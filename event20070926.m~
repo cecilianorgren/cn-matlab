@@ -1,0 +1,139 @@
+%% 2007 09 26 10:50-11:00
+%% Specifying time interval used for downloading data
+t1=[2007 9 26 10 50 0];
+t2=[2007 9 26 11 0 0];
+tint=[toepoch(t1) toepoch(t2)];
+%% Loading data
+cd /home/cecilia/data/20070926/
+caa_load
+sc_list= [3 4];
+%% Loading E and B
+c_eval('[caaB?,~,B?]=c_caa_var_get(''B_vec_xyz_gse__C?_CP_FGM_FULL'');',3:4);
+c_eval('[caaE?,~,E?]=c_caa_var_get(''E_Vec_xyz_ISR2__C?_CP_EFW_L2_E3D_INERT'');',3:4);
+%% Loading electron data
+c_eval('[caaEdata?,~,Edata?]=c_caa_var_get(''Data__C?_CP_PEA_PITCH_SPIN_DEFlux'');',3:4)
+%% Sampling frequency fs
+dt=E2(2,1)-E2(1,1);
+fs=1/dt;
+%% Getting frequency spectrum with no overlap
+overlap=0;
+c_eval('E?fft=caa_powerfft(E3,256,fs,overlap)',3:4)
+%% Getting frequency spectrum with overlap
+overlap=50;
+c_eval('E?fft_olap=caa_powerfft(E3,256,fs,overlap)',3:4)
+
+% Det blir skillnad i tidsskalan, med overlap blir antalet frekvenser f?rre
+% och f?rskjutna
+%% Calculating separation distance between s/c 3 and s/c 4
+D=dist34(t1,t2);
+%% Making the ultimate plot
+
+h=irf_plot(7);
+irf_plot(h(1),'B_vec_xyz_gse__C?_CP_FGM_FULL');
+%irf_plot(h(2),D(:,[1 2]),'-*');
+         irf_plot(h(2),'Data__C3_CP_PEA_PITCH_SPIN_DEFlux','sum_dim1');
+         
+         set(h(2),'yscale','log','ylim',[100 3e4]);
+         set(h(2),'ytick',[1 1e1 1e2 1e3 1e4 1e5])
+         irf_legend(h(2),{['C' num2str(3)]},[0.98 0.05],'color','k');
+         ylabel('E [eV]');
+
+irf_zoom('x',tint,h);
+add_timeaxis(h);
+%% Plotting E with spectrogram and printing to file
+figure(2)
+h=irf_plot(5);
+irf_plot(h(1),E3(:,[1 2 3]));
+caa_spectrogram([h(2) h(3)],E3fft);
+caa_spectrogram([h(4) h(5)],E3fft_olap);
+ylabel(h(1),'E [mV/m]');
+irf_legend(h(1),{'E_x' 'E_y'},[0.02 0.05]);
+irf_legend(h(2),'E3_x 0% overlap',[0.02 0.05]);
+irf_legend(h(3),'E3_y 0% overlap',[0.02 0.05]);
+irf_legend(h(4),'E3_x 50% overlap',[0.02 0.05]);
+irf_legend(h(5),'E3_y 50% overlap',[0.02 0.05]);
+irf_zoom(tint,'x',h);
+add_timeaxis(h);
+print -dpng E3_olaps.png
+
+%% Plotting E
+figure(1)
+h=irf_plot(2);
+irf_plot(h(1),E3(:,[1 2 3]));
+irf_plot(h(2),E4(:,[1 2 3]));
+ylabel(h(1),'C3 [mV/m]');
+ylabel(h(2),'C4 [mV/m]');
+irf_legend(h(1),{'x','y'},[0.02 0.05]);
+irf_legend(h(2),{'x','y'},[0.02 0.05]);
+irf_zoom(tint,'x');
+add_timeaxis(h);
+
+%% Plotting E with spectrogram and printing to file
+figure(3)
+h=irf_plot(3);
+irf_plot(h(1),E4(:,[1 2 3]));
+caa_spectrogram([h(2) h(3)],E4fft);
+%caa_spectrogram([h(4) h(5)],E3fft_olap);
+ylabel(h(1),'C1 [mV/m]');
+irf_legend(h(1),{'x','y'},[0.02 0.05]);
+irf_legend(h(2),'E4_x',[0.02 0.05]);
+irf_legend(h(3),'E4_y',[0.02 0.05]);
+%irf_legend(h(4),'E3_x 50% overlap',[0.02 0.05]);
+%irf_legend(h(5),'E3_y 50% overlap',[0.02 0.05]);
+irf_zoom(tint,'x',h);
+add_timeaxis(h);
+print -dpng E4ps.png
+
+%% Plotting E2 & E4 with spectrogram and printing to file
+figure(4)
+
+h=irf_plot(6);
+irf_plot(h(1),E3(:,[1 2 3]));
+caa_spectrogram([h(2) h(3)],E3fft);
+irf_plot(h(4),E4(:,[1 2 3]));
+caa_spectrogram([h(5) h(6)],E4fft);
+
+ylabel(h(1),'C1 [mV/m]');
+irf_legend(h(1),{'x','y'},[0.82 0.85]);
+irf_legend(h(2),'E4_x',[0.02 0.05]);
+irf_legend(h(3),'E4_y',[0.02 0.05]);
+ylabel(h(4),'C1 [mV/m]');
+irf_legend(h(4),{'x','y'},[0.02 0.05]);
+irf_legend(h(5),'E4_x',[0.02 0.05]);
+irf_legend(h(6),'E4_y',[0.02 0.05]);
+irf_zoom(tint,'x',h);
+add_timeaxis(h);
+print -dpng E34ps_0olap.png
+
+%% Getting spectrogram with wavelets
+
+Ewlet=dumwavelet(E3(:,1),E3(:,[2 3]));
+%% 
+dumwaveplot(E3(:,1),E3(:,2)); %  x-component
+%% Wavelet plots of E, B and S, needs B_0 - ambient magnetic field
+irf_pl_ebs(E3,B3,B3)
+
+%% Ion and electron spectrum
+% There is no ion data for this time
+[caaEl3,~,El3]=c_caa_var_get('Data__C3_CP_PEA_PITCH_SPIN_DEFlux');
+El3data=El3.data;
+%%
+[caaEle3,~,Ele3]=c_caa_var_get('Sweep_Energy__C3_CP_PEA_PITCH_SPIN_DEFlux');
+[caaElen3,~,Elen3]=c_caa_var_get('Sweep_Energy__C3_CP_PEA_PITCH_SPIN_DEFlux');
+%%
+h=irf_plot(1);
+irf_plot(h(1),El3.t,El3.data(:,1,1));
+%%
+pcolor(El3.data(1,:,:));
+%%
+El3.data(:,:,3);
+pcolor(El3.data(:,:,3));
+%% SUBPLOT: PEACE energy spectrogram
+         hca=irf_plot(2);
+         irf_plot(hca(2),'Data__C3_CP_PEA_PITCH_SPIN_DEFlux','sum_dim1','colorbarlabel',...
+             'log10 dEF\newline keV/cm^2 s sr keV','fitcolorbarlabel');
+         caxis([5.9 7.6]);
+         set(hca,'yscale','log','ylim',[100 3e4]);
+         set(hca,'ytick',[1 1e1 1e2 1e3 1e4 1e5])
+         irf_legend(hca(2),{['C' num2str(4)]},[0.98 0.05],'color','k');
+         ylabel('E [eV]');

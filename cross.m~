@@ -1,0 +1,2 @@
+function f=cross(a,b)
+f=[a(2)*b(3)-a(3)*b(2) a(3)*b(1)-a(1)*b(3) a(1)*y?hat(2)-gseB?hat(2)*y?hat(1)]

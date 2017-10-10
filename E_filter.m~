@@ -1,0 +1,38 @@
+tic
+figure(6)
+h=irf_plot(9);
+
+%% Non-filtered
+dt=diE3zoom(2,1)-diE3zoom(1,1);
+fs=1/dt;
+overlap=0;
+nfft=256;
+
+c_eval('E?fft=irf_powerfft(diE?zoom,nfft,fs,overlap);',3:4);
+irf_plot(h(1),diE3zoom);
+irf_spectrogram([h(2) h(3)],E3fft);
+irf_plot(h(4),diE4zoom);
+irf_spectrogram([h(5) h(6)],E4fft);
+
+%% Filtered
+if 0
+E_filt=caa_filter_e(diE3zoom,0.05); % 20Hz?
+irf_plot(h(4),E_filt);
+Efft=irf_powerfft(E_filt,nfft,fs,overlap);
+irf_spectrogram([h(5) h(6)],Efft);
+end
+%% Other filter
+
+c_eval('E?_filt=irf_filt(diE?zoom,20,100,fs,3);',3:4);
+irf_plot(h(7),E2_filt);
+Efft2=irf_powerfft(E_filt2,nfft,fs,overlap);
+irf_spectrogram([h(8) h(9)],Efft2);
+
+%%
+irf_zoom(h,'x',tint_zoom(5,:));
+ irf_plot_axis_align
+    add_timeaxis(h(6),'usefig');
+    
+ set(gcf,'PaperPositionMode','auto')   
+ print -dpdf filter.pdf
+    toc

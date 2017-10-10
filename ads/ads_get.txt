@@ -1,0 +1,1291 @@
+<?xml version="1.0"?>
+<records xmlns="http://ads.harvard.edu/schema/abs/1.1/abstracts" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ads.harvard.edu/schema/abs/1.1/abstracts http://ads.harvard.edu/schema/abs/1.1/abstracts.xsd" retrieved="17" start="1" selected="17" citations="17">
+<record refereed="true" article="true">
+<bibcode>2013AdSpR..52..205W</bibcode>
+<title>Generation mechanism of the whistler-mode waves in the plasma sheet prior to magnetic reconnection</title>
+<author>Wei, X. H.</author>
+<author>Cao, J. B.</author>
+<author>Zhou, G. C.</author>
+<author>Fu, H. S.</author>
+<author>Santolík, O.</author>
+<author>Rème, H.</author>
+<author>Dandouras, I.</author>
+<author>Cornilleau, N.</author>
+<author>Fazakerley, A.</author>
+<affiliation>AA(State Key Laboratory of Space Weather, Center for Space Science and Applied Research, Chinese Academy of Sciences, Beijing, China), AB(Beihang University, Beijing 100190, China), AC(State Key Laboratory of Space Weather, Center for Space Science and Applied Research, Chinese Academy of Sciences, Beijing, China), AD(Beihang University, Beijing 100190, China), AE(Institute of Atmospheric Physics of the Academy of Sciences of the Czech Republic, Charles University, Prague, Czech Republic; Faculty of Mathematics and Physics, Charles University, Prague, Czech Republic), AF(IRAP, University of Toulouse, UPS-OMP, Toulouse, France; CNRS, IRAP, 9 Ave. Colonel Roche, BP 44346, F-31028 Toulouse cedex 4, France), AG(IRAP, University of Toulouse, UPS-OMP, Toulouse, France; CNRS, IRAP, 9 Ave. Colonel Roche, BP 44346, F-31028 Toulouse cedex 4, France), AH(CETP/UVSQ, Velizy, France), AI(Univ. College London, London, UK)</affiliation>
+<journal>Advances in Space Research, Volume 52, Issue 1, p. 205-210.</journal>
+<volume>52</volume>
+<pubdate>Jul 2013</pubdate>
+<page>205</page>
+<lastpage>210</lastpage>
+<origin>ELSEVIER</origin>
+<copyright>COSPAR</copyright>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013AdSpR..52..205W&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013AdSpR..52..205W&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013AdSpR..52..205W&#38;link_type=REFERENCES</url>
+  <count>28</count>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013AdSpR..52..205W&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2013AdSpR..52..205W</url>
+<score>1.000</score>
+<abstract>The whistler-mode waves and electron temperature anisotropy play a key
+role prior to and during magnetic reconnection. On August 21, 2002, the
+Cluster spacecrafts encountered a quasi-collisionless magnetic
+reconnection event when they crossed the plasma sheet. Prior to the
+southward turning of magnetospheric magnetic field and high speed ion
+flow, the whistler-mode waves and positive electron temperature
+anisotropy are simultaneously observed. Theoretic analysis shows that
+the electrons with positive temperature anisotropy can excite the
+whistler-mode waves via cyclotron resonances. Using the data of
+particles and magnetic field, we estimated the whistler-mode wave growth
+rate and the ratio of whistler-mode growth rate to wave frequency. They
+are 0.0016fce (Electron cyclotron frequency) and
+0.0086fce, respectively. Therefore the whistler-mode waves
+can grow quickly in the current sheet. The combined observations of
+energetic electron beams and waves show that after the southward turning
+of magnetic field, energetic electrons in the reconnection process are
+accelerated by the whistler-mode waves.</abstract>
+<DOI>10.1016/j.asr.2013.02.016</DOI>
+</record>
+
+<record article="true">
+<bibcode>2013arXiv1305.2333W</bibcode>
+<title>Quantified Energy Dissipation Rates: Electromagnetic Wave Observations in the Terrestrial Bow Shock</title>
+<author>Wilson, L. B., III</author>
+<author>Sibeck, D. G.</author>
+<author>Breneman, A. W.</author>
+<author>Le Contel, O.</author>
+<author>Cully, C.</author>
+<author>Turner, D. L.</author>
+<author>Angelopoulos, V.</author>
+<journal>eprint arXiv:1305.2333</journal>
+<volume>1305</volume>
+<pubdate>May 2013</pubdate>
+<page>2333</page>
+<keywords>
+<keyword>Physics - Space Physics</keyword>
+<keyword>Physics - Plasma Physics</keyword>
+</keywords>
+<origin>ARXIV</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1305.2333W&#38;link_type=ABSTRACT</url>
+</link>
+<link type="PREPRINT" access="open">
+  <name>arXiv e-print</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1305.2333W&#38;link_type=PREPRINT</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1305.2333W&#38;link_type=REFERENCES</url>
+  <count>72</count>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1305.2333W&#38;link_type=AR</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2013arXiv1305.2333W</url>
+<comment>41 pages, 14 PDF figures, planning to submit to Nature</comment>
+<score>1.000</score>
+<abstract>We present the first quantified measure of the rate of energy dissipated
+per unit volume by high frequency electromagnetic waves in the
+transition region of the Earth's collisionless bow shock using data from
+the THEMIS spacecraft. Every THEMIS shock crossing examined with
+available wave burst data showed both low frequency (&#60; 10 Hz)
+magnetosonic-whistler waves and high frequency (&#62; 10 Hz)
+electromagnetic and electrostatic waves throughout the entire transition
+region and into the magnetosheath. The waves in both frequency ranges
+had large amplitudes, but the higher frequency waves, which are the
+focus of this study, showed larger contributions to both the Poynting
+flux and the energy dissipation rates. The higher frequency waves were
+identified as combinations of ion-acoustic waves, electron cyclotron
+drift instability driven waves, electrostatic solitary waves, and
+whistler mode waves. These waves were found to have: (1) amplitudes
+capable of exceeding dB ~ 10 nT and dE ~ 300 mV/m, though more typical
+values were dB ~ 0.1-1.0 nT and dE ~ 10-50 mV/m; (2) energy fluxes in
+excess of 2000 x 10^(-6) W m^(-2); (3) resistivities &#62; 9000 Ohm m;
+and (4) energy dissipation rates &#62; 3 x 10^(-6) W m^(-3). The
+dissipation rates were found to be in excess of four orders of magnitude
+greater than was necessary to explain the increase in entropy across the
+shocks. Thus, the waves need only be, at times, &#60; 0.01% efficient to
+balance the nonlinear wave steepening that produces the shocks.
+Therefore, these results show for the first time that high frequency
+electromagnetic and electrostatic waves have the capacity to regulate
+the global structure of collisionless shocks.</abstract>
+<eprintid>arXiv:1305.2333</eprintid>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2013JGRA..118....5W</bibcode>
+<title>Electromagnetic waves and electron anisotropies downstream of supercritical interplanetary shocks</title>
+<author>Wilson, L. B.</author>
+<author>Koval, A.</author>
+<author>Szabo, A.</author>
+<author>Breneman, A.</author>
+<author>Cattell, C. A.</author>
+<author>Goetz, K.</author>
+<author>Kellogg, P. J.</author>
+<author>Kersten, K.</author>
+<author>Kasper, J. C.</author>
+<author>Maruca, B. A.</author>
+<author>Pulupa, M.</author>
+<affiliation>AA(NASA Goddard Space Flight Center, Greenbelt, Maryland USA), AB(NASA Goddard Space Flight Center, Greenbelt, Maryland USA; Goddard Planetary Heliophysics Institute, University of Maryland Baltimore County, Baltimore, Maryland USA), AC(NASA Goddard Space Flight Center, Greenbelt, Maryland USA), AD(School of Physics and Astronomy, University of Minnesota, Minneapolis, Minnesota USA), AE(School of Physics and Astronomy, University of Minnesota, Minneapolis, Minnesota USA), AF(School of Physics and Astronomy, University of Minnesota, Minneapolis, Minnesota USA), AG(School of Physics and Astronomy, University of Minnesota, Minneapolis, Minnesota USA), AH(School of Physics and Astronomy, University of Minnesota, Minneapolis, Minnesota USA), AI(Harvard-Smithsonian Center for Astrophysics, Harvard University, Cambridge, Massachusetts USA), AJ(Harvard-Smithsonian Center for Astrophysics, Harvard University, Cambridge, Massachusetts USA), AK(Space Sciences Lab, University of California at Berkeley, Berkeley, California USA)</affiliation>
+<journal>Journal of Geophysical Research: Space Physics, Volume 118, Issue 1, pp. 5-16</journal>
+<volume>118</volume>
+<pubdate>Jan 2013</pubdate>
+<page>5</page>
+<lastpage>16</lastpage>
+<keywords>
+<keyword>whistler mode waves</keyword>
+<keyword>lower hybrid waves</keyword>
+<keyword>interplanetary shocks</keyword>
+<keyword>electron anisotropy</keyword>
+<keyword>heat flux instability</keyword>
+</keywords>
+<origin>WILEY</origin>
+<copyright>©2013. American Geophysical Union. All Rights Reserved.</copyright>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=EJOURNAL</url>
+</link>
+<link type="PREPRINT" access="open">
+  <name>arXiv e-print</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=PREPRINT</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=REFERENCES</url>
+  <count>60</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=CITATIONS</url>
+  <count>1</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013JGRA..118....5W&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2013JGRA..118....5W</url>
+<score>1.000</score>
+<citations>1</citations>
+<abstract>We present waveform observations of electromagnetic lower hybrid and
+whistler waves with fci ≪ f &#60; fce downstream
+of four supercritical interplanetary shocks using the Wind search coil
+magnetometer. The whistler waves were observed to have a weak positive
+correlation between δB and normalized heat flux magnitude and an
+inverse correlation with Teh/Tec. All were
+observed simultaneous with electron distributions satisfying the
+whistler heat flux instability threshold and most with T⊥
+h/T∥ h &#62; 1.01. Thus, the whistler mode waves
+appear to be driven by a heat flux instability and cause perpendicular
+heating of the halo electrons. The lower hybrid waves show a much weaker
+correlation between δB and normalized heat flux magnitude and are
+often observed near magnetic field gradients. A third type of event
+shows fluctuations consistent with a mixture of both lower hybrid and
+whistler mode waves. These results suggest that whistler waves may
+indeed be regulating the electron heat flux and the halo temperature
+anisotropy, which is important for theories and simulations of electron
+distribution evolution from the Sun to the Earth.</abstract>
+<DOI>10.1029/2012JA018167</DOI>
+<eprintid>arXiv:1207.6429</eprintid>
+</record>
+
+<record article="true">
+<bibcode>2013arXiv1301.3814T</bibcode>
+<title>THEMIS Observations of the Magnetopause Electron Diffusion Region: Large Amplitude Waves and Heated Electrons</title>
+<author>Tang, Xiangwei</author>
+<author>Cattell, Cynthia</author>
+<author>Dombeck, John</author>
+<author>Dai, Lei</author>
+<author>Wilson, Lynn B., III</author>
+<author>Breneman, Aaron</author>
+<author>Hupach, Adam</author>
+<journal>eprint arXiv:1301.3814</journal>
+<volume>1301</volume>
+<pubdate>Jan 2013</pubdate>
+<page>3814</page>
+<keywords>
+<keyword>Physics - Space Physics</keyword>
+</keywords>
+<origin>ARXIV</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1301.3814T&#38;link_type=ABSTRACT</url>
+</link>
+<link type="PREPRINT" access="open">
+  <name>arXiv e-print</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1301.3814T&#38;link_type=PREPRINT</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1301.3814T&#38;link_type=REFERENCES</url>
+  <count>36</count>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2013arXiv1301.3814T&#38;link_type=AR</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2013arXiv1301.3814T</url>
+<score>1.000</score>
+<abstract>We present the first observations of large amplitude waves in a
+well-defined electron diffusion region at the sub-solar magnetopause
+using data from one THEMIS satellite. These waves identified as whistler
+mode waves, electrostatic solitary waves, lower hybrid waves and
+electrostatic electron cyclotron waves, are observed in the same 12-sec
+waveform capture and in association with signatures of active magnetic
+reconnection. The large amplitude waves in the electron diffusion region
+are coincident with abrupt increases in electron parallel temperature
+suggesting strong wave heating. The whistler mode waves which are at the
+electron scale and enable us to probe electron dynamics in the diffusion
+region were analyzed in detail. The energetic electrons (~30 keV) within
+the electron diffusion region have anisotropic distributions with
+T_{e\perp}/T_{e\parallel}&#62;1 that may provide the free energy for the
+whistler mode waves. The energetic anisotropic electrons may be produced
+during the reconnection process. The whistler mode waves propagate away
+from the center of the 'X-line' along magnetic field lines, suggesting
+that the electron diffusion region is a possible source region of the
+whistler mode waves.</abstract>
+<eprintid>arXiv:1301.3814</eprintid>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2012PhRvL.109e5001N</bibcode>
+<title>Lower Hybrid Drift Waves: Space Observations</title>
+<author>Norgren, Cecilia</author>
+<author>Vaivads, Andris</author>
+<author>Khotyaintsev, Yuri V.</author>
+<author>André, Mats</author>
+<affiliation>AA(Swedish Institute of Space Physics, Uppsala, Sweden; Department of Physics and Astronomy, Uppsala University, Uppsala, Sweden), AB(Swedish Institute of Space Physics, Uppsala, Sweden), AC(Swedish Institute of Space Physics, Uppsala, Sweden), AD(Swedish Institute of Space Physics, Uppsala, Sweden)</affiliation>
+<journal>Physical Review Letters, vol. 109, Issue 5, id. 055001</journal>
+<volume>109</volume>
+<pubdate>Aug 2012</pubdate>
+<page>55001</page>
+<keywords type="PACS">
+<keyword>MHD waves</keyword>
+<keyword>plasma waves</keyword>
+<keyword>and instabilities</keyword>
+<keyword>Electrostatic waves and oscillations</keyword>
+<keyword>Drift waves</keyword>
+</keywords>
+<origin>APS</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=REFERENCES</url>
+  <count>17</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=CITATIONS</url>
+  <count>1</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012PhRvL.109e5001N&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2012PhRvL.109e5001N</url>
+<score>1.000</score>
+<citations>1</citations>
+<abstract>Lower hybrid drift waves (LHDWs) are commonly observed at plasma
+boundaries in space and laboratory, often having the strongest measured
+electric fields within these regions. We use data from two of the
+Cluster satellites (C3 and C4) located in Earth’s magnetotail and
+separated by a distance of the order of the electron gyroscale. These
+conditions allow us, for the first time, to make cross-spacecraft
+correlations of the LHDWs and to determine the phase velocity and
+wavelength of the LHDWs. Our results are in good agreement with the
+theoretical prediction. We show that the electrostatic potential of
+LHDWs is linearly related to fluctuations in the magnetic field
+magnitude, which allows us to determine the velocity vector through the
+relation
+∫δEdt·v=ϕδB∥. The
+electrostatic potential fluctuations correspond to ˜10% of the
+electron temperature, which suggests that the waves can strongly affect
+the electron dynamics.</abstract>
+<DOI>10.1103/PhysRevLett.109.055001</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2012ChPhL..29h9401Z</bibcode>
+<title>Anomalous Resistivity Associated with Secondary Islands in the Reconnection Region</title>
+<author>Zhou, Meng</author>
+<author>Su, Wei</author>
+<author>Deng, Xiao-Hua</author>
+<author>Yao, Ming</author>
+<journal>Chinese Physics Letters, Volume 29, Issue 8, article id. 089401, 4 pp. (2012).</journal>
+<volume>29</volume>
+<pubdate>Aug 2012</pubdate>
+<page>9401</page>
+<origin>IOP</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ChPhL..29h9401Z&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ChPhL..29h9401Z&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ChPhL..29h9401Z&#38;link_type=REFERENCES</url>
+  <count>28</count>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ChPhL..29h9401Z&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2012ChPhL..29h9401Z</url>
+<score>1.000</score>
+<abstract>We calculate the anomalous resistivity (AR) due to electrostatic waves,
+including possibly the lower hybrid wave and electron beam mode, around
+the secondary islands in the reconnection region observed by the Cluster
+spacecraft. Our main findings are: AR is important on the reconnection
+separatrix layer but heavily suppressed at the central current sheet
+where Bx ~ 0. Moreover, there is a highly asymmetric pattern
+of AR across the island along the outflow direction, with much larger AR
+on one side of island than on the other side. Our results may be helpful
+in understanding the role of AR in reconnection.</abstract>
+<DOI>10.1088/0256-307X/29/8/089401</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2012ApJ...754..103B</bibcode>
+<title>A Classification Scheme for Turbulent Acceleration Processes in Solar Flares</title>
+<author>Bian, Nicolas</author>
+<author>Emslie, A. Gordon</author>
+<author>Kontar, Eduard P.</author>
+<affiliation>AA(School of Physics &#38; Astronomy, University of Glasgow, Glasgow G12 8QQ, UK n.bian@physics.gla.ac.uk), AB(Department of Physics &#38; Astronomy, Western Kentucky University, Bowling Green, KY 42101, USA eduard@astro.gla.ac.uk), AC(School of Physics &#38; Astronomy, University of Glasgow, Glasgow G12 8QQ, UK  emslieg@wku.edu)</affiliation>
+<journal>The Astrophysical Journal, Volume 754, Issue 2, article id. 103, 16 pp. (2012).</journal>
+<volume>754</volume>
+<pubdate>Aug 2012</pubdate>
+<page>103</page>
+<keywords type="Astronomy">
+<keyword>Sun: activity</keyword>
+<keyword>Sun: flares</keyword>
+<keyword>Sun: particle emission</keyword>
+<keyword>Sun: X-rays</keyword>
+<keyword>gamma rays</keyword>
+</keywords>
+<origin>IOP</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=EJOURNAL</url>
+</link>
+<link type="ARTICLE">
+  <name>Full Printable Article (PDF/Postscript)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=ARTICLE</url>
+</link>
+<link type="PREPRINT" access="open">
+  <name>arXiv e-print</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=PREPRINT</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=REFERENCES</url>
+  <count>104</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=CITATIONS</url>
+  <count>5</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012ApJ...754..103B&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2012ApJ...754..103B</url>
+<score>1.000</score>
+<citations>5</citations>
+<abstract>We establish a classification scheme for stochastic acceleration models
+involving low-frequency plasma turbulence in a strongly magnetized
+plasma. This classification takes into account both the properties of
+the accelerating electromagnetic field, and the nature of the transport
+of charged particles in the acceleration region. We group the
+acceleration processes as either resonant, non-resonant, or
+resonant-broadened, depending on whether the particle motion is
+free-streaming along the magnetic field, diffusive, or a combination of
+the two. Stochastic acceleration by moving magnetic mirrors and
+adiabatic compressions are addressed as illustrative examples. We obtain
+expressions for the momentum-dependent diffusion coefficient D(p), both
+for general forms of the accelerating force and for the situation when
+the electromagnetic force is wave-like, with a specified dispersion
+relation ω = ω(k). Finally, for models considered, we
+calculate the energy-dependent acceleration time, a quantity that can be
+directly compared with observations of the time profile of the radiation
+field produced by the accelerated particles, such as those occuring
+during solar flares.</abstract>
+<DOI>10.1088/0004-637X/754/2/103</DOI>
+<eprintid>arXiv:1206.0472</eprintid>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2012GeoRL..39.8109W</bibcode>
+<title>Observations of electromagnetic whistler precursors at supercritical interplanetary shocks</title>
+<author>Wilson, L. B., III</author>
+<author>Koval, A.</author>
+<author>Szabo, A.</author>
+<author>Breneman, A.</author>
+<author>Cattell, C. A.</author>
+<author>Goetz, K.</author>
+<author>Kellogg, P. J.</author>
+<author>Kersten, K.</author>
+<author>Kasper, J. C.</author>
+<author>Maruca, B. A.</author>
+<author>Pulupa, M.</author>
+<affiliation>AA(NASA Goddard Space Flight Center,, Greenbelt, Maryland,, USA); AB(Goddard Planetary Heliophysics Institute, University of Maryland,, Baltimore County, Baltimore, Maryland,, USA); AC(NASA Goddard Space Flight Center,, Greenbelt, Maryland,, USA); AD(School of Physics and Astronomy, University of Minnesota,, Twin Cities, Minneapolis, Minnesota,, USA); AE(School of Physics and Astronomy, University of Minnesota,, Twin Cities, Minneapolis, Minnesota,, USA); AF(School of Physics and Astronomy, University of Minnesota,, Twin Cities, Minneapolis, Minnesota,, USA); AG(School of Physics and Astronomy, University of Minnesota,, Twin Cities, Minneapolis, Minnesota,, USA); AH(School of Physics and Astronomy, University of Minnesota,, Twin Cities, Minneapolis, Minnesota,, USA); AI(Harvard-Smithsonian Center for Astrophysics, Harvard University,, Cambridge, Massachusetts,, USA); AJ(Harvard-Smithsonian Center for Astrophysics, Harvard University,, Cambridge, Massachusetts,, USA); AK(Space Sciences Laboratory, University of California,, Berkeley, California,, USA)</affiliation>
+<journal>Geophysical Research Letters, Volume 39, Issue 8, CiteID L08109</journal>
+<volume>39</volume>
+<pubdate>Apr 2012</pubdate>
+<page>8109</page>
+<keywords type="AGU">
+<keyword>Interplanetary Physics: Interplanetary shocks</keyword>
+<keyword>Interplanetary Physics: Plasma waves and turbulence</keyword>
+<keyword>Space Plasma Physics: Particle acceleration</keyword>
+<keyword>Space Plasma Physics: Plasma energization</keyword>
+<keyword>Space Plasma Physics: Wave/particle interactions (2483</keyword>
+<keyword>6984)</keyword>
+</keywords>
+<origin>AGU</origin>
+<copyright>(c) 2012: American Geophysical Union</copyright>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=EJOURNAL</url>
+</link>
+<link type="ARTICLE">
+  <name>Full Printable Article (PDF/Postscript)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=ARTICLE</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=REFERENCES</url>
+  <count>28</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=CITATIONS</url>
+  <count>5</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2012GeoRL..39.8109W&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2012GeoRL..39.8109W</url>
+<score>1.000</score>
+<citations>5</citations>
+<abstract>We present observations of electromagnetic precursor waves, identified
+as whistler mode waves, at supercritical interplanetary shocks using the
+Wind search coil magnetometer. The precursors propagate obliquely with
+respect to the local magnetic field, shock normal vector, solar wind
+velocity, and they are not phase standing structures. All are right-hand
+polarized with respect to the magnetic field (spacecraft frame), and all
+but one are right-hand polarized with respect to the shock normal vector
+in the normal incidence frame. They have rest frame frequencies
+fci &#60; f ≪ fce and wave numbers 0.02 ≲
+kρce ≲ 5.0. Particle distributions show signatures
+of specularly reflected gyrating ions, which may be a source of free
+energy for the observed modes. In one event, we simultaneously observe
+perpendicular ion heating and parallel electron acceleration, consistent
+with wave heating/acceleration due to these waves. Although the
+precursors can have δB/Bo as large as 2, fluxgate
+magnetometer measurements show relatively laminar shock transitions in
+three of the four events.</abstract>
+<DOI>10.1029/2012GL051581</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2011PhRvL.106p5001K</bibcode>
+<title>Plasma Jet Braking: Energy Dissipation and Nonadiabatic Electrons</title>
+<author>Khotyaintsev, Yu. V.</author>
+<author>Cully, C. M.</author>
+<author>Vaivads, A.</author>
+<author>André, M.</author>
+<author>Owen, C. J.</author>
+<affiliation>AA(Swedish Institute of Space Physics, Uppsala, Sweden), AB(Swedish Institute of Space Physics, Uppsala, Sweden), AC(Swedish Institute of Space Physics, Uppsala, Sweden), AD(Swedish Institute of Space Physics, Uppsala, Sweden), AE(Mullard Space Science Laboratory, University College London, Dorking, United Kingdom)</affiliation>
+<journal>Physical Review Letters, vol. 106, Issue 16, id. 165001</journal>
+<volume>106</volume>
+<pubdate>Apr 2011</pubdate>
+<page>165001</page>
+<keywords type="PACS">
+<keyword>Electromagnetic waves</keyword>
+<keyword>Magnetic reconnection</keyword>
+<keyword>Wave/wave</keyword>
+<keyword>wave/particle interactions</keyword>
+<keyword>Magnetotail</keyword>
+</keywords>
+<origin>APS</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=REFERENCES</url>
+  <count>18</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=CITATIONS</url>
+  <count>14</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2011PhRvL.106p5001K&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2011PhRvL.106p5001K</url>
+<score>1.000</score>
+<citations>14</citations>
+<abstract>We report in situ observations by the Cluster spacecraft of
+wave-particle interactions in a magnetic flux pileup region created by a
+magnetic reconnection outflow jet in Earth’s magnetotail. Two
+distinct regions of wave activity are identified: lower-hybrid drift
+waves at the front edge and whistler-mode waves inside the pileup
+region. The whistler-mode waves are locally generated by the electron
+temperature anisotropy, and provide evidence for ongoing betatron
+energization caused by magnetic flux pileup. The whistler-mode waves
+cause fast pitch-angle scattering of electrons and isotropization of the
+electron distribution, thus making the flow braking process
+nonadiabatic. The waves strongly affect the electron dynamics and thus
+play an important role in the energy conversion chain during plasma jet
+braking.</abstract>
+<DOI>10.1103/PhysRevLett.106.165001</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2010PhDT........43W</bibcode>
+<title>The microphysics of collisionless shocks</title>
+<author>Wilson, Lynn Bruce, III</author>
+<affiliation>AA(University of Minnesota lynn.b.wilsoniii@gmail.com)</affiliation>
+<journal>ProQuest Dissertations And Theses; University of Minnesota; Publication Number:  AAT 3426498; ISBN:  9781124274577; DAI-B 71/11, May 2011; ProQuest document ID:  2183187011</journal>
+<pubdate>Nov 2010</pubdate>
+<page>43</page>
+<keywords>
+<keyword>Collisionless shocks</keyword>
+<keyword>Ion-acoustic waves</keyword>
+<keyword>Langmuir waves</keyword>
+<keyword>Shock waves</keyword>
+<keyword>Solitary waves</keyword>
+<keyword>Wave-particle interactions</keyword>
+</keywords>
+<origin>AUTHOR</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2010PhDT........43W&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2010PhDT........43W&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2010PhDT........43W&#38;link_type=REFERENCES</url>
+  <count>282</count>
+</link>
+<url>http://adsabs.harvard.edu/abs/2010PhDT........43W</url>
+<comment>Publication Number:  AAT 3426498; ISBN:  9781124274577; Advisor:  Cynthia Cattell</comment>
+<score>1.000</score>
+<abstract>Shock waves in interplanetary (IP) space are of considerable interest
+due to their potential to damage ground based electronic systems and
+their ability to energize charged particles. The energization of charged
+particles at IP shocks has the obvious extrapolation to supernova shock
+waves, which are thought to be a candidate for generating the most
+energetic particles in the universe. The observations and theory behind
+collisionless shock wave evolution suggest that IP shocks should, for
+the most part, be stable structures which require energy dissipation. In
+a regular fluid, like our atmosphere, energy dissipation is accomplished
+through binary particle collisions transferring the loss of bulk flow
+kinetic energy to heat. Plasmas are mostly collisionless fluids, thus
+requiring other means by which to dissipate energy.
+
+The studies herein were performed using wave and particle data primarily
+from the Wind spacecraft to investigate the microphysics of IP shock
+energy dissipation mechanisms. Due to their lower Mach numbers, more
+simplified geometry, and quasi-perpendicular nature, IP shock waves are
+an excellent laboratory to study wave-particle related dissipation
+mechanisms. Utilization of multiple data sets from multiple high time
+resolution instruments on board the Wind spacecraft, we have performed
+studies on the transition region microphysics of IP shocks.
+
+The work began with a statistical study of high frequency
+(≥ 1 kHz) waveform capture data during 67 IP shocks with
+Mach numbers ranging from ∼1-6 found ion-acoustic
+wave amplitudes correlated with the fast mode Mach number and shock
+strength. The ion-acoustic waves (IAWs) were estimated to produce
+anomalous resistivities roughly seven orders of magnitude above
+classical estimates.
+
+Another study was an examination of low frequency waves (0.25 Hz &#60; f
+&#60; 10 Hz) at five quasi-perpendicular IP shocks found the wave modes
+to be consistent with oblique precusor whistler waves at four of the
+events. The strongest event in that study had low frequency waves
+consistent with shocklets. The shocklets are seen simultaneously with
+diffuse ion distributions. Both the shocklets and precursor whistlers
+are seen simultaneously with anisotropic electron distributions unstable
+to whistler anisotropy and heat flux instabilities. The IP shock with
+upstream shocklets showed much stronger electron heating across the
+shock ramp than the four events without upstream shocklets.
+
+Further investigation of the atypical IP shock found the strong heating
+to be associated with large amplitude (&#62; 100 mV/m) solitary waves and
+electron Bernstein waves. The observed heating and waveforms are likely
+due to instabilities driven by the free energy provided by reflected
+ions at this supercritical IP shock, not the DC macroscopic fields. The
+particle heating observed for the event with shocklets was observed to
+be different from other events with similar shock parameters, suggesting
+a different dissipation mechanism.
+
+The work presented in this thesis has helped increase the understanding
+of the microphysics of IP shocks in addition to raising new questions
+regarding the energy dissipation mechanisms dominating in the ramp
+regions. The initial work focused on a statistical study of high
+frequency waveforms in IP shock ramps. The study results suggested a
+re-evaluation of the relative importance of anomalous resistivity due to
+wave-particle interactions. This assertion was further strengthened by
+the atypical particle heating observed in the 04/06/2000 event which we
+claimed clearly showed a dependence on the observed waveforms. Thus, the
+nearly ubiquitous observations of large amplitude IAWs in the ramp
+regions of IP shocks raises doubts about ignoring these high frequency
+fluctuations. In addition to these findings, we also observed a low
+frequency wave mode which is only supposed to exist upstream of
+quasi-parallel shocks with small radii of curvatures.
+
+All of these findings have increased our knowledge of collisionless
+shock energy dissipation, but they have raised many questions regarding
+our current theories. We have raised doubts regarding the use of the
+solar wind electron distributions as one particle population. We have
+showed evidence to support the energy dependence of wave-particle
+interactions between low frequency whistler waves and
+≥1 keV electrons. Thus, we conclude that in the
+analysis of IP shocks the microphysics can no longer be disregarded.</abstract>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2009GeoRL..3620107Z</bibcode>
+<title>THEMIS observation of multiple dipolarization fronts and associated wave characteristics in the near-Earth magnetotail</title>
+<author>Zhou, Meng</author>
+<author>Ashour-Abdalla, Maha</author>
+<author>Deng, Xiaohua</author>
+<author>Schriver, David</author>
+<author>El-Alaoui, Mostafa</author>
+<author>Pang, Ye</author>
+<affiliation>AA(Institute of Geophysics and Planetary Physics, University of California, Los Angeles, California, USA), AB(Department of Physics and Astronomy, University of California, Los Angeles, California, USA), AC(Institute of Geophysics and Planetary Physics, University of California, Los Angeles, California, USA), AD(Institute of Geophysics and Planetary Physics, University of California, Los Angeles, California, USA), AE(Institute of Geophysics and Planetary Physics, University of California, Los Angeles, California, USA), AF(Institute of Geophysics and Planetary Physics, University of California, Los Angeles, California, USA)</affiliation>
+<journal>Geophysical Research Letters, Volume 36, Issue 20, CiteID L20107</journal>
+<volume>36</volume>
+<pubdate>Oct 2009</pubdate>
+<page>20107</page>
+<keywords>
+<keyword>Space Plasma Physics: Wave/particle interactions (2483</keyword>
+<keyword>6984)</keyword>
+<keyword>Magnetospheric Physics: Substorms</keyword>
+<keyword>Magnetospheric Physics: Plasma waves and instabilities (2471)</keyword>
+<keyword>Magnetospheric Physics: Plasma sheet</keyword>
+<keyword>Space Plasma Physics: Plasma energization</keyword>
+</keywords>
+<origin>AGU</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=EJOURNAL</url>
+</link>
+<link type="ARTICLE">
+  <name>Full Printable Article (PDF/Postscript)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=ARTICLE</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=REFERENCES</url>
+  <count>23</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=CITATIONS</url>
+  <count>22</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009GeoRL..3620107Z&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2009GeoRL..3620107Z</url>
+<score>1.000</score>
+<citations>22</citations>
+<abstract>Multiple dipolarization fronts were observed by THEMIS spacecraft in the
+near-Earth magnetotail during a substorm. The dipolarization fronts were
+located at the leading edge of earthward propagating plasma bubbles.
+Major energetic electron flux enhancements were observed at the
+dipolarization fronts, which were also associated with large wave
+fluctuations extending from below the lower hybrid frequency to above
+the electron cyclotron frequency. Intense electric field wave packets,
+primarily contributed by the Hall electric field and lower hybrid drift
+(LHD) wave, were observed right at the front, which was a thin current
+layer with size of the order of the ion inertial length. The LHD wave
+was believed to be generated by a diamagnetic current in the presence of
+density and temperature gradients. Electrostatic electron cyclotron
+harmonic (ECH) waves were detected slightly after the front. The ECH
+waves were probably generated by the positive slope of the electron
+perpendicular velocity distribution. Both of these waves are suggested
+to be able to heat electrons. The observation of these waves at the
+dipolarization front could be important for the understanding of
+electron energization during substorm injection, as well as the
+mechanism of current disruption.</abstract>
+<DOI>10.1029/2009GL040663</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2009PhPl...16i2902V</bibcode>
+<title>Solar nanoflares and other smaller energy release events as growing drift waves</title>
+<author>Vranjes, J.</author>
+<author>Poedts, S.</author>
+<affiliation>AA(Center for Plasma Astrophysics and Leuven Mathematical Modeling and Computational Science Centre (LMCC), Celestijnenlaan 200B, 3001 Leuven, Belgium), AB(Center for Plasma Astrophysics and Leuven Mathematical Modeling and Computational Science Centre (LMCC), Celestijnenlaan 200B, 3001 Leuven, Belgium)</affiliation>
+<journal>Physics of Plasmas, Volume 16, Issue 9, pp. 092902-092902-4 (2009).</journal>
+<volume>16</volume>
+<pubdate>Sep 2009</pubdate>
+<page>2902</page>
+<keywords>
+<keyword>magnetic reconnection</keyword>
+<keyword>plasma drift waves</keyword>
+<keyword>solar corona</keyword>
+<keyword>solar flares</keyword>
+</keywords>
+<keywords type="PACS">
+<keyword>Corona</keyword>
+<keyword>Drift waves</keyword>
+</keywords>
+<origin>AIP</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=EJOURNAL</url>
+</link>
+<link type="PREPRINT" access="open">
+  <name>arXiv e-print</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=PREPRINT</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=REFERENCES</url>
+  <count>32</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=CITATIONS</url>
+  <count>2</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16i2902V&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2009PhPl...16i2902V</url>
+<score>1.000</score>
+<citations>2</citations>
+<abstract>Rapid energy releases (RERs) in the solar corona extend over many orders
+of magnitude, the largest (flares) releasing an energy of
+1025 J or more. Other events, with a typical energy that is a
+billion times less, are called nanoflares. A basic difference between
+flares and nanoflares is that flares need a larger magnetic field and
+thus occur only in active regions, while nanoflares can appear
+everywhere. The origin of such RERs is usually attributed to magnetic
+reconnection that takes place at altitudes just above the transition
+region. Here we show that nanoflares and smaller similar RERs at least
+in some cases can be explained within the drift wave theory as a natural
+stage in the kinetic growth of the drift wave. In this scenario, a
+growing mode with a sufficiently large amplitude leads to stochastic
+heating that can provide an energy release of over 1016 J.</abstract>
+<DOI>10.1063/1.3224037</DOI>
+<eprintid>arXiv:0909.1689</eprintid>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2009JGRA..114.7216D</bibcode>
+<title>Dynamics and waves near multiple magnetic null points in reconnection diffusion region</title>
+<author>Deng, X. H.</author>
+<author>Zhou, M.</author>
+<author>Li, S. Y.</author>
+<author>Baumjohann, W.</author>
+<author>Andre, M.</author>
+<author>Cornilleau, N.</author>
+<author>Santolík, O.</author>
+<author>Pontin, D. I.</author>
+<author>Reme, H.</author>
+<author>Lucek, E.</author>
+<author>Fazakerley, A. N.</author>
+<author>Decreau, P.</author>
+<author>Daly, P.</author>
+<author>Nakamura, R.</author>
+<author>Tang, R. X.</author>
+<author>Hu, Y. H.</author>
+<author>Pang, Y.</author>
+<author>Büchner, J.</author>
+<author>Zhao, H.</author>
+<author>Vaivads, A.</author>
+<author>Pickett, J. S.</author>
+<author>Ng, C. S.</author>
+<author>Lin, X.</author>
+<author>Fu, S.</author>
+<author>Yuan, Z. G.</author>
+<author>Su, Z. W.</author>
+<author>Wang, J. F.</author>
+<affiliation>AA(Institute of Information and Engineering, Nanchang University, Nanchang, China), AB(Department of Space Physics, Wuhan University, Wuhan, China), AC(Department of Space Physics, Wuhan University, Wuhan, China), AD(Space Research Institute, Austrian Academy of Sciences, Graz, Austria), AE(Uppsala Division, Swedish Institute of Space Physics, Uppsala, Sweden), AF(Centre d'Étude des Environnements Terrestre et Planétaires, L'Institut Pierre-Simon La Place, Velizy, France), AG(Faculty of Mathematics and Physics, Charles University, Prague, Czech Republic), AH(Division of Mathematics, University of Dundee, Dundee, UK), AI(Centre d'Étude Spatiale des Rayonnements, CNRS, Toulouse, France), AJ(Space and Atmospheric Physics, Imperial College, London, UK), AK(Mullard Space Sciences Laboratory, University College London, London, UK), AL(Laboratoire de Physique et Chimie de l'Environnement, CNRS, Orleans, France), AM(Max-Planck-Institut für Sonnensystemforschung, Katlenburg-Lindau, Germany), AN(Space Research Institute, Austrian Academy of Sciences, Graz, Austria), AO(Department of Space Physics, Wuhan University, Wuhan, China), AP(Department of Space Physics, Wuhan University, Wuhan, China), AQ(Department of Space Physics, Wuhan University, Wuhan, China), AR(Max-Planck-Institut für Sonnensystemforschung, Katlenburg-Lindau, Germany), AS(National Astronomical Observatoires, Chinese Academy of Sciences, Beijing, China), AT(Uppsala Division, Swedish Institute of Space Physics, Uppsala, Sweden), AU(Department of Physics and Astronomy, University of Iowa, Iowa City, Iowa, USA), AV(Space Science Center, University of New Hampshire, Durham, New Hampshire, USA), AW(Department of Space Physics, Wuhan University, Wuhan, China), AX(Department of Space Physics, Wuhan University, Wuhan, China), AY(Department of Space Physics, Wuhan University, Wuhan, China), AZ(Department of Space Physics, Wuhan University, Wuhan, China), BA(Department of Space Physics, Wuhan University, Wuhan, China)</affiliation>
+<journal>Journal of Geophysical Research, Volume 114, Issue A7, CiteID A07216</journal>
+<volume>114</volume>
+<pubdate>Jul 2009</pubdate>
+<page>7216</page>
+<keywords>
+<keyword>Space Plasma Physics: Magnetic reconnection (2723</keyword>
+<keyword>7526)</keyword>
+<keyword>Magnetospheric Physics: Plasma waves and instabilities (2471)</keyword>
+<keyword>Space Plasma Physics: Kinetic waves and instabilities</keyword>
+<keyword>Space Plasma Physics: Nonlinear phenomena (4400</keyword>
+<keyword>6944)</keyword>
+<keyword>Space Plasma Physics: Particle acceleration</keyword>
+</keywords>
+<origin>AGU</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=EJOURNAL</url>
+</link>
+<link type="ARTICLE">
+  <name>Full Printable Article (PDF/Postscript)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=ARTICLE</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=REFERENCES</url>
+  <count>39</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=CITATIONS</url>
+  <count>4</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=REFCIT</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009JGRA..114.7216D&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2009JGRA..114.7216D</url>
+<score>1.000</score>
+<citations>4</citations>
+<abstract>Identifying the magnetic structure in the region where the magnetic
+field lines break and how reconnection happens is crucial to improving
+our understanding of three-dimensional reconnection. Here we show the in
+situ observation of magnetic null structures in the diffusion region,
+the dynamics, and the associated waves. Possible spiral null pair has
+been identified near the diffusion region. There is a close relation
+among the null points, the bipolar signature of the Z component of the
+magnetic field, and enhancement of the flux of energetic electrons up to
+100 keV. Near the null structures, whistler-mode waves were identified
+by both the polarity and the power law of the spectrum of electric and
+magnetic fields. It is found that the angle between the fans of the
+nulls is quite close to the theoretically estimated maximum value of the
+group-velocity cone angle for the whistler wave regime of reconnection.</abstract>
+<DOI>10.1029/2008JA013197</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2009PhPl...16e2105V</bibcode>
+<title>Warm electromagnetic lower hybrid wave dispersion relation</title>
+<author>Verdon, A. L.</author>
+<author>Cairns, Iver H.</author>
+<author>Melrose, D. B.</author>
+<author>Robinson, P. A.</author>
+<affiliation>AA(School of Physics, University of Sydney, New South Wales 2006, Australia), AB(School of Physics, University of Sydney, New South Wales 2006, Australia), AC(School of Physics, University of Sydney, New South Wales 2006, Australia), AD(School of Physics, University of Sydney, New South Wales 2006, Australia)</affiliation>
+<journal>Physics of Plasmas, Volume 16, Issue 5, pp. 052105-052105-12 (2009).</journal>
+<volume>16</volume>
+<pubdate>May 2009</pubdate>
+<page>2105</page>
+<keywords type="PACS">
+<keyword>Electromagnetic waves</keyword>
+</keywords>
+<origin>AIP</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=REFERENCES</url>
+  <count>22</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=CITATIONS</url>
+  <count>5</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2009PhPl...16e2105V&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2009PhPl...16e2105V</url>
+<score>1.000</score>
+<citations>5</citations>
+<abstract>Lower hybrid (LH) waves can interact resonantly with both electrons and
+ions transferring energy between the species. For this reason the
+properties of LH waves are of interest. Most treatments of LH waves
+include either electromagnetic (EM) or warm plasma effects but not both.
+Here a new analytic dispersion relation for LH waves, including both EM
+and warm plasma effects, is derived and shown to be more consistent than
+the previous analytic dispersion relations with numerical results. These
+comparisons show a very good agreement of the real part of the frequency
+and reasonable agreement of the imaginary part for a wide range of
+parameters. It is found that ion magnetization effects, which have been
+neglected in all previous analytic treatments of LH waves, are
+surprisingly important. When ion magnetization effects become important
+the continuous LH mode breaks up into a series of segments of ion
+Bernstein modes.</abstract>
+<DOI>10.1063/1.3132628</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2008JGRA..11312215R</bibcode>
+<title>Cluster observations of energetic electrons and electromagnetic fields within a reconnecting thin current sheet in the Earth's magnetotail</title>
+<author>Retinò, A.</author>
+<author>Nakamura, R.</author>
+<author>Vaivads, A.</author>
+<author>Khotyaintsev, Y.</author>
+<author>Hayakawa, T.</author>
+<author>Tanaka, K.</author>
+<author>Kasahara, S.</author>
+<author>Fujimoto, M.</author>
+<author>Shinohara, I.</author>
+<author>Eastwood, J. P.</author>
+<author>André, M.</author>
+<author>Baumjohann, W.</author>
+<author>Daly, P. W.</author>
+<author>Kronberg, E. A.</author>
+<author>Cornilleau-Wehrlin, N.</author>
+<affiliation>AA(Space Research Institute, Austrian Academy of Sciences, Graz, Austria), AB(Space Research Institute, Austrian Academy of Sciences, Graz, Austria), AC(Swedish Institute of Space Physics, Uppsala, Sweden), AD(Swedish Institute of Space Physics, Uppsala, Sweden), AE(Department of Earth and Planetary Sciences, Tokyo Institute of Technology, Meguro, Japan), AF(Institute of Space and Astronautical Science, Japan Aerospace Exploration Agency, Sagamihara, Japan), AG(Institute of Space and Astronautical Science, Japan Aerospace Exploration Agency, Sagamihara, Japan), AH(Institute of Space and Astronautical Science, Japan Aerospace Exploration Agency, Sagamihara, Japan), AI(Institute of Space and Astronautical Science, Japan Aerospace Exploration Agency, Sagamihara, Japan), AJ(Space Sciences Laboratory, University of California, Berkeley, California, USA), AK(Swedish Institute of Space Physics, Uppsala, Sweden), AL(Space Research Institute, Austrian Academy of Sciences, Graz, Austria), AM(Max Planck Institute for Solar System Research, Katlenburg-Lindau, Germany), AN(Max Planck Institute for Solar System Research, Katlenburg-Lindau, Germany), AO(Centre d'Étude des Environnements Terrestre et Planétairs, CNRS/IPSL, Vélizy, France)</affiliation>
+<journal>Journal of Geophysical Research: Space Physics, Volume 113, Issue A12, CiteID A12215</journal>
+<volume>113</volume>
+<pubdate>Dec 2008</pubdate>
+<page>12215</page>
+<keywords>
+<keyword>Space Plasma Physics: Magnetic reconnection (2723</keyword>
+<keyword>7526)</keyword>
+<keyword>Space Plasma Physics: Plasma energization</keyword>
+<keyword>Space Plasma Physics: Charged particle motion and acceleration</keyword>
+<keyword>Space Plasma Physics: Wave/particle interactions (2483</keyword>
+<keyword>6984)</keyword>
+<keyword>Solar Physics</keyword>
+<keyword>Astrophysics</keyword>
+<keyword>and Astronomy: Energetic particles (2114)</keyword>
+<keyword>magnetic reconnection</keyword>
+<keyword>energetic particles</keyword>
+<keyword>electric fields</keyword>
+</keywords>
+<origin>AGU; WILEY</origin>
+<copyright>Copyright 2008 by the American Geophysical Union.</copyright>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=EJOURNAL</url>
+</link>
+<link type="ARTICLE">
+  <name>Full Printable Article (PDF/Postscript)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=ARTICLE</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=REFERENCES</url>
+  <count>32</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=CITATIONS</url>
+  <count>28</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=REFCIT</url>
+</link>
+<link type="AR">
+  <name>Also-Read Articles</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=AR</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2008JGRA..11312215R&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2008JGRA..11312215R</url>
+<score>1.000</score>
+<citations>28</citations>
+<abstract>We study the acceleration of energetic electrons during magnetotail
+reconnection by using Cluster simultaneous measurements of
+three-dimensional electron distribution functions, electric and magnetic
+fields, and waves in a thin current sheet. We present observations of
+two consecutive current sheet crossings where the flux of electrons
+35-127 keV peaks within an interval of tailward flows. The first
+crossing shows the signatures of a tailward moving flux rope. The
+observed magnetic field and density indicate that the flux rope was very
+dynamic, and a comparison with numerical simulation suggests a crossing
+right after coalescence of smaller flux ropes. The second crossing
+occurs within the ion diffusion region. The flux of electrons is largest
+within the flux rope where they are mainly directed perpendicular to the
+magnetic field. At the magnetic separatrices, the fluxes are smaller,
+but the energy spectra are harder and electrons are mainly field
+aligned. Reconnection electric fields EY ˜ 7 mV/m are
+observed within the diffusion region, whereas in the flux rope,
+EY are much smaller. Waves around lower hybrid frequency do
+not show a clear correlation with energetic electrons. We interpret the
+field-aligned electrons at the separatrices as directly accelerated by
+the reconnection electric field in the diffusion region, whereas we
+interpret the perpendicular electrons as trapped within the flux rope
+and accelerated by a combination of betatron acceleration with
+nonadiabatic pitch-angle scattering. Our observations indicate that thin
+current sheets during dynamic reconnection are important for in situ
+production of energetic electrons and that simultaneous measurements of
+electrons and electromagnetic fields within thin sheets are crucial to
+understand the acceleration mechanisms.</abstract>
+<DOI>10.1029/2008JA013511</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2007PhPl...14a2103M</bibcode>
+<title>Parallel and lower hybrid turbulence in low β plasmas driven by strong parallel currents and the resulting parallel electron and perpendicular ion energization</title>
+<author>McMillan, Ben F.</author>
+<author>Cairns, Iver H.</author>
+<affiliation>AA(School of Physics, Sydney University, NSW 2006, Sydney, Australia), AB(School of Physics, Sydney University, NSW 2006, Sydney, Australia)</affiliation>
+<journal>Physics of Plasmas, Volume 14, Issue 1, pp. 012103-012103-10 (2007).</journal>
+<volume>14</volume>
+<pubdate>Jan 2007</pubdate>
+<page>2103</page>
+<keywords type="PACS">
+<keyword>Plasma turbulence</keyword>
+<keyword>Electromagnetic waves</keyword>
+<keyword>Transport properties</keyword>
+<keyword>Electromagnetic  radiation interactions with plasma</keyword>
+<keyword>Macroinstabilities</keyword>
+<keyword>Plasma heating by particle beams</keyword>
+</keywords>
+<origin>AIP</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2007PhPl...14a2103M&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2007PhPl...14a2103M&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2007PhPl...14a2103M&#38;link_type=REFERENCES</url>
+  <count>19</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2007PhPl...14a2103M&#38;link_type=CITATIONS</url>
+  <count>9</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2007PhPl...14a2103M&#38;link_type=REFCIT</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2007PhPl...14a2103M&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2007PhPl...14a2103M</url>
+<score>1.000</score>
+<citations>9</citations>
+<abstract>In plasmas with strong field aligned currents, the most unstable mode is
+not always at parallel propagation, but may be at intermediate and very
+oblique angles. 2D particle simulations are performed in order to
+examine the interaction between the plasma waves at various angles and
+the electron and ion distributions in low β collisionless plasmas
+with strong electron drifts. The parallel Buneman instability is known
+to arise in this situation, but the simulations demonstrate that the
+very oblique lower hybrid (LH) waves, until recently considered
+unimportant, may actually play a role just as significant as the waves
+at parallel propagation. The LH waves are energized by a current-driven
+linear instability, which may be seen as the oblique limit of the
+Buneman or ion-acoustic instability. The simulations resolve strong LH
+turbulence, substantial perpendicular ion tail heating and parallel
+electron heating. The combined action of parallel and oblique modes
+results in more complete electron relaxation than may be produced by the
+parallel Buneman instability alone.</abstract>
+<DOI>10.1063/1.2409764</DOI>
+</record>
+
+<record refereed="true" article="true">
+<bibcode>2006PhPl...13e2104M</bibcode>
+<title>Lower hybrid turbulence driven by parallel currents and associated electron energization</title>
+<author>McMillan, Ben F.</author>
+<author>Cairns, Iver H.</author>
+<affiliation>AA(School of Physics, Sydney University, NSW 2006, Sydney, Australia), AB(School of Physics, Sydney University, NSW 2006, Sydney, Australia)</affiliation>
+<journal>Physics of Plasmas, Volume 13, Issue 5, pp. 052104-052104-13 (2006).</journal>
+<volume>13</volume>
+<pubdate>May 2006</pubdate>
+<page>2104</page>
+<keywords type="PACS">
+<keyword>Plasma production and heating</keyword>
+<keyword>Waves</keyword>
+<keyword>oscillations</keyword>
+<keyword>and instabilities in plasmas and intense beams</keyword>
+</keywords>
+<origin>AIP</origin>
+<link type="ABSTRACT">
+  <name>Abstract</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2006PhPl...13e2104M&#38;link_type=ABSTRACT</url>
+</link>
+<link type="EJOURNAL">
+  <name>Electronic On-line Article (HTML)</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2006PhPl...13e2104M&#38;link_type=EJOURNAL</url>
+</link>
+<link type="REFERENCES">
+  <name>References in the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2006PhPl...13e2104M&#38;link_type=REFERENCES</url>
+  <count>35</count>
+</link>
+<link type="CITATIONS">
+  <name>Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2006PhPl...13e2104M&#38;link_type=CITATIONS</url>
+  <count>12</count>
+</link>
+<link type="REFCIT">
+  <name>Refereed Citations to the Article</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2006PhPl...13e2104M&#38;link_type=REFCIT</url>
+</link>
+<link type="OPENURL">
+  <name>Library Link Server</name>
+  <url>http://adsabs.harvard.edu/cgi-bin/nph-data_query?bibcode=2006PhPl...13e2104M&#38;link_type=OPENURL</url>
+</link>
+<url>http://adsabs.harvard.edu/abs/2006PhPl...13e2104M</url>
+<score>1.000</score>
+<citations>12</citations>
+<abstract>Parallel currents are usually in the form of field-aligned electron
+drifts in collisionless plasmas. The field-aligned drifts often drive
+instabilities. For instance, Drake et al. [Science, 299, 873 (2003)]
+found growth of parallel propagating turbulence initially and strong
+levels of oblique lower hybrid (LH) waves at later times; substantial
+parallel electron acceleration was also found. We use collisionless
+linear theory and quasilinear simulations to study wave growth and
+parallel electron dynamics in similar systems. In low-β plasmas
+with intense parallel currents and both with or without parallel E
+fields, LH waves are shown to grow even for electron distributions
+stable to the parallel Buneman instability and to accelerate electrons
+parallel to B very rapidly. This instability may be seen as the oblique
+limit of the ion acoustic and Buneman instabilities. The quasilinear
+diffusion via LH waves may release almost all of the available drift
+energy, and produce stronger electron acceleration and heating than the
+parallel Buneman instability alone.</abstract>
+<DOI>10.1063/1.2198212</DOI>
+</record>
+
+</records>

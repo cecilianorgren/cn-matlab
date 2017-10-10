@@ -1,0 +1,49 @@
+function cn_gui(t1,t2,E3_raw,E4_raw)
+
+c_eval('E?=cn_toepoch(t1,t2,E?_raw);',3:4);
+
+figure
+h=irf_plot(2);
+isub=1;
+
+index=10;
+
+if 1 % Allt
+        hca=h(isub);isub=isub+1;
+        irf_plot(hca,E3(:,[1 2]),'g'); hold(hca,'on');
+        irf_plot(hca,E4(:,[1 2]),'b'); hold(hca,'on');
+        irf_plot(hca,E3(index,[1 2]),'ko'); hold(hca,'on');
+        ylabel(hca,'E_{X}[mV/m]');
+        set(hca,'ColorOrder',[[0 1 0];[0 0 1]]);
+        irf_legend(hca,{'C3','C4'},[0.02 0.05]); 
+        set(hca,'ColorOrder',[0 0 0]);  
+        irf_zoom(hca,'y');       
+        ylim=get(hca,'ylim');
+        xlim=get(hca,'xlim');
+               
+        hca=h(isub);isub=isub+1;
+        irf_plot(hca,E3(:,[1 3]),'g'); hold(hca,'on');
+        irf_plot(hca,E4(:,[1 3]),'b'); hold(hca,'on');
+        irf_plot(hca,E3(index,[1 3]),'ko'); hold(hca,'on');
+        
+        ylabel(hca,'E_{Y,}[mV/m]');
+        set(hca,'ColorOrder',[[0 1 0];[0 0 1]]);
+        irf_legend(hca,{'C3','C4'},[0.02 0.05]); 
+        set(hca,'ColorOrder',[0 0 0]);   
+        irf_zoom(hca,'y'); 
+                
+end
+ax=get(hca,'position')
+
+uicontrol('Style', 'slider',...
+        'Min',1,'Max',50,'Value',41,...
+        'Position', [120 20 120 20],...
+        'Callback', {@surfzlim,hca});
+end
+
+function time(hObj,event,ax) %#ok<INUSL>
+    % Called to change time
+    % when user moves the slider control 
+    val = 51 - get(hObj,'Value');
+    zlim(ax,[-val val]);
+end

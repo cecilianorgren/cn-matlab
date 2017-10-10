@@ -1,0 +1,69 @@
+%% Load interval
+tint=[toepoch([2007 08 31 09 45 00]) toepoch([2007 08 31 12 15 00])];
+
+%% Take out B for interval with two biggest blops
+c_eval('[caagseB?,~,gseB?]=c_caa_var_get(''B_vec_xyz_gse__C?_CP_FGM_FULL'');',3:4);
+tint_zoom=[toepoch([2007 08 31 10 18 42]) toepoch([2007 08 31 10 18 44])];
+i_start=find(gseB3(:,1)>tint_zoom(1),1);
+i_end=find(gseB3(:,1)>tint_zoom(2),1);
+c_eval('gseB?zoom=gseB?(i_start:i_end,:);',3:4);
+
+%% Even smaller interval
+Nint=size(gseB3zoom,1);
+c_eval('gseB?zooom=gseB?zoom(fix(4*Nint/10):fix(Nint/2),:);',3:4);
+
+%% Take average value of B
+N=size(gseB3zoom,1);
+c_eval('gseB?av=[sum(gseB?zoom(:,2))/N sum(gseB?zoom(:,3))/N sum(gseB?zoom(:,4))/N];',3:4);
+
+%% Defining B hat
+c_eval('B?mag = mag(gseB?av);',3:4);
+c_eval('gseB?hat = gseB?av/B?mag;',3:4);
+
+%% Taking out xhat and yhat
+c_eval('z?hat=gseB?hat;',3:4);
+c_eval('x?hat=cross(cross(z?hat,[0 1 0]),z?hat);',3:4);
+c_eval('x?hat=x?hat/mag(x?hat);',3:4);
+c_eval('y?hat=cross(z?hat,x?hat);',3:4);
+
+%% plot
+plot3([0 x3hat(1)],[0 x3hat(2)],[0 x3hat(3)],'--b'); hold on;
+plot3([0 y3hat(1)],[0 y3hat(2)],[0 y3hat(3)],'--g'); hold on;
+plot3([0 z3hat(1)],[0 z3hat(2)],[0 z3hat(3)],'--r'); hold on;
+legend('y_{B}','x_{B}','B')
+
+plot3([0 1],[0 0],[0 0],'b'); hold on;
+plot3([0 0],[0 1],[0 0],'g'); hold on;
+plot3([0 0],[0 0],[0 1],'r'); hold on;
+xlabel('x_{gse}');ylabel('y_{gse}');zlabel('z_{gse}');
+
+%% Transformation matrix
+M=[x3hat;y3hat;z3hat];
+
+%% Transforming from gse to field aligned coordinate system 
+% xnew=M*xold'
+
+%% Plotting spacecraft trajectory
+[caaPos,~,gsePos]=c_caa_var_get('sc_pos_xyz_gse__C4_CP_FGM_FULL');
+
+bcPos=[gsePos(:,1) M*gsePos(1,2:4)];
+
+%% Plotting trajectory of sc
+
+x1=gsePos(1,2:4)';
+x2=gsePos(fix(end/4),2:4)';
+x3=gsePos(fix(end/2),2:4)';
+x4=gsePos(fix(3*end/4),2:4)';
+x5=gsePos(end,2:4)';
+
+x0=(x1+x2+x3+x4+x5)/5;
+for n=1:5
+    eval(['x',num2str(n),'=x',num2str(n),'-x0;'])
+    eval(['x',num2str(n),'b=M*x',num2str(n),';'])
+end
+
+x0b=M*x0;
+
+plot3([x1(1) xab(1) xb(1)],[xa(2) xab(2) xb(2)],[xa(3) xab(3) xb(3)])
+
+

@@ -1,0 +1,19 @@
+tint = irf.tint('2015-11-12T06:05:00.00Z/2015-11-12T07:55:00.00Z');
+tmp_omni = irf_get_data_omni(tint,'bsnx,Bx,By,Bz,Ma,v,n','omni_min');
+omni = tmp_omni;
+%%
+tsBSNX = irf.ts_scalar(irf_time(omni(:,1),'epoch>utc'),omni(:,2));     
+    tsBSNX.units = 'RE'; 
+    tsBSNX.name = 'Bowshock nose distance, X'; 
+tsB = irf.ts_vec_xyz(irf_time(omni(:,1),'epoch>utc'),omni(:,3:5));     
+    tsB.units = 'nT'; 
+    tsB.name = 'Solar wind magnetic field'; 
+tsM = irf.ts_scalar(irf_time(omni(:,1),'epoch>utc'),omni(:,6));     
+    tsM.units = ''; 
+    tsM.name = 'Solar wind Mach number'; 
+tsV = irf.ts_scalar(irf_time(omni(:,1),'epoch>utc'),omni(:,7));     
+    tsV.units = 'km/s'; 
+    tsV.name = 'Solar wind speed'; 
+tsN = irf.ts_scalar(irf_time(omni(:,1),'epoch>utc'),omni(:,8));     
+    tsN.units = 'cc'; 
+    tsN.name = 'Solar wind density'; 

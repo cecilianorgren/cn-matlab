@@ -1,0 +1,33 @@
+% study_kappa
+v=linspace(0,50000,100);
+k1 = 2;
+k2 = 3;
+k3 = 150;
+T = 1200; 
+n = 1;
+scale=0.64;
+plot(v,scale*cn.kappa(v,k1,T,n)/cn.kappa(0,k1,T,n),...
+     v,scale*cn.kappa(v,k2,T,n)/cn.kappa(0,k1,T,n),...
+     v,scale*cn.kappa(v,k3,T,n)/cn.kappa(0,k1,T,n),...
+     v,0.88*scale*cn.maxwellian(v,T,n)/cn.kappa(0,k1,T,n),'o')
+legend(num2str(k1),num2str(k2),num2str(k3),'max')
+%set(gca,'yscale','lin','ylim',[0 1e-16])
+title('psd')
+%semilogy(v,cn.kappa(v,2,1600,0.05),v,cn.kappa(v,3,1600,0.05),v,cn.kappa(v,16,1600,0.05),v,cn.maxwellian(v,1600,0.05),'-o')
+
+%% check the gamma dependence
+% x = v^2/vt^2
+gf = @(k,x) gamma(k+1)./gamma(k-0.5)./gamma(3/2).*(1+x./(k)).^(-k-1);
+k=1:0.2:50;
+x = [10 15 20 25 300];
+plot(k,gf(k,x(1)),...
+     k,gf(k,x(2)),...
+     k,gf(k,x(3)),...
+     k,gf(k,x(4)),...
+     k,gf(k,x(5))...
+    )
+legend(['x=' num2str(x(1))],['x=' num2str(x(2))],...
+       ['x=' num2str(x(3))],['x=' num2str(x(4))],...
+       ['x=' num2str(x(5))],'location','southwest')
+set(gca,'yscale','log')
+xlabel('k')

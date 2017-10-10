@@ -1,0 +1,47 @@
+%% Loading data 2010-06-25
+cd /home/cecilia/data/20070625/CAA_Download_20110329_1657
+caa_load
+%%
+[caaB3,~,B3]=c_caa_var_get('B_vec_xyz_gse__C3_CP_FGM_FULL');
+[caaB4,~,B4]=c_caa_var_get('B_vec_xyz_gse__C3_CP_FGM_FULL');
+
+[caaP3,~,P3]=c_caa_var_get('Spacecraft_potential__C3_CP_EFW_L2_P');
+[caaP4,~,P4]=c_caa_var_get('Spacecraft_potential__C4_CP_EFW_L2_P');
+
+[caaED3,~,ED3]=c_caa_var_get('Electron_Density__C3_CP_WHI_ELECTRON_DENSITY');
+[caaED4,~,ED4]=c_caa_var_get('Electron_Density__C4_CP_WHI_ELECTRON_DENSITY');
+
+[caaWF3,~,WF3]=c_caa_var_get('Electric_Wave_Form_Power_Density__C4_CP_WHI_WAVE_FORM_ENERGY');
+[caaWF4,~,WF4]=c_caa_var_get('Electric_Wave_Form_Power_Density__C4_CP_WHI_WAVE_FORM_ENERGY');
+%% Compare spacecraft potential and electron density
+figure(1)
+h=irf_plot(2);
+irf_plot(h(1),P3(:,[1 2]),'g'); hold(h(1),'on');
+irf_plot(h(1),P4(:,[1 2]),'b'); hold(h(1),'on');
+ylabel(h(1),'Spacecraft Potential [V]')
+
+irf_plot(h(2),ED3(:,[1 2]),'g'); hold(h(2),'on');
+irf_plot(h(2),ED4(:,[1 2]),'b'); hold(h(2),'on');
+ylabel(h(2),'Electron Density [cm^3]')
+set(gcf,'PaperPositionMode','auto')
+print -dpng spP_ED.png
+
+%%
+irf_plot(h(3),WF3(:,[1 2]),'g'); hold(h(3),'on');
+irf_plot(h(3),WF4(:,[1 2]),'b'); hold(h(3),'on');
+ylabel(h(3),'~ [~]')
+
+%% Plot xyz components in two (B3 and B4) different plots 
+figure(2)
+irf_plot('B?');
+
+%% Plot xyz components in two (E3 and E4) different plots 
+figure(3)
+irf_plot('E?')
+%%
+h=irf_plot(4)
+irf_plot(h(1),'E?');
+irf_plot(h(2),{ED3 ED4},'comp')
+irf_plot(h(3),{B3 B4},'comp')
+
+%irf_plot(g(1),{WF3 WF4},'comp');

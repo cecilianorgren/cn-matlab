@@ -1,0 +1,7 @@
+function [v vminus vplus]= cn_v(dt,terror,vhat,Pos3,Pos4,t)
+c_eval('gsePos?=cn_toepoch(t,Pos?);',3:4);
+r34=gsePos4(2:4)-gsePos4(2:4) % Relative position
+v=cn_scalar(r34,vhat)/dt;
+vminus=cn_scalar(r34,vhat)/(dt+terror);
+vplus=cn_scalar(r34,vhat)/(dt-terror);
+
