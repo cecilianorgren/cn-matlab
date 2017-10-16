@@ -1,5 +1,5 @@
 ic = 1:4;
-tint = irf.tint('2015-11-12T07:18:54.00Z/2015-11-12T07:19:45.00Z'); %20151112071854
+tint = irf.tint('2017-07-11T22:33:23.00Z/2017-07-11T22:34:45.00Z'); %20151112071854
 
 if 0
   %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
@@ -31,12 +31,13 @@ end
 mkdir(eventPath)
 
 %% Load defatt, for coordinate tranformation
-disp('Loading defatt...')
-%load /Users/Cecilia/Data/MMS/2015Oct16/defatt.mat
-c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic);
-c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic);
-c_eval('defatt? = mms_removerepeatpnts(defatt?);',ic)
-    
+if 0 % not nessecary unless E needs to be recalibrated
+  disp('Loading defatt...')
+  %load /Users/Cecilia/Data/MMS/2015Oct16/defatt.mat
+  c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic);
+  c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic);
+  c_eval('defatt? = mms_removerepeatpnts(defatt?);',ic)
+end
 %% Magnetic field
 disp('Loading magnetic field...')
 c_eval('tic; dmpaB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
@@ -50,6 +51,7 @@ c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brs
 c_eval('tic; dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint); toc',ic);
 c_eval('tic; E?par=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_par_epar_brst_l2'',tint); toc',ic);
 c_eval('tic; dslE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_dsl_brst_l2'',tint); toc',ic);
+%c_eval('tic; gseE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_gse_brst_l2'',tint); toc',ic);
 c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_par_epar_brst_l2'',tint); toc',ic);
 
 %% Load spacecraft position

@@ -18,7 +18,7 @@ time = tintObs(2) +- (tintObs(2)-tintObs(1))*0.5 + zf0/CS_normal_velocity;
 % c_eval('t? = tintObs(2) +- (tintObs(2)-tintObs(1))*0.5 + zf0(?)/CS_normal_velocity;',1:nPSD)
 tind = find(abs(obsPDist.time-time)==min(abs(obsPDist.time-time)));
   
-c_eval('gseBref = mean(gseB?.tlim(time+[-0.005 0.005]+-1).data,1);',ic)
+c_eval('gseBref = mean(gseB?.tlim(time+[-0.005 0.005]).data,1);',ic)
 zObsPDist = (obsPDist.time.epochUnix-mean(obsPDist.time.epochUnix))*CS_normal_velocity;
 
 % Model parameters
@@ -147,14 +147,15 @@ normvx0 = vx0./vtot; normvy0 = vy0./vtot; normvz0 = vz0./vtot;
 thetab = acosd(normvx0.*normB(1) + normvy0.*normB(2) + normvz0.*normB(3));
 
 % only run for electrons that are going in towards the current sheet.
-ingoing = find(thetab<90);
+ingoing = find(thetab);find(thetab>90);
 % remove higher energy particles that have f = 0
 empty_bin = find(f0.data == 0);
-keep_ind = setdiff(ingoing,empty_bin);
+keep_ind = setdiff(ingoing(:),empty_bin);
 
 f0_all = f0.data(keep_ind);
 x_init_all = [double(tocolumn(x0(keep_ind))) double(tocolumn(y0(keep_ind))) double(tocolumn(z0(keep_ind))) double(vx0(keep_ind)) double(vy0(keep_ind)) double(vz0(keep_ind))]*1e3; % m, m/s
 
+  
 %% Integration
 T = 2; % Integration time
 limN = 40e3; % outer N limit for stopping integration
@@ -164,10 +165,10 @@ tic
 
 x_sol_all = [];
 saveParticle = cell(1,nParticles);
-disp(sprintf('nParticles = %g',nParticles))
-for iParticle = 1:1:2000;nParticles;
+%disp(sprintf('nParticles = %g',nParticles))
+for iParticle = 1:nParticles;
   if mod(iParticle,10) == 0
-    disp(sprintf('iParticle = %g',iParticle))
+    disp(sprintf('iParticle = %g/%g',iParticle,nParticles))
   end
   % Initial positions and velocities                                   
   x_init = x_init_all(iParticle,:); % m, m/s
@@ -220,6 +221,8 @@ edgesAzimuthalAngle = 0:11.25:360;
 
 f_binned_all = zeros(numel(edgesN)-1,numel(edgesE)-1,numel(edgesAzimuthalAngle)-1,numel(edgesPolarAngle)-1);
 
+allPa = nan(numel(saveParticle),1);
+allF = nan(numel(saveParticle),1);
 %tsFlmap = 
   
 %times = tintObs(2) +- (tintObs(2)-tintObs(1))*0.5 + zf0/CS_normal_velocity;
@@ -227,15 +230,19 @@ f_binned_all = zeros(numel(edgesN)-1,numel(edgesE)-1,numel(edgesAzimuthalAngle)-
 tind = find(abs(obsPDist.time-time)==min(abs(obsPDist.time-time)));
 nBins = numel(edgesN)-1;
 
-iPlotParticles = 1:2000;%numel(saveParticle);
+iPlotParticles = 1:numel(saveParticle);
 iPincluded = [];
 plotIncluded = 0;
 
 for iP = iPlotParticles %:numel(saveParticle) % step through particles
   % Pick out the data
   ind = 1:numel(saveParticle{iP}.t);
-  z = saveParticle{iP}.r(ind,3); % N
- 
+  z = saveParticle{iP}.r(ind,3); % N  
+  pa = saveParticle{iP}.pa(ind); % pitch angle  
+  
+  allPa(iP) = pa(1);
+  if pa(1)< (130), pa(1); continue; end  
+    
   if any(abs(z)<abs(z(1))*0.6)
     iPincluded = [iPincluded; iP];
     if plotIncluded
@@ -273,8 +280,7 @@ for iP = iPlotParticles %:numel(saveParticle) % step through particles
     continue
   end
   
-  iP
-  pa = saveParticle{iP}.pa(ind); % pitch angle
+  iP;
   v = saveParticle{iP}.v(ind,:);    
   energy = saveParticle{iP}.energy;
   
@@ -315,6 +321,7 @@ for iP = iPlotParticles %:numel(saveParticle) % step through particles
   f_binned = bins_occupied; f_binned(f_binned~=0) = saveParticle{iP}.f;
   f_binned_all = f_binned_all + f_binned(1:42,1:32,1:32,1:16);
   
+  allF(iP) = saveParticle{iP}.f;
 %   hca = subplot(3,1,1);
 %   pcolor(hca,mid{1}*1e-3,mid{2},bins_occupied')
 %   hca.YScale = 'log';
@@ -350,6 +357,9 @@ for iP = iPlotParticles %:numel(saveParticle) % step through particles
   %all_psd = all_psd./(all_npart+bins_occupied);
   % Add DEF to N/PA grid, more complicated since energy changes    
   %all_def = all_def + bins_occupied*energy(1).^2;%/saveParticle{iP}.dE;
+  if numel(iPincluded) > 99
+    break;
+  end
 end
 %
 midN = mid{1};
@@ -359,29 +369,67 @@ timesMap_ = timesMap([1 end])+0.015*[-1 1];
 tsFmap = obsPDist.tlim(timesMap([1 end])+0.015*[-1 1]); % need to add one sampling period to get the right number
 tsFmap.data = f_binned_all;
 
+hist([thetab(keep_ind) allPa]); legend('initializing','post integration')
 %% Plot
-npanels = 2;
+npanels = 6;
 [h1,h2] = initialize_combined_plot(npanels,1,1,0.4,'vertical');
+elim = [000 1000];
 
 isub = 1;
 hca = h1(isub); isub = isub + 1;
-irf_spectrogram(hca,tsFmap.pitchangles(gseB1,15).tlim(tintObs).deflux.specrec('pa'),'log');
+irf_spectrogram(hca,obsPDist.omni.tlim(tintObs).deflux.specrec('energy'),'log'); hca.YScale = 'log';
 hca = h1(isub); isub = isub + 1;
-irf_spectrogram(hca,obsPDist.pitchangles(gseB1,15).tlim(tintObs).deflux.specrec('pa'),'log');
+irf_spectrogram(hca,tsFmap.omni.tlim(tintObs).deflux.specrec('energy'),'log'); hca.YScale = 'log';
+hca = h1(isub); isub = isub + 1;
+irf_spectrogram(hca,obsPDist.pitchangles(gseB1,15).tlim(tintObs).deflux.elim(elim).specrec('pa'),'log');
+hca = h1(isub); isub = isub + 1;
+irf_spectrogram(hca,tsFmap.pitchangles(gseB1,15).tlim(tintObs).deflux.elim(elim).specrec('pa'),'log'); %hca.CLim = h1(isub-2).CLim;
+hca = h1(isub); isub = isub + 1;
+irf_spectrogram(hca,obsPDist.pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa'),'log');
+hca = h1(isub); isub = isub + 1;
+irf_spectrogram(hca,tsFmap.pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa'),'log'); %hca.CLim = h1(isub-2).CLim;
+
+% h1(1).CLim = [7.3 8.1];
+% h1(2).CLim = [7.0 8.1];
+% h1(3).CLim = [-26.5 -26.0];
+% h1(4).CLim = [-26.5 -24];
 
 isub = 1;
 hca = h2;
 holdon = 0;
-
+%%
 nPlotP = numel(iPincluded);
-for iP_ = 1:nPlotP;
+indPlot = 1:10;
+for iP_ = 1:1:nPlotP;
   iP = iPincluded(iP_);
   thisParticle = saveParticle{iP};
-  thisX = thisParticle.r(:,1)*1e-3; % L
-  thisY = thisParticle.r(:,2)*1e-3; % M
-  thisZ = thisParticle.r(:,3)*1e-3; % N
+  indPlot = 1:numel(thisParticle.r(:,1));
+  thisX = thisParticle.r(indPlot,1)*1e-3; % L
+  thisY = thisParticle.r(indPlot,2)*1e-3; % M
+  thisZ = thisParticle.r(indPlot,3)*1e-3; % N
    
-  plot3(hca,thisX,thisY,thisZ)  
+  if 1 % colormap according to f
+    cmap = colormap(h1(1)); % parula
+    ncmap = size(cmap,1); % 64
+    clim = h1(4).CLim;
+    colorind = ceil(ncmap*(log10(thisParticle.f)-clim(1))/diff(clim));
+    if colorind == 0
+      plotcolor = [1 1 1];
+    elseif colorind > ncmap
+      colorind = 64;
+      plotcolor = cmap(fix(colorind),:);
+    else
+      plotcolor = cmap(fix(colorind),:);
+    end
+  else % colormap according to ending position
+    if thisZ(end)<0;
+      plotcolor = [0.1000    0.4000    1.0000];
+    else
+      plotcolor = [0.9500    0.7000         0];
+    end
+  end
+      
+  plot3(hca,thisX,thisY,thisZ,'color',plotcolor)
   hca.XLabel.String = 'L';
   hca.YLabel.String = 'M';
   hca.ZLabel.String = 'N';
