@@ -13,16 +13,21 @@ Tint = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:08.00Z'); %20151112071
 %% Load data
 Tintl = Tint+[-100 100];
 
-Rxyz = gseR1.tlim(Tint);
-Bxyz = gseB1.tlim(Tint);
-Exyz = gseE1.tlim(Tint);
-Bscm = gseB1scm.tlim(Tint);
+ic = 1;
+c_eval('n = ne?.tlim(Tint);',ic)
+c_eval('Rxyz = gseR?.tlim(Tint);',ic)
+c_eval('Bxyz = gseB?.tlim(Tint);',ic)
+c_eval('Exyz = gseE?.tlim(Tint);',ic)
+c_eval('Bscm = gseB?scm.tlim(Tint);',ic)
 
 %% Polarization analysis
 Units=irf_units; % read in standard units
 Me=Units.me;
 e=Units.e;
+epso=Units.eps0;
 B_SI=Bxyz.abs.data*1e-9;
+N_SI=n*1e6;
+
 Wce = e*B_SI/Me;
 ecfreq = Wce/2/pi;
 ecfreq01 = ecfreq*0.1;
@@ -30,6 +35,9 @@ ecfreq05 = ecfreq*0.5;
 ecfreq = irf.ts_scalar(Bxyz.time,ecfreq);
 ecfreq01 = irf.ts_scalar(Bxyz.time,ecfreq01);
 ecfreq05 = irf.ts_scalar(Bxyz.time,ecfreq05);
+
+Wpe = sqrt(N_SI*e^2/Me/epso); % rad/s
+fpe = Wpe/2/pi; % Hz
 
 tic
 polarization = irf_ebsp(Exyz,Bscm,Bxyz,Bxyz,Rxyz,[10 4000],'polarization','fac');
@@ -39,8 +47,10 @@ frequency = polarization.f;
 time = polarization.t;
 Bsum = polarization.bb_xxyyzzss(:,:,4);
 Bperp = polarization.bb_xxyyzzss(:,:,1)+polarization.bb_xxyyzzss(:,:,2);
+Bpar = polarization.bb_xxyyzzss(:,:,3);
 Esum = polarization.ee_xxyyzzss(:,:,4);
 Eperp = polarization.ee_xxyyzzss(:,:,1)+polarization.ee_xxyyzzss(:,:,2);
+Epar = polarization.ee_xxyyzzss(:,:,3);
 ellipticity = polarization.ellipticity;
 dop = polarization.dop;
 thetak = polarization.k_tp(:,:,1);
@@ -68,11 +78,13 @@ gg = interp1([1 64 128 192 256],[0.0  0.5 0.75 0.5 0.00],1:256);
 bb = interp1([1 64 128 192 256],[0.75 1.0 0.75 0.5 0.00],1:256);
 bgrcmap = [rr' gg' bb'];
 
-npanels = 12;
+npanels = 11;
 h=irf_plot(npanels,'newfigure'); 
-
+isub = 1;
+isspec=zeros(npanels,1);
 
 if 1 % B
+  isub = isub + 1;
   hca = irf_panel('B');
   set(hca,'ColorOrder',mms_colors('xyza'))
   %c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
@@ -82,6 +94,7 @@ if 1 % B
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
 if 1 % ne
+  isub = isub + 1;
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('12'))
   c_eval('irf_plot(hca,{ne?},''comp'');',ic)
@@ -89,6 +102,7 @@ if 1 % ne
   set(hca,'ColorOrder',mms_colors('12'))    
 end
 if 1 % Ve  
+  isub = isub + 1;
   hca = irf_panel('Ve');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)
@@ -97,16 +111,18 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 1 % E
-  hca = irf_panel('E');
+if 1 % B scm
+  isub = isub + 1;
+  hca = irf_panel('B scm');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseE?.x.tlim(tint),gseE?.y.tlim(tint),gseE?.z.tlim(tint)},''comp'');',ic)
-  hca.YLabel.String = {'E','(mV/m)'};
+  %c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
+  c_eval('irf_plot(hca,{gseB?scm.x.tlim(tint),gseB?scm.y.tlim(tint),gseB?scm.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'B_{SCM}','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
-  irf_zoom(hca,'y')
 end
-if 1 % B spectrogram
+if 1 % B sum spectrogram
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('Bsum');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -119,6 +135,7 @@ if 1 % B spectrogram
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -126,7 +143,18 @@ if 1 % B spectrogram
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % E spectrogram
+if 1 % E tot
+  isub = isub + 1;
+  hca = irf_panel('E');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?.x.tlim(tint),gseE?.y.tlim(tint),gseE?.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 1 % E sum spectrogram
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('Esum');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -139,6 +167,7 @@ if 1 % E spectrogram
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -146,7 +175,70 @@ if 1 % E spectrogram
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % Ellipticity
+if 1 % E par
+  isub = isub + 1;
+  hca = irf_panel('E vec par');
+  set(hca,'ColorOrder',mms_colors('1'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+  irf_zoom(hca,'y')
+end
+if 1 % E par spectrogram
+  isspec(isub) = 1; isub = isub + 1;
+  hca=irf_panel('Epar');
+  specrec=struct('t',time);
+  specrec.f=frequency;
+  specrec.p=Epar;
+  specrec.f_label='';
+  specrec.p_label={'log_{10}E_{||}^{2}','mV^2 m^{-2} Hz^{-1}'};
+  irf_spectrogram(hca,specrec,'log','donotfitcolorbarlabel');
+  irf_legend(hca,'(b)',[0.99 0.98],'color','w','fontsize',12)
+  hold(hca,'on');
+  irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
+  hold(hca,'off');
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3]);
+  caxis(hca,[-6 1])
+  ylabel(hca,'f (Hz)','fontsize',12);
+  colormap(hca,'jet');
+end
+if 1 % E perp
+  isub = isub + 1;
+  hca = irf_panel('E vec perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?perp.x.tlim(tint),gseE?perp.y.tlim(tint),gseE?perp.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 1 % E per spectrogram
+  isspec(isub) = 1; isub = isub + 1;
+  hca=irf_panel('Eper');
+  specrec=struct('t',time);
+  specrec.f=frequency;
+  specrec.p=Eperp;
+  specrec.f_label='';
+  specrec.p_label={'log_{10}E_{\perp}^{2}','mV^2 m^{-2} Hz^{-1}'};
+  irf_spectrogram(hca,specrec,'log','donotfitcolorbarlabel');
+  irf_legend(hca,'(b)',[0.99 0.98],'color','w','fontsize',12)
+  hold(hca,'on');
+  irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
+  hold(hca,'off');
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3]);
+  caxis(hca,[-6 1])
+  ylabel(hca,'f (Hz)','fontsize',12);
+  colormap(hca,'jet');
+end
+if 0 % Ellipticity
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('ellipt');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -159,6 +251,7 @@ if 1 % Ellipticity
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -166,7 +259,8 @@ if 1 % Ellipticity
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,bgrcmap);
 end
-if 1 % thetak, propagation angle
+if 0 % thetak, propagation angle
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('thetak');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -179,6 +273,7 @@ if 1 % thetak, propagation angle
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -186,7 +281,8 @@ if 1 % thetak, propagation angle
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % degree of polarization
+if 0 % degree of polarization
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('dop');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -199,6 +295,7 @@ if 1 % degree of polarization
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -206,7 +303,8 @@ if 1 % degree of polarization
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % planarity
+if 0 % planarity
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('planarity');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -219,6 +317,7 @@ if 1 % planarity
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -226,7 +325,8 @@ if 1 % planarity
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % vph, E/B
+if 0 % vph, E/B
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('vph');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -239,6 +339,7 @@ if 1 % vph, E/B
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -246,7 +347,8 @@ if 1 % vph, E/B
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % poynting flux, ExB
+if 0 % poynting flux, ExB
+  isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('poynting');
   specrec=struct('t',time);
   specrec.f=frequency;
@@ -259,6 +361,7 @@ if 1 % poynting flux, ExB
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
@@ -268,26 +371,16 @@ if 1 % poynting flux, ExB
 end
 
 % Remove grid and set background to grey
-set(h(5:npanels),'xgrid','off','ygrid','off')
-%set(h(1:8),'Color',0.7*[1 1 1]);
+set(h(find(isspec==1)),'xgrid','off','ygrid','off')
+set(h(find(isspec==1)),'Color',0.7*[1 1 1]);
 
-
-
-
-colormap(hca,'jet');
-colormap(hca,bgrcmap);
-colormap(hca,'jet');
-colormap(hca,'jet');
-colormap(hca,'jet');
-colormap(hca,'jet');
-colormap(hca,bgrcmap);
 
 c_eval('title(h(1),''MMS? Polarization Analysis'');',ic);
 irf_plot_axis_align(h);
 irf_zoom(h,'x',Tint);
 set(h,'fontsize',12);
 
-irf_zoom(h(1:4),'y');
+irf_zoom(h(find(isspec==0)),'y');
 
 %% Find center of where the power peaks
 Tint = irf.tint('2015-10-16T10:33:45.00Z/2015-10-16T10:33:45.70Z');
