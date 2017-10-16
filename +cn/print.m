@@ -90,7 +90,13 @@ elseif printInLocal
   directory = '';
 elseif printInPlotTime
   timeutc = time.utc;
-  directory = ['/Users/Cecilia/Research/Events/',timeutc(1:10),extrapath];
+  [~,computername]=system('hostname');
+  if strfind(computername,'ift0227887')
+    directory = ['/Users/cno062/Research/Events/',timeutc(1:10),extrapath];
+  else
+    directory = ['/Users/Cecilia/Research/Events/',timeutc(1:10),extrapath];
+  end  
+  
   if ~exist(directory,'dir')
     eval(['mkdir ', directory])
   end
