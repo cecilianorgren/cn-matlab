@@ -4826,3 +4826,366 @@ end
 
 %h(10).YLim = 7*[-1 1];
 %h(11).YLim = 7*[-1 1];
+
+%% Figure: reconnection signatures 2, mva fields
+npanels = 7;
+tintZoom = irf.tint('2015-11-12T07:19:19.40Z/2015-11-12T07:19:23.10Z');
+%tintZoom = irf.tint('2015-11-12T07:19:10.00Z/2015-11-12T07:19:40.00Z');
+h = irf_plot(npanels);
+ic = 1;
+pshift = 0;
+scrsz = get(groot,'ScreenSize')
+figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.4; figurePostition(4)=figurePostition(4)*0.9;
+hcf = gcf; hcf.Position = figurePostition;
+
+cmap = 'jet';
+
+tref = irf_time('2015-11-12T07:19:21.00Z','utc>epochtt');
+c_eval('intNe? = irf_integrate(ne?-ne?.resample(tref).data,tref);',ic)
+
+if 1 % B no abs
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaB?.x.tlim(tint),mvaB?.y.tlim(tint),mvaB?.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  %hca.YLim = [-25 35];
+end
+if 0 % B with abs
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaB?.x.tlim(tint),mvaB?.y.tlim(tint),mvaB?.z.tlim(tint),mvaB?.abs},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N','|B|'},[0.98 0.9],'fontsize',12);
+  %hca.YLim = [-25 35];
+end
+if 0 % n
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?,ni?*0.96},''comp'');',ic)
+  hca.YLabel.String = {'n','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
+  hca.YLim = [0 12];
+end
+if 0 % J
+  hca = irf_panel('J');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaJ?.x.tlim(tint),mvaJ?.y.tlim(tint),mvaJ?.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);     
+end
+if 1 % Ve
+  hca = irf_panel('Ve');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint),mvaVe?.y.tlim(tint),mvaVe?.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);  
+  hca.YLim = [-1100 1100];  
+end
+if 0 % Ve
+  hca = irf_panel('Ve perp par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?perp.x.tlim(tint),mvaVe?perp.y.tlim(tint),mvaVe?perp.z.tlim(tint),mvaVe?par.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L_{\perp}','M_{\perp}','N_{\perp}','v_{e,||}'},[0.98 0.9],'fontsize',12);  
+  hca.YLim = [-1100 1100];  
+end
+if 1 % Te par perp
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2},''comp'');',ic)
+  hca.YLabel.String = {'T_e','(eV)'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'T_{||}','T_{\perp}'},[0.98 0.9],'fontsize',12);
+  hca.YScale = 'lin'; %hca.YTick = [10:10:100 200:100:1000];
+  hca.YLim = [20 120];
+  %hca.YTick
+end
+if 0 % eDist omni 64
+  pas = [0 30];
+  c_eval('ePitch?lim = ePDist?.pitchangles(dmpaB?,pas);',ic)
+  hca = irf_panel('e DEF 1');    
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePitch?lim.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  if 1 % sc pot
+    hold(hca,'on')
+    c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+    hold(hca,'off')
+    %hhleg=irf_legend(hca,'V_{sc}',[0.95 0.21],'color',[0 0 0]);
+    %hhleg.FontSize = 9;
+  end
+  hca.YLabel.String = {'E_e','(eV)'}; 
+  colormap(hca,cmap)   
+  irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta_B<' num2str(pas(2),'%.0f')]},[0.98 0.10],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % eDist omni 64
+  pas = [75 105];
+  c_eval('ePitch?lim = ePDist?.pitchangles(dmpaB?,pas);',ic)
+  hca = irf_panel('e DEF 2');    
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePitch?lim.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  if 1 % sc pot
+    hold(hca,'on')
+    c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+    hold(hca,'off')
+    %hhleg=irf_legend(hca,'V_{sc}',[0.95 0.21],'color',[0 0 0]);
+    %hhleg.FontSize = 9;
+  end
+  hca.YLabel.String = {'E_e','(eV)'}; 
+  colormap(hca,cmap)   
+  irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta_B<' num2str(pas(2),'%.0f')]},[0.98 0.10],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % eDist omni 64
+  pas = [150 180];
+  c_eval('ePitch?lim = ePDist?.pitchangles(dmpaB?,pas);',ic)
+  hca = irf_panel('e DEF 3');    
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePitch?lim.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  if 1 % sc pot
+    hold(hca,'on')
+    c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+    hold(hca,'off')
+    %hhleg=irf_legend(hca,'V_{sc}',[0.95 0.21],'color',[0 0 0]);
+    %hhleg.FontSize = 9;
+  end
+  hca.YLabel.String = {'E_e','(eV)'}; 
+  colormap(hca,cmap)   
+  irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta_B<' num2str(pas(2),'%.0f')]},[0.98 0.1],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % eDist omni 64
+  hca = irf_panel('e DEF omni 64');    
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.deflux.e64.omni.tlim(tint).specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  if 0 % sc pot
+    hold(hca,'on')
+    c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+    hold(hca,'off')
+    hhleg=irf_legend(hca,'V_{sc}',[0.95 0.21],'color',[0 0 0]);
+    hhleg.FontSize = 9;
+  end
+  hca.YLabel.String = {'E_e','(eV)'}; 
+  colormap(hca,cmap)   
+end
+if 1 % ePDist pa 32
+  hca = irf_panel('e PA e32 deflux all low E');
+  elim = [0 1000];
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(elim).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,20).elim(elim).deflux.specrec(''pa''),''log'');',ic)
+  end
+  %c_eval('irf_spectrogram(hca,ePDist?.e64.pitchangles(dmpaB?,20).elim([180 203]).deflux.specrec(''pa''),''log'');',ic)
+  %hca.YLabel.String = {'Pitchangle','(\circ)'};   
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
+  irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.98 0.90],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % ePDist pa 64
+  %%
+  hca = irf_panel('e PA e32 deflux high E');  
+  elim = [200 1000];  
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(elim).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,20).elim(elim).deflux.specrec(''pa''),''log'');',ic)
+  end
+  %c_eval('irf_spectrogram(hca,ePDist?.e64.pitchangles(dmpaB?,20).elim([180 203]).deflux.specrec(''pa''),''log'');',ic)
+  %hca.YLabel.String = {'Pitchangle','(\circ)'};   
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
+  irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.98 0.90],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % gradPe
+  hca = irf_panel('gradPe');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{gseGradPe.x*1e3,gseGradPe.y*1e3,gseGradPe.z*1e3},'comp');
+  hca.YLabel.String = {'\nabla \cdot P_e','(pPa/km)'};
+  %set(hca,'ColorOrder',mms_colors('xyz'))
+  %irf_legend(hca,{'4 sc average'},[0.06 0.9],'fontsize',11,'color','k');
+  set(hca,'ColorOrder',mms_colors('xyza')) 
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 0 % E
+  hca = irf_panel('E');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?.x.tlim(tint),gseE?.y.tlim(tint),gseE?.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z','|B|'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 0 % ePDist pa 32 low E
+  hca = irf_panel('e PA e32 deflux all low E mms4');
+  elim = [10 400];
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(elim).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    %irf_spectrogram(hca,ePDist4.tlim(tint).pitchangles(dmpaB4,20).elim(elim).deflux.specrec('pa'),'log');
+  end
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
+  irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.98 0.90],'fontsize',12,'color',[0 0 0]);
+  hca.CLim = [7.3 8.2];
+end
+if 0 % ePDist pa 32
+  hca = irf_panel('e PA e32 deflux all medium E mms4');
+  elim = [400 1000];
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(elim).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    %irf_spectrogram(hca,ePDist4.tlim(tint).pitchangles(dmpaB4,20).elim(elim).deflux.specrec('pa'),'log');
+  end
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
+  irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.98 0.90],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % E
+  hca = irf_panel('E perp par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaE?perp.x.tlim(tint),mvaE?perp.y.tlim(tint),mvaE?perp.z.tlim(tint),mvaE?par},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L_{\perp}','M_{\perp}','N_{\perp}','||'},[0.98 0.9],'fontsize',12);  
+  irf_zoom(hca,'y')  
+end
+if 0 % E perp par new
+  hca = irf_panel('E perp par new');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaE?perp_new.x.tlim(tint),mvaE?perp_new.y.tlim(tint),mvaE?perp_new.z.tlim(tint),mvaE?par_new},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L_{\perp}','M_{\perp}','N_{\perp}','||'},[0.98 0.9],'fontsize',12);  
+  irf_zoom(hca,'y')  
+end
+if 1 % E perp par new
+  hca = irf_panel('E new');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaE?_new.x.tlim(tint),mvaE?_new.y.tlim(tint),mvaE?_new.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);  
+  irf_zoom(hca,'y')  
+end
+if 0 % V ExB LMN
+  hca = irf_panel('V ExB mva new');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaEVexB?_new.x.tlim(tint),mvaEVexB?_new.y.tlim(tint),mvaEVexB?_new.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint),mvaVe?.y.tlim(tint),mvaVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'E+v_exB','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);    
+end
+if 0 % gradPe/ne
+  hca = irf_panel('Grad Pe/ne');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{mvaOhmGradPe.x,mvaOhmGradPe.y,mvaOhmGradPe.z},'comp');
+  hca.YLabel.String = {'\nabla\cdotP_e/ne','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'4 sc'},[0.06 0.9],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % Ohm's law M
+  hca = irf_panel('Ohm M');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE_new.y,mvaOhmGradPe.y,-mvaOhmVexB.y},'comp');
+  hca.YLabel.String = {'E_M','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'E','\nabla P_e','-v_e\times B'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'4 sc'},[0.06 0.9],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % Ohm's law N
+  hca = irf_panel('Ohm N');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE_new.z,mvaOhmGradPe.z,-mvaOhmVexB.z},'comp');
+  hca.YLabel.String = {'E_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'E','\nabla P_e','-v_e\times B'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'4 sc'},[0.06 0.9],'fontsize',12,'color',[0 0 0]);
+end
+if 0 % agyrotropy
+  hca = irf_panel('Q');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  if 1
+    c_eval('irf_plot(hca,{Q?.^0.5},''comp'');',ic)
+    hca.YLabel.String = '\sqrt{Q}';
+  else
+    irf_plot(hca,{Q1.tlim(tint).abs,Q2.tlim(tint).abs,Q3.tlim(tint).abs,Q4.tlim(tint).abs},'comp');    
+    hca.YLabel.String = 'Q';
+  end
+  hca.YLabel.String = 'Q';
+end
+if 1 % Epar new
+  hca = irf_panel('E par new');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaE?par_new.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};    
+end
+if 0 % E dot J
+  hca = irf_panel('E dot J');
+  set(hca,'ColorOrder',mms_colors('matlab'))  
+  c_eval('irf_plot(hca,{EdotJ?_new,EdotJ?par_new.tlim(tint),EdotJ?perp_new,RedotJ?_new},''comp'');',ic)
+  set(hca,'ColorOrder',mms_colors('matlab'))  
+  irf_legend(hca,{'E \cdot J','E_{||}\cdot J_{||}','E_{\perp}\cdot J_{\perp}','(E+v_exB)\cdot J'},[0.98 0.9],'fontsize',12);      
+  hca.YLabel.String = {'E \cdot J','(nW/m^3)'};  
+end
+if 1 % length scales
+  hca = irf_panel('length scales');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{re?,Le?},''comp'');',ic)
+  hca.YLabel.String = {'length scales','(km)'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'r_e','L_e'},[0.98 0.9],'fontsize',12);
+  %hca.YLim = [0 12];
+end
+
+irf_zoom(h,'x',tintZoom)
+irf_zoom(h,'y')
+hca = irf_panel('e PA e32 deflux all low E'); hca.YLim = [0 180];
+
+
+%hca = irf_panel('e PA e32 deflux all low E mms4'); hca.YLim = [0 180];
+%for  ii = 5:7; h(ii).CLim = [5 8.5]; end
+%for  ii = 5:7; h(ii).YLim = [10 1000]; end
+irf_plot_axis_align
+
+h(1).Title.String = {['MMS' num2str(ic)],''};
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+legshift = 0; % the two sc configuration plots
+
+hca = irf_panel('B'); hca.YLim = [-15 15];
+
+for ii = 1:npanels
+  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0])
+  h(ii+pshift).FontSize = 14;  
+  h(ii+pshift).YLabel.FontSize = 13;
+end
+
+%for ii = 1:3; h(ii).Visible = 'off'; end
+
+%h(10).YLim = 7*[-1 1];
+%h(11).YLim = 7*[-1 1];
+add_length_on_top(h(1),70,0.2)

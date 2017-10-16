@@ -9,7 +9,27 @@ tint = irf.tint('2016-11-25T08:03:10.00Z/2016-11-25T08:03:50.00Z');
 tint = irf.tint('2016-12-29T11:12:14.00Z/2016-12-29T11:13:53.00Z'); % mms1_sp_20161229_111214_111353
 tint = irf.tint('2017-01-01T13:59:30.00Z/2017-01-01T14:00:00.00Z');
 tint = irf.tint('2015-12-02T01:14:30.00Z/2015-12-02T01:15:15.00Z');
-tint = irf.tint('2015-10-18T15:11:30.00Z/2015-10-18T15:12:45.00Z');
+tint = irf.tint('2015-10-18T15:11:30.00Z/2015-10-18T15:12:45.00Z'); 
+tint = irf.tint('2017-07-06T15:36:43.00Z/2017-07-06T15:41:13.00Z'); % 20170706153643
+tint = irf.tint('2017-07-06T15:39:12.00Z/2017-07-06T15:40:13.00Z'); % 20170706153913
+tint = irf.tint('2017-07-06T15:41:33.00Z/2017-07-06T15:42:33.00Z'); % 20170706154133
+tint = irf.tint('2017-07-06T15:44:03.00Z/2017-07-06T15:45:33.00Z'); % 20170706154403
+tint = irf.tint('2017-07-06T15:46:23.00Z/2017-07-06T15:47:43.00Z'); % 20170706154623
+
+tint = irf.tint('2017-07-06T15:48:53.00Z/2017-07-06T15:50:43.00Z'); % 20170706154853
+tint = irf.tint('2017-07-06T15:51:13.00Z/2017-07-06T15:52:43.00Z'); % 20170706155113
+tint = irf.tint('2017-07-06T15:53:43.00Z/2017-07-06T15:54:43.00Z'); % 20170706155343
+tint = irf.tint('2017-07-06T15:56:03.00Z/2017-07-06T15:57:43.00Z'); % 20170706155603
+%
+%
+tint = irf.tint('2017-07-11T22:29:23.00Z/2017-07-11T22:31:43.00Z'); % 20170711222923
+tint = irf.tint('2017-07-11T22:33:23.00Z/2017-07-11T22:34:43.00Z'); % 20170711223323, major X-line moving tailward
+%tint = irf.tint('2017-07-11T22:37:23.00Z/2017-07-11T22:38:43.00Z'); % 20170711223723
+
+%tint = irf.tint('2017-07-09T10:45:13.00Z/2017-07-09T10:46:43.00Z'); % 20170709104513
+%tint = irf.tint('2017-07-09T10:47:03.00Z/2017-07-09T10:48:43.00Z'); % 20170709104703
+%tint = irf.tint('2017-07-09T10:49:03.00Z/2017-07-09T10:51:03.00Z'); % 20170709104903
+
 
 % Set datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -98,6 +118,11 @@ c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 % Pitchangle distribution
 c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,13); ePitch? = ePitch?.convertto(''s^3/km^6'');',ic)
 
+% Feeps data
+%c_eval('dobj = dataobj(''/Volumes/Nexus/data/mms?/feeps/brst/l2/electron/2017/07/11/mms?_feeps_brst_l2_electron_20170711222923_v5.5.1.cdf'')',ic)
+%c_eval('feeps? = mms.variable2ts(get_variable(dobj,''mms?_epd_feeps_brst_l2_electron_spin''));',ic)
+%mms1_epd_feeps_brst_l2_electron_spin
+
 %% Plot overview figure with focus on electrons
 npanels = 10;
 cmap = 'jet';
@@ -115,7 +140,14 @@ if 1 % B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % n
+if 1 % ne
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n_e','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('12'))    
+end
+if 0 % ne ni
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('12'))
   c_eval('irf_plot(hca,{ne?,ni?},''comp'');',ic)
@@ -191,7 +223,7 @@ if 0 % e DEF omni 32
 end
 if 1 % ePDist pa 64
   hca = irf_panel('e PA e64 deflux lowe');  
-  eint = [20 500];  
+  eint = [100 30000];  
   try
     c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   catch
@@ -262,10 +294,10 @@ end
 
 %% Plot overview figure with focus on electrons, including single time electron distributions
 npanels = 10;
-tintZoom = tint;irf.tint('2016-12-25T16:00:53.00Z/2016-12-25T16:00:58.00Z');
+tintZoom = tint;%irf.tint('2016-12-25T16:00:53.00Z/2016-12-25T16:00:58.00Z');
 cmap = 'jet';
-[h1,h2] = initialize_combined_plot(9,2,2,0.4,'vertical');
-ic = 2;
+[h1,h2] = initialize_combined_plot(npanels,2,2,0.4,'vertical');
+ic = 1;
 iisub = 0;
 cmap = colormap('jet');
 
@@ -278,7 +310,14 @@ if 1 % B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % n
+if 1 % ne
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n_e','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('12'))    
+end
+if 0 % n
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('12'))
   c_eval('irf_plot(hca,{ne?,ni?},''comp'');',ic)
@@ -297,7 +336,7 @@ if 1 % J
   %hca.YLim = [-1100 1100];  
 end
 if 1 % Vi  
-  hca = irf_panel('Ve');
+  hca = irf_panel('Vi');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseVi?.x.tlim(tint),gseVi?.y.tlim(tint),gseVi?.z.tlim(tint)},''comp'');',ic)
   %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
@@ -346,10 +385,13 @@ if 1 % e DEF omni 64
   colormap(hca,cmap) 
 end
 if 1 % ePDist pa 64
-  %%
   hca = irf_panel('e PA e64 deflux lowe');  
-  eint = [10 1000];  
-  c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,20).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  eint = [100 30000];  
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,20).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  end
   %c_eval('irf_spectrogram(hca,ePDist?.e64.pitchangles(dmpaB?,20).elim([180 203]).deflux.specrec(''pa''),''log'');',ic)
   %hca.YLabel.String = {'Pitchangle','(\circ)'};   
   %irf_legend(hca,['E = [' num2str(eint(1),'%.0f') ' ' num2str(eint(2),'%.0f') ']'],[0.95 0.90],'color',0*[1 1 1])
@@ -389,7 +431,7 @@ for ii = [1:npanels]
 end
 
 %irf_zoom(h(1:iisub),'x',fastTint)
-irf_zoom(h1(1:npanels),'x',tintZoom)
+irf_zoom(h1,'x',tintZoom)
 %irf_zoom(h([1:3 6 10]),'y')
 %hca = irf_panel('Te'); irf_zoom(hca,'y')
 %hca = irf_panel('e PA e64 deflux lowe');  hca.YLim = [0 180];
@@ -411,7 +453,7 @@ end
 for ii = 1:npanels;
   h1(ii).FontSize = 12;
 end
-h1(7).CLim = [7 8.5];
+%h1(7).CLim = [7 8.5];
 %% Plot single time particle distributions, 1 sc, 4 projections,
   
 c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
@@ -421,10 +463,10 @@ c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
 c_eval('ePitch = ePitch?;',ic)
 
 % Plot format input
-vlim = 12*1e3;
+vlim = 50*1e3;
 elevlim = 15;
 strCMap = 'jet';
-projclim = [0 5];  
+projclim = [-3 1.5];  
   
 
 c_eval('times = ePDist?.time;',ic)
@@ -432,7 +474,7 @@ tind = 786;%:1:920;953; 911;
 tind = 1160;
 tind = 1240;
 tind = 1451:1500;%1350:1450;
-for it = 1701:1710%:2370;1420:1530;2340:2370;tind;589;%:650;550:650;%1240;tind;
+for it = 1251:2:1381;%2260:2300%:1710%:2370;1420:1530;2340:2370;tind;589;%:650;550:650;%1240;tind;
   time = times(it);
   it
   if exist('hmark'); delete(hmark); end
@@ -478,10 +520,10 @@ for it = 1701:1710%:2370;1420:1530;2340:2370;tind;589;%:650;550:650;%1240;tind;
   hca.YScale = 'log'; hca.XScale = 'log';
   hca.YLabel.String = ['f_e (' ePitch.units ')'];
   hca.XLabel.String = 'E (eV)';
-  hca.XLim = [10 1000];
+  hca.XLim = [10 30000];
   legend(hca,{'0','90','180'})
-  hca.YTick = 10.^[0:5];
-  hca.YLim = [1e0 1e5];
+  hca.YTick = 10.^[-4:5];
+  hca.YLim = [1e-4 1e5];
 
   % ExB plane, with markings
   if 0
