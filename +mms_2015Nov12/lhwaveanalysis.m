@@ -6,11 +6,14 @@ tintZoom = irf.tint('2015-11-12T07:19:15.50Z/2015-11-12T07:19:17.00Z');
 %tintZoomThin = irf.tint('2015-11-30T00:22:36.50Z/2015-11-30T00:22:37.50Z');
 %tintZoomThin = irf.tint('2015-11-30T00:23:16.00Z/2015-11-30T00:23:17.00Z');
 tintZoom = irf.tint('2015-11-12T07:19:20.00Z/2015-11-12T07:19:20.80Z');
+%tintZoom = irf.tint('2017-06-19T10:41:39.50Z/2017-06-19T10:41:41.00Z');
+tintZoom = irf.tint('2017-07-11T22:35:05.70Z/2017-07-11T22:35:10.00Z');
+
 tintLH = tintZoom;
 tintUTC = tintLH.utc;
-ffilt = 5;
+ffilt = 0.1;
 mmsid = 1;
-c_eval('[phiEB,vbest,dirbest,thetas,corrs] = mms.lhwaveanalysis(tintLH,gseE?,gseB?scm,gseB?,ne?,''plot'',1,''lhfilt'',ffilt);',mmsid)
+c_eval('[phiEB,vbest,dirbest,thetas,corrs] = mms.lhwaveanalysis(tintLH,gseE?,gseB?,gseB?,ne?,''plot'',1);',mmsid)
 
 %%
 tintZoom = tintZoomThin + 0.05*[-1 1];

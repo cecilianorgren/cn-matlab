@@ -24,6 +24,7 @@ gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resa
 %% Pressure and temperature divergences
 gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km'; gseGradPe.name = 'div Pe';
 gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
+gseGradPi_smooth = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1.filt(0,0.2,[],5),gsePi2.filt(0,0.2,[],5),gsePi3.filt(0,0.2,[],5),gsePi4.filt(0,0.2,[],5)); gseGradPi_smooth.units = 'nPa/km';
 gseGradTe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';
 gseGradTi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';
 gseGradNe = c_4_grad('gseR?','ne?','grad');
@@ -32,6 +33,7 @@ gseGradNi = c_4_grad('gseR?','ni?','grad');
 % Electron pressure divergence with diagonal terms set to zero
 c_eval('gsePe?_offdial = gsePe?; gsePe?_offdial.data(:,1,1) = 0; gsePe?_offdial.data(:,2,2) = 0; gsePe?_offdial.data(:,3,3) = 0;',ic)
 gseGradPe_offdial = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1_offdial,gsePe2_offdial,gsePe3_offdial,gsePe4_offdial); gseGradPe.units = 'nPa/km';
+
 
 %% Perpendicular and parallel decomposition
 % Celocity and current
@@ -71,9 +73,9 @@ if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
 else
   c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
-  c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
-  c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
-  c_eval('ePitch?apar = ePDist?.pitchangles(dmpaB?,[165 180]);',ic)
+  %c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
+  %c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
+  %c_eval('ePitch?apar = ePDist?.pitchangles(dmpaB?,[165 180]);',ic)
 end
 
 %% Calculate some additional parameters, irf_plasma_calc
@@ -158,9 +160,9 @@ c_eval('wavVe?par.f_units = ''Hz''; wavVe?par.f_label = ''f [Hz]''; wavVe?par.p_
 c_eval('wavVe?perp = irf_wavelet(gseVe?perp.abs.tlim(tint),''wavelet_width'',5.36*2,''f'',[1 15],''nf'',100);',ic)
 c_eval('wavVe?perp.f_units = ''Hz''; wavVe?perp.f_label = ''f [Hz]''; wavVe?perp.p_label = {''log_{10} v_{e,\perp}^2'',''(km/s)^2/Hz''};',ic)
 
-
 %% Average properties
 avNe = (ne1+ne2.resample(ne1.time)+ne3.resample(ne1.time)+ne4.resample(ne1.time))/4; avNe.name = '<ne>';
+avNi = (ni1+ni2.resample(ni1.time)+ni3.resample(ni1.time)+ni4.resample(ni1.time))/4; avNi.name = '<ne>';
 gseAvE = (gseE1+gseE2.resample(gseE1.time)+gseE3.resample(gseE1.time)+gseE4.resample(gseE1.time))/4; 
 gseAvVe = (gseVe1+gseVe2.resample(gseVe1.time)+gseVe3.resample(gseVe1.time)+gseVe4.resample(gseVe1.time))/4; 
 gseAvVeperp = (gseVe1perp+gseVe2perp.resample(gseVe1perp.time)+gseVe3perp.resample(gseVe1perp.time)+gseVe4perp.resample(gseVe1perp.time))/4; 
@@ -179,12 +181,17 @@ divVe = c_4_grad('gseR?','gseVe?','div'); divVe.name = 'div Ve';
 % Ohm's law terms
 %gseAvEVexB = (gseEVexB1 + gseEVexB2.resample(gseEVexB1) + gseEVexB3.resample(gseEVexB1) + gseEVexB4.resample(gseEVexB1))/4;
 gseOhmGradPe = gseGradPe/avNe.resample(gseGradPe.time)/units.e*1e-9*1e-6; gseOhmGradPe.units = 'mV/m';
+gseOhmGradPi = gseGradPi/avNi.resample(gseGradPi.time)/units.e*1e-9*1e-6; gseOhmGradPi.units = 'mV/m';
 gseOhmVexB = gseAvVexB; gseOhmVexB.units = 'mV/m';
 gseOhmVixB = gseAvVixB; gseOhmVixB.units = 'mV/m';
 gseOhmJxB_a = gseAvJ.resample(gseAvB.time).cross(gseAvB)/avNe/units.e*1e-9*1e-9*1e-6*1e3; gseOhmJxB_a.units = 'mV/m';
 gseOhmJxB_b = gseJcurl.resample(gseAvB.time).cross(gseAvB)/avNe/units.e*1e-9*1e-9*1e-6*1e3; gseOhmJxB_b.units = 'mV/m';
 gseOhmJxB_c = (gseJxB1/ne1+gseJxB2.resample(gseJxB1.time)/ne2+gseJxB3.resample(gseJxB1.time)/ne3+gseJxB4.resample(gseJxB1.time)/ne4)/4/units.e*1e-9*1e-9*1e-6*1e3; gseOhmJxB_c.units = 'mV/m'; 
 gseOhmJxB = gseOhmJxB_c;
+
+% Diamagnetic drift
+gseVDe = gseGradPe.cross(gseAvB.resample(gseGradPe))/(avNe*1e6)/gseAvB.abs/gseAvB.abs/units.e*(1e-3*1e-9/1e-9)*1e-3; gseVDe.name = 'VDe';
+gseVDi = -1*gseGradPi.cross(gseAvB.resample(gseGradPi))/(avNe*1e6)/gseAvB.abs/gseAvB.abs/units.e*(1e-3*1e-9/1e-9)*1e-3; gseVDi.name = 'VDi';
 
 
 % Other parameters 
@@ -202,6 +209,9 @@ facAvTe = (facTe1+facTe2.resample(facTe1)+facTe3.resample(facTe1)+facTe4.resampl
 
 % Curl of E+VexB (Scudder2105)
 gseRotRe = mms_2015Oct16.rotRe(gseR1,gseR2,gseR3,gseR4,gseEVexB1,gseEVexB2,gseEVexB3,gseEVexB4);
+
+%% Return
+return
 
 %% MVA: Rotate into lmn coordinates
 ic=1:4;

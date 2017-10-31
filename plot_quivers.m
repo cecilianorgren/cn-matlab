@@ -17,7 +17,7 @@ if nargs>3
   plotLabels = 1;
 end
   
-S = 0.7;
+S = 0.5;
 
 
 if isa(data,'TSeries')

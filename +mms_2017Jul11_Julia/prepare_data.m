@@ -1,55 +1,13 @@
-pathPaper =  '/Users/Cecilia/Dropbox (IRFU)/MMS_Nov12/';
-ic=1:4;
+ic = 1:4;
 units = irf_units;
 
+% To make new electric field, nvm this for now, see mms_2015Nov12.prepare_data for reference
 
-% Convective electric fields
-c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.units = ''mV/m'';',ic)
-c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = ''mV/m'';',ic)
+% Tetrahedron centered positions
+gseR0 = (gseR1.resample(gseR1.time)+gseR2.resample(gseR1.time)+gseR3.resample(gseR1.time)+gseR4.resample(gseR1.time))/4;
+c_eval('gseRR? = gseR?-gseR0; gseRR? = gseRR?.resample(irf_time(''2017-07-11T22:33:28.00Z'',''utc>epochTT'')).data;',ic)
 
-%% Make new electric field
-% Reconstruct Electric field from probe voltages
-baselength = 2*14.5;
-multiplier = 1.5;
-offsetE1z = -2.5;
-offsetE2z = -3.5;
-offsetE3z = 0;
-offsetE4z = 0.5;
-c_eval('dslE?z = irf.ts_scalar(dcv?.time,(dcv?.data(:,6)-dcv?.data(:,5))/baselength*multiplier*1e3-offsetE?z);',1:4)
-c_eval('dslE?_newz = dslE?.clone(dslE?.time,[dslE?.data(:,1:2) dslE?z.data]);',1:4)
-
-% lowpass filter E field and subtract this part
-c_eval('dbcsVexB? = dbcsVe?.cross(dmpaB?.resample(dbcsVe?))*1e-3; dbcsVexB?.units = ''mV/m'';',ic)
-c_eval('dbcsVixB? = dbcsVi?.cross(dmpaB?.resample(dbcsVi?))*1e-3; dbcsVixB?.units = ''mV/m'';',ic)
-
-ffilt = 0.15;
-c_eval('[dslE?par_newz,dslE?perp_newz] = irf_dec_parperp(dmpaB?,dslE?_newz); dslE?par_newz.units =''mv/m''; dslE?perp_newz.units =''mv/m'';',ic)
-%c_eval('dslE?_lowf = dslE?perp_newz.filt(0,ffilt,[],3);',ic)
-c_eval('dslE?_lowf = dslE?_newz.filt(0,ffilt,[],3);',ic)
-c_eval('dbcsVexB?_lowf = dbcsVexB?.filt(0,ffilt,[],3);',ic)
-c_eval('E?_vefit = dslE?_lowf + dbcsVexB?_lowf.resample(dslE?);',ic)
-c_eval('dslE?_detrend = dslE?_newz - E?_vefit;',ic);
-c_eval('dslE?_new = dslE?_detrend; dslE?_new.name = ''E new'';',ic)
-
-c_eval('[dslE?par_new,dslE?perp_new] = irf_dec_parperp(dmpaB?,dslE?_new); dslE?par_new.name = ''E par''; dslE?perp_new.name = ''E perp'';',ic)
-
-[~,computername]=system('hostname');
-if strfind(computername,'ift0227887')
-  load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
-else
-  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
-end
-
-c_eval('gseE?_new = mms_dsl2gse(dslE?_new,defatt?);',ic)
-c_eval('[gseE?par_new,gseE?perp_new] = irf_dec_parperp(gseB?,gseE?_new); gseE?par_new.name = ''E par''; gseE?perp_new.name = ''E perp'';',ic)
-
-c_eval('gseEVexB?_new = gseE?_new.resample(gseVexB?.time) + gseVexB?; gseEVexB?_new.name = ''E+VexB'';',ic)
-%c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
-
-gseAvE_new = 0.25*(gseE1_new + gseE2_new.resample(gseE1_new) + gseE3_new.resample(gseE1_new) + gseE4_new.resample(gseE1_new)); gseAvE_new.name = 'av E new';
-%gseAvVexB = 0.25*(gseVexB1 + gseVexB2.resample(gseVexB1) + gseVexB3.resample(gseVexB1) + gseVexB4.resample(gseVexB1)); gseVexB.name = 'av Ve new';
-
-%%
+%% Current
 % Current from magnetic field (curlometer) 
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
 [Jcurl,divBbrst,Bbrst,JxBbrst,divTshearbrst,divPbbrst] = c_4_j('gseR?brsttime','gseB?');
@@ -57,14 +15,14 @@ gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'G
 gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 
-% Currents from moments
+% Currents from moments, use ne also for Ji 
 c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; 
 
-% Pressure and temperature divergences
-gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km';
+%% Pressure and temperature divergences
+gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km'; gseGradPe.name = 'div Pe';
 gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
 gseGradTe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';
 gseGradTi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';
@@ -75,10 +33,34 @@ gseGradNi = c_4_grad('gseR?','ni?','grad');
 c_eval('gsePe?_offdial = gsePe?; gsePe?_offdial.data(:,1,1) = 0; gsePe?_offdial.data(:,2,2) = 0; gsePe?_offdial.data(:,3,3) = 0;',ic)
 gseGradPe_offdial = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1_offdial,gsePe2_offdial,gsePe3_offdial,gsePe4_offdial); gseGradPe.units = 'nPa/km';
 
+%% Perpendicular and parallel decomposition
+% Celocity and current
+c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
+c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
+c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J par''; gseJ?perp.name = ''J perp'';',ic)
 
+% Electric fields
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+% Wave magnetic field
+gseB2scm = gseB2scm{2};
+c_eval('[gseB?scmpar,gseB?scmperp] = irf_dec_parperp(gseB?,gseB?scm); gseB?scmpar.name = ''B par scm''; gseB?scmperp.name = ''B perp scm'';',ic)
+try
+c_eval('[gseE?hmfepar,gseE?hmfeperp] = irf_dec_parperp(gseB?,gseE?hmfe); gseE?hmfepar.name = ''E par hmfe''; gseE?hmfeperp.name = ''E perp hmfe'';',ic)
+end
 
+%% Cross products
 % ExB drift
 c_eval('gseVExB? = cross(gseE?,gseB?.resample(gseE?.time))/gseB?.abs.resample(gseE?.time)/gseB?.abs.resample(gseE?.time)*1e3; gseVExB?.units = '''';',ic) % km/s
+
+% Convective electric fields
+c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.units = ''mV/m'';',ic)
+c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = ''mV/m'';',ic)
+
+% Non-ideal electric field, E+VexB
+c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
+
+% JxB
+c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?));',ic)
 
 % Magnetic field curvature 
 c_eval('R? = gseR?.resample(gseB1);',1:4)
@@ -86,74 +68,19 @@ c_eval('B? = gseB?.resample(gseB1);',1:4)
 [gseCurvB,avB]=c_4_grad('R?','B?','curvature'); gseCurvB.name = 'curv B'; gseCurvB.coordinateSystem = 'GSE';
 curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
 
-% Electron inertial term
-c_eval('R? = gseR?.resample(gseB1);',1:4)
-c_eval('Ve? = gseVe?.resample(gseB1);;',1:4)
-[gseCurvVe,avVE]=c_4_grad('R?','Ve?','curvature'); gseCurvVe.name = 'curv Ve'; gseCurvVe.coordinateSystem = 'GSE';
-
-
-
-% Pitchangle distribution
-if 1
-  try
-    load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
-  catch
-    c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
-  end
-else
-  c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
-end
+%% Pitchangle distributions
 if 0
-  %%
+  load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
+elseif 0
+  ic = 1;
+  c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
   c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
   c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
   c_eval('ePitch?apar = ePDist?.pitchangles(dmpaB?,[165 180]);',ic)
-  c_eval(['orig_size = size(ePitch?par.data);',...
-          'eAparReshape = reshape(ePitch?apar.data,1, prod(orig_size));',...
-          'eParReshape = reshape(ePitch?par.data,1, prod(orig_size));',...
-          'eParAparReshape = eParReshape./eAparReshape;',...
-          'eParApar = reshape(eParAparReshape,orig_size);',...
-          'eAnis?_app = ePDist?.clone(ePitch?par.time,log(eParApar));'],ic) 
-end
-
-
-% T = kg?s?2?A?1
-% J = kg?m2?s?2
-% J/T = kg?m2?s?2/(kg?s?2?A?1) = Am2
-
-% c_eval('Wref = 0.5*units.me*vte?perp.resample(tref).data.^2*10^6/units.eV;',ic)
-% c_eval('Wref = 0.5*(facTe?.yy.resample(tref).data+facTe?.zz.resample(tref).data);',ic)
-% c_eval('Bref = mvaB?.abs.resample(tref).data;',ic)
-%     c_eval('muref = 0.5*units.me*vte?perp.resample(tref).data.^2*10^6/units.eV/mvaB?.abs.resample(tref).data;',ic)
-%     c_eval('Wperp = irf.ts_scalar(mvaB?.tlim(tintB).time,mvaB?.tlim(tintB).abs.data*muref);',ic)
-    
-
-
-%% Wave analysis
-if 0
-  %% Field aligned wavelets
-  c_eval('facE? = irf_convert_fac(gseE?,gseB?,[1 0 0]);',ic)
-  c_eval('facB?scm = irf_convert_fac(gseB?scm,gseB?,[1 0 0]);',ic)
-  
-  c_eval('wavE?fac = irf_wavelet(facE?.tlim(tint),''wavelet_width'',5.36*2,''f'',[1 4000],''nf'',100);',ic)
-  c_eval('wavE?fac.f_units = ''Hz''; wavE?fac.f_label = ''f [Hz]''; wavE?fac.p_label = {''log_{10} E^2'',''(mV/m)^2/Hz''};',ic)
-  c_eval('wavB?fac = irf_wavelet(facB?scm.tlim(tint),''wavelet_width'',5.36*2,''f'',[1 4000],''nf'',100);',ic)
-  c_eval('wavB?fac.f_units = ''nT''; wavB?fac.f_label = ''f [Hz]''; wavB?fac.p_label = {''log_{10} B^2'',''(nT)^2/Hz''};',ic)
-%%
-if 0
   ic = 1:4;
-  tic
-  c_eval('wavE? = irf_wavelet(gseE?.abs.tlim(tint),''wavelet_width'',5.36*2,''f'',[1 4000],''nf'',100);',ic)
-  c_eval('wavE?.f_units = ''Hz''; wavE?.f_label = ''f [Hz]''; wavE?.p_label = {''log_{10} E^2'',''(mV/m)^2/Hz''};',ic)
-  c_eval('wavB? = irf_wavelet(gseB?scm.abs.tlim(tint),''wavelet_width'',5.36*2,''f'',[1 4000],''nf'',100);',ic)
-  c_eval('wavB?.f_units = ''nT''; wavB?.f_label = ''f [Hz]''; wavB?.p_label = {''log_{10} B^2'',''(nT)^2/Hz''};',ic)
-    toc
-%%
-tintPol = irf.tint('2015-10-16T10:33:40.00Z/2015-10-16T10:33:52.00Z');
-c_eval('polarization? = irf_ebsp(gseE?.tlim(tintPol),gseB?scm.tlim(tintPol),gseB?.tlim(tintPol),gseB?.tlim(tintPol),gseR?brsttime.tlim(tintPol),[10 2200],''polarization'',''fac'');',1)
 end
-end
-%% Calculate some additional parameters
+
+%% Calculate some additional parameters, irf_plasma_calc
 % Speeds
 c_eval('matB? = gseB?.abs.data;',ic)
 c_eval('matParTe? = facTe?.xx.resample(gseB?.time).data;',ic)
@@ -187,25 +114,8 @@ c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? =
 c_eval('beta? = (re?/Le?).^2;',ic)
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
 
-% JxB
-c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?));',ic)
-
-% Electron pitchangles
-%c_eval('ePitch? = ePDist?.pitchangles(dmpaB?);',ic);
-
-% Non-ideal electric field, E+VexB
-c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
-
-% Perpendicular and parallel velocity and current components
-c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
-c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
-c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J par''; gseJ?perp.name = ''J perp'';',ic)
-
-% Parallel and perpendicular electric fields
-c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
-try
-c_eval('[gseE?hmfepar,gseE?hmfeperp] = irf_dec_parperp(gseB?,gseE?hmfe); gseE?hmfepar.name = ''E par hmfe''; gseE?hmfeperp.name = ''E perp hmfe'';',ic)
-end
+% Magnetic moment
+c_eval('mag_mom? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom?.units = ''nAm^2''; mag_mom?.name = ''magnetic moment'';',ic)
 
 %% EDR signatures
 c_eval('facPepp? = mms.rotate_tensor(gsePe?,''fac'',gseB?,''pp'');',ic); % Peperp1 = Peperp2
@@ -240,14 +150,8 @@ c_eval('oce? = fce?*2*pi;',ic)
 c_eval('EdotVe? = gseE?.resample(gseVe?).dot(gseVe?);',ic);
 c_eval('epsilone? = abs(6*pi*EdotVe?/(oce?.resample(gseVe?)*(facTe?.trace)));',ic);
 
-c_eval('gseVexBE? = gseE?.resample(gseVe?)+gseVexB?.data;',ic);
-
 c_eval('deltae? = gseVexB?/(gseVe?perp.abs*gseB?.resample(gseVe?).abs*1e-9);',ic);
 %c_eval('deltae? = irf.ts_scalar(Uevec?.time,deltae?);',ic);
-
-gseR0 = (gseR1.resample(gseR1.time)+gseR2.resample(gseR1.time)+gseR3.resample(gseR1.time)+gseR4.resample(gseR1.time))/4;
-c_eval('gseRR? = gseR?-gseR0; gseRR? = gseRR?.resample(irf_time(''2015-11-12T07:19:21.000Z'',''utc>epochTT'')).data;',ic)
-
 
 % Plasma beta and magnetic pressure
 c_eval('beta? = (re?/Le?).^2;',ic)
@@ -287,7 +191,6 @@ gseOhmJxB_c = (gseJxB1/ne1+gseJxB2.resample(gseJxB1.time)/ne2+gseJxB3.resample(g
 gseOhmJxB = gseOhmJxB_c;
 
 
-
 % Other parameters 
 [gseGradPepar,gseGradPeperp] = irf_dec_parperp(gseAvB,gseGradPe); gseGradPepar.name = 'div Pe par'; gseGradPeperp.name = 'div Pe par';
 avPe = (gsePe1.trace+gsePe2.trace.resample(gsePe1)+gsePe3.trace.resample(gsePe1)+gsePe3.trace.resample(gsePe1))/3/4;
@@ -304,8 +207,6 @@ facAvTe = (facTe1+facTe2.resample(facTe1)+facTe3.resample(facTe1)+facTe4.resampl
 % Curl of E+VexB (Scudder2105)
 gseRotRe = mms_2015Oct16.rotRe(gseR1,gseR2,gseR3,gseR4,gseEVexB1,gseEVexB2,gseEVexB3,gseEVexB4);
 
-% Magnetic moment
-c_eval('mag_mom? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom?.units = ''nAm^2''; mag_mom?.name = ''magnetic moment'';',ic)
 %% MVA: Rotate into lmn coordinates
 ic=1:4;
 % Set up coordinate system
@@ -315,212 +216,13 @@ ic=1:4;
 %coordLabels = {'L','M','N'};
 %lmn = [N;-M;L];
 
-
-%% compare mva's, large scale
-c_eval('[out?,l?,v?] = irf_minvar(gseB?.tlim(irf.tint(''2015-11-12T07:19:10.00Z/2015-11-12T07:19:40.00Z'')));',1:4)
-%v2 = [v2(1,:); -v2(2,:); -v2(3,:)];
-clear mva_angle1 mva_angle2 mva_angle3
-mva_angle1 = []; mva_angle2 = []; mva_angle3 = [];
-for ic1 = 1:3
-  for ic2 = ic1:4
-    for icomp = 1:3
-      c_eval('mva_angle_temp = real(acosd(dot(v?(icomp,:),v!(icomp,:))));',ic1,ic2)
-      c_eval('mva_angle? = [mva_angle? mva_angle_temp];',icomp)
-    end
-  end
-end
-c_eval('lratio?large(1) = l?(1)/l?(2); lratio?large(2) = l?(2)/l?(3);',1:4)
-lratio_mean_large = mean([lratio1large; lratio2large; lratio3large; lratio4large]);
-lratio_std_large = std([lratio1large; lratio2large; lratio3large; lratio4large]);
-
-
-c_eval('mva_all(:,:,?) = v?;',1:4)
-mva_mean = mean(mva_all,3);
-mva_angle_mean = mean([mva_angle1' mva_angle2' mva_angle3'],1);
-mva_angle_std = std([mva_angle1' mva_angle2' mva_angle3'],1);
-
-mva_mean_large = mva_mean;
-mva_angle_mean_large = mva_angle_mean;
-mva_angle_std_large = mva_angle_std;
-
-%% compare mva's, befurcated current sheet, enforced normal component
-tint_bcs_utc = '2015-11-12T07:19:20.116Z/2015-11-12T07:19:22.136Z';
-tint_bcs = irf.tint(tint_bcs_utc);
-c_eval('[out?,l?,v?] = irf_minvar(gseB?.tlim(tint_bcs),''td'');',1:4)
-c_eval('v? = [v?(1,:); -v?(2,:); -v?(3,:)];',[1 2 3 4])
-clear mva_angle1 mva_angle2 mva_angle3
-mva_angle1 = []; mva_angle2 = []; mva_angle3 = [];
-for ic1 = 1:3
-  for ic2 = ic1:4
-    
-    for icomp = 1:3
-      c_eval('mva_angle_temp = real(acosd(dot(v?(icomp,:),v!(icomp,:))));',ic1,ic2)
-      c_eval('mva_angle? = [mva_angle? mva_angle_temp];',icomp)
-    end
-  end
-end
-c_eval('lratio?(1) = l?(1)/l?(2); lratio?(2) = l?(2)/l?(3);',1:4)
-lratio_mean_bcs_td = mean([lratio1; lratio2; lratio3; lratio4]);
-lratio_std_bcs_td = std([lratio1; lratio2; lratio3; lratio4]);
-
-c_eval('mva_all_td(:,:,?) = v?;',1:4)
-mva_mean_td = mean(mva_all_td,3);
-mva_angle_mean_td = mean([mva_angle1' mva_angle2' mva_angle3'],1);
-mva_angle_std_td = std([mva_angle1' mva_angle2' mva_angle3'],1);
-
-c_eval('mva_angle_large_bifurcated_td(?) = real(acosd(dot(mva_mean_td(?,:),mva_mean_large(?,:))));',1:3)
-
-%% compare mva's, befurcated current sheet
-c_eval('[out?,l?,v?] = irf_minvar(gseB?.tlim(tint_bcs));',1:4)
-v2 = [v2(1,:); -v2(2,:); -v2(3,:)];
-clear mva_angle1 mva_angle2 mva_angle3
-mva_angle1 = []; mva_angle2 = []; mva_angle3 = [];
-for ic1 = 1:3
-  for ic2 = ic1:4
-    
-    for icomp = 1:3
-      c_eval('mva_angle_temp = real(acosd(dot(v?(icomp,:),v!(icomp,:))));',ic1,ic2)
-      c_eval('mva_angle? = [mva_angle? mva_angle_temp];',icomp)
-    end
-  end
-end
-c_eval('lratio?(1) = l?(1)/l?(2); lratio?(2) = l?(2)/l?(3);',1:4)
-lratio_mean_bcs = mean([lratio1; lratio2; lratio3; lratio4]);
-lratio_std_bcs = std([lratio1; lratio2; lratio3; lratio4]);
-
-c_eval('mva_all(:,:,?) = v?;',1:4)
-mva_mean = mean(mva_all,3);
-mva_angle_mean = mean([mva_angle1' mva_angle2' mva_angle3'],1);
-mva_angle_std = std([mva_angle1' mva_angle2' mva_angle3'],1);
-
-c_eval('mva_angle_large_bifurcated(?) = real(acosd(dot(mva_mean(?,:),mva_mean_large(?,:))));',1:3)
-
-%% compare mva's: large and small cs after the bifurcated one
-c_eval('[out?,l?,v?] = irf_minvar(gseB?.tlim(irf.tint(''2015-11-12T07:19:30.200Z/2015-11-12T07:19:31.200Z'')));',1:4)
-c_eval('v? = [v?(1,:); -v?(2,:); -v?(3,:)];',1:4)
-clear mva_angle1 mva_angle2 mva_angle3
-mva_angle1 = []; mva_angle2 = []; mva_angle3 = [];
-for ic1 = 1:3
-  for ic2 = ic1:4
-    for icomp = 1:3
-      c_eval('mva_angle_temp = real(acosd(dot(v?(icomp,:),v!(icomp,:))));',ic1,ic2)
-      c_eval('mva_angle? = [mva_angle? mva_angle_temp];',icomp)
-    end
-  end
-end
-c_eval('mva_all(:,:,?) = v?;',1:4)
-mva_mean_2 = mean(mva_all,3);
-mva_angle_mean_2 = mean([mva_angle1' mva_angle2' mva_angle3'],1);
-mva_angle_std_2 = std([mva_angle1' mva_angle2' mva_angle3'],1);
-
-
-c_eval('mva_angle_bcs_other_small(?) = real(acosd(dot(mva_mean(?,:),mva_mean_2(?,:))));',1:3)
-
-if 0
-  %%
-  figure(17)
-  plot_quivers(mva_mean,mva_mean*0,'b',{'L','M','N'}); hold on
-  plot_quivers(mva_mean_2,mva_mean*0,'r',{'L','M','N'});
-  plot_quivers(mva_mean_large,mva_mean*0,'k',{'L','M','N'});
-  set(gca,'ylim',[-1 1],'xlim',[-1 1],'zlim',[-1 1])
-  
-end
-
-%% Choose LMN coordinate system
-coordSystem = 15; % 16:td, 15:unconstr.
-switch coordSystem % Choose another
-  case 1 % N: minimum variance of B
-    [out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:19.611Z/2015-11-12T07:19:22.641Z')));
-    L = v(1,:); M = -v(2,:); N = -v(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];
-  case 12 % N: minimum variance of B
-    [out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:20.116Z/2015-11-12T07:19:22.136Z')));
-    L = v(1,:); M = v(2,:); N = v(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];
-  case 15 % N: minimum variance of B, mean of all 4 spacecraft
-    %[out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:20.116Z/2015-11-12T07:19:22.136Z')));
-    L = mva_mean(1,:); M = mva_mean(2,:); N = mva_mean(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];
-  case 16 % N: minimum variance of B, mean of all 4 spacecraft
-    %[out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:20.116Z/2015-11-12T07:19:22.136Z')),'<Bn>=0');
-    L = mva_mean_td(1,:); M = mva_mean_td(2,:); N = mva_mean_td(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];    
-  case 2 % minimum variance of gradPe
-    [out,l,v] = irf_minvar(gseGradPe.tlim(irf.tint('2015-11-12T07:19:20.484Z/2015-11-12T07:19:22.034Z')));
-    N = -v(1,:); L = -v(2,:); M = -v(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];
-  case 3 % B in magnetosphere
-    L = gseB1.resample(irf_time('2015-11-12T07:19:05.000Z','utc>epochtt')); L = L.data/norm(L.data);
-    M = cross(L,cross([0 1 0],L)); M = M/norm(M);
-    N = cross(L,M);
-    lmn = [L;M;N];
-  case 4 % N: minimum variance of J
-    [out,l,v] = irf_minvar(gseJ1.tlim(irf.tint('2015-11-12T07:19:20.516Z/2015-11-12T07:19:21.826Z')));
-    L = v(1,:); M = v(2,:); N = v(3,:);
-    coordLabels = {'N','-M','L'};
-    lmn = [L;M;N];        
-  case 5 % N: minimum variance of B,'<Bn>=0' 
-    [out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:19.611Z/2015-11-12T07:19:22.641Z')),'<Bn>=0');
-    L = v(1,:); M = v(2,:); N = v(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];
-  case 6 % N: minimum variance of B,'<Bn>=0' 
-    [out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:19.611Z/2015-11-12T07:19:22.641Z')),'<Bn>=0');
-    L = v(1,:); M = -v(2,:); N = -v(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];
-  case 22 % N: minimum variance of J
-    [out,l,v] = irf_minvar(gseJ1.tlim(irf.tint('2015-10-16T10:33:23.000Z/2015-10-16T10:33:32.000Z')));
-    L = -v(2,:); M = -v(1,:); N = v(3,:);
-    coordLabels = {'N','-M','L'};
-    lmn = [N;-M;L];
-    [out,l,v] = irf_minvar(gseJcurl.tlim(irf.tint('2015-10-16T10:33:22.595Z/2015-10-16T10:33:31.284Z')));
-    L = -v(1,:); M = v(2,:); N = -v(3,:);
-    coordLabels = {'L','M','N'};
-    lmn = [L;M;N];        
-  case 33 % N: maximum variance of E
-    tint = irf.tint('2015-10-16T10:33:30.100Z/2015-10-16T10:33:30.400Z');
-    [out,l,v] = irf_minvar(gseE3.tlim(tint));
-    L = v(2,:); M = -v(3,:); N = -v(1,:);
-    coordLabels = {'N','-M','L'};
-    lmn = [N;-M;L];
-  case 44 % N: magnetosheath side normal derived from mms1 and mms4
-    gseVec14 = gseR4-gseR1; gseVec14 = gseVec14.resample(tint.start);
-    gseM = irf.ts_vec_xyz(gseVec14.time,M);
-    gseNorm14 = gseVec14.cross(gseM);
-    gseNormalMSH = gseNorm14/gseNorm14.abs;
-
-    N = -gseNormalMSH.data;
-    M = M;
-    L = cross(M,N);
-  case 55 % N: magnetosphere side normal derived from mms3 and mms4
-    gseVec34 = gseR4-gseR3; gseVec34 = gseVec34.resample(tint.start);
-    gseM = irf.ts_vec_xyz(gseVec34.time,M);
-    gseNorm34 = gseVec34.cross(gseM);
-    gseNormalMSP = gseNorm34/gseNorm34.abs;
-
-    N = -gseNormalMSP.data;
-    M = M;
-    L = cross(M,N);
-end
-
-% DeHoffman-Teller frame
-[vht,eht,dvht,p,cc]=irf_vht(-gseVixB1.tlim(tint_bcs+[-2 3]),gseB1.tlim(tint_bcs+[-2 3]));
-mvaVht = vht*lmn';
-mvaEht = eht*lmn';
+[out,l,v] = irf_minvar(gseAvB.tlim(irf.tint('2015-10-16T10:33:20.00Z/2015-10-16T10:34:00.00Z')));
+L = v(1,:); M = v(2,:); N = v(3,:);
+coordLabels = {'L','M','N'};
+lmn = [L;M;N];
 
 disp(sprintf('L = [%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',L,M,N))
 % Rotate data
-c_eval('mvaE?_new = gseE?_new*lmn'';',ic)
-c_eval('mvaE?par_new = gseE?par_new; mvaE?perp_new = gseE?perp_new*lmn'';',ic)
-mvaAvE_new = gseAvE_new*lmn'';
-c_eval('mvaEVexB?_new = gseEVexB?_new*lmn'';',ic)
-
 c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';')
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';')
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';')
@@ -592,28 +294,10 @@ mvaOhmJxB_b = mvaJcurl.resample(mvaAvB.time).cross(mvaAvB)/avNe/e*1e-9*1e-9*1e-6
 mvaOhmJxB_c = (mvaJxB1/ne1+mvaJxB2.resample(mvaJxB1.time)/ne2+mvaJxB3.resample(mvaJxB1.time)/ne3+mvaJxB4.resample(mvaJxB1.time)/ne4)/4/e*1e-9*1e-9*1e-6*1e3; mvaOhmJxB_c.units = 'mV/m'; 
 mvaOhmJxB = mvaOhmJxB_c;
 
-%%
-
-CS_normal_velocity = 70;
-c_eval('dtP = mvaPe?.time(2)-mvaPe?.time(1); LPNN?time = mvaPe?.time(1:end-1)+0.5*dtP;',ic)
-c_eval('sumP? = mvaPe?.zz.data(1:end-1)+mvaPe?.zz.data(2:end);',ic)
-c_eval('LPNN? = irf.ts_scalar(LPNN?time,0.5*sumP?./diff(mvaPe?.zz.data(:,1))*CS_normal_velocity*dtP);',ic)
-0.5*(0.055+0.03)/(0.055-0.03)*70*dtP;
-%%
-
+%% Magnetic curvature, MVA
 c_eval('R? = mvaR?.resample(mvaB1);',1:4)
 c_eval('B? = mvaB?.resample(mvaB1);',1:4)
 [mvaCurvB,BB]=c_4_grad('R?','B?','curvature'); mvaCurvB.name = 'curv B'; mvaCurvB.units = '1/km';
 curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
-
-% c_eval('R? = mvaR?.resample(facPe1);',1:4)
-% c_eval('facPdiff? = facPe?.xx-0.5*(facPe?.yy+facPe?.zz); facPdiff? = facPdiff?.resample(facPe1);',1:4)
-% [mvaCurvPdiff,BB]=c_4_grad('R?','facPdiff?','curvature'); mvaCurvPdiff.name = 'curv ppar-pperp'; mvaCurvPdiff.units = '1/km';
-% curvPdiffradius = 1/mvaCurvPdiff.abs; curvPdiffradius.name = 'R_c (ppar-pperp)';
-
-c_eval('R? = mvaR?.resample(mvaVe1);',1:4)
-c_eval('Ve? = mvaVe?.resample(mvaVe1);',1:4)
-[mvaCurvVe,VVE]=c_4_grad('R?','Ve?','curvature'); mvaCurvVe.name = 'curv Ve';
-
 
 
