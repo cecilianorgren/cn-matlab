@@ -1,5 +1,5 @@
 tint = irf.tint('2015-10-16T10:32:54.00Z/2015-10-16T10:34:14.00Z'); % magnetosphere-magnetosheath-magnetosphere
-ic = 2:4;
+ic = 1:4;
 if 0 
   %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
   load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-24.mat')
@@ -18,7 +18,13 @@ c_eval('tic; iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-di
 fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-eventPath = ['/Users/Cecilia/Research/Events/' dirName '/fluxrope/'];
+[~,computername]=system('hostname');
+if strfind(computername,'ift0227887')
+  eventPath = ['/Users/cno062/Research/Events/' dirName '/fluxrope/'];
+else
+  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/fluxrope/'];
+end
+
 mkdir(eventPath)
 
 %% Load defatt, for coordinate tranformation

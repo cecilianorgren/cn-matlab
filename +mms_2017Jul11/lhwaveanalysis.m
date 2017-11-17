@@ -6,9 +6,11 @@ tintZoom = irf.tint('2017-07-11T22:34:01.00Z/2017-07-11T22:34:03.00Z'); %2015111
 %tintZoomThin = irf.tint('2015-11-30T00:22:36.50Z/2015-11-30T00:22:37.50Z');
 %tintZoomThin = irf.tint('2015-11-30T00:23:16.00Z/2015-11-30T00:23:17.00Z');
 tintZoom = irf.tint('2017-07-11T22:33:28.50Z/2017-07-11T22:33:30.00Z'); %20151112071854
+tintZoom = irf.tint('2017-07-11T22:33:02.00Z/2017-07-11T22:33:10.00Z'); %20151112071854
+tintZoom = irf.tint('2017-07-11T22:33:19.00Z/2017-07-11T22:33:21.00Z'); %20151112071854
 tintLH = tintZoom;
 tintUTC = tintLH.utc;
-ffilt = 3;
+ffilt = 5;
 mmsid = 1;
 c_eval('[phiEB,vbest,dirbest,thetas,corrs] = mms.lhwaveanalysis(tintLH,gseE?,gseB?scm,gseB?,ne?,''plot'',1,''lhfilt'',ffilt);',mmsid)
 
@@ -16,12 +18,13 @@ c_eval('[phiEB,vbest,dirbest,thetas,corrs] = mms.lhwaveanalysis(tintLH,gseE?,gse
 ic = 1:4;
 tint = irf.tint('2017-07-11T22:33:28.00Z/2017-07-11T22:33:31.00Z'); % LH separatrix
 t_center = irf_time('2017-07-11T22:33:29.00','utc>epochtt'); % LH separatrix center time
+dt_timing = [0.0000   0.0141   0.0104   0.0078];
 v_timing = 1.34e+03*[-0.85 -0.48  0.24];
 c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
 v_direction = irf_norm(v_timing);
 v_amplitude = sqrt(sum(v_timing.^2));
 
-
+%%
 c_eval('gseEdt? = irf_integrate(gseE?perp,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt?.time,gseEdt?.data);',ic)
 phi_filt = 3;
 c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
@@ -36,12 +39,23 @@ newxyz = [newx;newy;newz];
 
 ic_tmp=ic;
 ic = 1:4;
-c_eval('bdryB? = gseB?*newxyz''',ic);
-c_eval('bdryE? = gseE?*newxyz''',ic);
-c_eval('bdryE?perp = gseE?perp*newxyz''',ic);
-c_eval('bdryVe? = gseVe?*newxyz''',ic);
-c_eval('bdryVi? = gseVi?*newxyz''',ic);
+c_eval('bdryB? = gseB?*newxyz'';',ic);
+c_eval('bdryE? = gseE?*newxyz'';',ic);
+c_eval('bdryE?perp = gseE?perp*newxyz'';',ic);
+c_eval('bdryVExB? = gseVExB?*newxyz'';',ic);
+c_eval('bdryVexB? = gseVexB?*newxyz'';',ic);
+c_eval('bdryVe? = gseVe?*newxyz'';',ic);
+c_eval('bdryVi? = gseVi?*newxyz'';',ic);
+c_eval('bdryVe?perp = gseVe?perp*newxyz'';',ic);
+c_eval('bdryVi?perp = gseVi?perp*newxyz'';',ic);
+c_eval('bdryE?perp = gseE?perp*newxyz'';',ic);
+c_eval('bdryJ? = gseJ?*newxyz'';',ic);
+bdryJcurl = gseJcurl*newxyz';
+c_eval('bdryR? = gseR?*newxyz'';',ic);
+c_eval('bdryRR? = gseRR?*newxyz'';',ic);
+
 ic = ic_tmp;
+
 %% Plot potential
 npanels = 7;
 cmap = 'jet';
@@ -240,6 +254,7 @@ for ii = 1:npanels;
   h(ii).FontSize = 12;
 end
 %irf_plot_zoomin_lines_between_panels(h(iisub),h(iisub+2))
+
 %% Plot fields and potential in new coordinate system
 npanels = 6;
 cmap = 'jet';
@@ -412,8 +427,8 @@ end
 for ii = 1:npanels;
   h(ii).FontSize = 12;
 end
+
 %% Compare 4 sc in new coordinate system
-%% Figure 2: 4 sc 
 npanels = 7;
 h = irf_plot(npanels);
 
@@ -508,6 +523,134 @@ end
 
 %h(10).YLim = 7*[-1 1];
 %h(11).YLim = 7*[-1 1];
+
+%% Show timing 4 sc in new coordinate system
+npanels = 8;
+h = irf_plot(npanels);
+
+pshift = 0;
+scrsz = get(groot,'ScreenSize');
+figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.5; figurePostition(4)=figurePostition(4)*0.9;
+hcf = gcf; hcf.Position = figurePostition;
+
+if 0 % BX
+  hca = irf_panel('BX');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryB1.x.tlim(tint),bdryB2.x.tlim(tint),bdryB3.x.tlim(tint),bdryB4.x.tlim(tint)},'comp');
+  hca.YLabel.String = {'B_{v}','(nT)'};
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'mms 1','mms 2','mms 3','mms 4'},[0.98 0.9],'fontsize',12);
+end
+if 0 % BY
+  hca = irf_panel('BY');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryB1.y.tlim(tint),bdryB2.y.tlim(tint),bdryB3.y.tlim(tint),bdryB4.y.tlim(tint)},'comp');
+  hca.YLabel.String = {'B_{N}','(nT)'};
+end
+if 0 % BZ
+  hca = irf_panel('BZ');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryB1.z.tlim(tint),bdryB2.z.tlim(tint),bdryB3.z.tlim(tint),bdryB4.z.tlim(tint)},'comp');
+  hca.YLabel.String = {'B_{||}','(nT)'};
+end
+if 1 % EX
+  hca = irf_panel('EX');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.x.tlim(tint),bdryE2.x.tlim(tint),bdryE3.x.tlim(tint),bdryE4.x.tlim(tint)},'comp');
+  hca.YLabel.String = {'E_{v}','(nT)'};
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'mms 1','mms 2','mms 3','mms 4'},[0.98 0.9],'fontsize',12);
+end
+if 1 % EX, time shifted
+  hca = irf_panel('EX shifted');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.x.tlim(tint),bdryE2.x.tlim(tint),bdryE3.x.tlim(tint),bdryE4.x.tlim(tint)},'comp','dt',dt_timing);
+  hca.YLabel.String = {'E_{v}','(nT)'};
+  set(hca,'ColorOrder',mms_colors('1234'))  
+  irf_legend(hca,sprintf('dt = [%.4f %.4f %.4f %.4f] s',dt_timing),[0.98 0.1],'fontsize',12);
+end
+if 1 % EY
+  hca = irf_panel('EY');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.y.tlim(tint),bdryE2.y.tlim(tint),bdryE3.y.tlim(tint),bdryE4.y.tlim(tint)},'comp');
+  hca.YLabel.String = {'E_{N}','(nT)'};
+end
+if 1 % EY shifted
+  hca = irf_panel('EY shited');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.y.tlim(tint),bdryE2.y.tlim(tint),bdryE3.y.tlim(tint),bdryE4.y.tlim(tint)},'comp','dt',dt_timing);
+  hca.YLabel.String = {'E_{N}','(nT)'};
+  irf_legend(hca,sprintf('dt = [%.4f %.4f %.4f %.4f] s',dt_timing),[0.98 0.1],'fontsize',12);
+end
+if 1 % EZ
+  hca = irf_panel('EZ');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.z.tlim(tint),bdryE2.z.tlim(tint),bdryE3.z.tlim(tint),bdryE4.z.tlim(tint)},'comp');
+  hca.YLabel.String = {'E_{||}','(nT)'};
+end
+if 1 % EZ shifted
+  hca = irf_panel('EZ shited');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.z.tlim(tint),bdryE2.z.tlim(tint),bdryE3.z.tlim(tint),bdryE4.z.tlim(tint)},'comp','dt',dt_timing);
+  hca.YLabel.String = {'E_{||}','(nT)'};
+  irf_legend(hca,sprintf('dt = [%.4f %.4f %.4f %.4f] s',dt_timing),[0.98 0.1],'fontsize',12);
+end
+if 1 % B wave par
+  hca = irf_panel('B scm par');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gseB1scmpar.filt(phi_filt,0,[],3),gseB2scmpar.filt(phi_filt,0,[],3),gseB3scmpar.filt(phi_filt,0,[],3),gseB4scmpar.filt(phi_filt,0,[],3)},'comp');
+  irf_legend(hca,sprintf('f_{filt} = %g Hz',phi_filt),[0.98 0.90],'fontsize',12);
+  hca.YLabel.String = {'B_{SCM}','(nT)'};  
+end
+if 1 % B wave par shifted
+  hca = irf_panel('B scm par shifted');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gseB1scmpar.filt(phi_filt,0,[],3),gseB2scmpar.filt(phi_filt,0,[],3),gseB3scmpar.filt(phi_filt,0,[],3),gseB4scmpar.filt(phi_filt,0,[],3)},'comp','dt',dt_timing);
+  irf_legend(hca,sprintf('f_{filt} = %g Hz',phi_filt),[0.98 0.90],'fontsize',12);
+  hca.YLabel.String = {'B_{SCM}','(nT)'};  
+  irf_legend(hca,sprintf('dt = [%.4f %.4f %.4f %.4f] s',dt_timing),[0.98 0.1],'fontsize',12);
+end
+if 0 % Phi
+  hca = irf_panel('phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gsePhi1_filt,gsePhi2_filt,gsePhi3_filt,gsePhi4_filt},'comp');
+  hca.YLabel.String = {'Phi','(V)'};
+  set(hca,'ColorOrder',mms_colors('1234'))       
+  irf_legend(hca,sprintf('v_{timing} = %.0f x [%.2f %.2f %.2f] km/s',v_amplitude, v_direction),[0.98 0.9],'fontsize',12);
+  irf_legend(hca,sprintf('f_{filt} = %g Hz',phi_filt),[0.98 0.10],'fontsize',12);
+end
+if 0 % ne
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{ne1,ne2,ne3,ne4},'comp');
+  hca.YLabel.String = {'n_e','(cm^{-3})'};   
+end
+if 0 % sc Pot
+  hca = irf_panel('scPot');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{-1*scPot1,-1*scPot2,-1*scPot3,-1*scPot4},'comp');
+  hca.YLabel.String = {'-scPot','(V)'};  
+end
+
+irf_zoom(h,'x',tint)
+irf_zoom(h,'y')
+irf_plot_axis_align
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+legshift = 0; % the two sc configuration plots
+
+for ii = 1:npanels
+  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0])
+  h(ii+pshift).FontSize = 12;  
+  h(ii+pshift).YLabel.FontSize = 11;
+end
+
+%for ii = 1:3; h(ii).Visible = 'off'; end
+
+%h(10).YLim = 7*[-1 1];
+%h(11).YLim = 7*[-1 1];
+
+
 
 %% Quiver plot
 %tint = irf.tint('2017-07-11T22:33:28.00Z/2017-07-11T22:33:31.00Z');

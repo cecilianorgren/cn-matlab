@@ -1,5 +1,5 @@
 ic = 1:4;
-tint = irf.tint('2017-07-11T22:33:23.00Z/2017-07-11T22:34:45.00Z'); %20151112071854
+tint = irf.tint('2017-07-11T22:29:23.00Z/2017-07-11T22:35:23.00Z'); %20151112071854
 
 if 0
   %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
@@ -10,18 +10,15 @@ end
 mms.db_init('local_file_db','/Volumes/Nexus/data');
 db_info = datastore('mms_db');   
 
-%% Particle distributions: electrons and ions
-disp('Loading particle distributions...')
-c_eval('tic; [ePDist?,ePDist?error] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
-c_eval('tic; iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0])); toc',ic)
-
-%% Setting tint from ePDist1
-tint = ePDist1([1 ePDist1.length]).time;
-
 %% Make event directory
+if 0 % already done
 fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+else
+  dirName = '2017-07-11_223323';
+end
+
 [~,computername]=system('hostname');
 if strfind(computername,'ift0227887')
   eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
@@ -38,12 +35,14 @@ if 0 % not nessecary unless E needs to be recalibrated
   c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic);
   c_eval('defatt? = mms_removerepeatpnts(defatt?);',ic)
 end
+
 %% Magnetic field
 disp('Loading magnetic field...')
-c_eval('tic; dmpaB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
-c_eval('tic; gseB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
-c_eval('tic; gsmB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint); toc;',ic);
-c_eval('tic; gseB?scm=mms.db_get_ts(''mms?_scm_brst_l2_scb'',''mms?_scm_acb_gse_scb_brst_l2'',tint); toc',ic);
+c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
+c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
+c_eval('tic; gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint); toc;',ic);
+%c_eval('tic; gseB?scm = mms.db_get_ts(''mms?_scm_brst_l2_scb'',''mms?_scm_acb_gse_scb_brst_l2'',tint); toc',ic);
+c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
 
 %% Electric field
 disp('Loading electric field...')
@@ -69,10 +68,10 @@ c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_br
 c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l2'',tint); toc;',ic);
 
 %% Particle moments
-
 % Skymap distributions
-%c_eval('ePDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
-%c_eval('iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0]));',ic)
+disp('Loading skymaps...')
+c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
 
 % Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -100,3 +99,5 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 %c_eval('tic; gseVe?fast = mms.get_data(''Ve_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 %c_eval('tic; gseVi?fast = mms.get_data(''Vi_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
+
+disp('Done loading data.');

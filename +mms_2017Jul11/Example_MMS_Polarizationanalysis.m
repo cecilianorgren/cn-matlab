@@ -8,7 +8,7 @@
 ic = 1; % Spacecraft number
 
 Tint = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:08.00Z'); % EDR
-Tint = irf.tint('2017-07-11T22:33:28.00Z/2017-07-11T22:33:31.00Z'); % LH
+Tint = irf.tint('2017-07-11T22:33:18.00Z/2017-07-11T22:33:32.00Z'); % LH
 % 5 s takes 1 min
 
 %% Load data
@@ -73,13 +73,14 @@ vph(removepts) = NaN;
 vphperp(removepts) = NaN;
 
 %% Plot
+ic = 1;
 % Define blue-red colormap
 rr = interp1([1 64 128 192 256],[0.0  0.5 0.75 1.0 0.75],1:256);
 gg = interp1([1 64 128 192 256],[0.0  0.5 0.75 0.5 0.00],1:256);
 bb = interp1([1 64 128 192 256],[0.75 1.0 0.75 0.5 0.00],1:256);
 bgrcmap = [rr' gg' bb'];
 
-npanels = 11;
+npanels = 9;
 h=irf_plot(npanels,'newfigure'); 
 isub = 1;
 isspec=zeros(npanels,1);
@@ -94,7 +95,33 @@ if 1 % B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % ne
+if 1 % ePDist deflux omni
+  isub = isub + 1;
+  hca = irf_panel('e DEF omni');  
+  c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).deflux.omni.specrec,''log'');',ic)
+  hca.YLabel.String = {'E_e','(eV)'};  
+  hca.YScale = 'log';
+  hca.YTick = [1e1 1e2 1e3 1e4];
+  colormap(hca,'jet') 
+  hold(hca,'on')
+  c_eval('irf_plot(hca,gseTe?.trace/3,''k'');',ic)
+  hold(hca,'off')
+  hca.YLabel.String = {'E_e','(eV)'};  
+end
+if 1 % ePDist pa 64
+  hca = irf_panel('e PA e64 deflux lowe');  
+  eint = [100 30000];  
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,16).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  end
+   irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1])
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
+end
+if 0 % ne
   isub = isub + 1;
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('12'))
@@ -102,7 +129,7 @@ if 1 % ne
   hca.YLabel.String = {'n_e','(cm^{-3})'};
   set(hca,'ColorOrder',mms_colors('12'))    
 end
-if 1 % Ve  
+if 0 % Ve  
   isub = isub + 1;
   hca = irf_panel('Ve');
   set(hca,'ColorOrder',mms_colors('xyza'))
@@ -112,7 +139,7 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 1 % B scm
+if 0 % B scm
   isub = isub + 1;
   hca = irf_panel('B scm');
   set(hca,'ColorOrder',mms_colors('xyza'))
@@ -122,7 +149,7 @@ if 1 % B scm
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % B sum spectrogram
+if 0 % B sum spectrogram
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('Bsum');
   specrec=struct('t',time);
@@ -132,6 +159,69 @@ if 1 % B sum spectrogram
   specrec.p_label={'log_{10}B^{2}','nT^2 Hz^{-1}'};
   irf_spectrogram(hca,specrec,'log','donotfitcolorbarlabel');
   irf_legend(hca,'(a)',[0.99 0.98],'color','w','fontsize',12)
+  hold(hca,'on');
+  irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
+  hold(hca,'off');
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3]);
+  caxis(hca,[-8 -4])
+  ylabel(hca,'f (Hz)','fontsize',12);
+  colormap(hca,'jet');
+end
+if 0 % B par
+  isub = isub + 1;
+  hca = irf_panel('B vec par');
+  set(hca,'ColorOrder',mms_colors('1'))
+  c_eval('irf_plot(hca,{gseB?scmpar},''comp'');',ic)
+  hca.YLabel.String = {'B_{||}','(mV/m)'};
+  irf_zoom(hca,'y')
+end
+if 0 % B par spectrogram
+  isspec(isub) = 1; isub = isub + 1;
+  hca=irf_panel('Bpar');
+  specrec=struct('t',time);
+  specrec.f=frequency;
+  specrec.p=Bpar;
+  specrec.f_label='';
+  specrec.p_label={'log_{10}B_{||}^{2}','nT^2 Hz^{-1}'};
+  irf_spectrogram(hca,specrec,'log','donotfitcolorbarlabel');
+  irf_legend(hca,'(b)',[0.99 0.98],'color','w','fontsize',12)
+  hold(hca,'on');
+  irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
+  irf_plot(hca,ecfreq01,'linewidth',1.5,'color','w')
+  irf_plot(hca,fpe,'linewidth',1.5,'color','w')
+  hold(hca,'off');
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3]);
+  caxis(hca,[-8 -4])
+  ylabel(hca,'f (Hz)','fontsize',12);
+  colormap(hca,'jet');
+end
+if 0 % B perp
+  isub = isub + 1;
+  hca = irf_panel('B vec perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseB?scmperp.x.tlim(tint),gseB?scmperp.y.tlim(tint),gseB?scmperp.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'B_{\perp}','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 0 % B per spectrogram
+  %%
+  isspec(isub) = 1; isub = isub + 1;
+  hca=irf_panel('Bper');
+  specrec=struct('t',time);
+  specrec.f=frequency;
+  specrec.p=Bperp;
+  specrec.f_label='';
+  specrec.p_label={'log_{10}B_{\perp}^{2}','nT^2 Hz^{-1}'};
+  irf_spectrogram(hca,specrec,'log','donotfitcolorbarlabel');
+  irf_legend(hca,'(b)',[0.99 0.98],'color','w','fontsize',12)
   hold(hca,'on');
   irf_plot(hca,ecfreq,'linewidth',1.5,'color','w')
   irf_plot(hca,ecfreq05,'linewidth',1.5,'color','w')
