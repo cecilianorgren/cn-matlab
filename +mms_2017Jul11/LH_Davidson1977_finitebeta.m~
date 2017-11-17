@@ -147,6 +147,7 @@ D = mms_2017Jul11.D_Davidson1977(w,k,vte,wce,wpe,vti,wci,wpi,vE,vB,vn,vT);
 %%
 vE = vE-0*vB;
   
+%
 % Observed wave phase velocity and wavelength
 v_timing = 1.34e+03*[-0.85 -0.48  0.24];
 v_amplitude = sqrt(sum(v_timing.^2));
@@ -154,7 +155,63 @@ l_obs = 100e3;
 k_obs = 2*pi/l_obs;
 roek_obs = k_obs*roe;
 
+% Dispersion relation
+Nfad = 50;
+xi = @(w,k,vd,vt) (w-k*vd)/(k*vt);
+b = @(k,vt,wc) k.^2*vt^2/2/wc^2;
 
+% v_delta: Davidson1975, eq. 7
+if 1
+  % only Ln
+  v_delta_Ln = @(k) ...
+    + 0.5*vte.^2/wce*besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)).*(...
+        +1/Ln);
+  % Ln and LT
+  v_delta_LnLT = @(k) ...
+    + 0.5*vte.^2/wce*besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)).*(...
+        +1/Ln...
+        -1/LT*b(k,vte,wce).*(1-besseli(1,b(k,vte,wce))./besseli(0,b(k,vte,wce))));
+  % Ln LT and LB
+  v_delta_LnLBLT = @(k) ...
+    + 0.5*vte.^2/wce*besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)).*(...
+        +1/Ln...
+        -1/LB*(1-b(k,vte,wce).*(1-besseli(1,b(k,vte,wce))./besseli(0,b(k,vte,wce))))...
+        -1/LT*b(k,vte,wce).*(1-besseli(1,b(k,vte,wce))./besseli(0,b(k,vte,wce))));
+   % only LB   
+   v_delta_LB = @(k) ...
+    + 0.5*vte.^2/wce*besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)).*(...        
+        -1/LB*(1-b(k,vte,wce).*(1-besseli(1,b(k,vte,wce))./besseli(0,b(k,vte,wce)))));   
+  % only LT
+  v_delta_LT = @(k) ...
+    + 0.5*vte.^2/wce*besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)).*(...        
+        -1/LT*b(k,vte,wce).*(1-besseli(1,b(k,vte,wce))./besseli(0,b(k,vte,wce))));
+  
+  if plot_v_delta
+    nk = 80; % just for plotting v_delta, changed below for the dispersion solver
+    kvec = 1*linspace(1e-3,1,nk)/roe; 
+  
+    figure(77)    
+    hca = subplot(1,1,1);    
+    plot(hca,...
+         kvec*roe,v_delta_Ln(kvec)*1e-3,...
+         kvec*roe,v_delta_LT(kvec)*1e-3,...
+         kvec*roe,v_delta_LB(kvec)*1e-3,...
+         kvec*roe,v_delta_LnLT(kvec)*1e-3,...
+         kvec*roe,v_delta_LnLBLT(kvec)*1e-3)
+    legend(hca,'Ln','LT','LB','Ln,LT','Ln,LB,LT')
+    hca.XLabel.String = 'k\rho_e';
+    hca.YLabel.String = 'v_\Delta (km/s)';
+  end
+  v_delta = v_delta_LnLBLT;
+end
+
+
+%psi_i = @(w,k,vd,vt,wp) 2*wp^2/(k^2*vt^2)*(1 + i*sqrt(pi)*xi(w,k,vd,vt).*faddeeva(xi(w,k,vd,vt),Nfad));
+psi_i = @(w,k,vt,wp,wc) 2*wp^2./(k.^2)/(vti^2).*(1+w./k/vti.*i*sqrt(pi).*faddeeva(w./k/vti,Nfad));
+psi_e = @(w,k,vt,wp,wc) (wp^2/wc^2).*(1-besseli(0,b(k,vt,wc)).*exp(-b(k,vt,wc)))./b(k,vt,wc) + ...
+                           2*wp^2./k.^2/vt^2.*k.*v_delta(k)./(w-k*vE);
+
+D_ = @(w,k) 1 + psi_i(w,k,vti,wpi) + psi_e(w,k,vte,wpe,wce);
 
 %mms_2017Jul11.LH_Davidson1975_plot_dispersion_properties;
 
@@ -243,20 +300,17 @@ for nn = 2:length(kvec)
   wrv = linspace(wr_(nn-1)+gradr-frange,wr_(nn-1)+gradr+frange,nf+1);
   wiv = linspace(wi_(nn-1)+gradi-frange,wi_(nn-1)+gradi+frange,nf);
   %if kvec(nn)*Ld<0.2; wiv(wiv<0)=[]; end
-  isneg = find(wrv<0);
-  wrv(isneg)=[];
-  wiv(isneg)=[];
+  wrv(wrv<0)=0;
+  wiv(wrv<0)=0;
 
   [wr,wi] = meshgrid(wrv,wiv);
   wc = wr+i*wi; 
   wc = wc*2;
   
   if 1 % compare Davidson1975 and Davidson1977
-    D75 = mms_2017Jul11.D_Davidson1975(wc,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT);
-    %D77 = mms_2017Jul11.D_Davidson1977(wc,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,vB,vn,vT);
-    D77 = D75;
-    z75 = abs(D75);
-    z77 = abs(D77);
+    D = mms_2017Jul11.D_Davidson1977(wc,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,vB,vn,vT);
+    z = abs(D);
+    z_ = abs(D_(wc,kvec(nn)));
     
     figure(13)
     nrows = 3;    
@@ -268,62 +322,64 @@ for nn = 2:length(kvec)
     isub = 1;
     if 1 % Davdison1975     
       hca = h2(isub); isub = isub + 1;
-      pcolor(hca,wrv/wlh,wiv/wlh,abs(D75)); shading(hca,'flat');
-      hca.Title.String = '1975, abs(D)';
+      pcolor(hca,wrv/wlh,wiv/wlh,imag(D_(wc,kvec(nn)))); shading(hca,'flat');
+      hca.Title.String = '1975';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z75)) max(max(z75))];
+      hca.CLim = [min(min(z_)) max(max(z_))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
     if 1 % Davdison1977, finite beta
       hca = h2(isub); isub = isub + 1;
-      pcolor(hca,wrv/wlh,wiv/wlh,abs(D77)); shading(hca,'flat');
-      hca.Title.String = '1977, finite beta, abs(D)';
+      pcolor(hca,wrv/wlh,wiv/wlh,imag(D)); shading(hca,'flat');
+      hca.Title.String = '1977, finite beta';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z77)) max(max(z77))];
+      hca.CLim = [min(min(z)) max(max(z))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
     if 1 % Davdison1975     
       hca = h2(isub); isub = isub + 1;
-      pcolor(hca,wrv/wlh,wiv/wlh,real(D75)); shading(hca,'flat');
-      hca.Title.String = '1975, real(D)';
+      pcolor(hca,wrv/wlh,wiv/wlh,imag(D_(wc,kvec(nn)))); shading(hca,'flat');
+      hca.Title.String = '1975';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z75)) max(max(z75))];
+      hca.CLim = [min(min(z_)) max(max(z_))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
     if 1 % Davdison1977, finite beta
       hca = h2(isub); isub = isub + 1;
-      pcolor(hca,wrv/wlh,wiv/wlh,real(D77)); shading(hca,'flat');
-      hca.Title.String = '1977, finite beta, real(D)';
+      pcolor(hca,wrv/wlh,wiv/wlh,imag(D)); shading(hca,'flat');
+      hca.Title.String = '1977, finite beta';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z77)) max(max(z77))];
+      hca.CLim = [min(min(z)) max(max(z))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
     if 1 % Davdison1975     
       hca = h2(isub); isub = isub + 1;
-      pcolor(hca,wrv/wlh,wiv/wlh,imag(D75)); shading(hca,'flat');
-      hca.Title.String = '1975, imag(D)';
+      pcolor(hca,wrv/wlh,wiv/wlh,imag(D_(wc,kvec(nn)))); shading(hca,'flat');
+      hca.Title.String = '1975';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z75)) max(max(z75))];
+      hca.CLim = [min(min(z_)) max(max(z_))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
     if 1 % Davdison1977, finite beta
       hca = h2(isub); isub = isub + 1;
-      pcolor(hca,wrv/wlh,wiv/wlh,imag(D77)); shading(hca,'flat');
-      hca.Title.String = '1977, finite beta, imag(D)';
+      pcolor(hca,wrv/wlh,wiv/wlh,imag(D)); shading(hca,'flat');
+      hca.Title.String = '1977, finite beta';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z77)) max(max(z77))];
+      hca.CLim = [min(min(z)) max(max(z))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
-    %pause
+    pause
   end
-  z = z75;
-  
+  z = z_;
+  ze = abs(psi_e(wc,kvec(nn),vte,wpe,wce));
+  zi = abs(psi_i(wc,kvec(nn),vti,wpi,wci));
+  %z=ze;
   residue = min(min(z));
   [q r] = find(min(min(z))==z);
   wr_(nn) = wrv(r);
