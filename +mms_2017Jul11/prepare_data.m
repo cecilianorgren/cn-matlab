@@ -228,6 +228,12 @@ ic=1:4;
 % coordLabels = {'L','M','N'};
 % lmn = [L;M;N];
 
+dt_timing = [0.0000   0.0141   0.0104   0.0078];
+v_timing = 1.34e+03*[-0.85 -0.48  0.24];
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+
 v_direction = irf_norm(v_timing);
 tintLH = irf.tint('2017-07-11T22:33:28.60Z/2017-07-11T22:33:29.30Z'); % LH wave packet
 newz = irf_norm(mean(gseB1.tlim(tintLH).data,1));
@@ -244,6 +250,7 @@ disp(sprintf('L = [%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',
 % Rotate data
 c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';')
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';')
+c_eval('mvaB?scm = gseB?scm*lmn''; mvaB?scm.name = ''B LMN'';')
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';')
 c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';')
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';')
@@ -320,6 +327,7 @@ c_eval('B? = mvaB?.resample(mvaB1);',1:4)
 curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
 
 %% Assume normal electric fields are directly proportional to ion pressure gradient at boundary
+c_eval('gseGradPi?_fromE = gseE?.resample(ne?)*ne?*units.e*1e-3*1e6*1e9*1e3; gseGradPi?_fromE.units = ''nPa/km'';',ic)
 c_eval('Pi?perp = irf.ts_scalar(facPi?.time,(facPi?.yy.data+facPi?.zz.data)/2);',ic)
 c_eval('Lp?= Pi?perp/ne?.resample(Pi?perp)/gseE?perp.abs/units.e*1e-9*1e-6*1e3;',ic)
 c_eval('gseE?perp_filt = gseE?perp.filt(0,3,[],3);',ic)

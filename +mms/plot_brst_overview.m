@@ -58,7 +58,7 @@ tint = irf.tint('2017-06-11T17:43:23.00Z',1); % 20170611174323
 % tint = irf.tint('2017-07-03T22:05:33.00Z',1); % 20170703220533
 
 tint = irf.tint('2015-10-16T13:06:00.00Z',60); % 20170703220533
-
+tint = irf.tint('2017-06-17T20:28:00.00Z',60);
 
 % Set datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -71,13 +71,14 @@ c_eval('tic; ePDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-di
 c_eval('tic; iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0])); toc',ic)
 
 % Setting tint from ePDist1
-tint = [ePDist1([1 ePDist1.length]).time];
+tint = ePDist1([1 ePDist1.length]).time;
 
 % Make event directory
 fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
+%eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
+eventPath = ['/Users/cno062/Research/Events/' dirName '/']; 
 mkdir(eventPath)
     
 % Magnetic field
@@ -156,7 +157,7 @@ c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,13); ePitch? = ePitch?.convertto(''
 npanels = 10;
 cmap = 'jet';
 h = irf_plot(npanels);
-ic = 2;
+ic = 1;
 iisub = 0;
 cmap = colormap('jet');
 

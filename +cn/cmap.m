@@ -3,8 +3,15 @@ function out = cmap(map)
 %   Choice can be 'islands', 'pinkpurple', 'bluered', 'bluered2',
 %   'bluered3','fall' or whatever (then the default is returned).
 
-path = '/Users/Cecilia/MATLAB/colormaps/';
+%path = '/Users/Cecilia/MATLAB/colormaps/';
+path = datastore('colormaps','path');
 switch map
+    case 'white_jet'
+        out = load([path 'white_jet.mat']);
+        out = out.cmap;
+    case 'white_parula'
+        out = load([path 'white_parula.mat']);
+        out = out.cmap;
     case 'discrete_jet'
         out = load([path 'discrete_jet.mat']);
         out = out.cmap;

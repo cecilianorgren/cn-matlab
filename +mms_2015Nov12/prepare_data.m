@@ -33,12 +33,12 @@ c_eval('dslE?_new = dslE?_detrend; dslE?_new.name = ''E new'';',ic)
 
 c_eval('[dslE?par_new,dslE?perp_new] = irf_dec_parperp(dmpaB?,dslE?_new); dslE?par_new.name = ''E par''; dslE?perp_new.name = ''E perp'';',ic)
 
-[~,computername]=system('hostname');
-if strfind(computername,'ift0227887')
+%[~,computername]=system('hostname');
+%if strfind(computername,'ift0227887')
   load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
-else
-  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
-end
+%else
+%  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
+%end
 
 c_eval('gseE?_new = mms_dsl2gse(dslE?_new,defatt?);',ic)
 c_eval('[gseE?par_new,gseE?perp_new] = irf_dec_parperp(gseB?,gseE?_new); gseE?par_new.name = ''E par''; gseE?perp_new.name = ''E perp'';',ic)
@@ -48,8 +48,8 @@ c_eval('gseEVexB?_new = gseE?_new.resample(gseVexB?.time) + gseVexB?; gseEVexB?_
 
 gseAvE_new = 0.25*(gseE1_new + gseE2_new.resample(gseE1_new) + gseE3_new.resample(gseE1_new) + gseE4_new.resample(gseE1_new)); gseAvE_new.name = 'av E new';
 %gseAvVexB = 0.25*(gseVexB1 + gseVexB2.resample(gseVexB1) + gseVexB3.resample(gseVexB1) + gseVexB4.resample(gseVexB1)); gseVexB.name = 'av Ve new';
+c_eval('gseE?_old = gseE?; gseE? = gseE?_new;',ic)
 
-%%
 % Current from magnetic field (curlometer) 
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
 [Jcurl,divBbrst,Bbrst,JxBbrst,divTshearbrst,divPbbrst] = c_4_j('gseR?brsttime','gseB?');
@@ -63,13 +63,30 @@ c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; 
 
-% Pressure and temperature divergences
-gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km';
-gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
-gseGradTe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';
-gseGradTi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';
-gseGradNe = c_4_grad('gseR?','ne?','grad');
-gseGradNi = c_4_grad('gseR?','ni?','grad');
+%% Pressure and temperature divergences
+gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km';  gseGradPe.name = 'div Pe';
+gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';  gseGradPi.name = 'div Pi';
+gseGradTe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';  gseGradTe.name = 'div Te';
+gseGradTi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';  gseGradTi.name = 'div Ti';
+gseGradNe = c_4_grad('gseR?','ne?','grad');  gseGradNe.units = 'cc/km';  gseGradNe.name = 'grad Ne';
+gseGradNi = c_4_grad('gseR?','ni?','grad');  gseGradNi.units = 'cc/km';  gseGradNi.name = 'grad Ni';
+
+avNe = (ne1+ne2.resample(ne1.time)+ne3.resample(ne1.time)+ne4.resample(ne1.time))/4; avNe.name = '<ne>';
+avTe = (gseTe1.trace/3+gseTe2.trace.resample(gseTe1.time)/3+gseTe3.trace.resample(gseTe1.time)/3+gseTe4.trace.resample(gseTe1.time)/3)/4;  avTe.name = '<Te>';
+avPe = (gsePe1.trace/3+gsePe2.trace.resample(gsePe1.time)/3+gsePe3.trace.resample(gsePe1.time)/3+gsePe4.trace.resample(gsePe1.time)/3)/4;  avPe.name = '<Pe>';
+avNi = (ni1+ni2.resample(ni1.time)+ni3.resample(ni1.time)+ni4.resample(ni1.time))/4; avNi.name = '<ni>';
+avTi = (gseTi1.trace/3+gseTi2.trace.resample(gseTi1.time)/3+gseTi3.trace.resample(gseTi1.time)/3+gseTi4.trace.resample(gseTi1.time)/3)/4;  avTi.name = '<Ti>';
+avPi = (gsePi1.trace/3+gsePi2.trace.resample(gsePi1.time)/3+gsePi3.trace.resample(gsePi1.time)/3+gsePi4.trace.resample(gsePi1.time)/3)/4;  avPi.name = '<Pi>';
+
+epsNe = gseGradNe/avNe; epsNe.name = 'grad(ne)/ne'; epsNe.units = '1/km';
+epsTe = gseGradTe/avTe; epsTe.name = 'grad(Te)/Te'; epsTe.units = '1/km';
+epsPe = gseGradPe/avPe; epsPe.name = 'grad(Pe)/Pe'; epsPe.units = '1/km';
+epsNi = gseGradNi/avNi; epsNi.name = 'grad(ni)/ni'; epsNi.units = '1/km';
+epsTi = gseGradTi/avTi; epsTi.name = 'grad(Ti)/Ti'; epsTi.units = '1/km';
+epsPi = gseGradPi/avPi; epsPi.name = 'grad(Pi)/Pi'; epsPi.units = '1/km';
+epsTiNe = avTi.resample(gseGradPe)*gseGradNe/avNe; epsPi.name = 'grad(Pi)/Pi'; epsPi.units = '1/km';
+
+%%
 
 % Electron pressure divergence with diagonal terms set to zero
 c_eval('gsePe?_offdial = gsePe?; gsePe?_offdial.data(:,1,1) = 0; gsePe?_offdial.data(:,2,2) = 0; gsePe?_offdial.data(:,3,3) = 0;',ic)
@@ -184,8 +201,12 @@ c_eval('Ld? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Ld''); Ld? = irf.ts
 c_eval('re? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Roe''); re? = irf.ts_scalar(gseB?.time,re?)*1e-3; re?.units = ''km''; re?.name=''e gyroradius'';',ic)
 c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? = irf.ts_scalar(gseB?.time,rp?)*1e-3; rp?.units = ''km''; re?.name=''p gyroradius'';',ic)
 
-c_eval('beta? = (re?/Le?).^2;',ic)
+%c_eval('beta?_ = (re?/Le?).^2;',ic)
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
+c_eval('PP? = gsePi?.trace/3 + gsePe?.resample(gsePi?).trace/3; PP?.name = ''Plasma pressure''; PB?.units =''nPa'';',ic)
+c_eval('betae? = gsePe?.trace/3/PB?.resample(gsePe?);',ic)
+c_eval('betai? = gsePi?.trace/3/PB?.resample(gsePi?);',ic)
+c_eval('beta? = PP?/PB?.resample(PP?);',ic)
 
 % JxB
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?));',ic)
@@ -260,11 +281,17 @@ c_eval('wavVe?perp.f_units = ''Hz''; wavVe?perp.f_label = ''f [Hz]''; wavVe?perp
 
 
 %% Average properties
-avNe = (ne1+ne2.resample(ne1.time)+ne3.resample(ne1.time)+ne4.resample(ne1.time))/4; avNe.name = '<ne>';
-gseAvE = (gseE1+gseE2.resample(gseE1.time)+gseE3.resample(gseE1.time)+gseE4.resample(gseE1.time))/4; 
+
+gseAvE = (gseE1+gseE2.resample(gseE1.time)+gseE3.resample(gseE1.time)+gseE4.resample(gseE1.time))/4; gseAvE.name = 'avg E (gse)';
+gseAvE_old = (gseE1_old+gseE2_old.resample(gseE1.time)+gseE3_old.resample(gseE1.time)+gseE4_old.resample(gseE1.time))/4; gseAvE_old.name = 'avg E (gse)';
+
+avPB = (PB1 + PB2.resample(PB1) + PB3.resample(PB1) + PB4.resample(PB1))/4;
+
 gseAvVe = (gseVe1+gseVe2.resample(gseVe1.time)+gseVe3.resample(gseVe1.time)+gseVe4.resample(gseVe1.time))/4; 
 gseAvVeperp = (gseVe1perp+gseVe2perp.resample(gseVe1perp.time)+gseVe3perp.resample(gseVe1perp.time)+gseVe4perp.resample(gseVe1perp.time))/4; 
 gseAvVi = (gseVi1+gseVi2.resample(gseVi1.time)+gseVi3.resample(gseVi1.time)+gseVi4.resample(gseVi1.time))/4; 
+avTi = (gseTi1.trace/3+gseTi2.trace.resample(gseTi1.time)/3+gseTi3.trace.resample(gseTi1.time)/3+gseTi4.trace.resample(gseTi1.time)/3)/4; 
+avPi = (gsePi1.trace/3+gsePi2.trace.resample(gsePi1.time)/3+gsePi3.trace.resample(gsePi1.time)/3+gsePi4.trace.resample(gsePi1.time)/3)/4; 
 gseAvB = (gseB1+gseB2.resample(gseB1.time)+gseB3.resample(gseB1.time)+gseB4.resample(gseB1.time))/4; 
 gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; gseAvJ.units = gseJ1.units;
 gseAvVExB = (gseVExB1+gseVExB2.resample(gseVExB1.time)+gseVExB3.resample(gseVExB1.time)+gseVExB4.resample(gseVExB1.time))/4; 
@@ -605,6 +632,18 @@ c_eval('R? = mvaR?.resample(mvaB1);',1:4)
 c_eval('B? = mvaB?.resample(mvaB1);',1:4)
 [mvaCurvB,BB]=c_4_grad('R?','B?','curvature'); mvaCurvB.name = 'curv B'; mvaCurvB.units = '1/km';
 curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
+
+c_eval('R? = gseR?.resample(ne?);',1:4)
+c_eval('n? = ne?.resample(ne?);',1:4)
+[gseGradNe,NN]=c_4_grad('R?','n?','grad'); gseGradNe.name = 'grad ne'; gseGradNe.units = '1/km';
+gseEfromdivPi = units.kB*avTi.resample(gseGradNe)*gseGradNe/units.e*1e3; gseEfromdivPi.units = 'mV/m'; gseEfromdivPi.name = 'E (divPi)';
+
+
+c_eval('R? = gseR?.resample(ne?);',1:4)
+c_eval('Pi? = gsePi?.resample(ne?).trace/3;',1:4)
+[gseGradPi,NN]=c_4_grad('R?','Pi?','grad'); gseGradPi.name = 'grad Pi'; gseGradPi.units = '1/km';
+gseEfromdivPi_ = avPi.resample(gseGradPi)*gseGradPi/units.e*1e3; gseEfromdivPi.units = 'mV/m'; gseEfromdivPi.name = 'E (divPi)';
+
 
 % c_eval('R? = mvaR?.resample(facPe1);',1:4)
 % c_eval('facPdiff? = facPe?.xx-0.5*(facPe?.yy+facPe?.zz); facPdiff? = facPdiff?.resample(facPe1);',1:4)

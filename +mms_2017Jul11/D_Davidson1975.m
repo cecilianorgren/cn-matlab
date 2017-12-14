@@ -1,4 +1,4 @@
-function D = D_Davidson1975(w,k,vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT)
+function Dout = D_Davidson1975(w,k,vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT)
 
 % Dispersion relation
 Nfad = 50;
@@ -30,12 +30,16 @@ if 1
     + 0.5*vte.^2/wce*besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)).*(...        
         -1/LT*b(k,vte,wce).*(1-besseli(1,b(k,vte,wce))./besseli(0,b(k,vte,wce))));
   
-  v_delta = v_delta_LnLBLT;
+  v_delta = @(k) -1*v_delta_LnLBLT(k);
 end
 
 psi_i = @(w,k,vt,wp,wc) 2*wp^2./(k.^2)/(vti^2).*(1+w./k/vti.*i*sqrt(pi).*faddeeva(w./k/vti,Nfad));
 psi_e = @(w,k,vt,wp,wc) (wp^2/wc^2).*(1-besseli(0,b(k,vt,wc)).*exp(-b(k,vt,wc)))./b(k,vt,wc) + ...
-                           2*wp^2./k.^2/vt^2.*k.*v_delta(k)./(w-k*vE);
+                           + 2*wp^2./k.^2/vt^2.*k.*v_delta(k)./(w-k*vE);
+D = @(w,k) 1 + psi_i(w,k,vti,wpi) + psi_e(w,k,vte,wpe,wce);
 
-D_ = @(w,k) 1 + psi_i(w,k,vti,wpi) + psi_e(w,k,vte,wpe,wce);
-D = D_(w,k);
+Dout = D(w,k);
+
+%output_args=[real(D), imag(D)];
+
+%fprintf('Re(D) = 1 + %g \n',(wpe^2/wce^2).*(1-besseli(0,b(k,vte,wce)).*exp(-b(k,vte,wce)))./b(k,vte,wce))

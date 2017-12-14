@@ -9,8 +9,8 @@ units = irf_units;
 n = 0.07e6;
 ne = n;
 ni = n;
-Te = 2000; Te_K = Te*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
-Ti = 4000; Ti_K = Ti*units.eV/units.kB; % use perpendicular temperature -> diamagnetic drift
+Te = 500; Te_K = Te*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
+Ti = 5000; Ti_K = Ti*units.eV/units.kB; % use perpendicular temperature -> diamagnetic drift
 B = 10e-9;
  
 % new better ion temperature using gsePi and ne
@@ -70,10 +70,8 @@ disp('----------------------------------------------')
 fprintf('B = %g nT \nn = %g cc \nTe = %g eV \nTi = %g eV \nbeta = %g \nbeta_i = %g \nbeta_e = %g\nvti = %g km/s\n\n',B*1e9,n*1e-6,Te,Ti,beta,betai,betae,vti*1e-3)
 fprintf('Ln = %g km \nLB = %g km \nLT = %g km \n\n',Ln*1e-3,LB*1e-3,LT*1e-3)
 
-% magnetic field gradient drift
+% gradient drifts
 vB = 1/LB*vte^2/2/wce;
-
-% 
 vn = -1/Ln*vte^2/2/wce;
 vT = -1/LT*vte^2/2/wce;
 
@@ -122,6 +120,7 @@ fprintf('0.5*betae*LB/LT = %g \n',0.5*betae*LB/LT)
 
 %% Examine dispersion relation
 % besseli Modified Bessel function of the first kind
+if 0
 J0p = @(x) (s*besselj(0, x))./x - besselj(0 + 1, x); % x is mu = k*v/wce
 J0 = @(x) besselj(0, x); % x is mu = k*v/wce
 A = @(w,k,v) w - k*vE - k*vn - k*vT*(1-v.^2/vte^2);
@@ -143,6 +142,7 @@ O3 = trapz(O3_(wtot,k,vvec),vvec);
 O1, O2, O2
 
 D = mms_2017Jul11.D_Davidson1977(w,k,vte,wce,wpe,vti,wci,wpi,vE,vB,vn,vT);
+end
 
 %%
 vE = vE-0*vB;
@@ -159,8 +159,8 @@ roek_obs = k_obs*roe;
 %mms_2017Jul11.LH_Davidson1975_plot_dispersion_properties;
 
 % Dispersion solver
-nk = 100;
-kvec = 0.5*linspace(1e-2,1,nk)/roe;
+nk = 50;
+kvec = 1*linspace(1e-2,2,nk)/roe;
 dk = kvec(2)-kvec(1);
 wia = nan(1,length(kvec));
 wga = nan(1,length(kvec));
@@ -172,13 +172,21 @@ wga = nan(1,length(kvec));
 % w/k = vph -> wrange >~vph*k
 
 vguess = 1*vE;
-wapprox = kvec(1)*vguess;wlh;kvec(1)*vguess;
+wapprox = 1*kvec(1)*vguess;%wlh;kvec(1)*vguess;
 wrvec = linspace(0,1,1501)*wapprox;
 wivec = linspace(0,1,1501)*wapprox;
 [wr,wi] = meshgrid(wrvec,wivec);
 wmat = wr+i*wi;
 
-z = abs(D_(wmat,kvec(1))); 
+do75 = 0;
+D75 = mms_2017Jul11.D_Davidson1975(wmat,kvec(1),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT);
+D77 = mms_2017Jul11.D_Davidson1977(wmat,kvec(1),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT);
+if do75
+  D_ = D75;
+else
+  D_ = D77;
+end
+z = abs(D_); 
 %min(min(z));
 %pcolor(abs(z)); shading flat
 [q r] = find(min(min(z))==z);
@@ -222,39 +230,47 @@ colors = mms_colors('matlab');
 if exist('hl','var'); delete(hl); end
 hl = plot(h(2),kvec([1 end])*roe,v_amplitude*[1 1]...,'color',colors(1,:)...
               ,k_obs*roe,v_amplitude,'*'...%,'color',colors(2,:)...
-              ,kvec*roe,v_delta(kvec)*1e-3...%,'color',colors(3,:)...
+              ...%,kvec*roe,v_delta(kvec)*1e-3...%,'color',colors(3,:)...
               ,kvec([1 end])*roe,vE*1e-3*[1 1]...%,'color',colors(4,:)...
           );        
 
 hl(1).Color = colors(1,:);
 hl(2).Color = colors(1,:);
 hl(3).Color = colors(2,:);
-hl(4).Color = colors(3,:);
+%hl(4).Color = colors(3,:);
 
-legend(hl,'vph obs','k obs','v\Delta','vE')        
+legend(hl,'vph obs','k obs','vE','v\Delta')        
 
 colors = mms_colors('matlab');
+
+x_real_store = [];
+x_imag_store = [];
+x_real_store(1) = 0;
+x_imag_store(1) = 0;
+
 frange = 1.0*wapprox;
 for nn = 2:length(kvec)
   frange = vguess*dk*2;
   %linear search for zero point around linearly interpolated guess. frange
   %may need to be changed depending on mode. Large frange decreases accuracy
-  nf = 201;
-  wrv = linspace(wr_(nn-1)+gradr-frange,wr_(nn-1)+gradr+frange,nf+1);
-  wiv = linspace(wi_(nn-1)+gradi-frange,wi_(nn-1)+gradi+frange,nf);
+  nf = 401;
+%   wrv = linspace(wr_(nn-1)+gradr-frange,wr_(nn-1)+gradr+frange,nf+1);
+%   wiv = linspace(wi_(nn-1)+gradi-frange,wi_(nn-1)+gradi+frange,nf);
+  wrv = linspace(0,5*wlh,nf);
+  wiv = linspace(0,2*wlh,nf);
   %if kvec(nn)*Ld<0.2; wiv(wiv<0)=[]; end
   isneg = find(wrv<0);
   wrv(isneg)=[];
-  wiv(isneg)=[];
+  %wiv(isneg)=[];
 
   [wr,wi] = meshgrid(wrv,wiv);
   wc = wr+i*wi; 
-  wc = wc*2;
+  wc = wc;
   
   if 1 % compare Davidson1975 and Davidson1977
     D75 = mms_2017Jul11.D_Davidson1975(wc,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT);
-    %D77 = mms_2017Jul11.D_Davidson1977(wc,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,vB,vn,vT);
-    D77 = D75;
+    D77 = mms_2017Jul11.D_Davidson1977(wc,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT);
+    %D77 = D75;
     z75 = abs(D75);
     z77 = abs(D77);
     
@@ -280,7 +296,7 @@ for nn = 2:length(kvec)
       pcolor(hca,wrv/wlh,wiv/wlh,abs(D77)); shading(hca,'flat');
       hca.Title.String = '1977, finite beta, abs(D)';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z77)) max(max(z77))];
+      hca.CLim = [min(min(z75)) max(max(z75))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
@@ -289,7 +305,7 @@ for nn = 2:length(kvec)
       pcolor(hca,wrv/wlh,wiv/wlh,real(D75)); shading(hca,'flat');
       hca.Title.String = '1975, real(D)';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z75)) max(max(z75))];
+      hca.CLim = [min(min(real(D75))) max(max(real(D75)))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
@@ -298,7 +314,7 @@ for nn = 2:length(kvec)
       pcolor(hca,wrv/wlh,wiv/wlh,real(D77)); shading(hca,'flat');
       hca.Title.String = '1977, finite beta, real(D)';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z77)) max(max(z77))];
+      hca.CLim = [min(min(real(D77))) max(max(real(D77)))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
@@ -307,7 +323,7 @@ for nn = 2:length(kvec)
       pcolor(hca,wrv/wlh,wiv/wlh,imag(D75)); shading(hca,'flat');
       hca.Title.String = '1975, imag(D)';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z75)) max(max(z75))];
+      hca.CLim = [min(min(imag(D75))) max(max(imag(D75)))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
@@ -316,20 +332,37 @@ for nn = 2:length(kvec)
       pcolor(hca,wrv/wlh,wiv/wlh,imag(D77)); shading(hca,'flat');
       hca.Title.String = '1977, finite beta, imag(D)';
       colorbar('peer',hca)
-      hca.CLim = [min(min(z77)) max(max(z77))];
+      hca.CLim = [min(min(imag(D75))) max(max(imag(D75)))];
       hca.YLabel.String = 'w_i/wlh';
       hca.XLabel.String = 'w_r/wlh';
     end
     %pause
   end
-  z = z75;
+  if do75
+    z = z75;
+  else
+    z = z77;
+  end  
   
   residue = min(min(z));
   [q r] = find(min(min(z))==z);
-  wr_(nn) = wrv(r);
-  wi_(nn) = wiv(q);
-
-  wnorm = wlh; wpi; 
+  wr_(nn) = wrv(r(1));
+  wi_(nn) = wiv(q(1));
+  
+  
+  af = @(temp) mms_2017Jul11.D_Davidson1977(temp,kvec(nn),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT);
+  %[x,FVAL,EXITFLAG] = fsolve(af,[x_real_store(end) x_imag_store(end)], optimset('GradObj','on','display','off'));
+  %[x,FVAL,EXITFLAG] = fsolve(af,[wr_(nn)  1*wi_(nn)], optimset('GradObj','on','display','off'));
+  %[x,FVAL,EXITFLAG] = fsolve(af,wr_(nn)+i*wi_(nn), optimset('GradObj','on','display','off'));
+  [x,FVAL,EXITFLAG] = fsolve(af,wlh*[1+1*i]*linspace(0,1,10), optimset('GradObj','on','display','off'));
+  x
+  FVAL
+  minFVAL = min(abs(FVAL));
+  iminFVAL = find(abs(FVAL)==minFVAL);
+  x_real_store = [x_real_store real(x(iminFVAL))]; 
+  x_imag_store = [x_imag_store imag(x(iminFVAL))];
+  
+  wnorm = wlh;
   if 1
     figure(17)
     hca = h(1);
@@ -342,8 +375,12 @@ for nn = 2:length(kvec)
       color2 = colors(2,:);
     end
     plot(hca,kvec(nn)*roe,wr_(nn)/wnorm,'.b',kvec(nn)*roe,wi_(nn)/wnorm,'.r')
+    plot(hca,kvec(nn)*roe,real(x)/wnorm,'+b',kvec(nn)*roe,imag(x)/wnorm,'+r')
+    plot(hca,kvec(nn)*roe,x_real_store(nn)/wnorm,'+b',kvec(nn)*roe,x_imag_store(nn)/wnorm,'+r')
     hca.XLabel.String = 'k*\rho_e';
     hca.YLabel.String = '\gamma/\omega_{LH}, \omega/\omega_{LH}';
+    hca.YLim = [-2 2];
+    %hca.YScale = 'log';
     %errorbar(h(1),kvec(nn)*roe,wrv(fix(nf/2))/wnorm,frange/wnorm)
     %errorbar(h(1),kvec(nn)*roe,wiv(fix(nf/2))/wnorm,frange/wnorm)
     
@@ -364,7 +401,7 @@ for nn = 2:length(kvec)
     colorbar
     set(gca,'clim',[0 1e2])
   end
-  pause(0.1)
+  pause%(0.1)
   %To do: Write better root finder.
 
   gradr = wr_(nn)-wr_(nn-1);

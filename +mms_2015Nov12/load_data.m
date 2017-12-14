@@ -23,11 +23,11 @@ fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
 [~,computername]=system('hostname');
-if strfind(computername,'ift0227887')
+%if strfind(computername,'ift0227887')
   eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
-else
-  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
-end
+%else
+%  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
+%end
 mkdir(eventPath)
 
 %% Load defatt, for coordinate tranformation
