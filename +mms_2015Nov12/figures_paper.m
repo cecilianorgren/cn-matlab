@@ -544,7 +544,8 @@ end
 fastTint = irf.tint('2015-11-12T06:10:00.00Z/2015-11-12T07:30:00.00Z');
 brstTint = irf.tint('2015-11-12T07:19:10.00Z/2015-11-12T07:19:40.00Z');
 tintBCS = irf.tint('2015-11-12T07:19:19.80Z/2015-11-12T07:19:22.70Z');
-npanels = 12;
+timeMP = irf_time('2015-11-12T07:19:17.80Z','utc>epochtt');
+npanels = 13;
 cmap = 'jet';
 h = irf_plot(npanels);
 ic = 1;
@@ -552,15 +553,15 @@ iisub = 0;
 cmap = colormap('jet');
 
 if 1 % B
-  hca = irf_panel('B brst');
+  hca = irf_panel('B');
   set(hca,'ColorOrder',mms_colors('xyza'))
   %c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
   c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
-  hca.YLabel.String = {'B','(nT)'};
+  hca.YLabel.String = {'B','(nT)'};  
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z','|B|'},[0.98 0.9],'fontsize',12);
   hca.YLim = [-25 35];
-  if 1 % plot ion scale
+  if 1 % plot ion scales
     %%
     T0 = tintBCS(1)+0.5*(tintBCS.stop-tintBCS.start);
     vBCS = 70; % km/s
@@ -575,11 +576,12 @@ if 1 % B
     hold(hca,'on') 
     colors = mms_colors('matlab');
     hh1 = irf_plot(hca,tsRP,'linewidth',2,'color',[0 0 0]);
-    irf_legend(hca,'\rho_p',[0.45 0.98])
+    irf_legend(hca,'\rho_p',[0.45 0.98],'fontsize',14)
     hh2 = irf_plot(hca,tsLP,'linewidth',2,'color',[0 0 0]);
-    irf_legend(hca,'L_p',[0.41 0.80])
+    irf_legend(hca,'L_p',[0.41 0.80],'fontsize',14)
     hold(hca,'off')
   end
+  hca.YLabel.String = {'B','(nT)'};  
 end
 if 1 % J
   hca = irf_panel('J');
@@ -589,7 +591,7 @@ if 1 % J
   hca.YLabel.String = {'J','(nA/m^2)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
-  %hca.YLim = [-1100 1100];  
+  hca.YLim = [-490 900];  
 end
 if 1 % Vi
   hca = irf_panel('Vi');
@@ -609,7 +611,21 @@ if 1 % Ve
   hca.YLabel.String = {'v_e','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
-  hca.YLim = [-1100 1100];  
+  hca.YLim = [-910 780];  
+  hca.YTick = [-1200:400:1200];
+end
+if 1 % Te par perp
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(brstTint),(facTe?.yy+facTe?.zz)/2,facTi?.trace/3/refTi},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_i/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);
+  %hca.YScale = 'log'; %hca.YTick = [10:10:100 200:100:1000];
+  hca.YLim = [21 105];
+  %hca.YTick
+  %irf_zoom(hca,'y')
 end
 if 1 % P, 1sc, given above
   hca = irf_panel(sprintf('P sc %g',ic));
@@ -642,19 +658,6 @@ if 1 % n
   set(hca,'ColorOrder',mms_colors('1'))  
   hca.YLim = [0 9.9];
 end
-if 1 % Te par perp
-  hca = irf_panel('Te');
-  set(hca,'ColorOrder',mms_colors('123'))
-  refTi = 10;
-  c_eval('irf_plot(hca,{facTe?.xx.tlim(brstTint),(facTe?.yy+facTe?.zz)/2,facTi?.trace/3/refTi},''comp'');',ic)
-  hca.YLabel.String = {'T','(eV)'};
-  set(hca,'ColorOrder',mms_colors('123'))
-  irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_i/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);
-  %hca.YScale = 'log'; %hca.YTick = [10:10:100 200:100:1000];
-  hca.YLim = [20 100];
-  %hca.YTick
-  %irf_zoom(hca,'y')
-end
 if 0 % gradPe
   hca = irf_panel('gradPe');
   set(hca,'ColorOrder',mms_colors('xyz'))
@@ -664,10 +667,10 @@ if 0 % gradPe
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);    
   irf_legend(hca,{'4 spacecraft'},[0.05 0.9],'fontsize',12,'color','k');
 end
-if 1 % E
+if 0 % E
   hca = irf_panel('E');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('plotE = gseE? - 0*gseE?.filt(1,0,[],3);',ic)
+  c_eval('plotE = gseE?perp - 0*gseE?.filt(1,0,[],3);',ic)
   
   irf_plot(hca,{plotE.x.tlim(tint),plotE.y.tlim(tint),plotE.z.tlim(tint)},'comp');
   %c_eval('irf_plot(hca,{gseE?.x.tlim(tint),gseE?.y.tlim(tint),gseE?.z.tlim(tint)},''comp'');',ic)
@@ -675,6 +678,27 @@ if 1 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
   %hca.YLim = [-5 5];  
+end
+if 1 % J x B
+  hca = irf_panel('E + Ve x B');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseJxB?.x.tlim(tint),gseJxB?.y.tlim(tint),gseJxB?.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J x B','()'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [-1100 1100];  
+end
+if 1 % diff P
+  hca = irf_panel('gradPi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  scale = 1e9*1e-3;
+  irf_plot(hca,{gseGradPe.x.tlim(tint)*scale,gseGradPe.y.tlim(tint)*scale,gseGradPe.z.tlim(tint)*scale},'comp');
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'div(Pe)','()'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [-3 3]*scale;  
 end
 if 0 % Ve x B
   hca = irf_panel('E + Ve x B');
@@ -732,7 +756,7 @@ if 1 % ePDist pa 64
   %c_eval('irf_spectrogram(hca,ePDist?.e64.pitchangles(dmpaB?,20).elim([180 203]).deflux.specrec(''pa''),''log'');',ic)
   %hca.YLabel.String = {'Pitchangle','(\circ)'};   
   %irf_legend(hca,['E = [' num2str(eint(1),'%.0f') ' ' num2str(eint(2),'%.0f') ']'],[0.95 0.90],'color',0*[1 1 1])
-  irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f') ' eV'],[0.99 0.90],'color',0*[1 1 1])
+  irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f') ' eV'],[0.99 0.90],'color',0*[1 1 1],'fontsize',14)
   hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
   hca.YTick = [45 90 135];   
   colormap(hca,cmap)
@@ -762,17 +786,28 @@ end
 %hca = irf_panel('Ti'); hca.YLim = [300 700];
 irf_plot_axis_align
 h(1).Title.String = irf_ssub('MMS ?',ic);
-if 0
+colors = mms_colors('matlab');
+c_eval('hmark_mp = irf_pl_mark(h(?),timeMP,0*colors(1,:));',1:npanels)
+irf_legend(h(1),'MP',[0.25 1.05],'fontsize',14);
+irf_legend(h(1),'BCS',[0.35 1.05],'fontsize',14);
+hleg = irf_legend(h(1),'unperturbed MSH',[0.97 1.05],'fontsize',14);
+hleg.HorizontalAlignment = 'center';
+
+if 1 % irf_pl_hmark
+  %%
 imark = 1;
 clear hmark;
-c_eval('hmark(imark) = irf_pl_mark(h(?),tintBCS, ''yellow''); imark = imark + 1;',[1 4:npanels])
+
+c_eval('hmark(imark) = irf_pl_mark(h(?),tintBCS, ''yellow''); imark = imark + 1;',1:(npanels-3))
 for ii = 1:numel(hmark);
   hmark(ii).FaceAlpha = 0.5;
 end
 end
 for ii = 1:npanels;
-  h(ii).FontSize = 12;
+  h(ii).FontSize = 14;
 end
+
+hca = irf_panel('e DEF omni 64'); hca.YGrid = 'off'; hca.XGrid = 'off';
 %irf_plot_zoomin_lines_between_panels(h(iisub),h(iisub+2))
 
 %% Constrained and unconstrained minimum variance magnetic field (average), 2 panels
