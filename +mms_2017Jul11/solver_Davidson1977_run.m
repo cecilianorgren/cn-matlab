@@ -109,6 +109,7 @@ if 1
   hca.XLabel.String = 'T_e (eV)';    
 end
 end
+
 %% run for  array of Te and E, 3rd dim is k
 units = irf_units;
 n = 0.07e6;

@@ -7,7 +7,7 @@ if 0
   return
 end
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Nexus/data');
+%mms.db_init('local_file_db','/Volumes/Nexus/data');
 db_info = datastore('mms_db');   
 
 %% Particle distributions: electrons and ions
@@ -26,7 +26,7 @@ dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9
 %if strfind(computername,'ift0227887')
   eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
 %else
-%  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
+  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
 %end
 mkdir(eventPath)
 

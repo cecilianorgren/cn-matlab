@@ -37,7 +37,7 @@ else
     tticks = Lticks/v+xticks0(1);
           
     for k=1:numel(Lticks)
-        xticklabels{k}=num2str(Lticks(k));
+        xticklabels{k}=num2str(Lticks(k)-mean(Lticks));
     end    
     %xticklabels{end} = 'km'; 
     yticks=[];

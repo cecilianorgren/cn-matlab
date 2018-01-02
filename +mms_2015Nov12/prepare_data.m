@@ -35,9 +35,9 @@ c_eval('[dslE?par_new,dslE?perp_new] = irf_dec_parperp(dmpaB?,dslE?_new); dslE?p
 
 %[~,computername]=system('hostname');
 %if strfind(computername,'ift0227887')
-  load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
+%  load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
 %else
-%  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
+  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
 %end
 
 c_eval('gseE?_new = mms_dsl2gse(dslE?_new,defatt?);',ic)
@@ -102,6 +102,11 @@ c_eval('R? = gseR?.resample(gseB1);',1:4)
 c_eval('B? = gseB?.resample(gseB1);',1:4)
 [gseCurvB,avB]=c_4_grad('R?','B?','curvature'); gseCurvB.name = 'curv B'; gseCurvB.coordinateSystem = 'GSE';
 curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
+
+% Magnetic shear, magnetic angle with respect to some reference time
+trefshear = irf_time('2015-11-12T07:19:10.000Z','utc>epochTT');
+c_eval('shearB? = irf.ts_scalar(gseB?.time,acosd(gseB?.norm.dot(gseB?.resample(trefshear).norm.data).data));',ic)
+
 
 % Electron inertial term
 c_eval('R? = gseR?.resample(gseB1);',1:4)
@@ -454,7 +459,7 @@ if 0
 end
 
 %% Choose LMN coordinate system
-coordSystem = 15; % 16:td, 15:unconstr.
+coordSystem = 23; % 16:td, 15:unconstr.
 switch coordSystem % Choose another
   case 1 % N: minimum variance of B
     [out,l,v] = irf_minvar(gseB1.tlim(irf.tint('2015-11-12T07:19:19.611Z/2015-11-12T07:19:22.641Z')));
@@ -502,14 +507,44 @@ switch coordSystem % Choose another
     coordLabels = {'L','M','N'};
     lmn = [L;M;N];
   case 22 % N: minimum variance of J
-    [out,l,v] = irf_minvar(gseJ1.tlim(irf.tint('2015-10-16T10:33:23.000Z/2015-10-16T10:33:32.000Z')));
+    [out,l,v] = irf_minvar(gseJ1.tlim(irf.tint('2015-11-12T07:19:19.611Z/2015-11-12T07:19:22.641Z')));
     L = -v(2,:); M = -v(1,:); N = v(3,:);
     coordLabels = {'N','-M','L'};
     lmn = [N;-M;L];
-    [out,l,v] = irf_minvar(gseJcurl.tlim(irf.tint('2015-10-16T10:33:22.595Z/2015-10-16T10:33:31.284Z')));
-    L = -v(1,:); M = v(2,:); N = -v(3,:);
+    [out,l,v] = irf_minvar(gseJcurl.tlim(irf.tint('2015-11-12T07:19:19.611Z/2015-11-12T07:19:22.641Z')));
+    L = v(1,:); M = v(2,:); N = v(3,:);
     coordLabels = {'L','M','N'};
-    lmn = [L;M;N];        
+    lmn = [L;M;N];   
+  case 23 % N: minimum variance of J, L: maximum variance of B
+    %%
+    tint_minvar = irf.tint('2015-11-12T07:19:20.116Z/2015-11-12T07:19:22.136Z');
+    L_B = mva_mean(1,:); M_B = mva_mean(2,:); N_B = mva_mean(3,:); 
+    %mva_mean
+    if 0
+    [outB,lB,vB] = irf_minvar(gseAvB.tlim(tint_minvar));
+    %vB
+    L_B = vB(1,:); M_B = -vB(2,:); N_B = -vB(3,:);
+    vB = [L_B;M_B;N_B];
+    end        
+    
+    [outJ,lJ,vJ] = irf_minvar(gseJcurl.tlim(tint_minvar));    
+    L_J = vJ(1,:); M_J = vJ(2,:); N_J = vJ(3,:);
+    vJ = [L_J;M_J;N_J];
+    if 1
+      L = L_B;
+      N = cross(L,cross(N_J,L));
+      M = cross(N,L);
+    elseif 0      
+      N = N_J;
+      L = cross(N,cross(L_B,N));
+      M = cross(N,L);
+    else
+      N = N_B;
+      L = L_B;
+      M = M_B;
+    end
+    coordLabels = {'L','M','N'};
+    lmn = [L;M;N];
   case 33 % N: maximum variance of E
     tint = irf.tint('2015-10-16T10:33:30.100Z/2015-10-16T10:33:30.400Z');
     [out,l,v] = irf_minvar(gseE3.tlim(tint));
@@ -619,6 +654,20 @@ mvaOhmJxB_b = mvaJcurl.resample(mvaAvB.time).cross(mvaAvB)/avNe/e*1e-9*1e-9*1e-6
 mvaOhmJxB_c = (mvaJxB1/ne1+mvaJxB2.resample(mvaJxB1.time)/ne2+mvaJxB3.resample(mvaJxB1.time)/ne3+mvaJxB4.resample(mvaJxB1.time)/ne4)/4/e*1e-9*1e-9*1e-6*1e3; mvaOhmJxB_c.units = 'mV/m'; 
 mvaOhmJxB = mvaOhmJxB_c;
 
+% Curvature
+c_eval('R? = mvaR?.resample(mvaB1);',1:4)
+c_eval('B? = mvaB?.resample(mvaB1);',1:4)
+[mvaCurvB,BB]=c_4_grad('R?','B?','curvature'); mvaCurvB.name = 'curv B'; mvaCurvB.units = '1/km';
+curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
+
+
+figure(12)
+c_eval('h=irf_plot({mvaB?,mvaJ?,mvaVe?});',1)
+irf_zoom(h,'x',tintZoom); irf_zoom(h,'y');
+h(1).Title.String = sprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];',L,M,N)
+%fprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];\n',lmn')
+%fprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];\n',L,M,N)
+
 %%
 
 CS_normal_velocity = 70;
@@ -628,10 +677,7 @@ c_eval('LPNN? = irf.ts_scalar(LPNN?time,0.5*sumP?./diff(mvaPe?.zz.data(:,1))*CS_
 0.5*(0.055+0.03)/(0.055-0.03)*70*dtP;
 %%
 
-c_eval('R? = mvaR?.resample(mvaB1);',1:4)
-c_eval('B? = mvaB?.resample(mvaB1);',1:4)
-[mvaCurvB,BB]=c_4_grad('R?','B?','curvature'); mvaCurvB.name = 'curv B'; mvaCurvB.units = '1/km';
-curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
+
 
 c_eval('R? = gseR?.resample(ne?);',1:4)
 c_eval('n? = ne?.resample(ne?);',1:4)
