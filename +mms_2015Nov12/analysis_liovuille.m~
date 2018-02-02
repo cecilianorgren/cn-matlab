@@ -1,0 +1,114 @@
+% analysis_liovuille
+
+% particles starting on left and exiting on right
+leftstart = find(z0<0); % index
+leftstop = find(allzend<0);
+rightstart = find(z0>0);
+rightstop = find(allzend>0);
+centerpass = find(allzmin<10e3); 
+
+leftleft = intersect(leftstart,leftstop);
+leftright = intersect(leftstart,rightstop);
+rightleft = intersect(rightstart,leftstop);
+rightright = intersect(rightstart,rightstop);
+
+leftcenterleft = intersect(leftleft,centerpass);
+leftcenterright = intersect(leftright,centerpass);
+rightcenterleft = intersect(rightleft,centerpass);
+rightcenterright = intersect(rightright,centerpass);
+
+
+leftleft_NE = histc(eENERGY(leftleft),edgesE);
+leftright_NE = histc(eENERGY(leftright),edgesE);
+rightleft_NE = histc(eENERGY(rightleft),edgesE);
+rightright_NE = histc(eENERGY(rightright),edgesE);
+
+leftcenterleft_NE = histc(eENERGY(leftcenterleft),edgesE);
+leftcenterright_NE = histc(eENERGY(leftcenterright),edgesE);
+rightcenterleft_NE = histc(eENERGY(rightcenterleft),edgesE);
+rightcenterright_NE = histc(eENERGY(rightcenterright),edgesE);
+
+limit = 2;
+edgesDiffE = [-limit:0.2:limit];
+diffE = (allEend-allE0)./allE0;
+leftleft_NEdiff = histc(diffE(leftleft),edgesDiffE);
+leftright_NEdiff = histc(diffE(leftright),edgesDiffE);
+rightleft_NEdiff = histc(diffE(rightleft),edgesDiffE);
+rightright_NEdiff = histc(diffE(rightright),edgesDiffE);
+
+
+figure(61)
+
+nrows = 4;
+ncols = 2;
+npanels = nrows*ncols;
+for ipanel = 1:npanels
+  h(ipanel) = subplot(nrows,ncols,ipanel);
+end
+isub = 1;
+ 
+hca = h(isub); isub = isub + 1;
+%hb = bar(hca,log10(edgesE),[leftleft_NE leftright_NE rightleft_NE rightright_NE],'stacked'); colormap('cool')
+hb = bar(hca,log10(edgesE),[leftcenterleft_NE leftcenterright_NE rightcenterleft_NE rightcenterright_NE],'stacked'); colormap(mms_colors('1234'))
+legend(hca,'leftleft','leftright','rightleft','rightright','location','eastoutside')
+
+if 1 % start and stop energy
+  hca = h(isub); isub = isub + 1;
+  colorE = zeros(numel(allEend),3);
+  colors = mms_colors('1234');
+  colorE(leftleft,:) = repmat(colors(1,:),numel(leftleft),1);
+  colorE(leftright,:) = repmat(colors(2,:),numel(leftright),1);
+  colorE(rightleft,:) = repmat(colors(3,:),numel(rightleft),1);
+  colorE(rightright,:) = repmat(colors(4,:),numel(rightright),1);
+  hscat = scatter(hca,allE0,allEend,allE0*0+20,colorE);
+  hca.XScale = 'log';
+  hca.YScale = 'log';
+  hca.XLabel.String = 'E_{start}';
+  hca.YLabel.String = 'E_{end}';
+  axis(hca,'square')
+  hca.XLim = [1e0 1e4];
+  hca.YLim = [1e0 1e4];
+  hold(hca,'on')
+  plot(hca,hca.XLim,hca.YLim,'k')
+  text(hca,1e1,1e3,'E increase')
+  text(hca,1e3,1e1,'E decrease')
+  hold(hca,'off')
+end
+if 1 % start and stop energy
+  hca = h(isub); isub = isub + 1;
+  colorE = zeros(numel(allEend),3);
+  colors = mms_colors('1234');
+  colorE(leftleft,:) = repmat(colors(1,:),numel(leftleft),1);
+  colorE(leftright,:) = repmat(colors(2,:),numel(leftright),1);
+  colorE(rightleft,:) = repmat(colors(3,:),numel(rightleft),1);
+  colorE(rightright,:) = repmat(colors(4,:),numel(rightright),1);
+  hscat = scatter(hca,allE0,allEend,allE0*0+20,colorE);
+  hca.XScale = 'log';
+  hca.YScale = 'log';
+  hca.XLabel.String = 'E_{start}';
+  hca.YLabel.String = 'E_{end}';
+  axis(hca,'square')
+  hca.XLim = [1e0 1e4];
+  hca.YLim = [1e0 1e4];
+  hold(hca,'on')
+  plot(hca,hca.XLim,hca.YLim,'k')
+  text(hca,1e1,1e3,'E increase')
+  text(hca,1e3,1e1,'E decrease')
+  hold(hca,'off')
+end
+
+if 1 % diff E
+  hca = h(isub); isub = isub + 1;
+  limit = 3;
+  %hist(hca,diffE,edgesDiffE)
+  hb = bar(hca,edgesDiffE,[leftleft_NEdiff leftright_NEdiff rightleft_NEdiff rightright_NEdiff],'stacked'); 
+  hca.XLim = [-limit, limit];
+  hca.XLabel.String = '(E_{end}-E_{start})/E_{start}';
+  hca.YLabel.String = 'Counts';
+  legend(hca,'leftleft','leftright','rightleft','rightright','location','eastoutside')
+end
+
+hca = h(isub); isub = isub + 1;
+hist(hca,allTend,[0:0.1:1.9])
+hca.XLabel.String = 'T_{int}';
+hca.YLabel.String = 'counts';

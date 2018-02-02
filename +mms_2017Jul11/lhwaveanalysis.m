@@ -23,14 +23,65 @@ v_timing = 1.34e+03*[-0.85 -0.48  0.24];
 c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
 v_direction = irf_norm(v_timing);
 v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = irf.tint('2017-07-11T22:33:28.60Z/2017-07-11T22:33:29.30Z'); % LH wave packet
 
-%%
+%% larges amplitude EAC LH waves
+ic = 1:4;
+tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:23.00Z'); % LH separatrix
+t_center = irf_time('2017-07-11T22:33:29.00','utc>epochtt'); % LH separatrix center time
+dt_timing = [0.0000   0.0418   0.0199   0.0119];
+v_timing = 1.34e3*[-0.57 -0.81  0.09];
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = tint; % LH wave packet
+
+%% Earlier LH waves, small EDC ~10, modulated high freq Epar
+ic = 1:4;
+tint = irf.tint('2017-07-11T22:33:19.00Z/2017-07-11T22:33:20.50Z'); % LH separatrix
+t_center = irf_time('2017-07-11T22:33:29.00','utc>epochtt'); % LH separatrix center time
+dt_timing = [0.0000   0.0418   0.0199   0.0119];
+v_timing = 487*[-0.57 -0.81  0.09];
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = tint; % LH wave packet
+%% intermediate LH waves, large EDC ~40-50
+ic = 1:4;
+tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:22.50Z'); % LH separatrix
+t_center = irf_time('2017-07-11T22:33:22.00Z','utc>epochtt'); % LH separatrix center time
+dt_timing = [0.0000   0.0132   0.0092   0.0053]; % for 1500 km/s
+dt_timing = [0.0000   0.0099   0.0069   0.0040]; % for 2000 km/s
+v_timing = 2000*[-0.72  -0.62 0.30]; % this is guesswork
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = tint; % LH wave packet
+
+%% Epar at site of alrges EAC LH
+ic = 1:4;
+%tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:22.50Z'); % LH separatrix
+t_center = irf_time('2017-07-11T22:33:28.85Z','utc>epochtt'); % LH separatrix center time
+tint = t_center + [-0.05 0.06];
+dt_timing = [[0.0000    0.0036    0.0022    0.0074]]; % for 2000 km/s
+v_timing = 2.12e+03 * [-0.90  0.20 -0.39]; % this is guesswork
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = tint; % LH wave packet
+
+c_eval('gseEdt? = irf_integrate(gseE?,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt?.time,gseEdt?.data);',ic)
+phi_filt = 3;
+c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
+
+
+%% integrate E
 c_eval('gseEdt? = irf_integrate(gseE?perp,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt?.time,gseEdt?.data);',ic)
 phi_filt = 3;
 c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
 
 %% New coordinate system
-tintLH = irf.tint('2017-07-11T22:33:28.60Z/2017-07-11T22:33:29.30Z'); % LH wave packet
+
 
 newz = irf_norm(mean(gseB1.tlim(tintLH).data,1));
 newx = cross(newz,cross(v_direction,newz));
@@ -243,6 +294,7 @@ end
 
 %irf_zoom(h(1:iisub),'x',fastTint)
 irf_zoom(h(1:npanels),'x',irf.tint('2017-07-11T22:33:28.00Z/2017-07-11T22:33:31.00Z')); % LH)
+irf_zoom(h(1:npanels),'x',tintLH); % LH)
 irf_zoom(h(:),'y')
 irf_plot_axis_align
 h(1).Title.String = irf_ssub('MMS ?',ic);
@@ -430,19 +482,22 @@ for ii = 1:npanels;
   h(ii).FontSize = 12;
 end
 
+add_length_on_top(h(1),v_amplitude,1)
+
 %% Compare 4 sc in new coordinate system
-npanels = 7;
+npanels = 8;
 h = irf_plot(npanels);
 
 pshift = 0;
-scrsz = get(groot,'ScreenSize');
-figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.5; figurePostition(4)=figurePostition(4)*0.9;
-hcf = gcf; hcf.Position = figurePostition;
+%scrsz = get(groot,'ScreenSize');
+%figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.5; figurePostition(4)=figurePostition(4)*0.9;
+%hcf = gcf; hcf.Position = figurePostition;
+dt = dt_timing;
 
 if 0 % BX
   hca = irf_panel('BX');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryB1.x.tlim(tint),bdryB2.x.tlim(tint),bdryB3.x.tlim(tint),bdryB4.x.tlim(tint)},'comp');
+  irf_plot(hca,{bdryB1.x.tlim(tint),bdryB2.x.tlim(tint),bdryB3.x.tlim(tint),bdryB4.x.tlim(tint)},'comp','dt',dt);
   hca.YLabel.String = {'B_{v}','(nT)'};
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_legend(hca,{'mms 1','mms 2','mms 3','mms 4'},[0.98 0.9],'fontsize',12);
@@ -462,21 +517,31 @@ end
 if 1 % EX
   hca = irf_panel('EX');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryE1.x.tlim(tint),bdryE2.x.tlim(tint),bdryE3.x.tlim(tint),bdryE4.x.tlim(tint)},'comp');
+  irf_plot(hca,{bdryE1.x.tlim(tint),bdryE2.x.tlim(tint),bdryE3.x.tlim(tint),bdryE4.x.tlim(tint)},'comp','dt',0*dt);
   hca.YLabel.String = {'E_{v}','(nT)'};
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_legend(hca,{'mms 1','mms 2','mms 3','mms 4'},[0.98 0.9],'fontsize',12);
 end
+if 1 % EX dt
+  hca = irf_panel('EX dt');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{bdryE1.x.tlim(tint),bdryE2.x.tlim(tint),bdryE3.x.tlim(tint),bdryE4.x.tlim(tint)},'comp','dt',dt);
+  hca.YLabel.String = {'E_{v}','(nT)'};
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'mms 1','mms 2','mms 3','mms 4'},[0.98 0.9],'fontsize',12);
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{sprintf('dt = %g',dt(1)),sprintf('%g',dt(2)),sprintf('%g',dt(3)),sprintf('%g',dt(4))},[0.05 0.99],'fontsize',12);
+end
 if 1 % EY
   hca = irf_panel('EY');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryE1.y.tlim(tint),bdryE2.y.tlim(tint),bdryE3.y.tlim(tint),bdryE4.y.tlim(tint)},'comp');
+  irf_plot(hca,{bdryE1.y.tlim(tint),bdryE2.y.tlim(tint),bdryE3.y.tlim(tint),bdryE4.y.tlim(tint)},'comp','dt',dt);
   hca.YLabel.String = {'E_{N}','(nT)'};
 end
 if 1 % EZ
   hca = irf_panel('EZ');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryE1.z.tlim(tint),bdryE2.z.tlim(tint),bdryE3.z.tlim(tint),bdryE4.z.tlim(tint)},'comp');
+  irf_plot(hca,{bdryE1.z.tlim(tint),bdryE2.z.tlim(tint),bdryE3.z.tlim(tint),bdryE4.z.tlim(tint)},'comp','dt',dt);
   hca.YLabel.String = {'E_{||}','(nT)'};
 end
 if 1 % B wave par

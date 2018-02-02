@@ -75,6 +75,7 @@ curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
 %% Pitchangle distributions
 if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
+  %load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
 elseif 0
   ic = 1;
   c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
@@ -169,7 +170,6 @@ c_eval('wavVe?par.f_units = ''Hz''; wavVe?par.f_label = ''f [Hz]''; wavVe?par.p_
 c_eval('wavVe?perp = irf_wavelet(gseVe?perp.abs.tlim(tint),''wavelet_width'',5.36*2,''f'',[1 15],''nf'',100);',ic)
 c_eval('wavVe?perp.f_units = ''Hz''; wavVe?perp.f_label = ''f [Hz]''; wavVe?perp.p_label = {''log_{10} v_{e,\perp}^2'',''(km/s)^2/Hz''};',ic)
 
-
 %% Average properties
 avNe = (ne1+ne2.resample(ne1.time)+ne3.resample(ne1.time)+ne4.resample(ne1.time))/4; avNe.name = '<ne>';
 gseAvE = (gseE1+gseE2.resample(gseE1.time)+gseE3.resample(gseE1.time)+gseE4.resample(gseE1.time))/4; 
@@ -236,15 +236,26 @@ v_amplitude = sqrt(sum(v_timing.^2));
 
 v_direction = irf_norm(v_timing);
 tintLH = irf.tint('2017-07-11T22:33:28.60Z/2017-07-11T22:33:29.30Z'); % LH wave packet
-newz = irf_norm(mean(gseB1.tlim(tintLH).data,1));
-newx = cross(newz,cross(v_direction,newz));
-newy = cross(newz,newx);
+newz = irf_norm(mean(gseB1.tlim(tintLH).data,1)); % B
+newx = cross(newz,cross(v_direction,newz)); % J direction
+newy = cross(newz,newx); % normal to v/j and B
 newxyz = [newx;newy;newz];
 
 lmn = newxyz;
 L = lmn(1,:);
 M = lmn(2,:);
 N = lmn(3,:);
+
+tintFluxrope = irf.tint('2017-07-11T22:33:11.557111083Z/2017-07-11T22:33:41.157944824Z');
+[~,lB,lmnB]=irf_minvar(gseB1);
+lmn = lmnB;
+
+if 1
+N = newy; % direction of Eperp
+M = cross(N,cross(lmnB(2,:),N));
+L = cross(M,N);
+lmn = [L;M;N];
+end
 
 disp(sprintf('L = [%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',L,M,N))
 % Rotate data

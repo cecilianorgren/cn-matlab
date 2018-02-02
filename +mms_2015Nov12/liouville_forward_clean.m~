@@ -37,14 +37,14 @@ end
 %irf_plot({obsE,modE,modEperp,modEpar,modEenf,modEenfperp,modEenfpar})
 %irf_plot({obsE,modE,modEperp,modEenf,modEenfperp},'comp')
 irf_plot({obsB,modB},'comp')
-
+  
 %% Initialize particles
 solidangle = 0;
 do64 = 1;
 % Define pitch (pol) and azimuthal angle for population stating on each
 % side, total nP is 2*nE*nAz*nPol
-nPol = 10;
-nAz = 10;
+nPol = 16;
+nAz = 32;
 %nE = 16; 
 iE = 1:34; nE = numel(iE);
 nP = 2*nE*nAz*nPol;
@@ -166,8 +166,6 @@ fprintf('iP = %5.0f/%5.0f\n',0,nP)
 %f0_left64 = obsPDist(tind_left+[-1 0]).e64;
 %f0_right64 = obsPDist(tind_right+[0 1]).e64;
 
-f0_left_scale = 1;
-f0_right_scale = 1.1;
 for iP = 1:nP     
   %if mod(iP,100) == 0, disp(sprintf('iParticle = %g/%g',iP,nP)); end % display progress
   if mod(iP,100) == 0, fprintf([repmat('\b', 1, 12) '%5.0f/%5.0f\n'],iP,nP); end % display progress  
@@ -291,12 +289,9 @@ saveParticle_many = saveParticle;
 beep
 
 %% Binning
-saveParticle = saveParticle_many;
 doleft = 1;
 doright = 1;
 if all([doleft doright]); doall = 1; end
-
-limN = 40e3;
 
 % Decide binning, match with real observed bins if possible.
 times = obsPDist.tlim(tintObs).time;
@@ -313,7 +308,7 @@ edgesAzimuthalAngle = 0:11.25:360;
 f_binned_all = zeros(numel(edgesN)-1,numel(edgesE)-1,numel(edgesAzimuthalAngle)-1,numel(edgesPolarAngle)-1);
 f_occupied_all = zeros(numel(edgesN)-1,numel(edgesE)-1,numel(edgesAzimuthalAngle)-1,numel(edgesPolarAngle)-1);
 
-allPa0 = nan(numel(saveParticle),1);
+allPa = nan(numel(saveParticle),1);
 allF = nan(numel(saveParticle),1);
 allE0 = zeros(numel(saveParticle),1);
 allEend = zeros(numel(saveParticle),1);
@@ -321,7 +316,6 @@ allv0 = zeros(numel(saveParticle),1);
 allTend = zeros(numel(saveParticle),1);
 allzend = zeros(numel(saveParticle),1);
 allzmin = zeros(numel(saveParticle),1);
-allz0 = zeros(numel(saveParticle),1);
 alla = zeros(numel(saveParticle),1);
 
 disp('Binning particles')
@@ -354,14 +348,13 @@ for iP = 1:nP%(nP/2+1):nP %:numel(saveParticle) % step through particles
   allTend(iP) = saveParticle{iP}.t(end);
   pa = saveParticle{iP}.pa(ind); % pitch angle  
   
-  allz0(iP) = z(1);
-  allPa0(iP) = pa(1);
+  
   v = saveParticle{iP}.v(ind,:); % m/s
   energy = saveParticle{iP}.energy;
   allE0(iP) = energy(1);
   allEend(iP) = energy(end);
   
-  if 0%z(1)<0 
+    if z(1)<0 
     continue
     end
   
@@ -389,7 +382,7 @@ for iP = 1:nP%(nP/2+1):nP %:numel(saveParticle) % step through particles
   if any(a>0)
     continue;
   end
-  if 0%z(1)>0 && z(end)>0
+  if z(1)>0 && z(end)>0
     %%
     nrows = 4;
     ncols = 1;
@@ -416,8 +409,9 @@ for iP = 1:nP%(nP/2+1):nP %:numel(saveParticle) % step through particles
       hca.Title.String = sprintf('iP = %g',iP);    
       %hca.XLim = [-40 40];
       %hca.YLim = [0 180];
-      hca.XLabel.String = 'N (km)';
-      hca.YLabel.String = 'L (km)';      
+      hca.XLabel.String = 'L (km)';
+      hca.YLabel.String = 'M (km)';
+      hca.ZLabel.String = 'N (km)';      
     end
     if 1
       hca = h(isub); isub = isub + 1;
@@ -474,11 +468,7 @@ for iP = 1:nP%(nP/2+1):nP %:numel(saveParticle) % step through particles
   f_occupied(f_occupied~=0) = 1; % only count one particle once, no matter how many time steps it stays in/passes through there
   f_occupied_all = f_occupied_all + f_occupied; % total number of particles passing through
   f_binned = bins_occupied; 
-  this_f = saveParticle{iP}.f;
-  if z(1)>0
-    this_f = this_f*1.0;  
-  end
-  f_binned(f_binned~=0) = this_f; % put value of occupied bins to f of each particle
+  f_binned(f_binned~=0) = saveParticle{iP}.f; % put value of occupied bins to f of each particle
   f_binned_all = f_binned_all + f_binned(1:(numel(edgesN)-1),1:32,1:32,1:16); % add all f's
   
   allF(iP) = saveParticle{iP}.f;
@@ -611,7 +601,7 @@ pause(0.1); beep
 npanels = 10;
 %[h1,h2] = initialize_combined_plot(npanels,1,1,0.4,'vertical');
 h1 = irf_plot(npanels);
-elim = [50 250];
+elim = [30 250];
 ylim = [10 1000];
 colors = mms_colors('matlab');
 
@@ -728,7 +718,7 @@ if 0 % psd obs omni
 end
 if 1 % psd map pitchangles
   hca = h1(isub); isub = isub + 1;
-  irf_spectrogram(hca,obsPDist.einterp.pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa'),'log');
+  irf_spectrogram(hca,obsPDist.e64.pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa'),'log');
   irf_legend(hca,{sprintf('%g<E<%g eV',elim)},[0.98 0.10],'fontsize',12,'color',[0 0 0]);
 end
 if 1 % psd map pitchangles

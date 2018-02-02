@@ -18,8 +18,15 @@ switch ic
     EL = 0*-0.5*1e-3;
     zoffsy = 1e3;
   case {1,2} % good model for mms1 and mms2
+    lscale = 1;100/70; % make everything wider
+    a = 11e3*lscale; % thickness of current sheet, m
+    b = 8e3*lscale; % bifurcation length scale, m
+    c = 10e3;
+    d = 15e3;
+    g = 11e3*lscale;
+    
     limN = 30e3;
-    Er = -1.5*1e-3; % reconnection electric field, V/m
+    Er = -1.0*1e-3; % reconnection electric field, V/m
     Ey_inflow = 0*-0.2e-3;
     E0 = 1*2*-1e-3;
     Enas = -2.5e-3;
@@ -36,24 +43,33 @@ switch ic
     EL = 0*-0.5*1e-3;
     zoffsy = 1e3;
     %% for vcs = 100 km/s, multiply all lengths with 100/70 = 1.4
-    lscale = 1;100/70;
+    lscale = 1;100/70; % make everything wider
+    
+    a = 11e3*lscale; % thickness of current sheet, m
+    b = 8e3*lscale; % bifurcation length scale, m
+    c = 8e3*lscale;
+    d = 13e3*lscale;
+    g = 10e3*lscale;
+    
+    zoffsy = 1*1e3*lscale;
+    
+    
     limN = 30e3*1e-4*lscale;
     Er = -1.0*1e-3; % reconnection electric field, V/m
-    Ey_inflow = 0*-0.2e-3;
+    Ey_inflow = 0*-1e-3;
     E0 = 1*2*-1e-3;
     Enas = -2.5e-3;
     offsEnas = 15e3*lscale;
     B0 = 10e-9; % asymptotical magnetic field, T
-    d = 8e3*lscale; % thickness of current sheet, m
+    
     dE = 12e3*lscale; % thickness of current sheet, m
-    b = 8e3*lscale; % bifurcation length scale, m
+    
     dzE = 6e3*lscale;
-    Bg = 1*4.5*1e-9; % guide field, T
-    Bn = 2.0*1e-9; % normal field, T
+    Bg = 1*5*1e-9; % guide field, T
+    Bn = 2*1e-9; % normal field, T
     BH = 4e-9;
     BLoffset = 0e-9;
-    EL = 0*-0.5*1e-3;
-    zoffsy = 1e3*lscale;
+    EL = 0*-0.5*1e-3;            
   case {3,4} % good model for mms2 and mms3
     limN = 30e3;
     Er = 0*-1e-3; % reconnection electric field, V/m
@@ -72,16 +88,27 @@ switch ic
     zoffsy = 3e3;
     Enas = -0e-3;
     offsEnas = 0;
+    a = 11e3*lscale; % thickness of current sheet, m
+    b = 8e3*lscale; % bifurcation length scale, m
+    c = 10e3;
+    d = 15e3;
 end
 
 %Bx = @(z) -B0*tanh(z*pi/d);
-Bx = @(x,y,z) x*0 + y*0 - 0*1e-9 - 0*abs(z)/d*0.05*B0+- B0*tanh(z/d).*(1-exp(-z.^2/(2*b^2)))-BLoffset;
-By = @(x,y,z) x*0 + y*0 + 1*z/d*0.03*B0+ Bg-5*BH*sin(2/3*z/d-zoffsy/d).*exp(-(z-zoffsy).^2/(3*b^2)).*(1-exp(-(z-zoffsy).^2/(2*b^2)));
+Bx = @(x,y,z) x*0 + y*0 - 0*1e-9 - 0*abs(z)/a*0.05*B0+- B0*tanh(z/a).*(1-exp(-z.^2/(2*b^2)))-BLoffset; % L
+By = @(x,y,z) x*0 + y*0 + 0*z/d*0.03*B0+ Bg-4*BH*sin((z-zoffsy)/c).*exp(-(z-zoffsy).^2/(d^2)).*(1-exp(-(z-zoffsy).^2/(2*b^2))); % M
 %By = @(x,y,z) x*0 + y*0 + z*0 + Bg-7*BH*tanh(z/d).*exp(-z.^2/d^2).*(1-exp(-z.^2/(2*b^2))); 
-Bz = @(x,y,z) x*0 + y*0 + z*0 + Bn;
+Bz = @(x,y,z) x*0 + y*0 + z*0 + Bn; % N
+
+% new model
+if 1
+  Bx = @(x,y,z) x*0 + y*0 - 4.5*1e-9*tanh((z+11*1e3)/(5*1e3))- 5.5*1e-9*tanh((z-11*1e3)/(5*1e3)) - 1.5*1e-9; % L
+  By = @(x,y,z) x*0 + y*0 + Bg + 5.5*1e-9*exp(-(z+11*1e3).^2/((5*1e3)^2)) - 4.5*1e-9*exp(-(z-14*1e3).^2/((8*1e3)^2)); % M
+  Bz = @(x,y,z) x*0 + y*0 + z*0 + 1.5*1e-9; % N
+end
 
 Ex = @(x,y,z) x*0 + y*0 + z*0 + 0*EL*(-exp(-(z.^2)/d^2));
-Ey = @(x,y,z) x*0 + y*0 + z*0 + 1*(Er*(exp(-((z-3e3).^2)/d^2)) + Ey_inflow);
+Ey = @(x,y,z) x*0 + y*0 + z*0 + 0*(Er*(exp(-((z-5e3).^2)/g^2))) + Ey_inflow;
 Ez = @(x,y,z) x*0 + y*0 + z*0 + 0*(E0*sin((z-dzE)/dE).*exp(-(z-dzE).^2/(2*b^2)) + 1*Enas*exp(-(z-offsEnas).^2./d.^2) + -0.8*Enas*exp(-(z+offsEnas).^2./2/d.^2));
 
 B = @(x,y,z) sqrt(Bx(x,y,z).^2 + By(x,y,z).^2 + Bz(x,y,z).^2);
@@ -213,6 +240,7 @@ end
 end
 %%
 if 0 % See what part of the model field that is par and perp
+  %%
 B_ = [Bx(0,0,zObs*1e3) By(0,0,zObs*1e3) Bz(0,0,zObs*1e3)]; 
 Bnorm = irf_norm(B_);
 Evec = [Ex(0,0,zObs*1e3) Ey(0,0,zObs*1e3) Ez(0,0,zObs*1e3)];

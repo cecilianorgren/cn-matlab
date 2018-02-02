@@ -1,5 +1,5 @@
 %% Load data
-ic = 1;
+ic = 2:3;
 
 tint = irf.tint('2015-11-12T06:42:04.00Z/2015-11-12T06:43:00.00Z'); %20151112064204
 tint = irf.tint('2016-12-25T16:00:14.00Z',30); %20161225160014, or 20161225160144. Dec 25 2016 - at about 16.00
@@ -58,7 +58,7 @@ tint = irf.tint('2017-06-11T17:43:23.00Z',1); % 20170611174323
 % tint = irf.tint('2017-07-03T22:05:33.00Z',1); % 20170703220533
 
 tint = irf.tint('2015-10-16T13:06:00.00Z',60); % 20170703220533
-tint = irf.tint('2017-06-17T20:28:00.00Z',60);
+tint = irf.tint('2017-06-17T20:24:00.00Z',60);
 
 % Set datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -153,6 +153,10 @@ c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,13); ePitch? = ePitch?.convertto(''
 %c_eval('feeps? = mms.variable2ts(get_variable(dobj,''mms?_epd_feeps_brst_l2_electron_spin''));',ic)
 %mms1_epd_feeps_brst_l2_electron_spin
 
+c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.units = ''mV/m'';',ic)
+c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = ''mV/m'';',ic)
+
+c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
 %% Plot overview figure with focus on electrons
 npanels = 10;
 cmap = 'jet';

@@ -1,4 +1,4 @@
-cd /Users/Cecilia/Research/2015Oct16/Whamp
+cd /Users/cno062/Research/Events/2015-10-16_103254/2015-10-16_103254_fluxrope/Whamp
 
 n = [6 14];
 m = [0 0];
@@ -81,9 +81,9 @@ colormap('jet')
 
 %% run whamp
 tint = irf.tint('2015-10-16T10:33:44.90Z/2015-10-16T10:33:45.00Z'); % magnetosphere-magnetosheath-magnetosphere
-tint = irf.tint('2015-10-16T10:33:44.90Z/2015-10-16T10:33:44.93Z')+0.03; % magnetosphere-magnetosheath-magnetosphere
+tint = irf.tint('2015-10-16T10:33:44.90Z/2015-10-16T10:33:44.93Z')+10*0.03; % magnetosphere-magnetosheath-magnetosphere
 
-distribution = 3;
+distribution = 32;
 switch distribution 
   case 1
     n = [-23 40];
@@ -97,7 +97,7 @@ switch distribution
   case 2
     n = [-24 40];
     m = [0 0];
-    t = [26 35];
+    t = [23 35];
     vd = [0 0];
     d = [0.2 0.5];
     a1 = [2.25 1.9];
@@ -112,6 +112,33 @@ switch distribution
     a1 = [2.2 1.7];
     a2 = [1.1 0];
     toPlot = [1 2];
+  case 32
+    n = [-21 40];
+    m = [0 0];
+    t = [23 35];
+    vd = [0 0];
+    d = [0.2 1];%d = 1*[1 1];
+    a1 = [2.2 1.7];
+    a2 = [1.1 0];
+    toPlot = [1 2];
+  case 4
+    n = [12 8 -9];
+    m = [0 0 0];
+    t = [30 30 20];
+    vd = [0 0 0];
+    d = [1 1 1];
+    a1 = [0.6 2 1.5]; % temperature anisotropy, Tperp/Tpar
+    a2 = [1 1 1];
+    toPlot = 1:3;
+  case 5
+    n = [6 14];
+    m = [0 0];
+    t = [05 30];
+    vd = [00 0];
+    d = [0.001 1];
+    a1 = [3 0.05];
+    a2 = [6 1];
+    toPlot = 1:2;
 end
 
 
@@ -130,7 +157,7 @@ end
 PlasmaModel.B = 17;
 PlasmaModel.Species = Species;
 
-InputParameters.fstart = 0.001; % Hz,  start frequency
+InputParameters.fstart = 0.0001; % Hz,  start frequency
 InputParameters.kperp = [0 0.010 1];   % - kp (perpendicular wave vector) as scalar or, [kp_start kp_step kp_end]
 InputParameters.kpar = [0.02,0.0050,1.2];
 InputParameters.useLog = 0;
@@ -138,17 +165,17 @@ Output = whamp.run(PlasmaModel,InputParameters); % run whamp
 
 fce = 0.0279928*1000*PlasmaModel.B; % fce in Hz
 
+% max growth rate, along par direction
+iWimax = find(imag(Output.f(:,1))==max(imag(Output.f(:,1))));
+colors = mms_colors('matlab');
 
-nRows = 2;
+nRows = 3;
 nCols = 2;
-
-
 for ip = 1:nRows*nCols; h(ip) = subplot(nRows,nCols,ip); end 
-
 isub = 1;
 
 if 1 % Measured electron distribution and WHAMP fit
-  hca = h(isub); isub = isub +1;
+  hca = h(isub); isub = isub +1;  
   whamp.plot_f(hca,n(toPlot)*1e6,m(toPlot),t(toPlot)*1e-3,vd(toPlot),d(toPlot),a1(toPlot),a2(toPlot),'pitchangles',[0 90 180],'PSDvsE','km/s');
   hca.YScale = 'log';
   hca.XScale = 'log';
@@ -168,7 +195,6 @@ if 1 % Measured electron distribution and WHAMP fit
   mms_pa(1).Color = hca.ColorOrder(1,:);
   mms_pa(2).Color = hca.ColorOrder(2,:);
   mms_pa(3).Color = hca.ColorOrder(3,:);
-
   hold(hca,'off')
   hca.XScale = 'log';
   hca.YScale = 'log';
@@ -184,9 +210,17 @@ if 1 % Measured electron distribution and WHAMP fit
   irf_legend(hca,{{'-  Fit';'+ Measured';['   ' timeUTC(1:10)];['   ' timeUTC(12:23)]}},[0.05 0.4],'color',[0 0 0])
 end
 
+isub = isub + 1;
 if 1 % Surface plot of dispersion relation
-  hca = h(isub); isub = isub +1;
-  surf(hca,Output.kperp,Output.kpar,(real(Output.f)),imag(Output.f))
+  hca = h(isub); isub = isub +1;  
+  
+  surf_height = real(Output.f); 
+  surf_color = imag(Output.f);
+  
+  surf_height(surf_height<0) = NaN;
+  surf_height(surf_height>5) = NaN;
+  
+  surf(hca,Output.kperp,Output.kpar,surf_height,surf_color)
   shading(hca,'flat')
   hca.XLabel.String = 'k_{\perp}';
   hca.YLabel.String = 'k_{||}';
@@ -201,24 +235,18 @@ if 1 % Surface plot of dispersion relation
   hca.Title.String = ['Dispersion relation'];
 end
 
-if 1 % 1D plot of parallel dispersion relation
-  hca = h(isub); isub = isub +1;
-  plot(hca,Output.kpar,(real(Output.f(:,1))),Output.kpar,imag(Output.f(:,1)))
-  irf_legend(hca,{'Real frequency','Growth rate'},[0.05 0.95])
-  hca.Title.String = ['Dispersion relation, k_{\perp}=' num2str(Output.kperp(1),'%g')];
-  hca.YLabel.String = 'f/f_{ce}';
-  hca.XLabel.String = 'k_{||}';
-  hca.YLim = [-0.2 hca.YLim(2)];  
-  hca.XLim = [Output.kpar([1 end])];
-  hca.XGrid = 'on';
-  hca.YGrid = 'on';
-end
-
-if 1 % 2D flat plot of parallel dispersion relation, frequency as contours
+if 1 % 2D flat plot of dispersion relation, frequency as contours
   hca = h(isub); isub = isub +1; 
+  
+  surf_height = real(Output.f); 
+  surf_color = imag(Output.f);
+  
+  surf_height(surf_height<0) = NaN;
+  surf_height(surf_height>5) = NaN;
+  
   pcolor(hca,Output.kperp,Output.kpar,imag(Output.f))
   hold(hca,'on')
-  [c,ha] = contour(hca,Output.kperp,Output.kpar,real(Output.f),'k');
+  [c,ha] = contour(hca,Output.kperp,Output.kpar,surf_height,'k');
   clabel(c,ha)
   hold(hca,'on')
   shading(hca,'flat')
@@ -240,6 +268,37 @@ if 1 % 2D flat plot of parallel dispersion relation, frequency as contours
   axis(hca,'square')
   %hca.XLim = hca.XLim*0.9;
 end
+
+if 1 % 1D plot of parallel dispersion relation
+  hca = h(isub); isub = isub +1;
+  %set(hca,'ColorOrder',[colors(1:2,:); colors(1:2,:)])
+  plot(hca,Output.kpar,(real(Output.f(:,1))),...
+           Output.kpar,imag(Output.f(:,1)),...
+           Output.kpar(iWimax),real(Output.f(iWimax,1)),'*',...
+           Output.kpar(iWimax),imag(Output.f(iWimax,1)),'*')
+  irf_legend(hca,{'Real frequency','Growth rate'},[0.05 0.95])
+  irf_legend(hca,{sprintf('w_{r,max} = %g',real(Output.f(iWimax,1))),sprintf('w_{i,max} = %g',imag(Output.f(iWimax,1)))},[0.05 0.05])
+  hca.Title.String = ['Dispersion relation, k_{\perp}=' num2str(Output.kperp(1),'%g')];
+  hca.YLabel.String = 'f/f_{ce}';
+  hca.XLabel.String = 'k_{||}';
+  hca.YLim = [-0.2 hca.YLim(2)];  
+  hca.XLim = [Output.kpar([1 end])];
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+end
+
+if 1 % 1D plot of parallel phase velocity
+  hca = h(isub); isub = isub +1;
+  plot(hca,Output.kpar,real(Output.f(:,1)./Output.kpar')*2*pi,Output.kpar(iWimax),real(Output.f(iWimax,1)./Output.kpar(iWimax))*2*pi,'*')  
+  hca.Title.String = 'Parallel phase velocity';
+  hca.YLabel.String = '2\pi f/k_{||}';
+  hca.XLabel.String = 'k_{||}';
+  hca.YLim = [0 hca.YLim(2)];  
+  hca.XLim = [Output.kpar([1 end])];
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+end
+
 
 %% never mind about the higher energy ring, jus tfocus on the lower part.
 tint = irf.tint('2015-10-16T10:33:44.90Z/2015-10-16T10:33:45.00Z'); % magnetosphere-magnetosheath-magnetosphere

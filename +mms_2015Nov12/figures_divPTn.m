@@ -31,7 +31,6 @@ mvaEpsNi = epsNi*lmn'; mvaEpsNi.name = 'grad(ni)/ni'; mvaEpsNi.units = '1/km';
 mvaEpsTi = epsTi*lmn'; mvaEpsTi.name = 'grad(Ti)/Ti'; mvaEpsTi.units = '1/km';
 mvaEpsPi = epsPi*lmn'; mvaEpsPi.name = 'grad(Pi)/Pi'; mvaEpsPi.units = '1/km';
 
-
 EfromdivPi = avTi.resample(epsNe)*units.eV/units.e*epsNe;
 EfromdivPe = avTe*units.eV/units.e*epsNe.resample(avTe);
 
@@ -39,6 +38,12 @@ mvaE_TiepsPi = avTi*units.eV/units.e*mvaEpsPi.resample(avTi);
 mvaE_TiepsNe = avTi*units.eV/units.e*mvaEpsNe.resample(avTi);
 mvaE_TiepsNi = avTi*units.eV/units.e*mvaEpsNi.resample(avTi);
 mvaE_TeepsNe = avTe*units.eV/units.e*mvaEpsNe.resample(avTe);
+
+mvaGradPi = irf.ts_vec_xyz(gseGradPi.time,[gseGradPi.dot(L).data gseGradPi.dot(M).data gseGradPi.dot(N).data]);
+mvaGradPe = irf.ts_vec_xyz(gseGradPe.time,[gseGradPe.dot(L).data gseGradPe.dot(M).data gseGradPe.dot(N).data]);
+
+mvaOhmGradPe = mvaGradPe/avNe.resample(mvaGradPe.time)/e*1e-9*1e-6; mvaOhmGradPe.units = 'mV/m';
+mvaOhmGradPi = mvaGradPi/avNe.resample(mvaGradPi.time)/e*1e-9*1e-6; mvaOhmGradPi.units = 'mV/m';
 
 %% Gradient from 1 sc, using v_cs
 CS_normal_velocity = 1*70;
@@ -879,4 +884,179 @@ for ii = 1:npanels
   irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0])
   h(ii+pshift).FontSize = 12;  
   h(ii+pshift).YLabel.FontSize = 11;
+end
+
+%% MVA, 1. B, 2. electron momentum equation, N, 3. grad(n)/n, grad(T)/T, grad(P)/P, N
+ic = 1;
+npanels = 4;
+h = irf_plot(npanels);
+pshift=0;
+tintZoom = irf.tint('2015-11-12T07:19:20.20Z/2015-11-12T07:19:22.30Z');
+
+scrsz = get(groot,'ScreenSize');
+figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.25; figurePostition(4)=figurePostition(4)*0.4;
+hcf = gcf; hcf.Position = figurePostition;
+
+if 1 % av B
+  hca = irf_panel('B av');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{mvaAvB.x,mvaAvB.y,mvaAvB.z},'comp');
+  hca.YLabel.String = {'<B>_{4sc}','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',14);
+end
+if 1 % EOM e z
+  hca = irf_panel('EOM e N');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE.z,-mvaOhmVexB.z,mvaOhmGradPe.z},'comp');
+  hca.YLabel.String = {'E_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'<E>_{4sc}','-<v_e\times B>_{4sc}','\nabla P_e'},[0.98 0.9],'fontsize',14);
+end
+if 1 % E + Ve x B  N
+  hca = irf_panel('EVexB e N');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaEVexB1.z,mvaEVexB2.z,mvaEVexB3.z,mvaEVexB4.z},'comp');
+  hca.YLabel.String = {'(E + v_exB)_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.1],'fontsize',14);
+end
+if 0 % Ohm's law x
+  hca = irf_panel('Ohm L');
+  set(hca,'ColorOrder',mms_colors('1234ba'))
+  if 0
+    irf_plot(hca,{mvaAvE.x,mvaOhmGradPe.x,-mvaOhmVexB.x,-mvaOhmVixB.x,mvaOhmJxB.x,mvaAvE.x+mvaOhmVexB.resample(mvaAvE).x+mvaOhmGradPe.resample(mvaAvE).x},'comp');
+    set(hca,'ColorOrder',mms_colors('1234ba'))
+    irf_legend(hca,{'E','\nabla P_e','-v_e\times B','-v_i\times B','J\times B/ne','residual'},[0.98 0.9],'fontsize',12);
+  else
+    irf_plot(hca,{mvaAvE.x,mvaOhmGradPe.x,-mvaOhmVexB.x,-mvaOhmVixB.x,mvaOhmJxB.x},'comp');
+    set(hca,'ColorOrder',mms_colors('1234ba'))
+    irf_legend(hca,{'E','\nabla P_e','-v_e\times B','-v_i\times B','J\times B/ne'},[0.98 0.9],'fontsize',12);
+  end
+  hca.YLabel.String = {'E_L','(mV/m)'};
+end
+if 0 % Ohm's law y
+  hca = irf_panel('Ohm M');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE.y,mvaOhmGradPe.y,-mvaOhmVexB.y,-mvaOhmVixB.y,mvaOhmJxB.y},'comp');
+  hca.YLabel.String = {'E_M','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'E','\nabla P_e','-v_e\times B','-v_i\times B','J\times B/ne'},[0.98 0.9],'fontsize',12);
+end
+if 0 % Ohm's law z
+  hca = irf_panel('Ohm N');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE.z,mvaOhmGradPe.z,-mvaOhmVexB.z,-mvaOhmVixB.z,mvaOhmJxB.z},'comp');
+  hca.YLabel.String = {'E_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'E','\nabla P_e','-v_e\times B','-v_i\times B','J\times B/ne'},[0.98 0.9],'fontsize',12);
+end
+if 0 % EOM e x
+  hca = irf_panel('EOM e L');
+  set(hca,'ColorOrder',mms_colors('1234ba'))
+  irf_plot(hca,{mvaAvE.x,mvaOhmGradPe.x,-mvaOhmVexB.x},'comp');
+  set(hca,'ColorOrder',mms_colors('1234ba'))
+  irf_legend(hca,{'E','\nabla P_e','-v_e\times B','-v_i\times B','J\times B/ne'},[0.98 0.9],'fontsize',12);
+  hca.YLabel.String = {'E_L','(mV/m)'};
+end
+if 0 % EOM e y
+  hca = irf_panel('EOM e M');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE.y,mvaOhmGradPe.y,-mvaOhmVexB.y},'comp');
+  hca.YLabel.String = {'E_M','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'E','\nabla P_e','-v_e\times B','-v_i\times B','J\times B/ne'},[0.98 0.9],'fontsize',12);
+end
+if 0 % EOM e z
+  hca = irf_panel('EOM e N');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvE.z,-mvaOhmVexB.z,mvaOhmGradPe.z},'comp');
+  hca.YLabel.String = {'E_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'<E>_{4sc}','-<v_e\times B>_{4sc}','\nabla P_e'},[0.98 0.9],'fontsize',14);
+end
+if 0 % av n
+  hca = irf_panel('n av');
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_plot(hca,{avNe,avNi},'comp');
+  hca.YLabel.String = {'n','(cc)'};
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
+end
+if 0 % eps n
+  hca = irf_panel('eps n');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{mvaEpsNe.x,mvaEpsNe.y,mvaEpsNe.z},'comp');
+  hold(hca,'on')
+  irf_plot(hca,{mvaEpsNi.x,mvaEpsNi.y,mvaEpsNi.z},'comp','--');
+  hold(hca,'off')
+  hca.YLabel.String = {'\nabla n/n','(1/km)'};
+end
+if 0 % av T
+  hca = irf_panel('T av');
+  Tishift = 430;
+  Tidiv = 10;
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{avTe,avTi-Tishift,avTi/Tidiv,facAvTe.xx,0.5*(facAvTe.yy+facAvTe.zz)},'comp');
+  hca.YLabel.String = {'T','(ev)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'T_e',sprintf('T_i - %g eV',Tishift),sprintf('T_i/%g',Tidiv),'T_{e||}','T_{e\perp}'},[0.98 0.9],'fontsize',12);
+end
+if 0 % eps T
+  hca = irf_panel('eps T');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{mvaEpsTe.x,mvaEpsTe.y,mvaEpsTe.z},'comp');
+  hold(hca,'on')
+  irf_plot(hca,{mvaEpsTi.x,mvaEpsTi.y,mvaEpsTi.z},'comp','--');
+  hold(hca,'off')
+  hca.YLabel.String = {'\nabla T/T','(1/km)'};
+end
+if 0 % av P
+  hca = irf_panel('P av');
+  Pishift = 0.42;
+  set(hca,'ColorOrder',mms_colors('1234'))
+   %irf_plot(hca,{avPe,avPi-Pishift,avPB,avPi/10},'comp');
+  irf_plot(hca,{avPe,avPi-Pishift,avPB},'comp');
+  hca.YLabel.String = {'P','(nPa)'};
+  set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'P_e',sprintf('P_i-%.2f',Pishift),'P_B','P_i/10'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'P_e',sprintf('P_i - %.2f nPa',Pishift),'P_B'},[0.98 0.9],'fontsize',12);
+end
+if 0 % eps P
+  hca = irf_panel('eps P');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{mvaEpsPe.x,mvaEpsPe.y,mvaEpsPe.z},'comp');
+  hold(hca,'on')
+  irf_plot(hca,{mvaEpsPi.x,mvaEpsPi.y,mvaEpsPi.z},'comp','--');
+  hold(hca,'off')
+  hca.YLabel.String = {'\nabla P/P','(1/km)'};
+end
+if 1 % epsilon e, N
+  hca = irf_panel('eps n T P, N');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{mvaEpsNe.z,mvaEpsTe.z,mvaEpsPe.z},'comp');
+  hca.YLabel.String = {'\epsilon_N','(1/km)'};
+  irf_legend(hca,{'\nabla n_e/n_e','\nabla T_e/T_e','\nabla P_e/P_e'},[0.98 0.9],'fontsize',14);
+end
+irf_zoom(h,'x',tintZoom)
+irf_zoom(h,'y')
+irf_plot_axis_align
+
+
+hca = irf_panel('B av'); hca.YLim = [-14 11];
+hca = irf_panel('EVexB e N'); hca.YLim = [-5.5 7.5]; hca.YTick = -6:2:8;
+hca = irf_panel('eps n T P, N'); hca.YLim = [-0.065 0.042];
+hca = irf_panel('EOM e N'); hca.YLim = [-4.9 4.9];
+  
+for ip = [3 5 7]
+ % h(ip).YLim = [-0.06 0.06];
+end
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+legshift = 0; % the two sc configuration plots
+
+for ii = 1:npanels
+  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0],'fontsize',14)
+  h(ii+pshift).FontSize = 14;  
+  h(ii+pshift).YLabel.FontSize = 14;
 end

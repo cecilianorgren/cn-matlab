@@ -35,9 +35,9 @@ c_eval('[dslE?par_new,dslE?perp_new] = irf_dec_parperp(dmpaB?,dslE?_new); dslE?p
 
 %[~,computername]=system('hostname');
 %if strfind(computername,'ift0227887')
-%  load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
+  load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
 %else
-  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
+%  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
 %end
 
 c_eval('gseE?_new = mms_dsl2gse(dslE?_new,defatt?);',ic)
@@ -64,6 +64,13 @@ c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; 
 
 %% Pressure and temperature divergences
+% no diagonal terms
+c_eval('gsePe?_offdiag = gsePe?;',1:4)
+c_eval('gsePe?_offdiag.data(:,!,!) = zeros(gsePe?_offdiag.length,1);',1:4,1:3)
+c_eval('gsePe?_diag = gsePe?-gsePe?_offdiag;',1:4)
+gseGradPe_offdiag = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1_offdiag,gsePe2_offdiag,gsePe3_offdiag,gsePe4_offdiag); gseGradPe_offdiag.units = 'nPa/km';  gseGradPe_offdiag.name = 'div Pe';
+gseGradPe_diag = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1_diag,gsePe2_diag,gsePe3_diag,gsePe4_diag); gseGradPe_offdiag.units = 'nPa/km';  gseGradPe_offdiag.name = 'div Pe';
+
 gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km';  gseGradPe.name = 'div Pe';
 gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';  gseGradPi.name = 'div Pi';
 gseGradTe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';  gseGradTe.name = 'div Te';
@@ -300,6 +307,7 @@ avPi = (gsePi1.trace/3+gsePi2.trace.resample(gsePi1.time)/3+gsePi3.trace.resampl
 gseAvB = (gseB1+gseB2.resample(gseB1.time)+gseB3.resample(gseB1.time)+gseB4.resample(gseB1.time))/4; 
 gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; gseAvJ.units = gseJ1.units;
 gseAvVExB = (gseVExB1+gseVExB2.resample(gseVExB1.time)+gseVExB3.resample(gseVExB1.time)+gseVExB4.resample(gseVExB1.time))/4; 
+gseAvEVexB = (gseEVexB1+gseEVexB2.resample(gseEVexB1.time)+gseEVexB3.resample(gseEVexB1.time)+gseEVexB4.resample(gseEVexB1.time))/4; 
 gseAvVexB = (gseVexB1+gseVexB2.resample(gseVexB1.time)+gseVexB3.resample(gseVexB1.time)+gseVexB4.resample(gseVexB1.time))/4; 
 gseAvVixB = (gseVixB1+gseVixB2.resample(gseVixB1.time)+gseVixB3.resample(gseVixB1.time)+gseVixB4.resample(gseVixB1.time))/4; 
 gseAvB = (gseB1+gseB2.resample(gseB1.time)+gseB3.resample(gseB1.time)+gseB4.resample(gseB1.time))/4;
@@ -335,6 +343,9 @@ facAvTe = (facTe1+facTe2.resample(facTe1)+facTe3.resample(facTe1)+facTe4.resampl
 
 % Curl of E+VexB (Scudder2105)
 gseRotRe = mms_2015Oct16.rotRe(gseR1,gseR2,gseR3,gseR4,gseEVexB1,gseEVexB2,gseEVexB3,gseEVexB4);
+
+% Rotation of E
+[gseRotE,E]=c_4_grad('gseR?','gseE?','curl');
 
 % Magnetic moment
 c_eval('mag_mom? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom?.units = ''nAm^2''; mag_mom?.name = ''magnetic moment'';',ic)
@@ -623,8 +634,13 @@ c_eval('mvaRedJe?vec = irf.ts_vec_xyz(gseRedJe?vec.time,[gseRedJe?vec.dot(L).dat
 c_eval('mvaRedJi?vec = irf.ts_vec_xyz(gseRedJi?vec.time,[gseRedJi?vec.dot(L).data gseRedJi?vec.dot(M).data gseRedJi?vec.dot(N).data]);')
 end
 
+mvaRotE = gseRotE*lmn';
+
 mvaRotRe = irf.ts_vec_xyz(gseRotRe.time,[gseRotRe.dot(L).data gseRotRe.dot(M).data gseRotRe.dot(N).data]);
+mvaGradPi = irf.ts_vec_xyz(gseGradPi.time,[gseGradPi.dot(L).data gseGradPi.dot(M).data gseGradPi.dot(N).data]);
 mvaGradPe = irf.ts_vec_xyz(gseGradPe.time,[gseGradPe.dot(L).data gseGradPe.dot(M).data gseGradPe.dot(N).data]);
+mvaGradPe_diag = irf.ts_vec_xyz(gseGradPe_diag.time,[gseGradPe_diag.dot(L).data gseGradPe_diag.dot(M).data gseGradPe_diag.dot(N).data]);
+mvaGradPe_offdiag = irf.ts_vec_xyz(gseGradPe_offdiag.time,[gseGradPe_offdiag.dot(L).data gseGradPe_offdiag.dot(M).data gseGradPe_offdiag.dot(N).data]);
 
 mvaAvE = (mvaE1+mvaE2.resample(mvaE1.time)+mvaE3.resample(mvaE1.time)+mvaE4.resample(mvaE1.time))/4; 
 mvaAvVe = (mvaVe1+mvaVe2.resample(mvaVe1.time)+mvaVe3.resample(mvaVe1.time)+mvaVe4.resample(mvaVe1.time))/4; 
@@ -647,8 +663,12 @@ units = irf_units;
 e = units.e; % add the minus below
 mvaAvEVexB = (mvaEVexB1 + mvaEVexB2.resample(mvaEVexB1) + mvaEVexB3.resample(mvaEVexB1) + mvaEVexB4.resample(mvaEVexB1))/4;
 mvaOhmGradPe = mvaGradPe/avNe.resample(mvaGradPe.time)/e*1e-9*1e-6; mvaOhmGradPe.units = 'mV/m';
+mvaOhmGradPi = mvaGradPi/avNe.resample(mvaGradPi.time)/e*1e-9*1e-6; mvaOhmGradPi.units = 'mV/m';
+mvaOhmGradPe_diag = mvaGradPe_diag/avNe.resample(mvaGradPe.time)/e*1e-9*1e-6; mvaOhmGradPe_diag.units = 'mV/m';
+mvaOhmGradPe_offdiag = mvaGradPe_offdiag/avNe.resample(mvaGradPe.time)/e*1e-9*1e-6; mvaOhmGradPe_offdiag.units = 'mV/m';
 mvaOhmVexB = mvaAvVexB; mvaOhmVexB.units = 'mV/m';
 mvaOhmVixB = mvaAvVixB; mvaOhmVixB.units = 'mV/m';
+c_eval('mvaOhmJxB? = mvaJ?.resample(mvaB?.time).cross(mvaB?)/ne?/e*1e-9*1e-9*1e-6*1e3; mvaOhmJxB?.units = ''mV/m'';',1:4)
 mvaOhmJxB_a = mvaAvJ.resample(mvaAvB.time).cross(mvaAvB)/avNe/e*1e-9*1e-9*1e-6*1e3; mvaOhmJxB_a.units = 'mV/m';
 mvaOhmJxB_b = mvaJcurl.resample(mvaAvB.time).cross(mvaAvB)/avNe/e*1e-9*1e-9*1e-6*1e3; mvaOhmJxB_b.units = 'mV/m';
 mvaOhmJxB_c = (mvaJxB1/ne1+mvaJxB2.resample(mvaJxB1.time)/ne2+mvaJxB3.resample(mvaJxB1.time)/ne3+mvaJxB4.resample(mvaJxB1.time)/ne4)/4/e*1e-9*1e-9*1e-6*1e3; mvaOhmJxB_c.units = 'mV/m'; 
@@ -663,8 +683,8 @@ curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
 
 figure(12)
 c_eval('h=irf_plot({mvaB?,mvaJ?,mvaVe?});',1)
-irf_zoom(h,'x',tintZoom); irf_zoom(h,'y');
-h(1).Title.String = sprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];',L,M,N)
+%irf_zoom(h,'x',tintZoom); irf_zoom(h,'y');
+h(1).Title.String = sprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];',L,M,N);
 %fprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];\n',lmn')
 %fprintf('L = [%.2f %.2f %.2f]; M = [%.2f %.2f %.2f]; N = [%.2f %.2f %.2f];\n',L,M,N)
 

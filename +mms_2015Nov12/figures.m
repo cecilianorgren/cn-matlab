@@ -2393,11 +2393,11 @@ end
 legend(h2(1),num2str(ePitch3.depend{2}(indPA)'),'location','southwest')
 
 %% Figure: eletron pa plots, mva fields
-npanels = 10;
+npanels = 11;
 tintZoom = irf.tint('2015-11-12T07:19:19.40Z/2015-11-12T07:19:23.10Z');
 %tintZoom = irf.tint('2015-11-12T07:19:10.00Z/2015-11-12T07:19:40.00Z');
 h = irf_plot(npanels);
-ic = 1;
+ic = 3;
 pshift = 0;
 scrsz = get(groot,'ScreenSize');
 figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.5; figurePostition(4)=figurePostition(4)*0.9;
@@ -2591,7 +2591,7 @@ if 1 % E
   irf_legend(hca,{'L_{\perp}','M_{\perp}','N_{\perp}','E_{||}'},[0.98 0.9],'fontsize',12);  
   irf_zoom(hca,'y')
 end
-if 0 % potential in normal direction
+if 1 % potential in normal direction
   hca = irf_panel('phi');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaIntE?N.tlim(tint)*80},''comp'');',ic)

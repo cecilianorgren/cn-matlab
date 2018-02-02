@@ -18,16 +18,24 @@ c = 299792458;
 
 % Plasma properties for the different species
 B = 10e-9; % not used
-n = [0.3 4.5*6.8e-5]*1e6;
-T = [350 8.5]; T_K = T*units.eV/kB; % use parallel temperature
+n = [2e4 3e4 3.5e4];
+T = 0.2*[450 850 850]; T_K = T*units.eV/kB; % use parallel temperature
+m = [1 1 1]*me;
+q = [-1 -1 -1]*qe; 
+vd = [-1.5e7 -5e6 1e7]; % m/s
+
+if 1 % remove the middle species and add the density to the rightmost one
+n = [3.5e4 5e4];
+T = [400 600]; T_K = T*units.eV/kB; % use parallel temperature
 m = [1 1]*me;
 q = [-1 -1]*qe; 
-vd = [0 2.55e4]*1e3; % km/s
+vd = [-1.5e7 1e7]; % m/s
+end
 
 nsp = numel(n); % number of species
 
 % Physical parameters
-vt = sqrt(2*qe*T./m);
+vt = sqrt(2*qe*T./m); % m/s
 wp = sqrt(n.*q.^2./(m*eps0)); % Hz
 wc = q*B./m; % not used, although it can affect stability of phase space holes
 ro = vt./wc;
@@ -94,15 +102,15 @@ kvec = linspace(k_min,k_max,nk)/knorm;
 wr_store = nan(1,nk);
 wi_store = nan(1,nk);
 fval_store = nan(1,nk);
-x = 50;
+x = 000;
 for ik = 1:nk  
   xguess = x;
-  xguess = vd(2)*kvec(ik);
+  %xguess = vd(2)*kvec(ik);
   
   af = @(temp) D_streaming(temp,kvec(ik),vt,wp,vd);   
   options = optimset('GradObj','on','display','off','TolFun',1e-12);  
   [x,FVAL,EXITFLAG] = fsolve(af,xguess,options);    
-  %fprintf('x = %g + %gi \n',real(x),imag(x))
+  fprintf('x = %g + %gi \n',real(x),imag(x))
   fval_store(ik) = FVAL; 
   wr_store(ik) = real(x);
   wi_store(ik) = imag(x);  
@@ -131,6 +139,8 @@ fig.Position = [10 10 400 1100];
 
 wnorm = wp(1); wnorm_str = sprintf('w_{p%g}',1);
 
+do_normf = 0;
+
 nrows = 4;
 ncols = 1;
 npanels = nrows*ncols;
@@ -154,16 +164,13 @@ if 1 % input info
   sprintf('ro = ['), sprintf(' %g',ro*1e-3), sprintf('] km\n'), ...
   sprintf('Lin = ['), sprintf(' %g',Lin*1e-3), sprintf('] km\n'), ...
   sprintf('Ld = ['), sprintf(' %g',Ld*1e-3), sprintf('] km\n'), ...
-  ]
+  ];
   hca.Visible = 'off';
   text(hca,0,1,info_str,'verticalalignment','top')
 end
 
 if 1 % input distributions
   hca = h(isub); isub = isub + 1;
-  plot(hca,vphmax*1e-6*[1 1],[0 1],'-','linewidth',1.5,'color',0.8+[0 0 0])
-  hold(hca,'on')
-  
   vmax = max(2*vt + vd);
   vmin = min(-2*vt + vd);
   vvec = linspace(vmin,vmax,1000); 
@@ -172,7 +179,28 @@ if 1 % input distributions
   for isp = 1:nsp
     ftot = ftot + f(vvec,n(isp),vt(isp),vd(isp));
   end
-  plot(hca,vvec*1e-6,ftot/max(ftot),'-','linewidth',1,'color',[0 0 0])   
+  % plot normalization
+  if do_normf
+    for isp = 1:nsp
+      fnorm(isp) = max(f(vvec,n(isp),vt(isp),vd(isp)));
+    end
+    fnormtot = max(ftot);
+    fmaxtot = 1;
+  else
+    fnorm = ones(isp,1);
+    fnormtot = 1;
+    fmaxtot = max(ftot);
+  end
+  
+  % obtained phase velocity
+  plot(hca,vphmax*1e-6*[1 1],[0 fmaxtot],'-','linewidth',1.5,'color',0.8+[0 0 0])
+  hold(hca,'on')
+  
+
+  
+
+
+  plot(hca,vvec*1e-6,ftot/fnormtot,'-','linewidth',1,'color',[0 0 0])   
   
   colors = [     0    0.4470    0.7410;...
             0.8500    0.3250    0.0980;...
@@ -185,7 +213,7 @@ if 1 % input distributions
   for isp = 1:nsp
     %plot(hca,vvec*1e-6,f(vvec,n(isp),vt(isp),vd(isp))/max(f(vvec,n(isp),vt(isp),vd(isp))))    
     %plot(hca,vvec*1e-6,f(vvec,n(isp),vt(isp),vd(isp))/max(f(vvec,n(isp),vt(isp),vd(isp))),'--','linewidth',1.5,'color',colors(isp,:).^0.5)    
-    hp = patch(hca,[vvec vvec(end) vvec(1)]*1e-6,[f(vvec,n(isp),vt(isp),vd(isp)) 0 0]/max(f(vvec,n(isp),vt(isp),vd(isp))),colors(isp,:));
+    hp = patch(hca,[vvec vvec(end) vvec(1)]*1e-6,[f(vvec,n(isp),vt(isp),vd(isp)) 0 0]/fnorm(isp),colors(isp,:));
     hp.FaceAlpha = 0.3;
     hp.EdgeColor = 'none';
     f_legends{isp} = sprintf('f_%.0f/%g',isp,max(f(vvec,n(isp),vt(isp),vd(isp))));
@@ -194,8 +222,8 @@ if 1 % input distributions
   hl.Position(3) = 0.75;
   hl.Position(2) = hl.Position(2)+0.08;
   hca.XLabel.String = 'v (10^3 km/s)';
-  hca.YLabel.String = 'f/max(f)';    
-  plot(hca,vvec*1e-6,ftot/max(ftot),'-','linewidth',1,'color',[0 0 0])   
+  if do_normf, hca.YLabel.String = 'f/max(f)'; else, hca.YLabel.String = 'f'; end
+  plot(hca,vvec*1e-6,ftot/fnormtot,'-','linewidth',1,'color',[0 0 0])   
   hca.XLim = vvec([1 end])*1e-6;  
   hold(hca,'off')
 end
@@ -207,9 +235,9 @@ if 1 % solution, wr wi
     ax(2).YGrid = 'on';
     ax(1).XLim = kvec([1 end])*knorm;
     ax(2).XLim = kvec([1 end])*knorm;
-    ax(2).YLim = [-0.03 0.01];
-    ax(2).YTick = [-0.03:0.01:0.01];
-    ax(1).YLim = [0 1.5];
+    %ax(2).YLim = [-0.03 0.01];
+    %ax(2).YTick = [-0.03:0.01:0.01];
+    %ax(1).YLim = [0 1.5];
   else
     plot(hca,kvec*knorm,wr_store/wnorm,kvec*knorm,wi_store/wnorm,'linewidth',1.5)
     hca.XLim = [0 max(kvec)*knorm];

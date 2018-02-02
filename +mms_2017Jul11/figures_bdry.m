@@ -511,8 +511,8 @@ end
 
 %% Spacecraft position in local coordinate system
 % Subplot spacecraft position
-nrows = 3;
-ncols = 1;
+nrows = 1;
+ncols = 3;
 npanels = nrows*ncols;
 for ip = 1:npanels
   h(ip) = subplot(nrows,ncols,ip);
@@ -566,9 +566,9 @@ end
 
 %% Plasma parameters, beta, pressure etc
 ic = 1;
-npanels = 9;
+npanels = 4;
 h = irf_plot(npanels);
-tintZoom = irf.tint('2017-07-11T22:33:15.00Z/2017-07-11T22:33:45.00Z'); %20151112071854
+tintZoom = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:38:00.00Z'); %20151112071854
 tint = tintZoom;
 
 zoomy = [];
@@ -583,7 +583,7 @@ if 1 % B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'v','N','B','|B|'},[0.98 0.9],'fontsize',12);  
 end
-if 1 % iPDist deflux omni
+if 0 % iPDist deflux omni
   isub = isub + 1;
   hca = irf_panel('i DEF omni');  
   c_eval('irf_spectrogram(hca,iPDist?.tlim(tint).deflux.omni.specrec,''log'');',ic)
@@ -595,7 +595,7 @@ if 1 % iPDist deflux omni
   hold(hca,'off')
   hca.YLabel.String = {'E_i','(eV)'};  
 end
-if 1 % ePDist deflux omni
+if 0 % ePDist deflux omni
   isub = isub + 1;
   hca = irf_panel('e DEF omni');  
   c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).deflux.omni.specrec,''log'');',ic)
@@ -608,17 +608,38 @@ if 1 % ePDist deflux omni
   hold(hca,'off')
   hca.YLabel.String = {'E_e','(eV)'};  
 end
-if 1 % beta
+if 0 % ne ni
   isub = isub + 1;
   zoomy = [zoomy isub];
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?,ni?},''comp'');',ic)
+  hca.YLabel.String = {'n','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('12'))  
+  irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
+end
+if 1 % ne
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n','(cm^{-3})'};
+end
+if 1 % beta
+  isub = isub + 1;
+  %zoomy = [zoomy isub];
   hca = irf_panel('beta');
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_plot(hca,{beta1.tlim(tint),beta1i.tlim(tint),beta1e.tlim(tint)},'comp');
   hca.YLabel.String = {irf_ssub('\beta',ic),'(cm^{-3})'};
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_legend(hca,{'i+e','i','e'},[0.98 0.9],'fontsize',12);
+  hca.YScale = 'log';
+  hca.YLim = [1e-2 1e3];
+  hca.YTick = 10.^[-1:2];
 end
-if 1 % Pressures
+if 0 % Pressures
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Pressure');  
@@ -719,15 +740,17 @@ if 0 % E
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_legend(hca,sprintf('f<%g Hz',ffiltE),[0.98 0.1],'fontsize',12);
 end
-if 1 % Lp from Eperp
+if 0 % Lp from Eperp
   isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('E');
+  %zoomy = [zoomy isub];
+  hca = irf_panel('Lp');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{Lp?*1e-3},''comp'');',ic)
   hca.YLabel.String = {'L_p','(km)'};  
+  hca.YScale = 'log';
+  hca.YLim = [1e2 5e3];
 end
-if 1 % Te par perp Ti/Tref
+if 0 % Te par perp Ti/Tref
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Te');
@@ -740,17 +763,6 @@ if 1 % Te par perp Ti/Tref
   %hca.YLim = [10 400];  
   %irf_zoom(hca,'y')
 end
-if 1 % ne ni
-  isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('n');
-  set(hca,'ColorOrder',mms_colors('12'))
-  c_eval('irf_plot(hca,{ne?,ni?},''comp'');',ic)
-  hca.YLabel.String = {'n','(cm^{-3})'};
-  set(hca,'ColorOrder',mms_colors('12'))  
-  irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
-end
-
 irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
@@ -764,7 +776,7 @@ for ii = 1:npanels
   h(ii).YLabel.FontSize = 13;
 end
 
-%% Velocities in new coordinate system
+%% Velocities in new coordinate system, bdry
 npanels = 7;
 h = irf_plot(npanels);
 ic = 1;
@@ -875,9 +887,130 @@ for ii = 1:npanels
   h(ii+pshift).YLabel.FontSize = 11;
 end
 
+%% Velocities in new coordinate system, mva
+npanels = 8;
+h = irf_plot(npanels);
+ic = 1;
+
+tint = irf.tint('2017-07-11T22:33:15.00Z/2017-07-11T22:33:35.00Z'); %20151112071854
+tint = irf.tint('2017-07-11T22:33:15.00Z/2017-07-11T22:33:35.00Z'); %20151112071854
+
+pshift = 0;
+scrsz = get(groot,'ScreenSize');
+figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.5; figurePostition(4)=figurePostition(4)*0.9;
+hcf = gcf; hcf.Position = figurePostition;
+
+if 1 % B abs
+  hca = irf_panel('B abs');
+  set(hca,'ColorOrder',mms_colors('1'))  
+  c_eval('irf_plot(hca,{mvaB?.abs},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('1'))
+end 
+if 1 % B
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end 
+if 1 % J curl
+  hca = irf_panel('J curl');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_plot(hca,{mvaJcurl.x,mvaJcurl.y,mvaJcurl.z},'comp');  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'curlometer'},[0.05 0.9],'fontsize',12);    
+end
+if 1 % J  
+  hca = irf_panel('J fpi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaJ?.x,mvaJ?.y,mvaJ?.z},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  %hca.YLim = [-1100 1100];  
+end
+if 0 % Vi  
+  hca = irf_panel('Vi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVi?.x,mvaVi?.y,mvaVi?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_i','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 1 % Vi  
+  hca = irf_panel('Vi perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVi?perp.x,mvaVi?perp.y,mvaVi?perp.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{i,\perp}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 0 % Ve  
+  hca = irf_panel('Ve');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint),mvaVe?.y.tlim(tint),mvaVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 1 % Ve perp
+  hca = irf_panel('Ve perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?perp.x,mvaVe?perp.y,mvaVe?perp.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{e,\perp}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 0 % Ve x B
+  hca = irf_panel('VexB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVExB?.x,mvaVExB?.y,mvaVExB?.z},''comp'');',ic)  
+  hca.YLabel.String = {'-v_e x B','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 1 % V ExB
+  hca = irf_panel('VExB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVExB?.x,mvaVExB?.y,mvaVExB?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{ExB}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);   
+end
+if 1 % E perp
+  hca = irf_panel('E perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaE?perp.x,mvaE?perp.y,mvaE?perp.z},''comp'');',ic)
+  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+
+
+irf_zoom(h,'x',tint)
+irf_zoom(h,'y')
+irf_plot_axis_align
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+legshift = 0; % the two sc configuration plots
+
+for ii = 1:npanels
+  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0])
+  h(ii+pshift).FontSize = 12;  
+  h(ii+pshift).YLabel.FontSize = 11;
+end
+
 %% Plot overview figure with focus on electrons, including single time electron distributions
 npanels = 10;
-tintZoom = irf.tint('2017-07-11T22:33:16.00Z/2017-07-11T22:33:34.00Z'); % LH separatrix
+tint = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:33:35.00Z'); %20151112071854
+tintZoom = irf.tint('2017-07-11T22:31:50.00Z/2017-07-11T22:33:35.20Z'); % LH separatrix
+
 cmap = 'jet';
 [h1,h2] = initialize_combined_plot(npanels,3,3,0.4,'vertical');
 ic = 1;
@@ -1177,4 +1310,147 @@ for it_ = 1:numel(tind)
     colormap(h2(ii),strCMap)
   end
   cn.print(['e_proj_in_fix_mms' num2str(ic) '_' timeUTC '_opengl'],'opengl','path',[eventPath 'proj_int_mms1/'])
+end
+
+%% Earliest package of LH waves
+npanels = 7;
+h = irf_plot(npanels);
+ic = 1;
+
+tint = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:33:25.00Z'); %20151112071854
+
+pshift = 0;
+scrsz = get(groot,'ScreenSize');
+figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.5; figurePostition(4)=figurePostition(4)*0.9;
+hcf = gcf; hcf.Position = figurePostition;
+
+if 1 % B
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{bdryB?.x,bdryB?.y,bdryB?.z},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);
+end 
+if 0 % J curl
+  hca = irf_panel('J curl');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_plot(hca,{bdryJcurl.x,bdryJcurl.y,bdryJcurl.z},'comp');  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'curlometer'},[0.05 0.9],'fontsize',12);    
+end
+if 1 % J  
+  hca = irf_panel('J fpi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryJ?.x,bdryJ?.y,bdryJ?.z},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);
+  %hca.YLim = [-1100 1100];  
+end
+if 0 % Vi  
+  hca = irf_panel('Vi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVi?.x,bdryVi?.y,bdryVi?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_i','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12); 
+end
+if 0 % Vi  
+  hca = irf_panel('Vi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVi?perp.x,bdryVi?perp.y,bdryVi?perp.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{i,\perp}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12); 
+end
+if 0 % Ve  
+  hca = irf_panel('Ve');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVe?.x.tlim(tint),bdryVe?.y.tlim(tint),bdryVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);     
+end
+if 0 % Ve perp
+  hca = irf_panel('Ve perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVe?perp.x.tlim(tint),bdryVe?perp.y.tlim(tint),bdryVe?perp.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_{e,\perp}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);     
+end
+if 0 % Ve x B
+  hca = irf_panel('VexB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVExB?.x,bdryVExB?.y,bdryVExB?.z},''comp'');',ic)  
+  hca.YLabel.String = {'-v_e x B','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);     
+end
+if 0 % V ExB
+  hca = irf_panel('VExB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVExB?.x,bdryVExB?.y,bdryVExB?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{ExB}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','norm','||'},[0.98 0.9],'fontsize',12);     
+end
+if 1 % ne
+  hca = irf_panel('ne');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{ne1.tlim(tint),ne2.tlim(tint),ne3.tlim(tint),ne4.tlim(tint)},'comp');
+  hca.YLabel.String = {irf_ssub('n_{e}',ic),'(cm^{-3})'};
+end
+if 1 % E perp
+  hca = irf_panel('E perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryE?perp.x,bdryE?perp.y,bdryE?perp.z},''comp'');',ic)
+  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'v','N','||'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 1 % E par, low freq
+  hca = irf_panel('E par, low freq');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  ffilt = 10;
+  c_eval('irf_plot(hca,{bdryE?par.filt(0,ffilt,[],3)},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{sprintf('f<%g Hz',ffilt)},[0.05 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 1 % E par, high freq
+  hca = irf_panel('E par, high freq');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  ffilt = 10;
+  c_eval('irf_plot(hca,{bdryE?par.filt(ffilt,0,[],3)},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{sprintf('f>%g Hz',ffilt)},[0.05 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 1 % Ve par
+  hca = irf_panel('Ve par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{bdryVe?par},''comp'');',ic)  
+  hca.YLabel.String = {'v_{e,||}','(km/s)'};
+end
+
+
+irf_zoom(h,'x',tint)
+irf_zoom(h,'y')
+irf_plot_axis_align
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+legshift = 0; % the two sc configuration plots
+
+for ii = 1:npanels
+  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0])
+  h(ii+pshift).FontSize = 12;  
+  h(ii+pshift).YLabel.FontSize = 11;
 end

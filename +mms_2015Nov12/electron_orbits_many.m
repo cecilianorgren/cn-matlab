@@ -119,7 +119,7 @@ switch particle_set
   case 5
     limN = 40e3;
     T = 0.5;
-    electron_energy = [50 120 50 120]; % eV
+    electron_energy = [50 150 50 150]; % eV
     vt = sqrt(electron_energy*units.eV*2/units.me)/1000;
 
     velocity_angle = [-10 20 -10 20];
@@ -304,7 +304,7 @@ for iParticle= 1:nParticles
   x_init = x_init(:,iParticle); 
   % Integrate trajectory
   stopfunction = @(t,y) eom.lim(t,y,limN);
-  options = odeset('Events',stopfunction);%,'InitialStep',2.5e-5,'OutputSel',1,'Refine',refine);
+  options = odeset('Events',stopfunction,'RelTol',1e-10);%,'InitialStep',2.5e-5,'OutputSel',1,'Refine',refine);
 
   EoM = @(ttt,xxx) eom.general(ttt,xxx,Bx,By,Bz,Ex,Ey,Ez);
   %EoM = @(ttt,xxx) eom.interp_data(ttt,xxx,0,0,zObs,obsB.x.data,obsB.y.data,obsB.z.data,obsE.x.data,obsE.y.data,obsE.z.data);

@@ -1,6 +1,8 @@
 %% Electron orbits of several particles, not slice distributions but pitchangle plot
-tintObs = irf.tint('2015-11-12T07:19:20.65Z/2015-11-12T07:19:21.70Z');
-tintObs = tintObs;
+t_center = irf_time('2015-11-12T07:19:21.175000012Z','utc>EpochTT'); 
+tintObs = t_center + 1*[-1 1];
+%tintObs = irf.tint('2015-11-12T07:19:20.65Z/2015-11-12T07:19:21.70Z');
+%tintObs = tintObs;
 CS_normal_velocity = 70; % km/s
 
 ic = 1;
@@ -22,6 +24,13 @@ zObsPDist = (obsPDist.time.epochUnix-mean(obsPDist.time.epochUnix))*CS_normal_ve
 
 % Colors
 colors = mms_colors('xyz');
+
+% Save old saveParticle (prevent from overwriting) and call this one something else
+% call the one produced in this script saveParticle_4
+conserve_saveParticle = 1;
+if conserve_saveParticle && exist('saveParticle','var') && numel(saveParticle) > 1000
+  saveParticle_save = saveParticle;
+end
 
 % Model parameters
 mms_2015Nov12.Bmodel;
@@ -319,6 +328,11 @@ labels = arrayfun(@(x) {['E = ' num2str(x) ' eV']},electron_energy);
 %legend(hl,labels{:},'location','west')
 legend(hl,labels{:},'location','northwest')
 
+if conserve_saveParticle
+  saveParticle_4 = saveParticle;
+  saveParticle = saveParticle_save;
+end
+
 % add magnetic field
 hold(hca,'on')
 yellow = mms_colors('matlab'); yellow = yellow(3,:);
@@ -346,6 +360,7 @@ c_eval('h(?).Position(3) = h(2).Position(3);',1:4);
 %h(5).Position(2) = h(4).Position(2)-h(4).Position(4)-dy;
 irf_plot_axis_align
 c_eval('h(?).Position(1) = 0.15; h(?).Position(3) = 0.7;',1:4)
+
 
 %% 3D plot of particles only, with magnetic field
 figure(76);
@@ -698,9 +713,17 @@ if 0 % Time: ePDist pa low energies
 end
 if 1 % Distance: ePDist pa low energies
   hca = h(isub); isub = isub + 1;
-  elim = [10 400];
+  elim = [10 1000];
   plotPitch = obsPitch.elim(elim).deflux.specrec('pa');
-  pcolor(hca,zObsPDist,plotPitch.f,log10(plotPitch.p'))
+  edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
+  edges_z = [zObsPDist-0.5*diff(zObsPDist(1:2)); zObsPDist(end)+0.5*diff(zObsPDist(1:2))]';
+  surf_def = zeros(numel(edges_pa),numel(edges_z));
+  surf_col = log10(plotPitch.p');
+  surf(hca,edges_z,edges_pa,surf_def,surf_col)
+  view(hca,[0 0 1])
+  hca.YLim = [0 180];
+  %pcolor(hca,zObsPDist,plotPitch.f,log10(plotPitch.p'))
+  
   shading(hca,'flat')
   hold(hca,'on')
   set(hca,'ColorOrder',mms_colors('11'))
@@ -716,7 +739,7 @@ if 1 % Distance: ePDist pa low energies
   hca.YLabel.String = {'Pitchangle','(\circ)'};
   hca.YTick = [45 90 135];   
   colormap(hca,'jet')
-  irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.01 0.5],'fontsize',12,'color',[0 0 0]);
+  irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.01 0.5],'fontsize',14,'color',[0 0 0]);
   %hca.CLim = h(2).CLim;  
   xlabel(hca,'N (km)')  
 end
@@ -874,9 +897,9 @@ end
 c_eval('h(?).XTick = [-20 0 20];',1:2)
 c_eval('h(?).XTick = [];',3)
 c_eval('h(?).XLim = [-30 30];',1:3)
-c_eval('h(?).XLim = [0 115];',4:6)
-c_eval('h(?).YLim = [-50 110];',4:6)
-c_eval('h(?).ZLim = [-32 32];',4:6)
+%c_eval('h(?).XLim = [0 115];',4:6)
+%c_eval('h(?).YLim = [-50 110];',4:6)
+%c_eval('h(?).ZLim = [-32 32];',4:6)
 c_eval('h(?).XTick = -200:20:200;',4:6)
 c_eval('h(?).YTick = -200:20:200;',4:6)
 c_eval('h(?).ZTick = -200:20:200;',4:6)

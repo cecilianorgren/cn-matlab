@@ -4559,7 +4559,6 @@ irf_plot_axis_align
 %h(10).YLim = 7*[-1 1];
 %h(11).YLim = 7*[-1 1];
 
-
 %% Figure: the miniature current sheet
 npanels = 4;
 tintZoom = irf.tint('2015-11-12T07:19:19.40Z/2015-11-12T07:19:23.10Z');
