@@ -2737,7 +2737,7 @@ c_eval('h(?).XLim = nlim;',1:npanels)
 c_eval('h(?).XTickLabel = [];',1:npanels-1)
 c_eval('h(?).XLabel.String = [];',1:npanels-1)
 c_eval('h(?).FontSize = 14;',1:npanels)
-c_eval('h(?).CLim = [2.8 3.9];',3:7)
+c_eval('h(?).CLim = [3.0 3.9];',3:7)
 colormap_str = 'jet';
 c_eval('colormap(h(?),colormap_str);',3:7)
 
@@ -3135,7 +3135,7 @@ h(3).YTickLabel = [];
 h(3).YLabel.String = [];
 
 labels = {'h)','i)','j)'};
-labels = {'a)','b)','c)'};
+%labels = {'a)','b)','c)'};
 c_eval('irf_legend(h(?),labels{?},[0.05 0.95],''fontsize'',18)',1:3)
 
 
