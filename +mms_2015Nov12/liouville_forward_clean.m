@@ -36,17 +36,25 @@ end
 [obsEpar,obsEperp] = irf_dec_parperp(obsB,obsE); obsEpar.name = 'obs E par'; obsEperp.name = 'obs E perp';
 %irf_plot({obsE,modE,modEperp,modEpar,modEenf,modEenfperp,modEenfpar})
 %irf_plot({obsE,modE,modEperp,modEenf,modEenfperp},'comp')
-irf_plot({obsB,modB},'comp')
+figure(101); 
+h=irf_plot(6);
+irf_plot(irf_panel('BL'),{obsB.x,modB.x},'comp')
+irf_plot(irf_panel('BM'),{obsB.y,modB.y},'comp')
+irf_plot(irf_panel('BN'),{obsB.z,modB.z},'comp')
+irf_plot(irf_panel('EL'),{obsE.x,modE.x},'comp')
+irf_plot(irf_panel('EM'),{obsE.y,modE.y},'comp')
+irf_plot(irf_panel('EN'),{obsE.z,modE.z},'comp')
+
 
 %% Initialize particles
 solidangle = 0;
 do64 = 1;
 % Define pitch (pol) and azimuthal angle for population stating on each
 % side, total nP is 2*nE*nAz*nPol
-nPol = 10;
-nAz = 10;
+nPol = 12;
+nAz = 24;
 %nE = 16; 
-iE = 1:34; nE = numel(iE);
+iE = 3:34; nE = numel(iE);
 nP = 2*nE*nAz*nPol;
 
 % Initial position
@@ -134,9 +142,9 @@ else
   f_left = obsPDist(tind_left);
 end
 [VX_obs_left,VY_obs_left,VZ_obs_left] = f_left.v(lmn,'squeeze');
-vx0_obs_left = -VX_obs_left; % change to direction in which the particles are going
-vy0_obs_left = -VY_obs_left;
-vz0_obs_left = -VZ_obs_left;
+vx0_obs_left = VX_obs_left; % change to direction in which the particles are going, THIS WAS WRONG, SHOULD BE NO MINUS
+vy0_obs_left = VY_obs_left;
+vz0_obs_left = VZ_obs_left;
 
 t_right = t_center + max(z0)/CS_normal_velocity;
 tind_right = find(abs(obsPDist.time-t_right)==min(abs(obsPDist.time-t_right)));
@@ -147,9 +155,9 @@ else
   f_right = obsPDist(tind_right);
 end
 [VX_obs_right,VY_obs_right,VZ_obs_right] = f_right.v(lmn,'squeeze');
-vx0_obs_right = -VX_obs_right; % change to direction in which the particles are going
-vy0_obs_right = -VY_obs_right;
-vz0_obs_right = -VZ_obs_right;
+vx0_obs_right = VX_obs_right; % change to direction in which the particles are going, THIS WAS WRONG, SHOULD BE NO MINUS
+vy0_obs_right = VY_obs_right;
+vz0_obs_right = VZ_obs_right;
 
 disp('Initializing particles')
 fprintf('iP = %5.0f/%5.0f\n',0,nP)
@@ -350,7 +358,7 @@ for iP = 1:nP%(nP/2+1):nP %:numel(saveParticle) % step through particles
   y = saveParticle{iP}.r(ind,2); % M  
   z = saveParticle{iP}.r(ind,3); % N  
   allzend(iP) = z(end);
-  allzmin(iP) = min(abs(z));
+  allzmin(iP) = sign(z(1))*min(abs(z));
   allTend(iP) = saveParticle{iP}.t(end);
   pa = saveParticle{iP}.pa(ind); % pitch angle  
   
@@ -610,8 +618,8 @@ pause(0.1); beep
 %% Plot
 npanels = 10;
 %[h1,h2] = initialize_combined_plot(npanels,1,1,0.4,'vertical');
-h1 = irf_plot(npanels);
-elim = [50 250];
+h1 = irf_plot(npanels,'newfigure');
+elim = [20 1000];
 ylim = [10 1000];
 colors = mms_colors('matlab');
 
@@ -726,7 +734,7 @@ if 0 % psd obs omni
   irf_legend(hca,{sprintf('%g<E<%g eV',elim)},[0.98 0.10],'fontsize',12,'color',[0 0 0]);
   hca.YLim = [10 1000];
 end
-if 1 % psd map pitchangles
+if 1 % psd obs pitchangles
   hca = h1(isub); isub = isub + 1;
   irf_spectrogram(hca,obsPDist.einterp.pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa'),'log');
   irf_legend(hca,{sprintf('%g<E<%g eV',elim)},[0.98 0.10],'fontsize',12,'color',[0 0 0]);

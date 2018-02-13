@@ -1,9 +1,9 @@
 % analysis_liovuille
 
 % particles starting on left and exiting on right
-leftstart = find(z0<0); % index
+leftstart = find(allz0<0); % index
 leftstop = find(allzend<0);
-rightstart = find(z0>0);
+rightstart = find(allz0>0);
 rightstop = find(allzend>0);
 centerpass = find(allzmin<10e3); 
 
@@ -40,9 +40,14 @@ f_edges = logspace(-30,-25,20);
 left_f0 = histc(f0(leftstart),f_edges);
 right_f0 = histc(f0(rightstart),f_edges);
 
+z_min_edges = (-30:10:30)*1e3;
+left_zmin = histc(allzmin(leftstart),z_min_edges);
+right_zmin = histc(allzmin(rightstart),z_min_edges);
+
+
 figure(61)
 nrows = 4;
-ncols = 2;
+ncols = 3;
 npanels = nrows*ncols;
 for ipanel = 1:npanels
   h(ipanel) = subplot(nrows,ncols,ipanel);
@@ -142,11 +147,108 @@ if 1 % f0
   hca = h(isub); isub = isub + 1;
   colors = mms_colors('matlab');
   hca.ColorOrder = colors;
-  bar(log10(f_edges),[left_f0 right_f0]); colormap(hca,colors(1:2,:));
+  bar(hca,log10(f_edges),[left_f0 right_f0]); colormap(hca,colors(1:2,:));
   hca.XLim = log10(f_edges([1 end]));
   %hca.XScale = 'log';
   %hca.YScale = 'log';
   hca.ColorOrder = colors;
   irf_legend(hca,{'left','right'},[0.96 0.95])
   %legend(hca,'left','right','location','eastoutside');  
+end
+if 1 % zmin
+  hca = h(isub); isub = isub + 1;
+  colors = mms_colors('matlab');
+  hca.ColorOrder = colors;
+  bar(hca,z_min_edges,[left_zmin right_zmin]); colormap(hca,colors(1:2,:));
+  %hca.XLim = log10(f_edges([1 end]));
+  %hca.XScale = 'log';
+  %hca.YScale = 'log';
+  hca.ColorOrder = colors;
+  irf_legend(hca,{'left','right'},[0.96 0.95])
+  %legend(hca,'left','right','location','eastoutside');  
+end
+
+if 1 % pitchangle distributions of obs and map, left
+  hca = h(isub); isub = isub + 1;
+  
+  colors = mms_colors('matlab'); colors = colors(1:3,:);
+  time1 = irf_time('2015-11-12T07:19:20.900Z','utc>EpochTT');   
+  time2 = t_left;
+  tind1_obs  = find(abs(obsPDist.time-time1)==min(abs(obsPDist.time-time1)));
+  tind1_map  = find(abs(tsFmap.time-time1)==min(abs(tsFmap.time-time1)));
+  
+  pitch1_map = tsFmap(tind1_map).pitchangles(gseB1,15);
+  pitch1_obs = obsPDist(tind1_obs).pitchangles(gseB1,15);
+  
+  hca.ColorOrder = colors;
+  plot(hca,pitch1_obs.depend{1}(1,:),squeeze(pitch1_obs.data(1,:,[1 ceil(numel(pitch1_obs.depend{2})/2) numel(pitch1_obs.depend{2})])));
+  hold(hca,'on')
+  hca.ColorOrder = colors;
+  hca.LineStyleOrder = '--';
+  plot(hca,pitch1_map.depend{1}(1,:),squeeze(pitch1_map.data(1,:,[1 ceil(numel(pitch1_map.depend{2})/2) numel(pitch1_map.depend{2})])));
+  hold(hca,'off')
+  hca.YScale = 'log'; hca.XScale = 'log';
+  hca.YLabel.String = ['f_e (' pitch1_obs.units ')'];
+  hca.XLabel.String = 'E (eV)';
+  hca.XLim = [10 1000];
+  legend(hca,{'0','90','180'})
+  hca.YTick = 10.^[-3:5]*1e-30;
+  hca.YLim = [1e-1 1e5]*1e-30;
+  hca.Title.String = pitch1_obs.time.utc;
+end
+if 1 % pitchangle distributions of obs and map, center
+  hca = h(isub); isub = isub + 1;
+  
+  colors = mms_colors('matlab'); colors = colors(1:3,:);
+  time2 = irf_time('2015-11-12T07:19:21.500Z','utc>EpochTT'); 
+  time2 = t_center;
+  tind2_obs  = find(abs(obsPDist.time-time2)==min(abs(obsPDist.time-time2)));
+  tind2_map  = find(abs(tsFmap.time-time2)==min(abs(tsFmap.time-time2)));
+  
+  pitch2_map = tsFmap(tind2_map).pitchangles(gseB1,15);
+  pitch2_obs = obsPDist(tind2_obs).pitchangles(gseB1,15);
+  
+  hca.ColorOrder = colors;
+  plot(hca,pitch2_obs.depend{1}(1,:),squeeze(pitch2_obs.data(1,:,[1 ceil(numel(pitch2_obs.depend{2})/2) numel(pitch2_obs.depend{2})])));
+  hold(hca,'on')
+  hca.ColorOrder = colors;
+  hca.LineStyleOrder = '--';
+  plot(hca,pitch2_map.depend{1}(1,:),squeeze(pitch2_map.data(1,:,[1 ceil(numel(pitch2_map.depend{2})/2) numel(pitch2_map.depend{2})])));
+  hold(hca,'off')
+  hca.YScale = 'log'; hca.XScale = 'log';
+  hca.YLabel.String = ['f_e (' pitch1_obs.units ')'];
+  hca.XLabel.String = 'E (eV)';
+  hca.XLim = [10 1000];
+  legend(hca,{'0','90','180'})
+  hca.YTick = 10.^[-3:5]*1e-30;
+  hca.YLim = [1e-1 1e5]*1e-30;
+  hca.Title.String = pitch2_obs.time.utc;
+end
+if 1 % pitchangle distributions of obs and map, right
+  hca = h(isub); isub = isub + 1;
+  
+  colors = mms_colors('matlab'); colors = colors(1:3,:);
+  time2 = irf_time('2015-11-12T07:19:21.500Z','utc>EpochTT'); 
+  time2 = t_right;
+  tind2_obs  = find(abs(obsPDist.time-time2)==min(abs(obsPDist.time-time2)));
+  tind2_map  = find(abs(tsFmap.time-time2)==min(abs(tsFmap.time-time2)));
+  
+  pitch2_map = tsFmap(tind2_map).pitchangles(gseB1,15);
+  pitch2_obs = obsPDist(tind2_obs).pitchangles(gseB1,15);
+  
+  hca.ColorOrder = colors;
+  plot(hca,pitch2_obs.depend{1}(1,:),squeeze(pitch2_obs.data(1,:,[1 ceil(numel(pitch2_obs.depend{2})/2) numel(pitch2_obs.depend{2})])));
+  hold(hca,'on')
+  hca.ColorOrder = colors;
+  hca.LineStyleOrder = '--';
+  plot(hca,pitch2_map.depend{1}(1,:),squeeze(pitch2_map.data(1,:,[1 ceil(numel(pitch2_map.depend{2})/2) numel(pitch2_map.depend{2})])));
+  hold(hca,'off')
+  hca.YScale = 'log'; hca.XScale = 'log';
+  hca.YLabel.String = ['f_e (' pitch1_obs.units ')'];
+  hca.XLabel.String = 'E (eV)';
+  hca.XLim = [10 1000];
+  legend(hca,{'0','90','180'})
+  hca.YTick = 10.^[-3:5]*1e-30;
+  hca.YLim = [1e-1 1e5]*1e-30;
+  hca.Title.String = pitch2_obs.time.utc;
 end

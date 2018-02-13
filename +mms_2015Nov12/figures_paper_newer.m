@@ -683,7 +683,7 @@ for ii = 1:3;
 end
 
 %% Figure 4: 1 sc more detailed
-npanels = 9;
+npanels = 8;
 tintZoom = irf.tint('2015-11-12T07:19:19.40Z/2015-11-12T07:19:23.10Z');
 %tintZoom = irf.tint('2015-11-12T07:19:10.00Z/2015-11-12T07:19:40.00Z');
 h = irf_plot(npanels);
@@ -766,7 +766,7 @@ if 1 % Ve
 end
 if 1 % ePDist pa low energies
   hca = irf_panel('e PA e32 deflux all low E'); isub = isub + 1;  zoomPA = [zoomPA isub];
-  elim = [10 1000];
+  elim = [10 500];
   c_eval('irf_spectrogram(hca,ePitch?.tlim(tintZoom+[-2 2]).elim(elim).deflux.specrec(''pa''),''log'');',ic)
     
   if 1 % magnetic mirror angle
@@ -787,7 +787,13 @@ if 1 % ePDist pa low energies
     c_eval('alphaB = irf.ts_scalar(mvaB?.tlim(tintB).time,thetaref+asind((mvaB?.tlim(tintB).abs.data/mvaB?.abs.resample(tref).data).^0.5));',ic)    
     
     set(hca,'ColorOrder',mms_colors('11'))  
-    alpha_shift = 0;
+    alpha_shift = 40;
+    irf_plot(hca,{alphaB-alpha_shift,180-alphaB-alpha_shift},'comp','-.'); 
+    href = irf_plot(hca,{irf.ts_scalar(tref,90-alpha_shift)},'comp');
+    href.Children(1).Marker = '*';
+    href.Children(1).MarkerSize = 10;
+    
+    alpha_shift = 00;
     irf_plot(hca,{alphaB-alpha_shift,180-alphaB-alpha_shift},'comp','--');      
     %irf_pl_mark(hca,tref,'k')
     href = irf_plot(hca,{irf.ts_scalar(tref,90-alpha_shift)},'comp');
@@ -1062,7 +1068,7 @@ if 1 % E
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
 end
-if 1 % Epar
+if 0 % Epar
   hca = irf_panel('E par'); isub = isub + 1;
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaE?par.tlim(tint)},''comp'');',ic)  
@@ -1128,10 +1134,11 @@ for  ii = zoomPA; h(ii).YLim = [0 180]; end
 h(1).Title.String = ['MMS' num2str(ic)];
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+legends_color = {'k','k','k','k','w','w','w','k','k','k'};
 legshift = 0; % the two sc configuration plots
 
 for ii = 1:npanels
-  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0],'fontsize',14);
+  irf_legend(h(ii+pshift),legends{ii+legshift},[0.01 0.9],'color',[0 0 0],'fontsize',14,'color',legends_color{ii+legshift});
   h(ii+pshift).FontSize = 14;  
   h(ii+pshift).YLabel.FontSize = 14;
   %h(ii+pshift).Position(3) = h(ii+pshift).Position(3)*1.1;
@@ -1859,7 +1866,7 @@ vt = sqrt(electron_energy*units.eV*2/units.me)/1000;
 
 % Initial positions and velocitites
 x0 = [0 0 0 0]; 
-y0 = [120 120 0 20]; % km
+y0 = [120 120 -40 -50]; % km
 z0 = [30 30 -30 -30];
 
 velocity_angle = [-20 -10 -10 -20];
@@ -1917,6 +1924,7 @@ for iParticle= 1:nParticles
   saveParticle{iParticle}.pa = pitchangle;
 end
 
+saveParticle_4 = saveParticle;
 %% Figure 6, option 1, 4 panels, incl B, 3 particle panels
 scrsz = get(groot,'ScreenSize');
 figurePosition = scrsz;
@@ -2322,26 +2330,32 @@ view(h(6),[0 0 -1]); camroll(h(6),90); h(6).XAxisLocation = 'top';
 
 %% Figure 6A: tseries 
 % load '/Users/cno062/Research/Events/2015-11-12_071854/saveParticle_finiteE_nP=32768'
-tintObs = irf.tint('2015-11-12T07:19:20.65Z/2015-11-12T07:19:21.70Z')+-0.01;
+%tintObs = irf.tint('2015-11-12T07:19:20.65Z/2015-11-12T07:19:21.70Z');
+t_center = irf_time('2015-11-12T07:19:21.175000012Z','utc>EpochTT'); 
+tintObs = t_center + 1*[-1 1];
 c_eval([...
 'obsB = mvaB?.tlim(tintObs);'...
+'modB = modB.tlim(tintObs);'...
 'obsE = mvaE?.tlim(tintObs); obsE = obsE.resample(obsB);'...
 'obsPDist = ePDist?.tlim(tintObs);'...
+'obsPDistMap = tsFmap.tlim(tintObs);'...
 'obsPitch = ePitch?.tlim(tintObs);'...
 ],ic)
 zObsB = (obsB.time.epochUnix-mean(obsB.time.epochUnix))*CS_normal_velocity;
+zModB = (modB.time.epochUnix-mean(modB.time.epochUnix))*CS_normal_velocity;
 zObsE = (obsE.time.epochUnix-mean(obsE.time.epochUnix))*CS_normal_velocity;
 zObsPDist = (obsPDist.time.epochUnix-mean(obsPDist.time.epochUnix))*CS_normal_velocity;
+zObsPDistMap = (obsPDistMap.time.epochUnix-mean(obsPDistMap.time.epochUnix))*CS_normal_velocity;
 
 fig = figure(106);
 fig.Position = [100   100   475   542];
 % Set up plot
-npanels = 9;
+npanels = 7;
 units = irf_units;
 h = irf_plot(npanels);  
 
-nlim = [-30 30];
-elim = [30 250];
+nlim = [-28 28];
+elim = [30 350];
   
 isub = 1;
 if 1 % BL, BM, BN, Babs 
@@ -2357,15 +2371,23 @@ if 1 % BL, BM, BN, Babs
   linesObs(4).Color = B_colors(4,:);
   set(hca,'colororder',B_colors)
   %irf_legend(hca,{'B_L','B_M','B_N'},[0.01 0.2],'fontsize',14)
-  irf_legend(hca,{'L','M','N','|B|'},[0.01 0.2],'fontsize',14)
+  irf_legend(hca,{'L','M','N','|B|'},[0.95 0.2],'fontsize',14)
   
   hold(hca,'on')
-  zMod = linspace(nlim(1)-1,nlim(2)+1,100)*1e3;
-  %plot(hca,zMod*1e-3,[Bx(zMod); By(zMod); sqrt(Bx(zMod).^2 + By(zMod).^2)]*1e9)
-  lineMod = plot(hca,zMod*1e-3,[Bx(0,0,zMod)]*1e9,'--','color',B_colors(1,:));
-  plot(hca,zMod*1e-3,[By(0,0,zMod)]*1e9,'--','color',B_colors(2,:))
-  plot(hca,zMod*1e-3,[Bz(0,0,zMod)]*1e9,'--','color',B_colors(3,:))
-  plot(hca,zMod*1e-3,sqrt(Bx(0,0,zMod).^2+By(0,0,zMod).^2+Bz(0,0,zMod).^2)*1e9,'--','color',B_colors(4,:))
+  if 0
+    zMod = linspace(nlim(1)-1,nlim(2)+1,100)*1e3;
+    %plot(hca,zMod*1e-3,[Bx(zMod); By(zMod); sqrt(Bx(zMod).^2 + By(zMod).^2)]*1e9)
+    lineMod = plot(hca,zMod*1e-3,[Bx(0,0,zMod)]*1e9,'--','color',B_colors(1,:));
+    plot(hca,zMod*1e-3,[By(0,0,zMod)]*1e9,'--','color',B_colors(2,:))
+    plot(hca,zMod*1e-3,[Bz(0,0,zMod)]*1e9,'--','color',B_colors(3,:))
+    plot(hca,zMod*1e-3,sqrt(Bx(0,0,zMod).^2+By(0,0,zMod).^2+Bz(0,0,zMod).^2)*1e9,'--','color',B_colors(4,:))
+  else 
+    linesMod = plot(hca,zModB,[modB.data modB.abs.data],'--');
+    linesMod(1).Color = B_colors(1,:); linesMod(1).LineStyle = '--';
+    linesMod(2).Color = B_colors(2,:); linesMod(2).LineStyle = '--';
+    linesMod(3).Color = B_colors(3,:); linesMod(3).LineStyle = '--';
+    linesMod(4).Color = B_colors(4,:); linesMod(4).LineStyle = '--';
+  end
   hold(hca,'off')
   %legend(hca,[linesObs(1) lineMod],{'Observed data','Model fit'})
   %hca.Title.String = 'Magnetic field';
@@ -2418,7 +2440,7 @@ if 1 % EL, EM, EN, no absolute value
   linesObs(3).Color = B_colors(3,:);
   set(hca,'colororder',B_colors)
   %irf_legend(hca,{'E_L','E_M','E_N'},[0.01 0.2],'fontsize',14)
-  irf_legend(hca,{'L','M','N'},[0.01 0.95],'fontsize',14)
+  irf_legend(hca,{'L','M','N'},[0.95 0.95],'fontsize',14)
   hold(hca,'on')
   zMod = linspace(nlim(1)-1,nlim(2)+1,100)*1e3;
   %plot(hca,zMod*1e-3,[Bx(zMod); By(zMod); sqrt(Bx(zMod).^2 + By(zMod).^2)]*1e9)
@@ -2508,7 +2530,7 @@ if 0 % Distance: ePitch.deflux, test particle pitchangles to be added later
   %irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.01 0.5],'fontsize',14,'color',[0 0 0]);  
   xlabel(hca,'N (km)')  
 end
-if 1 % Distance: ePitch.deflux, Liouville mapped, from left
+if 0 % Distance: ePitch.deflux, Liouville mapped, from left
   hca = h(isub); isub = isub + 1;
   plotPitch = tsFmap_left.pitchangles(gseB1,15).tlim(tintObs).deflux.elim(elim).specrec('pa')
   edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
@@ -2529,7 +2551,7 @@ if 1 % Distance: ePitch.deflux, Liouville mapped, from left
   %irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.01 0.5],'fontsize',14,'color',[0 0 0]);  
   xlabel(hca,'N (km)')  
 end
-if 1 % Distance: ePitch.deflux, Liouville mapped, from right
+if 0 % Distance: ePitch.deflux, Liouville mapped, from right
   hca = h(isub); isub = isub + 1;
   plotPitch = tsFmap_right.pitchangles(gseB1,15).tlim(tintObs).deflux.elim(elim).specrec('pa')
   edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
@@ -2550,7 +2572,7 @@ if 1 % Distance: ePitch.deflux, Liouville mapped, from right
   %irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.01 0.5],'fontsize',14,'color',[0 0 0]);  
   xlabel(hca,'N (km)')  
 end
-if 1 % Distance: ePitch.deflux, Liouville mapped, all
+if 0 % Distance: ePitch.deflux, Liouville mapped, all
   hca = h(isub); isub = isub + 1;
   plotPitch = tsFmap_all.pitchangles(gseB1,15).tlim(tintObs).deflux.elim(elim).specrec('pa')
   edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
@@ -2565,6 +2587,33 @@ if 1 % Distance: ePitch.deflux, Liouville mapped, all
   hca.YGrid = 'off';   
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = plotPitch.p_label;
+  hca.YLabel.String = {'Pitchangle','(\circ)'};
+  hca.YTick = [45 90 135];   
+  colormap(hca,'jet')
+  %irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.01 0.5],'fontsize',14,'color',[0 0 0]);  
+  xlabel(hca,'N (km)')  
+end
+if 1 % Distance: ePitch/psd, NO test particles
+  hca = h(isub); isub = isub + 1;
+  plotPitch = obsPDist.convertto('s^3/km^6').einterp.pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa');
+  edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
+  edges_z = [zObsPDist-0.5*diff(zObsPDist(1:2)); zObsPDist(end)+0.5*diff(zObsPDist(1:2))]';
+  surf_def = zeros(numel(edges_pa),numel(edges_z));
+  surf_col = log10(plotPitch.p');
+  surf(hca,edges_z,edges_pa,surf_def,surf_col)
+  view(hca,[0 0 1])
+  hca.YLim = [0 180];
+  %pcolor(hca,zObsPDist,plotPitch.f,log10(plotPitch.p'))  
+  shading(hca,'flat')
+  
+  %irf_pl_mark(hca,tref,'k')
+  hca.XGrid = 'off';
+  hca.YGrid = 'off';   
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = plotPitch.p_label;
+  
+  %hca.YLabel.String = {'\theta_{PA,e} (\circ)'};
+  %ylabel(hca,{'\theta_{PA,e} (\circ)'},'interpreter','tex')
   hca.YLabel.String = {'Pitchangle','(\circ)'};
   hca.YTick = [45 90 135];   
   colormap(hca,'jet')
@@ -2586,8 +2635,8 @@ if 1 % Distance: ePitch/psd, test particle pitchangles to be added later
   
   for iP = 1:numel(saveParticle_4) % Electron pitchangles
     % Pick out the data
-    z = saveParticle{iP}.r(:,3); % N
-    pa = saveParticle{iP}.pa; % pitch angles    
+    z = saveParticle_4{iP}.r(:,3); % N
+    pa = saveParticle_4{iP}.pa; % pitch angles    
     colors = mms_colors('1234');
     step = 2;
     hold(hca,'on');
@@ -2613,7 +2662,7 @@ if 1 % Distance: ePitch/psd, Liouville mapped, from left
   hca = h(isub); isub = isub + 1;
   plotPitch = tsFmap_left.convertto('s^3/km^6').pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa');
   edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
-  edges_z = [zObsPDist-0.5*diff(zObsPDist(1:2)); zObsPDist(end)+0.5*diff(zObsPDist(1:2))]';
+  edges_z = [zObsPDistMap-0.5*diff(zObsPDistMap(1:2)); zObsPDistMap(end)+0.5*diff(zObsPDistMap(1:2))]';
   surf_def = zeros(numel(edges_pa),numel(edges_z));
   surf_col = log10(plotPitch.p');
   surf(hca,edges_z,edges_pa,surf_def,surf_col)
@@ -2622,7 +2671,7 @@ if 1 % Distance: ePitch/psd, Liouville mapped, from left
   shading(hca,'flat')     
   hca.XGrid = 'off';
   hca.YGrid = 'off';   
-  hcb = colorbar('peer',hca);
+  hcb = colorbar('peer',hca); hcb_save = hcb;
   hcb.YLabel.String = plotPitch.p_label;
   hca.YLabel.String = {'Pitchangle','(\circ)'};
   hca.YTick = [45 90 135];   
@@ -2634,7 +2683,7 @@ if 1 % Distance: ePitch/psd, Liouville mapped, from right
   hca = h(isub); isub = isub + 1;
   plotPitch = tsFmap_right.convertto('s^3/km^6').pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa');
   edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
-  edges_z = [zObsPDist-0.5*diff(zObsPDist(1:2)); zObsPDist(end)+0.5*diff(zObsPDist(1:2))]';
+  edges_z = [zObsPDistMap-0.5*diff(zObsPDistMap(1:2)); zObsPDistMap(end)+0.5*diff(zObsPDistMap(1:2))]';
   surf_def = zeros(numel(edges_pa),numel(edges_z));
   surf_col = log10(plotPitch.p');
   surf(hca,edges_z,edges_pa,surf_def,surf_col)
@@ -2655,7 +2704,7 @@ if 1 % Distance: ePitch/psd, Liouville mapped, all
   hca = h(isub); isub = isub + 1;
   plotPitch = tsFmap_all.convertto('s^3/km^6').pitchangles(gseB1,15).tlim(tintObs).elim(elim).specrec('pa');
   edges_pa = [plotPitch.f-0.5*diff(plotPitch.f(1:2)) plotPitch.f(end)+0.5*diff(plotPitch.f(1:2))];
-  edges_z = [zObsPDist-0.5*diff(zObsPDist(1:2)); zObsPDist(end)+0.5*diff(zObsPDist(1:2))]';
+  edges_z = [zObsPDistMap-0.5*diff(zObsPDistMap(1:2)); zObsPDistMap(end)+0.5*diff(zObsPDistMap(1:2))]';
   surf_def = zeros(numel(edges_pa),numel(edges_z));
   surf_col = log10(plotPitch.p');
   surf(hca,edges_z,edges_pa,surf_def,surf_col)
@@ -2684,11 +2733,24 @@ if 0 % Distance: ePitch.deflux, Lioville mapped
 end
 irf_plot_axis_align
 h(3).Box = 'on';
-c_eval('h(?).CLim = [3.1 3.8];',6:9)
 c_eval('h(?).XLim = nlim;',1:npanels)
 c_eval('h(?).XTickLabel = [];',1:npanels-1)
 c_eval('h(?).XLabel.String = [];',1:npanels-1)
-c_eval('h(?).FontSize = 12;',1:npanels)
+c_eval('h(?).FontSize = 14;',1:npanels)
+c_eval('h(?).CLim = [2.8 3.9];',3:7)
+colormap_str = 'jet';
+c_eval('colormap(h(?),colormap_str);',3:7)
+
+c_eval('h(?).YLabel.String = [];',[3 4 6 7])
+c_eval('delete(colorbar(h(?)));',[3 4 6 7])
+hcb_save.Position(2) = 0.10;% = [0.8042 0.3432    0.0421    0.1208];
+hcb_save.Position(4) = 0.60;
+hcb_save.Position(3) = 0.03;
+%hcb_save.Position = [0.8042 0.3432    0.0421    0.1208];
+labels = {'a)','b)','c)','d)','e)','f)','g)','h)','i)'};
+legends_color = {'k','k','k','k','k','w','w','k','k','k'};
+c_eval('irf_legend(h(?),labels{?},[0.02 0.95],''fontsize'',16,''color'',legends_color{?})',1:npanels)
+
 %% Figure 6B: trajectories, turned 3D plots
 colors = mms_colors('1234');
 Bcolor = mms_colors('matlab'); Bcolor = Bcolor(3,:);
@@ -2852,8 +2914,8 @@ else
 end
 
 lim_n = [-32 32];
-lim_l = [-40 140];
-lim_m = [-20 200];
+lim_l = [-60 180];
+lim_m = [-60 220];
 maxx = 0;
 
 addB1 = 1;
@@ -2880,9 +2942,9 @@ if 1 % add magnetic field
   quiver_width = 2;
 
   dL1 = -7;
-  dL2 = -22;
-  dM1 = -25;
-  dM2 = 9;
+  dL2 = -40;
+  dM1 = 40;
+  dM2 = 70;
   if 1 % MN
     hca = h(1);
     hold(hca,'on')
@@ -3049,9 +3111,9 @@ h(3).YLim = lim_l;
 %c_eval('h(?).XLim = [0 115];',4:6)
 %c_eval('h(?).YLim = [-50 110];',4:6)
 %c_eval('h(?).ZLim = [-32 32];',4:6)
-c_eval('h(?).XTick = -200:20:200;',1:3)
-c_eval('h(?).YTick = -200:20:200;',1:3)
-c_eval('h(?).ZTick = -200:20:200;',1:3)
+c_eval('h(?).XTick = -300:20:300;',1:3)
+c_eval('h(?).YTick = -300:20:300;',1:3)
+c_eval('h(?).ZTick = -300:20:300;',1:3)
 
 c_eval('h(?).XGrid = ''on'';',1:3)
 c_eval('h(?).YGrid = ''on'';',1:3)
@@ -3065,16 +3127,16 @@ n_width = l_width/diff(lim_l)*diff(lim_n);
 
 %m_width = h(3).Position(3);
 %n_width = h(2).Position(3);
-set(h(1:3),'fontsize',16)
+set(h(1:3),'fontsize',18)
 
 h(1).XTickLabel = [];
 h(1).XLabel.String = [];
 h(3).YTickLabel = [];
 h(3).YLabel.String = [];
 
-labels = {'g)','h)','i)'};
+labels = {'h)','i)','j)'};
 labels = {'a)','b)','c)'};
-c_eval('irf_legend(h(?),labels{?},[0.05 0.95],''fontsize'',16)',1:3)
+c_eval('irf_legend(h(?),labels{?},[0.05 0.95],''fontsize'',18)',1:3)
 
 
 

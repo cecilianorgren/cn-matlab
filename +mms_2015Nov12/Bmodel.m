@@ -49,7 +49,7 @@ switch ic
     b = 8e3*lscale; % bifurcation length scale, m
     c = 8e3*lscale;
     d = 13e3*lscale;
-    g = 10e3*lscale;
+    g = 12e3*lscale;
     
     zoffsy = 1*1e3*lscale;
     
@@ -62,6 +62,7 @@ switch ic
     offsEnas = 15e3*lscale;
     B0 = 10e-9; % asymptotical magnetic field, T
     
+    dzEr = 5e3;
     dE = 12e3*lscale; % thickness of current sheet, m
     
     dzE = 6e3*lscale;
@@ -108,8 +109,9 @@ if 1
 end
 
 Ex = @(x,y,z) x*0 + y*0 + z*0 + 0*EL*(-exp(-(z.^2)/d^2));
-Ey = @(x,y,z) x*0 + y*0 + z*0 + 0*(Er*(exp(-((z-5e3).^2)/g^2))) + Ey_inflow;
-Ez = @(x,y,z) x*0 + y*0 + z*0 + 0*(E0*sin((z-dzE)/dE).*exp(-(z-dzE).^2/(2*b^2)) + 1*Enas*exp(-(z-offsEnas).^2./d.^2) + -0.8*Enas*exp(-(z+offsEnas).^2./2/d.^2));
+Ey = @(x,y,z) x*0 + y*0 + z*0 + 0*(Er*(exp(-((z-dzEr).^2)/g^2))) + Ey_inflow;
+%Ez = @(x,y,z) x*0 + y*0 + z*0 + 1*(E0*sin((z-dzE)/dE).*exp(-(z-dzE).^2/(2*b^2)) + 1*Enas*exp(-(z-offsEnas).^2./d.^2) + -0.8*Enas*exp(-(z+offsEnas).^2./2/d.^2));
+Ez = @(x,y,z) x*0 + y*0 + z*0 + 0*(2e-3*exp(-(z+0*1e3).^2/((7*1e3)^2)) - 2*1e-3*exp(-(z-10*1e3).^2/((7*1e3)^2))); % N
 
 B = @(x,y,z) sqrt(Bx(x,y,z).^2 + By(x,y,z).^2 + Bz(x,y,z).^2);
 %% integrate magnetic field from z = -30 to z = 30 to see how it looks and
