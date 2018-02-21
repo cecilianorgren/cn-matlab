@@ -9,8 +9,8 @@ units = irf_units;
 n = 0.07e6;
 ne = n;
 ni = n;
-Te = 500; Te_K = Te*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
-Ti = 5000; Ti_K = Ti*units.eV/units.kB; % use perpendicular temperature -> diamagnetic drift
+Te = 1000; Te_K = Te*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
+Ti = 7000; Ti_K = Ti*units.eV/units.kB; % use perpendicular temperature -> diamagnetic drift
 B = 10e-9;
  
 % new better ion temperature using gsePi and ne

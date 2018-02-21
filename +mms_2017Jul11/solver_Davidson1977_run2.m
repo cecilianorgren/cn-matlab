@@ -24,11 +24,16 @@ wi_all = nan(nE,nTe,nk);
 k_all = nan(nE,nTe,nk);
 vph_all = nan(nE,nTe,nk);
 
+iTi = 1;
+
 for iE = 1:nE
   for iTe = 1:nTe
     Te = Te_vec(iTe);
+    Ti = Ti_vec(iTi);
     Te_K = Te_K_vec(iTe);
+    Ti_K = Ti_K_vec(iTi);
     E = E_vec(iE);
+    guess_previous_k = 1;
     mms_2017Jul11.solver_Davidson1977
     wr_allmax(iE,iTe) = wrmax;
     wi_allmax(iE,iTe) = wimax;
@@ -37,7 +42,7 @@ for iE = 1:nE
     
     wr_all(iE,iTe,:) = wr_store;
     wi_all(iE,iTe,:) = wi_store;
-    k_all(iE,iTe,:) = kmax;
+    k_all(iE,iTe,:) = kvec;
     vph_all(iE,iTe,:) = vphmax;
   end
 end

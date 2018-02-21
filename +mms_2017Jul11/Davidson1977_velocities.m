@@ -5,7 +5,7 @@ units = irf_units;
 n = 0.06e6;
 ne = n;
 ni = n;
-Te = 200:200:3000; Te_K = Te*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
+Te = 1000; Te_K = Te*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
 Ti = 7000; Ti_K = Ti*units.eV/units.kB; % use perpendicular temperature -> diamagnetic drift
 B = 10e-9; 
 
@@ -42,6 +42,8 @@ beta = betai + betae;
 vE = -E/B;
 vdi = -vE;
 vde = -Te/Ti*vdi;
+
+LnLT = 0.1;
 
 Ln = -(1+LnLT)*(Te_K*units.kB/units.e/B)./vde;
 LT = Ln/LnLT;
