@@ -829,9 +829,9 @@ end
 
 %% Boundary properties, modulation, thickness, current
 ic = 1;
-npanels = 10;
+npanels = 7;
 h = irf_plot(npanels);
-tintZoom = irf.tint('2017-07-11T22:31:50.00Z/2017-07-11T22:34:10.00Z'); %20151112071854
+tintZoom = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 tint = tintZoom;
 
 zoomy = [];
@@ -846,7 +846,7 @@ if 1 % B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N','|B|'},[0.98 0.1],'fontsize',12);  
 end
-if 0 % J curl
+if 1 % J curl
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('J curl');
@@ -856,16 +856,6 @@ if 0 % J curl
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
   irf_legend(hca,{'curlometer'},[0.05 0.9],'color',[0 0 0],'fontsize',12);    
-end
-if 1 % J mom 
-  isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('J mom');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{mvaJ?.x.tlim(tint),mvaJ?.y.tlim(tint),mvaJ?.z.tlim(tint)},''comp'');',ic)  
-  hca.YLabel.String = {'J','(nA/m^2)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end
 if 0 % Vi 
   isub = isub + 1;
@@ -887,7 +877,7 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end
-if 0 % iPDist deflux omni
+if 1 % iPDist deflux omni
   isub = isub + 1;
   hca = irf_panel('i DEF omni');  
   c_eval('irf_spectrogram(hca,iPDist?.tlim(tint).deflux.omni.specrec,''log'');',ic)
@@ -921,24 +911,6 @@ if 1 % ePDist deflux omni
   end
   hca.YLabel.String = {'E_e','(eV)'};  
 end
-if 1 % ePDist pa 64
-  isub = isub + 1;
-  hca = irf_panel('e PA e64 deflux lowe');  
-  eint = [100 30000];  
-  c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
-  irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1])
-  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
-  hca.YTick = [45 90 135];   
-  colormap(hca,cmap)
-end
-if 1 % J mom  par
-  isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('J mom par');
-  set(hca,'ColorOrder',mms_colors('1'))
-  c_eval('irf_plot(hca,{mvaJ?par},''comp'');',ic)  
-  hca.YLabel.String = {'J_{||}','(nA/m^2)'};
-end
 if 0 % ne ni
   isub = isub + 1;
   zoomy = [zoomy isub];
@@ -949,7 +921,7 @@ if 0 % ne ni
   set(hca,'ColorOrder',mms_colors('12'))  
   irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
 end
-if 1 % ne
+if 0 % ne
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('n');
@@ -1049,7 +1021,7 @@ if 0 % gradPi
   set(hca,'ColorOrder',mms_colors('xyza')) 
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 0 % E
+if 1 % E
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E');
@@ -1059,7 +1031,7 @@ if 0 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','N','N'},[0.98 0.9],'fontsize',12);  
 end
-if 1 % E perp
+if 0 % E perp
   hca = irf_panel('E perp');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaE?perp.x,mvaE?perp.y,mvaE?perp.z},''comp'');',ic)
@@ -1092,7 +1064,7 @@ if 0 % E high f
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_legend(hca,sprintf('f<%g Hz',ffiltE),[0.98 0.1],'fontsize',12);
 end
-if 0 % B scm filt
+if 1 % B scm filt
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('B scm');
@@ -1115,7 +1087,7 @@ if 0 % Lp from Eperp
   hca.YScale = 'log';
   hca.YLim = [1e2 5e3];
 end
-if 1 % Te par perp Ti/Tref
+if 0 % Te par perp Ti/Tref
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Te');

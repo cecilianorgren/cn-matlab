@@ -12,7 +12,7 @@ Tint = irf.tint('2015-10-16T10:33:43.00Z/2015-10-16T10:33:52.00Z');
 % 5 s takes 1 min
 
 %% Load data
-Tintl = Tint+[-100 100];
+%Tintl = Tint+[-100 100];
 
 ic = 1;
 c_eval('n = ne?.tlim(Tint);',ic)
@@ -27,6 +27,7 @@ Me = units.me;
 e = units.e;
 B_SI = Bxyz.abs.data*1e-9;
 N_SI = n*1e6;
+epso = units.eps0;
 
 Wce = e*B_SI/Me;
 ecfreq = Wce/2/pi;
@@ -40,7 +41,7 @@ Wpe = sqrt(N_SI*e^2/Me/epso); % rad/s
 fpe = Wpe/2/pi; % Hz
 
 tic
-polarization = irf_ebsp(Exyz,Bscm,Bxyz,Bxyz,Rxyz,[10 4000],'polarization','fac');
+%polarization = irf_ebsp(Exyz,Bscm,Bxyz,Bxyz,Rxyz,[10 4000],'polarization','fac');
 toc
 
 frequency = polarization.f;
@@ -124,10 +125,12 @@ ts_res_energy_lim_freq = irf.ts_scalar(irf_time(time,'epoch>epochtt'),resonant_e
 %% Plot, more adaptive
 ic = 1;
 figure(30)
-Tint = irf.tint('2015-10-16T10:33:43.00Z/2015-10-16T10:33:52.00Z');
+%Tint = irf.tint('2015-10-16T10:33:43.00Z/2015-10-16T10:33:52.00Z');
+Tint = tint;
 tint = Tint;
 tintZoom = tint;
 
+time = polarization.t;
 colors = mms_colors('matlab');
 
 % Define blue-red colormap
@@ -136,7 +139,7 @@ gg = interp1([1 64 128 192 256],[0.0  0.5 0.75 0.5 0.00],1:256);
 bb = interp1([1 64 128 192 256],[0.75 1.0 0.75 0.5 0.00],1:256);
 bgrcmap = [rr' gg' bb'];
 
-npanels = 6;
+npanels = 10;
 h=irf_plot(npanels); 
 isub = 1;
 isspec=zeros(npanels,1);
@@ -196,7 +199,7 @@ if 0 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 1 % eDist omni 64 apar
+if 0 % eDist omni 64 apar
   hca = irf_panel('e DEF 3'); zoomE = [zoomE isub]; isub = isub + 1; 
   pas = [150 180];
   set(hca,'ColorOrder',mms_colors('xyza'))
@@ -232,7 +235,7 @@ if 1 % eDist omni 64 apar
   colormap(hca,cmap)   
   irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta<' num2str(pas(2),'%.0f')]},[0.98 0.15],'fontsize',12,'color',[0 0 0]);
 end
-if 1 % eDist omni 64 perp
+if 0 % eDist omni 64 perp
   hca = irf_panel('e DEF 2'); zoomE = [zoomE isub]; isub = isub + 1;
   pas = [75 105];
   c_eval('ePitch?lim = ePDist?.tlim(tintZoom+[-2 2]).pitchangles(dmpaB?,pas);',ic)    
@@ -258,7 +261,7 @@ if 1 % eDist omni 64 perp
   colormap(hca,cmap)   
   irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta<' num2str(pas(2),'%.0f')]},[0.98 0.15],'fontsize',12,'color',[0 0 0]);
 end
-if 1 % eDist omni 64 par
+if 0 % eDist omni 64 par
   hca = irf_panel('e DEF 1'); zoomE = [zoomE isub]; isub = isub + 1;
   pas = [0 30]; 
   c_eval('ePitch?lim = ePDist?.tlim(tintZoom+[-2 2]).pitchangles(dmpaB?,pas);',ic)     
@@ -298,7 +301,7 @@ if 0 % B scm
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 0 % B sum spectrogram
+if 1 % B sum spectrogram
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('Bsum');
   specrec=struct('t',time);
@@ -393,7 +396,7 @@ if 0 % E tot
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
 end
-if 0 % E sum spectrogram
+if 1 % E sum spectrogram
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('Esum');
   specrec=struct('t',time);
@@ -411,7 +414,7 @@ if 0 % E sum spectrogram
   hold(hca,'off');
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3]);
-  caxis(hca,[-6 1])
+  caxis(hca,[-5 -2])
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
@@ -455,7 +458,7 @@ if 0 % E perp
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
 end
-if 0 % E per spectrogram
+if 1 % E per spectrogram
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('Eper');
   specrec=struct('t',time);
@@ -477,7 +480,7 @@ if 0 % E per spectrogram
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 0 % Ellipticity
+if 1 % Ellipticity
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('ellipt');
   specrec=struct('t',time);
@@ -565,7 +568,7 @@ if 0 % planarity
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % vph, E/B
+if 0 % vph, E/B
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('vph');
   specrec=struct('t',time);
@@ -587,7 +590,7 @@ if 1 % vph, E/B
   ylabel(hca,'f (Hz)','fontsize',12);
   colormap(hca,'jet');
 end
-if 1 % resonant energy
+if 0 % resonant energy
   isspec(isub) = 1; isub = isub + 1;
   hca=irf_panel('resonant energy');
   specrec=struct('t',time);

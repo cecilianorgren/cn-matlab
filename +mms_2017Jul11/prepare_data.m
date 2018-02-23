@@ -77,7 +77,8 @@ if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
   %load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
 elseif 0
-  ic = 1;
+  %%
+  ic = 1:4;
   c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
   c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
   c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
@@ -116,7 +117,7 @@ c_eval('Ld? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Ld''); Ld? = irf.ts
 c_eval('re? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Roe''); re? = irf.ts_scalar(gseB?.time,re?)*1e-3; re?.units = ''km''; re?.name=''e gyroradius'';',ic)
 c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? = irf.ts_scalar(gseB?.time,rp?)*1e-3; rp?.units = ''km''; re?.name=''p gyroradius'';',ic)
 
-c_eval('beta? = (re?/Le?).^2;',ic)
+%c_eval('beta? = (re?/Le?).^2;',ic)
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
 
 % Magnetic moment

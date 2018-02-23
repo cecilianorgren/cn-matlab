@@ -570,7 +570,7 @@ ic = 1;
 npanels = 10;
 h = irf_plot(npanels);
 pshift=0;
-tintZoom = irf.tint('2015-11-12T07:19:19.40Z/2015-11-12T07:19:23.10Z');
+%tintZoom = irf.tint('2015-11-12T07:19:19.40Z/2015-11-12T07:19:23.10Z');
 
 scrsz = get(groot,'ScreenSize');
 figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.4; figurePostition(4)=figurePostition(4)*0.9;

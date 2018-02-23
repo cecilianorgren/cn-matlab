@@ -1,5 +1,5 @@
 ic = 1:4;
-tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:38:00.00Z'); %20151112071854
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
 if 0
   %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
@@ -73,7 +73,7 @@ disp('Loading skymaps...')
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
 
-% Pressure and temperature
+%% Pressure and temperature
 disp('Loading pressure and temperature...'); tic
 c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic) 
 c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
