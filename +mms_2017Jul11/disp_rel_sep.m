@@ -19,15 +19,15 @@ kB = units.kB; % 1.381e-23;
 c = units.c; % 299792458;
 %% Out-of-plane beam direction, using a 1D beam (i.e. "parallel")
 % Time for distribution fit
-time = irf_time('2017-07-11T22:34:03.000Z','utc>epochtt');
+time = irf_time('2017-07-11T22:33:28.800Z','utc>epochtt');
 
 % Properties for the different plasma species
 B = 10e-9; % not used
-n = [0.03 0.03]*1e6;
-T = [300 8000]; T_K = T*units.eV/kB; % use parallel temperature
+n = [0.06 0.06]*1e6;
+T = [200 9000]; T_K = T*units.eV/kB; % use parallel temperature
 m = [me mi];
 q = [-1 1]*qe; 
-vd = [18000e3 0]; % m/s
+vd = [24000e3 0]; % m/s
 
 nsp = numel(n); % number of species
 
@@ -129,7 +129,7 @@ end
 % Dispersion solver, one curve
 % Wavenumber vector
 nk = 700;
-k_min= 0.1; k_max = 0.7;
+k_min= 0.1; k_max = 0.5;
 knorm = min(Ld(1));  % length
 knorm_str = sprintf('L_{d%g}',1);
 kvec = linspace(k_min,k_max,nk)/knorm;
@@ -192,7 +192,7 @@ if 1 % Measured electron distribution and WHAMP fit
   d = [1 1];
   a1 = [1 1];
   a2 = [0 0];
-  toPlot = 1;
+  toPlot = [1];
   whamp.plot_f(hca,n(toPlot)*1e-6,m(toPlot)/me,T(toPlot)*1e-3,vd(toPlot)./vt(toPlot),d(toPlot),a1(toPlot),a2(toPlot),'pitchangles',[0 90 180],'PSDvsE','km/s');
   hca.YScale = 'log';
   hca.XScale = 'log';
@@ -370,7 +370,7 @@ if 1 % solution, wr wi, common axis
   
   plot(hca,kvec*knorm,wr_store/wnorm,kvec*knorm,wi_store/wnorm,'linewidth',1.5)
   hca.XLim = [0 max(kvec)*knorm];
-  hca.YLim = [-0.1 0.3];
+  %hca.YLim = [-0.1 0.3];
   legend(hca,'w_r','w_i', 'location','northeast')
   hca.XLabel.String = sprintf('k%s',knorm_str);
   if wnorm ~= 1
@@ -388,11 +388,11 @@ if 1 % solution, wr wi, common axis
   hca.YGrid = 'on';
   text(hca,hca.XLim(1),hca.YLim(2),sprintf('w_r @ w_{i,max} = %g\nw_{i,max} = %g',wrmax,wimax),'horizontalalignment','left','verticalalignment','top')
   
-  ylim = hca.YLim;
-  yyaxis(hca,'right')
-  hca.YLim = ylim*wp(1)/wp(2);
-  hca.YLabel.String = 'w/w_{p2}';
-  hca.XLim = [0 0.4];
+  %ylim = hca.YLim;
+  %yyaxis(hca,'right')
+  %hca.YLim = ylim*wp(1)/wp(2);
+  %hca.YLabel.String = 'w/w_{p2}';
+  %hca.XLim = [0 0.4];
 end
 if 1 % phase velocity
   hca = h(isub); isub = isub + 1;

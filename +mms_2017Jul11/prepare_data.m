@@ -76,9 +76,9 @@ curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
 if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
   %load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
-elseif 0
+elseif 1
   %%
-  ic = 1:4;
+  ic = 1;
   c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
   c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
   c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
@@ -115,7 +115,7 @@ c_eval('Lp? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Li''); Lp? = irf.ts
 c_eval('Le? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Le''); Le? = irf.ts_scalar(gseB?.time,Le?)*1e-3; Le?.units = ''km''; Le?.name=''e inertial length'';',ic)
 c_eval('Ld? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Ld''); Ld? = irf.ts_scalar(gseB?.time,Ld?)*1e-3; Ld?.units = ''km''; Ld?.name=''Debye length'';',ic)
 c_eval('re? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Roe''); re? = irf.ts_scalar(gseB?.time,re?)*1e-3; re?.units = ''km''; re?.name=''e gyroradius'';',ic)
-c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? = irf.ts_scalar(gseB?.time,rp?)*1e-3; rp?.units = ''km''; re?.name=''p gyroradius'';',ic)
+c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? = irf.ts_scalar(gseB?.time,rp?)*1e-3; rp?.units = ''km''; rp?.name=''p gyroradius'';',ic)
 
 %c_eval('beta? = (re?/Le?).^2;',ic)
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
@@ -188,7 +188,7 @@ gseAvB = (gseB1+gseB2.resample(gseB1.time)+gseB3.resample(gseB1.time)+gseB4.resa
 % Inertial term
 divVe = c_4_grad('gseR?','gseVe?','div'); divVe.name = 'div Ve';
 
-% Ohm's law terms
+%% Ohm's law terms
 %gseAvEVexB = (gseEVexB1 + gseEVexB2.resample(gseEVexB1) + gseEVexB3.resample(gseEVexB1) + gseEVexB4.resample(gseEVexB1))/4;
 gseOhmGradPe = gseGradPe/avNe.resample(gseGradPe.time)/units.e*1e-9*1e-6; gseOhmGradPe.units = 'mV/m';
 gseOhmVexB = gseAvVexB; gseOhmVexB.units = 'mV/m';
@@ -199,7 +199,7 @@ gseOhmJxB_c = (gseJxB1/ne1+gseJxB2.resample(gseJxB1.time)/ne2+gseJxB3.resample(g
 gseOhmJxB = gseOhmJxB_c;
 
 
-% Other parameters 
+%% Other parameters 
 [gseGradPepar,gseGradPeperp] = irf_dec_parperp(gseAvB,gseGradPe); gseGradPepar.name = 'div Pe par'; gseGradPeperp.name = 'div Pe par';
 avPe = (gsePe1.trace+gsePe2.trace.resample(gsePe1)+gsePe3.trace.resample(gsePe1)+gsePe3.trace.resample(gsePe1))/3/4;
 LgradP = avPe/gseGradPe.abs; LgradP.name = 'L_{P}';

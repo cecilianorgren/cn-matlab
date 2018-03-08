@@ -829,13 +829,15 @@ end
 
 %% Boundary properties, modulation, thickness, current
 ic = 1;
-npanels = 10;
+npanels = 8;
 h = irf_plot(npanels);
-tintZoom = irf.tint('2017-07-11T22:31:50.00Z/2017-07-11T22:34:10.00Z'); %20151112071854
+tintZoom = irf.tint('2017-07-11T22:32:00.00Z/2017-07-11T22:33:40.00Z'); %20151112071854
 tint = tintZoom;
 
 zoomy = [];
 isub = 0;
+cmap = 'jet';
+% B, n, J, eDEF, ePitchDEF, Eperp lowf, 
 if 1 % B  
   isub = isub + 1;
   zoomy = [zoomy isub];
@@ -845,6 +847,14 @@ if 1 % B
   hca.YLabel.String = {'B','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N','|B|'},[0.98 0.1],'fontsize',12);  
+end
+if 1 % ne
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n','(cm^{-3})'};
 end
 if 0 % J curl
   isub = isub + 1;
@@ -857,7 +867,7 @@ if 0 % J curl
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
   irf_legend(hca,{'curlometer'},[0.05 0.9],'color',[0 0 0],'fontsize',12);    
 end
-if 1 % J mom 
+if 0 % J mom 
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('J mom');
@@ -877,7 +887,7 @@ if 0 % Vi
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end
-if 1 % Ve  
+if 0 % Ve  
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve');
@@ -924,7 +934,7 @@ end
 if 1 % ePDist pa 64
   isub = isub + 1;
   hca = irf_panel('e PA e64 deflux lowe');  
-  eint = [100 30000];  
+  eint = [100 10000];  
   c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1])
   hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
@@ -949,13 +959,30 @@ if 0 % ne ni
   set(hca,'ColorOrder',mms_colors('12'))  
   irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
 end
-if 1 % ne
+if 1 % J mom perp
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('n');
-  set(hca,'ColorOrder',mms_colors('12'))
-  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
-  hca.YLabel.String = {'n','(cm^{-3})'};
+  hca = irf_panel('J mom perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaJ?perp.x.tlim(tint),mvaJ?perp.y.tlim(tint),mvaJ?perp.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J_\perp','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 1 % J perp low f
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Jperp lowf');
+  ffiltJ = 0.5;
+  c_eval('mvaJ?highf = mvaJ?perp.filt(ffiltJ,0,[],3);',ic)
+  c_eval('mvaJ?lowf = mvaJ?perp-mvaJ?highf;',ic)
+  %c_eval('mvaJ?lowf = mvaJ?perp.filt(0,ffiltJ,[],3);',ic)
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaJ?lowf.x,mvaJ?lowf.y,mvaJ?lowf.z},''comp'');',ic)
+  hca.YLabel.String = {'J_{\perp}','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,sprintf('f < %g Hz',ffiltE),[0.98 0.1],'fontsize',12);
 end
 if 0 % beta
   isub = isub + 1;
@@ -1059,7 +1086,7 @@ if 0 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','N','N'},[0.98 0.9],'fontsize',12);  
 end
-if 1 % E perp
+if 0 % E perp
   hca = irf_panel('E perp');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaE?perp.x,mvaE?perp.y,mvaE?perp.z},''comp'');',ic)
@@ -1068,29 +1095,42 @@ if 1 % E perp
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
 end
-if 0 % E low f
+if 1 % E low f
+  isub = isub + 1;
+  zoomy = [zoomy isub];
   hca = irf_panel('E lowf');
-  ffiltE = 2;
-  c_eval('gseE?highf = gseE?.filt(3,0,[],3);',ic)
-  c_eval('gseE?lowf = gseE?-gseE?highf;',ic)
+  ffiltE = 1;
+  c_eval('mvaE?highf = mvaE?.filt(ffiltE,0,[],3);',ic)
+  c_eval('mvaE?lowf = mvaE?-mvaE?highf;',ic)
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseE?lowf.x,gseE?lowf.y,gseE?lowf.z},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaE?lowf.x,mvaE?lowf.y,mvaE?lowf.z},''comp'');',ic)
   hca.YLabel.String = {'E','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
-  irf_legend(hca,sprintf('f<%g Hz',ffiltE),[0.98 0.1],'fontsize',12);
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,sprintf('f < %g Hz',ffiltE),[0.98 0.1],'fontsize',12);
+end
+if 0 % E high f 
+  hca = irf_panel('E highf par');
+  ffiltE = 50;
+  c_eval('mvaE?highf = mvaE?par.filt(ffiltE,0,[],3);',ic)  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaE?highf},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,sprintf('f > %g Hz',ffiltE),[0.98 0.1],'fontsize',12);
 end
 if 0 % E high f
   hca = irf_panel('E highf');
-  ffiltE = 2;
-  c_eval('gseE?highf = gseE?.filt(3,0,[],3);',ic)
-  c_eval('gseE?lowf = gseE?-gseE?highf;',ic)
+  ffiltE = 50;
+  c_eval('mvaE?highf = mvaE?.filt(ffiltE,0,[],3);',ic)
+  c_eval('mvaE?lowf = mvaE?-mvaE?highf;',ic)
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseE?highf.x,gseE?highf.y,gseE?highf.z},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaE?highf.x,mvaE?highf.y,mvaE?highf.z},''comp'');',ic)
   hca.YLabel.String = {'E','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
-  irf_legend(hca,sprintf('f<%g Hz',ffiltE),[0.98 0.1],'fontsize',12);
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,sprintf('f > %g Hz',ffiltE),[0.98 0.1],'fontsize',12);
 end
 if 0 % B scm filt
   isub = isub + 1;
@@ -1115,7 +1155,7 @@ if 0 % Lp from Eperp
   hca.YScale = 'log';
   hca.YLim = [1e2 5e3];
 end
-if 1 % Te par perp Ti/Tref
+if 0 % Te par perp Ti/Tref
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Te');

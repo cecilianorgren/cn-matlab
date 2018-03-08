@@ -115,12 +115,12 @@ units = irf_units;
 n = 0.07e6;
 ne = n;
 ni = n;
-Te_vec = 200:200:3000; Te_K_vec = Te_vec*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
+Te_vec = 4000; Te_K_vec = Te_vec*units.eV/units.kB;  % use perpendicular temperature -> diamagnetic drift
 Ti = 7000; Ti_K = Ti*units.eV/units.kB; % use perpendicular temperature -> diamagnetic drift
 B = 10e-9; 
 
 E_vec = (-50:10:-10)*1e-3;
-E_vec = (-50)*1e-3;
+E_vec = (-50:5:-5)*1e-3;
 LnLT = 0.1; % Ln/LT, Ln generally smaller then LT
 
 nTe = numel(Te_vec);
@@ -139,6 +139,7 @@ wr_all = nan(nE,nTe,nk);
 wi_all = nan(nE,nTe,nk);
 k_all = nan(nE,nTe,nk);
 vph_all = nan(nE,nTe,nk);
+vE_all = nan(nE,nTe,nk);
 
 for iE = 1:nE
   for iTe = 1:nTe
@@ -192,7 +193,7 @@ for iE = 1:nE
         wi_diff = tocolumn(squeeze(wi_all(iE-1,iTe,:))) - tocolumn(wi_store);
       figure(99); plotyy(kvec,[tocolumn(squeeze(wr_all(iE-1,iTe,:))) tocolumn(squeeze(wr_store))],...
                          kvec,[tocolumn(squeeze(wi_all(iE-1,iTe,:))) tocolumn(squeeze(wi_store))])
-                       title(gca,sprintf('xdiff = %g, E = %g & %g',x_diff,E,E_vec(iE-1)))
+                       title(gca,sprintf('xdiff = %g, E = %g & %g',x_diff,E*1e3,E_vec(iE-1)*1e3))
                        drawnow
         %abs(mean(wr_diff))
         x_diff = mean(abs(wi_diff));
@@ -202,6 +203,7 @@ for iE = 1:nE
     wi_allmax(iE,iTe) = wimax;
     k_allmax(iE,iTe) = kmax;
     vph_allmax(iE,iTe) = vphmax;
+    vE_all(iE,iTe,:) = repmat(vE,1,nk);
     
     wr_all(iE,iTe,:) = wr_store;
     wi_all(iE,iTe,:) = wi_store;
@@ -441,9 +443,11 @@ end
 
 %% Plot range of E
 iTe = 1;
+iE = 1:nE;
+
 figure(104)
-nrows = 4;
-ncols = 3;
+nrows = 5;
+ncols = 2;
 npanels = nrows*ncols;
 for ip = 1:npanels
   h(ip) = subplot(nrows,ncols,ip);
@@ -451,12 +455,12 @@ end
 isub = 1;
 if 1 % input info
   hca = h(isub); isub = isub + 1;  
-  s1 = sprintf('B = %g nT \nn = %g cc \nTi = %g eV \nbeta_i = %g \nvti = %g km/s \nE = %g mV/m \nV_E = %.0f km/s \nV_E/vti = %.2f \nwpe/wce = %.2f \n(wpe/wce)^2 = %.2f',B*1e9,n*1e-6,Ti,betai,vti*1e-3,E_vec(iE)*1e3,E_vec(iE)/B*1e-3,E_vec(iE)/B/vti,wpe/wce,(wpe/wce)^2);
+  s1 = sprintf('B = %g nT \nn = %g cc \nTi = %g eV \nbeta_i = %g \nbeta_e = %g \nvti = %g km/s \nT_e = %g eV \nwpe/wce = %.2f \n(wpe/wce)^2 = %.2f',B*1e9,n*1e-6,Ti,betai,betae,vti*1e-3,Te_vec(iTe),wpe/wce,(wpe/wce)^2);
   %s2 = sprintf('Ln = %g km \nLB = %g km \nLT = %g km \nvn = %.0f km/s \nvT = %.0f km/s \nvB = %.0f km/s \nvE = %.0f km/s \nE = %.0f mV/m \n',Ln*1e-3,LB*1e-3,LT*1e-3,vn*1e-3,vT*1e-3,vB*1e-3,vE*1e-3,E*1e3);  
 
   if exist('ht1','var'); delete(ht1); end
   %if exist('ht2','var'); delete(ht2); end
-  ht1 = text(hca,hca.XLim(1),hca.YLim(2),s1,'verticalalignment','top','horizontalalignment','left');
+  ht1 = text(hca,hca.XLim(1),hca.YLim(2)*1.2,s1,'verticalalignment','top','horizontalalignment','left');
   %ht2 = text(hca,hca.XLim(2),hca.YLim(2),s2,'verticalalignment','top','horizontalalignment','left');  
   hca.Visible = 'off';
 end
@@ -464,120 +468,177 @@ if 1 % empty
   hca = h(isub); isub = isub + 1;  
   hca.Visible = 'off';
 end
-if 1 % empty
+if 0 % empty
   hca = h(isub); isub = isub + 1;  
   hca.Visible = 'off';
 end
 if 1 % wi vs kroe
-  iE = 1; 
-  iTe = 1:nTe;
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),Te_vec(iTe),squeeze(wi_all(iE,iTe,:))/wlh); 
+  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),E_vec(iE)*1e3,squeeze(wi_all(iE,iTe,:))/wlh); 
+  hold(hca,'on')
+  gridx = squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk);
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_i/w_{LH}';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'k*roe(T_e)';    
 end
-if 1 % wi vs k
-  iE = 1; 
-  iTe = 1:nTe;
+if 0 % wi vs k
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,squeeze(k_all(iE,iTe,:))*1e3,Te_vec(iTe),squeeze(wi_all(iE,iTe,:))/wlh); 
+  pcolor(hca,squeeze(k_all(iE,iTe,:))*1e3,E_vec(iE)*1e3,squeeze(wi_all(iE,iTe,:))/wlh); 
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_i/w_{LH}';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'k (1/km)';    
 end
 if 1 % wi vs lambda = 2pi/k
-  iE = 1; 
-  iTe = 1:nTe;
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,Te_vec(iTe),squeeze(wi_all(iE,iTe,:))/wlh); 
+  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,E_vec(iE)*1e3,squeeze(wi_all(iE,iTe,:))/wlh); 
+  hold(hca,'on')
+  gridx = 2*pi./squeeze(k_all(iE,iTe,:))*1e-3;
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_i/w_{LH}';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = '\lambda (km)';    
 end
 if 1 % wr vs kroe
-  iE = 1; 
-  iTe = 1:nTe;
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),Te_vec(iTe),squeeze(wr_all(iE,iTe,:))/wlh); 
+  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),E_vec(iE)*1e3,squeeze(wr_all(iE,iTe,:))/wlh); 
+  hold(hca,'on')
+  gridx = squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk);
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
   shading(hca,'flat');  
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_r/w_{LH}';
-  hca.YLabel.String = 'T_e (eV)';
-  hca.XLabel.String = 'k*roe(T_e)';    
+  hca.YLabel.String = 'E (mV/m)';
+  hca.XLabel.String = 'k*roe(T_e)'; 
+  hca.CLim = [0 10];
 end
-if 1 % wr vs k
-  iE = 1; 
-  iTe = 1:nTe;
+if 0 % wr vs k
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,squeeze(k_all(iE,iTe,:))*1e3,Te_vec(iTe),squeeze(wr_all(iE,iTe,:))/wlh); 
+  pcolor(hca,squeeze(k_all(iE,iTe,:))*1e3,E_vec(iE),squeeze(wr_all(iE,iTe,:))/wlh); 
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_r/w_{LH}';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'k (1/km)';    
 end
 if 1 % wr vs lambda = 2pi/k
-  iE = 1; 
-  iTe = 1:nTe;
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,Te_vec(iTe),squeeze(wr_all(iE,iTe,:))/wlh); 
+  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,E_vec(iE)*1e3,squeeze(wr_all(iE,iTe,:))/wlh); 
+  hold(hca,'on')
+  gridx = 2*pi./squeeze(k_all(iE,iTe,:))*1e-3;
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_r/w_{LH}';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = '\lambda (km)';    
 end
 if 1 % vph vs kroe
-  iE = 1; 
-  iTe = 1:nTe;
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),Te_vec(iTe),squeeze(vph_all(iE,iTe,:))*1e-3); 
+  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),E_vec(iE)*1e3,squeeze(vph_all(iE,iTe,:))*1e-3); 
+  hold(hca,'on')
+  gridx = squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk);
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'v_{ph} (km/s)';
-  hca.YLabel.String = 'T_e (eV)';
-  hca.XLabel.String = 'k*roe';    
+  hca.YLabel.String = 'E (mV/m)';
+  hca.XLabel.String = 'k*roe';
 end
-if 1 % vph vs k
-  iE = 1; 
-  iTe = 1:nTe;
+if 0 % vph vs k
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,squeeze(k_all(iE,iTe,:))*1e3,Te_vec(iTe),squeeze(vph_all(iE,iTe,:))*1e-3); 
+  pcolor(hca,squeeze(k_all(iE,iTe,:))*1e3,E_vec(iE)*1e3,squeeze(vph_all(iE,iTe,:))*1e-3); 
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'v_{ph} (km/s)';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'k (1/km)';    
 end
 if 1 % vph vs lambda
-  iE = 1; 
-  iTe = 1:nTe;
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,Te_vec(iTe),squeeze(vph_all(iE,iTe,:))*1e-3); 
+  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,E_vec(iE)*1e3,squeeze(vph_all(iE,iTe,:))*1e-3); 
+  hold(hca,'on')
+  gridx = 2*pi./squeeze(k_all(iE,iTe,:))*1e-3;
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
   shading(hca,'flat');
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'v_{ph} (km/s)';
-  hca.YLabel.String = 'T_e (eV)';
+  hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = '\lambda (km)';    
 end
+if 1 % vph/vE vs kroe
+  hca = h(isub); isub = isub + 1;  
+  pcolor(hca,squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk),E_vec(iE)*1e3,squeeze(vph_all(iE,iTe,:))./squeeze(vE_all(iE,iTe,:))); 
+  hold(hca,'on')
+  gridx = squeeze(k_all(iE,iTe,:)).*repmat(tocolumn(roe_all),1,nk);
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
+  shading(hca,'flat');
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'v_{ph}/v_{ExB}';
+  hca.YLabel.String = 'E (mV/m)';
+  hca.XLabel.String = 'k*roe';    
+end
+if 1 % vph/vE vs lambda
+  hca = h(isub); isub = isub + 1;  
+  pcolor(hca,2*pi./squeeze(k_all(iE,iTe,:))*1e-3,E_vec(iE)*1e3,squeeze(vph_all(iE,iTe,:))./squeeze(vE_all(iE,iTe,:))); 
+  hold(hca,'on')
+  gridx = 2*pi./squeeze(k_all(iE,iTe,:))*1e-3;
+  gridy = repmat(tocolumn(E_vec*1e3),1,nk);  
+  contour(hca,gridx,gridy,squeeze(wi_all(iE,iTe,:))/wlh,'k'); 
+  hold(hca,'off')
+  shading(hca,'flat');
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'v_{ph}/v_{ExB}';
+  hca.YLabel.String = 'E (mV/m)';
+  hca.XLabel.String = '\lambda';    
+end
 
-cmap = cn.cmap('white_parula');
+%cmap = cn.cmap('white_parula');
+cmap = 'parula';
+cmap = 'jet';
 
-for ip = 4:npanels
-  colormap(h(ip),cmap)
+for ip = 3:4
   h(ip).CLim = [-1 1]*max(abs(h(ip).CLim));
 end
-%%
-if 1
+for ip = 3:npanels
+  colormap(h(ip),cmap)
+end
+
+%% Plot max growth
+figure(104)
+nrows = 2;
+ncols = 2;
+npanels = nrows*ncols;
+for ip = 1:npanels
+  h(ip) = subplot(nrows,ncols,ip);
+end
+isub = 1;
+
+roe_mat = repmat(roe_all,nE,1);
+
+if 1 % k at wimax
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,Te_vec,E_vec*1e3,k_all.*roe_mat); 
+  pcolor(hca,Te_vec,E_vec*1e3,k_allmax.*roe_mat); 
   %shading(hca,'flat');
   hca.Title.String = 'k*roe at maximum w_i';
   hcb = colorbar('peer',hca);
@@ -585,9 +646,9 @@ if 1
   hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'T_e (eV)';    
 end
-if 1
+if 1 % wr at wimax
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,Te_vec,E_vec*1e3,wr_all/wlh); 
+  pcolor(hca,Te_vec,E_vec*1e3,wr_allmax/wlh); 
   %shading(hca,'flat');
   hca.Title.String = 'w_r at maximum w_i';
   hcb = colorbar('peer',hca);
@@ -595,19 +656,19 @@ if 1
   hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'T_e (eV)';    
 end
-if 1
+if 1 % wi at wimax
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,Te_vec,E_vec*1e3,wi_all/wlh); 
+  pcolor(hca,Te_vec,E_vec*1e3,wi_allmax/wlh); 
   %shading(hca,'flat');
-  hca.Title.String = 'w_r at maximum w_i';
+  hca.Title.String = 'w_i at maximum w_i';
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'w_i/w_{LH}';
   hca.YLabel.String = 'E (mV/m)';
   hca.XLabel.String = 'T_e (eV)';    
 end
-if 1
+if 1 % vph at wimax
   hca = h(isub); isub = isub + 1;  
-  pcolor(hca,Te_vec,E_vec*1e3,wr_all./k_all*1e-3); 
+  pcolor(hca,Te_vec,E_vec*1e3,wr_allmax./k_allmax*1e-3); 
   %shading(hca,'flat');
   hca.Title.String = 'v_{ph} at maximum w_i';
   hcb = colorbar('peer',hca);

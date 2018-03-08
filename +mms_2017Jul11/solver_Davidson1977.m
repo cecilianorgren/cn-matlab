@@ -52,6 +52,7 @@ vde = -Te/Ti*vdi;
 Ln = -(1+LnLT)*(Te_K*units.kB/units.e/B)./vde;
 LT = Ln/LnLT;
 LB = -2/(beta/Ln + betae/LT); % Davidson1975 eq. 13: (1/LB) = 0.5*beta*(1/Ln) - 0.5*betae*(1/LT)
+%LB = LB*100;
 
 vB = -1/LB*vte^2/2/wce;
 vn = -1/Ln*vte^2/2/wce;
@@ -89,7 +90,12 @@ for ik = 1:nk
   if guess_previous_k 
     xguess = x;
   else
-    xguess = wr_all(iE,iTe-1,ik) + wi_all(iE,iTe-1,ik)*1i;
+    if Te > 1
+        xguess = wr_all(iE,iTe-1,ik) + wi_all(iE,iTe-1,ik)*1i;
+    end
+    if 0%iE>1
+        xguess = wr_all(iE-1,iTe,ik) + wi_all(iE-1,iTe,ik)*1i;
+    end
   end
  % af = @(temp) mms_2017Jul11.D_Davidson1977(temp,kvec(ik),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT,'colde');  
   af = @(temp) mms_2017Jul11.D_Davidson1977(temp,kvec(ik),vte,wce,wpe,vti,wci,wpi,vE,LB,Ln,LT,'full',0);  

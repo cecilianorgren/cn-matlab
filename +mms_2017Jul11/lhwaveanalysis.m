@@ -74,6 +74,37 @@ c_eval('gseEdt? = irf_integrate(gseE?,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt
 phi_filt = 3;
 c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
 
+%% E waves that modulates the boundary, B
+ic = 1:4;
+%tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:22.50Z'); % LH separatrix
+t_center = irf_time('2017-07-11T22:33:05.1Z','utc>epochtt'); % LH separatrix center time
+tint = t_center + [-0.3 0.3];
+dt_timing = [0.0000    0.0156    0.0112    0.0022]; % 
+v_timing = 1.19e+03 * [-0.44 -0.76  0.49]; % km/s
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = tint; % LH wave packet
+
+c_eval('gseEdt? = irf_integrate(gseE?,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt?.time,gseEdt?.data);',ic)
+phi_filt = 2;
+c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
+
+%% E waves that modulates the boundary, A
+ic = 1:4;
+%tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:22.50Z'); % LH separatrix
+t_center = irf_time('2017-07-11T22:33:09.25Z','utc>epochtt'); % LH separatrix center time
+tint = t_center + [-0.5 0.5];
+dt_timing = [0.0000    0.0293    0.0171    0.0122]; % 
+v_timing = 692*[-0.72 -0.67  0.14]; % km/s
+c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1));',ic)
+v_direction = irf_norm(v_timing);
+v_amplitude = sqrt(sum(v_timing.^2));
+tintLH = tint; % LH wave packet
+
+c_eval('gseEdt? = irf_integrate(gseE?,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt?.time,gseEdt?.data);',ic)
+phi_filt = 2;
+c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
 
 %% integrate E
 c_eval('gseEdt? = irf_integrate(gseE?perp,t_center); gseEdt? = irf.ts_vec_xyz(gseEdt?.time,gseEdt?.data);',ic)
@@ -81,8 +112,6 @@ phi_filt = 3;
 c_eval('gsePhi? = gseEdt?.dot(tsV?_timing); gsePhi?_filt = gsePhi?.filt(phi_filt,0,[],3);',ic)
 
 %% New coordinate system
-
-
 newz = irf_norm(mean(gseB1.tlim(tintLH).data,1));
 newx = cross(newz,cross(v_direction,newz));
 newy = cross(newz,newx);
