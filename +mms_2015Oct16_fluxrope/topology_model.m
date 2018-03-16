@@ -9,7 +9,7 @@ xline   = @(x,y,x0,y0,a,b) 0.5*(a*(x-x0).^2-b*(y-y0).^2);
 topology = @(x,y) xline(x,y,0,0,1,7) + oline(x,y,3,0,2,2);
 topology = @(x,y) 1*xline(x,y,0,0,1,7) + -1*oline(x,y,3,0,0.5,0.5);
 topology = @(x,y) 1*xline(x,y,-5,0,1,7) + 1*xline(x,y,5,0,0.5,7);
-topology = @(x,y) -1*(2*oline(x,y,-4,0,0.1,0.1) + 1*oline(x,y,1,0,0.2,0.2) + 1*0.005*xline(x,y,7,0,1,7));
+topology = @(x,y) -1*(2*oline(x,y,-4,0,0.1,0.1) + 1*oline(x,y,1.4,0,0.2,0.2) + 1*0.004*xline(x,y,7,0,1,7));
 %topology = @(x,y) oline(x,y,3,0,0.5,0.5);
 
 % set up grid
@@ -48,9 +48,10 @@ Babs = sqrt(dXx.^2+dYx.^2);
 
 % interpolate to line
 X1q = x;
-Y1q = -0-x*2/20;
-Bx_line = interpn(X',Y',Bx,X1q,Y1q);
-By_line = interpn(X',Y',By,X1q,Y1q);
+Y1q = -0.1-x*4/20;
+Bx_line = interp2(X,Y,Bx,X1q,Y1q);
+By_line = interp2(X,Y,By,X1q,Y1q);
+Babs_line = interp2(X,Y,Babs,X1q,Y1q);
 
 if 0 % A 
     hca = h(isub); isub = isub + 1;
@@ -132,10 +133,10 @@ if 1 % By
 end  
 if 1 % By
     hca = h(isub); isub = isub + 1;
-    plot(hca,x,[Bx_line; By_line])   
+    plot(hca,x,[Bx_line; By_line; Babs_line])   
     hca.XLabel.String = 'X';
     hca.XLabel.String = 'B';
-    legend(hca,'B_x','B_y','location','eastoutside')
+    legend(hca,'B_x','B_y','|B|','location','eastoutside')
 end  
 %%
 for it = 1:nt  

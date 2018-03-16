@@ -58,10 +58,10 @@ gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 
 % Currents from moments
-c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',ic);
-c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
-c_eval('gseJ? = (gseJe?+gseJi?);',ic);
-gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; 
+c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE''; gseJe?.name = ''Je'';',ic);
+c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE''; gseJi?.name = ''Ji'';',ic);
+c_eval('gseJ? = (gseJe?+gseJi?); gseJ?.name = ''J (FPI)'';',ic);
+gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4;  gseAvJ.name = 'J (FPI 4sc)'; 
 
 %% Pressure and temperature divergences
 % no diagonal terms
@@ -216,6 +216,7 @@ c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? =
 %c_eval('beta?_ = (re?/Le?).^2;',ic)
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
 c_eval('PP? = gsePi?.trace/3 + gsePe?.resample(gsePi?).trace/3; PP?.name = ''Plasma pressure''; PB?.units =''nPa'';',ic)
+c_eval('Ptot? = PB?.resample(PP?) + PP?; PP?.name = ''Plasma pressure''; PB?.units =''nPa'';',ic)
 c_eval('betae? = gsePe?.trace/3/PB?.resample(gsePe?);',ic)
 c_eval('betai? = gsePi?.trace/3/PB?.resample(gsePi?);',ic)
 c_eval('beta? = PP?/PB?.resample(PP?);',ic)

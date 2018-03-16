@@ -22,7 +22,7 @@ tint = irf.tint('2017-07-06T15:39:12.00Z/2017-07-06T15:40:13.00Z'); % 2017070615
 %tint = irf.tint('2017-07-06T15:56:03.00Z/2017-07-06T15:57:43.00Z'); % 20170706155603
 %
 %
-%tint = irf.tint('2017-07 -11T22:29:23.00Z/2017-07-11T22:31:43.00Z'); % 20170711222923
+%tint = irf.tint('2017-07-11T22:29:23.00Z/2017-07-11T22:31:43.00Z'); % 20170711222923
 %tint = irf.tint('2017-07-11T22:33:23.00Z/2017-07-11T22:34:43.00Z'); % 20170711223323, major X-line moving tailward
 %tint = irf.tint('2017-07-11T22:37:23.00Z/2017-07-11T22:38:43.00Z'); % 20170711223723
 
@@ -37,7 +37,7 @@ tint = irf.tint('2017-06-11T17:35:03.00Z',1); % 20170611173503
 tint = irf.tint('2017-06-11T17:37:03.00Z',1); % 20170611173703
 tint = irf.tint('2017-06-11T17:39:13.00Z',1); % 20170611173913
 tint = irf.tint('2017-06-11T17:41:23.00Z',1); % 20170611174123
-%tint = irf.tint('2017-06-11T17:43:23.00Z',1); % 20170611174323
+tint = irf.tint('2017-06-11T17:43:23.00Z',1); % 20170611174323
 % tint = irf.tint('2017-06-11T17:52:23.00Z',1); % 20170611175223
 % 
 % tint = irf.tint('2017-06-19T10:41:23.00Z',1); % 20170619104123
@@ -59,20 +59,20 @@ tint = irf.tint('2017-06-11T17:41:23.00Z',1); % 20170611174123
 
 tint = irf.tint('2015-10-16T13:06:00.00Z',60); % 20170703220533
 % Tail separatrix
-%tint = irf.tint('2017-07-04T06:26:03.00Z',60); % not downloaded yet
-%tint = irf.tint('2017-07-06T06:24:03.00Z',60);
-%tint = irf.tint('2017-07-06T08:16:03.00Z',60);
-%tint = irf.tint('2017-07-06T08:18:13.00Z',60); % not done
-%tint = irf.tint('2017-07-06T13:53:03.00Z',60);
-%tint = irf.tint('2017-07-06T14:04:53.00Z',60);
-%tint = irf.tint('2017-07-06T14:06:53.00Z',60);
-%tint = irf.tint('2017-07-06T14:08:53.00Z',60);
-%tint = irf.tint('2017-07-06T15:28:03.00Z',60);
-%tint = irf.tint('2017-07-06T15:41:33.00Z',60);
-%tint = irf.tint('2017-07-06T15:46:23.00Z',60);
-%tint = irf.tint('2017-07-06T15:51:13.00Z',60);
-%tint = irf.tint('2017-07-06T16:02:13.00Z',60);
-tint = irf.tint('2017-07-06T16:38:12.00Z',60); % not done
+tint = irf.tint('2017-07-04T06:26:42.00Z',60);
+tint = irf.tint('2017-07-06T06:24:03.00Z',60);
+tint = irf.tint('2017-07-06T08:16:03.00Z',60);
+tint = irf.tint('2017-07-06T08:18:03.00Z',60);
+tint = irf.tint('2017-07-06T13:53:03.00Z',60);
+tint = irf.tint('2017-07-06T14:04:53.00Z',60);
+tint = irf.tint('2017-07-06T14:06:53.00Z',60);
+tint = irf.tint('2017-07-06T14:08:53.00Z',60);
+tint = irf.tint('2017-07-06T15:28:03.00Z',60);
+tint = irf.tint('2017-07-06T15:41:33.00Z',60);
+tint = irf.tint('2017-07-06T15:46:23.00Z',60);
+tint = irf.tint('2017-07-06T15:51:13.00Z',60);
+tint = irf.tint('2017-07-06T16:02:13.00Z',60);
+tint = irf.tint('2017-07-06T16:38:12.00Z',60);
 
 % Set datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -178,11 +178,8 @@ c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = '
 
 c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
 
-c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
-
-disp('Done.')
 %% Plot overview figure with focus on electrons
-npanels = 11;
+npanels = 10;
 cmap = 'jet';
 h = irf_plot(npanels);
 ic = 1;
@@ -301,7 +298,7 @@ end
 if 1 % ePDist pa 64
   iisub = iisub + 1;
   hca = irf_panel('e PA e64 deflux lowe');  
-  eint = [1.5*max(scPot1.data) 40000];  
+  eint = [100 30000];  
   try
     c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   catch
@@ -330,7 +327,7 @@ if 1 % Te par perp
   %hca.YTick
   irf_zoom(hca,'y')
 end
-if 0 % E
+if 1 % E
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('E');
@@ -340,25 +337,6 @@ if 0 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
-end
-if 1 % E perp
-  iisub = iisub + 1;
-  zoomy = [zoomy iisub];
-  hca = irf_panel('E perp');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseE?perp.x.tlim(tint),gseE?perp.y.tlim(tint),gseE?perp.z.tlim(tint)},''comp'');',ic)
-  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
-end
-if 1 % E par
-  iisub = iisub + 1;
-  zoomy = [zoomy iisub];
-  hca = irf_panel('E par');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
-  hca.YLabel.String = {'E_{||}','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))  
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
@@ -394,7 +372,7 @@ for ii = 1:npanels;
 end
 %irf_plot_zoomin_lines_between_panels(h(iisub),h(iisub+2))
 
-%% Plot overview figure with focus on ions and electrons, including hpca
+%% Plot overview figure with focus on ions, including hpca
 npanels = 10;
 cmap = 'jet';
 h = irf_plot(npanels);
@@ -445,17 +423,6 @@ if 1 % J
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
   %hca.YLim = [-1100 1100];  
-end
-if 1 % Vi 
-  iisub = iisub + 1;
-  zoomy = [zoomy iisub];
-  hca = irf_panel('Vi');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseVi?.x.tlim(tint),gseVi?.y.tlim(tint),gseVi?.z.tlim(tint)},''comp'');',ic)
-  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
-  hca.YLabel.String = {'v_i','(km/s)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
 if 1 % Ve 
   iisub = iisub + 1;

@@ -1,0 +1,28 @@
+
+%f1D = iPDist1([10:20]).reduce('1D',gseB1,'vint',[0 10000]);
+v
+
+npanels = 4;
+h = irf_plot(npanels);
+
+hca = irf_panel('B');
+irf_plot(hca,gseB1);
+
+hca = irf_panel('Vi');
+irf_plot(hca,gseVi1);
+
+hca = irf_panel('iDEF');
+[hout,hcb] = irf_spectrogram(hca,iPDist1.omni.deflux.specrec,'log');
+set(hca,'yscale','log');
+set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+hca.YLabel.String = {'E_i','(eV)'};   
+
+hca = irf_panel('iLine');
+irf_plot(hca,f1D.specrec('velocity_1D'));
+hca.YLabel.String = 'v (km/s)'; 
+%hca.YLim = [-1000 1000];
+
+
+%irf_zoom(h,'y')
+irf_plot_axis_align
+%h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
