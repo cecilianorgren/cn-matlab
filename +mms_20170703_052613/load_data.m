@@ -1,5 +1,5 @@
 ic = 1:4;
-tint = irf.tint('2017-07-06T08:16:03.00Z/2017-07-06T08:18:13.00Z');
+tint = irf.tint('2017-07-03T05:26:13.00Z/2017-07-03T05:27:03.00Z');
 
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -92,7 +92,7 @@ fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
 dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
+eventPath = ['/Users/cno062/Research/Events/' dirName '/'];  
 matlabPath = ['/Users/cno062/MATLAB/cn-matlab/' dirNameMatlab '/'];
   
 mkdir(eventPath)

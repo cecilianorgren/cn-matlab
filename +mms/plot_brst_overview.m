@@ -414,7 +414,7 @@ if 1 % B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % FPI: ne HPCA: O H He 
+if 0 % FPI: ne HPCA: O H He 
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('n e i');
@@ -424,7 +424,7 @@ if 1 % FPI: ne HPCA: O H He
   set(hca,'ColorOrder',mms_colors('1234')); 
   irf_legend(hca,{'e','H','He','O'},[0.98 0.9],'fontsize',12);  
 end
-if 0 % ne ni 
+if 1 % ne ni 
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('n');

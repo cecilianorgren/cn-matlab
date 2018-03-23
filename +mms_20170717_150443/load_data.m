@@ -1,5 +1,5 @@
-ic = 1:4;
-tint = irf.tint('2017-07-06T08:16:03.00Z/2017-07-06T08:18:13.00Z');
+ic = 1;
+tint = irf.tint('2017-07-17T15:04:43.00Z/2017-07-17T15:05:23.00Z');
 
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -55,8 +55,8 @@ c_eval('tic; [iPDist?,iPDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_b
 c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
 
 % Remove all one-count "noise"
-%c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
-%c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
+c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
+c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 
 %% Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -91,8 +91,6 @@ disp('Done loading data.');
 fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
 eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
-matlabPath = ['/Users/cno062/MATLAB/cn-matlab/' dirNameMatlab '/'];
-  
 mkdir(eventPath)
+  
