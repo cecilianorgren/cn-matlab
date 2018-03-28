@@ -716,7 +716,7 @@ if 1 % ePDist pa 64
   hca = irf_panel('e PA e64 deflux lowe');  
   eint = [100 30000];  
   try
-    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec,''log'');',ic)
   catch
     c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,20).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   end
@@ -802,11 +802,11 @@ tind = 786;%:1:920;953; 911;
 tind = 1160;
 tind = 1240;
 tind = 1451:1500;%1350:1450;
-for it = 1251:2:1381;%2260:2300%:1710%:2370;1420:1530;2340:2370;tind;589;%:650;550:650;%1240;tind;
+for it = 1251%:2:1381;%2260:2300%:1710%:2370;1420:1530;2340:2370;tind;589;%:650;550:650;%1240;tind;
   time = times(it);
   it
   if exist('hmark'); delete(hmark); end
-  hmark = irf_pl_mark(h1,time.epochUnix','green');
+  hmark = irf_pl_mark(h1(1),time.epochUnix','green');
   
   c_eval('hatE = dslE?slow.resample(time).data/dslE?slow.resample(time).abs.data;',ic)
   c_eval('hatB = dmpaB?slow.resample(time).data/dmpaB?slow.resample(time).abs.data;',ic)

@@ -1,5 +1,5 @@
 ic = 1:4;
-tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z'); %20151112071854
+tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
 
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -55,8 +55,8 @@ c_eval('tic; [iPDist?,iPDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_b
 c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
 
 % Remove all one-count "noise"
-c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
-c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
+%c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
+%c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 
 %% Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -86,3 +86,13 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 %c_eval('tic; gseVi?fast = mms.get_data(''Vi_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 
 disp('Done loading data.');
+
+%% Event path
+fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
+fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
+dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+eventPath = ['/Users/cno062/Research/Events/' dirName '/'];  
+matlabPath = ['/Users/cno062/MATLAB/cn-matlab/' dirNameMatlab '/'];
+  
+mkdir(eventPath)
