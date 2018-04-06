@@ -1210,7 +1210,7 @@ c_eval('times = ePDist?.time;',ic)
 [tind,~] = times.tlim(tintDist);
 
 doReducedF = 1;
-for it_ = 1:numel(tind)
+for it_ = 1%:numel(tind)
   it = tind(it_);
   time = times(it);
   it
@@ -1277,22 +1277,43 @@ for it_ = 1:numel(tind)
     mms.plot_int_projection(hca,dist_scm,'t',time,'xyz',xyz,'vlim',vlim,'clim',projclim_int,'vlabel',vlabels,'colorbar',1);        
     hca.Title.String = '';
   end  
-  % Pitchangle distribution
-  hca = h2(isub); isub = isub + 1;
-  plot(hca,ePitch.depend{1}(it,:),squeeze(ePitch.data(it,:,[1 ceil(numel(ePitch.depend{2})/2) numel(ePitch.depend{2})])));
-  hca.YScale = 'log'; hca.XScale = 'log';
-  hca.YLabel.String = ['f_e (' ePitch.units ')'];
-  hca.XLabel.String = 'E (eV)';
-  hca.XLim = [50 30000];
-  legend(hca,{'0','90','180'})
-  hca.YTick = 10.^[-4:2];
-  hca.YLim = [1e-4 1e2];
-
-  if 1 % invisible
+  if 1 % Perpendicular plane, integrated, smaller vint
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;perp2;par]; vlabels = {'v_{BxN}','v_{Bx(BxN)}','v_{||}'};
+    mms.plot_int_projection(hca,dist_scm,'t',time,'xyz',xyz,'vlim',vlim,'vzint',vint,'clim',projclim_int,'vlabel',vlabels,'colorbar',1);
+    hca.Title.String = '';
+  end 
+  vint = 10000*[-1 1];
+  if 1 % B plane 1, integrated, smaller vint
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;par;-perp2]; vlabels = {'v_{BxN}','v_{||}','-v_{Bx(BxN)}'};
+    %mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels,'vectors',vectors);        
+    mms.plot_int_projection(hca,dist_scm,'t',time,'xyz',xyz,'vlim',vlim,'vzint',vint,'clim',projclim_int,'vlabel',vlabels,'colorbar',1);
+    hca.Title.String = '';
+  end  
+  if 1 % B plane 2, integrated, smaller vint
+    hca = h2(isub); isub = isub + 1;
+    xyz = [perp2;par;perp1]; vlabels = {'v_{Bx(BxN)}','v_{||}','v_{BxN}'};
+    %mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels,'vectors',vectors);        
+    mms.plot_int_projection(hca,dist_scm,'t',time,'xyz',xyz,'vlim',vlim,'vzint',vint,'clim',projclim_int,'vlabel',vlabels,'colorbar',1);        
+    hca.Title.String = '';
+  end  
+  if 0 % Pitchangle distribution
+    hca = h2(isub); isub = isub + 1;
+    plot(hca,ePitch.depend{1}(it,:),squeeze(ePitch.data(it,:,[1 ceil(numel(ePitch.depend{2})/2) numel(ePitch.depend{2})])));
+    hca.YScale = 'log'; hca.XScale = 'log';
+    hca.YLabel.String = ['f_e (' ePitch.units ')'];
+    hca.XLabel.String = 'E (eV)';
+    hca.XLim = [50 30000];
+    legend(hca,{'0','90','180'})
+    hca.YTick = 10.^[-4:2];
+    hca.YLim = [1e-4 1e2];
+  end
+  if 0 % invisible
     hca = h2(isub); isub = isub + 1;
     hca.Visible = 'off';
   end
-  if 1 % invisible
+  if 0 % invisible
     hca = h2(isub); isub = isub + 1;
     hca.Visible = 'off';
   end

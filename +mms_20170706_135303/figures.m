@@ -11,8 +11,16 @@ vi = gseVi1.tlim(iDist.time).resample(iDist);
 scpot_margin = 1.5;
 scpot_lim = scPot1.resample(eDist)*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
-iLine = dmpaB1.resample(iDist).norm;
+ePlane1 = eLine.cross(irf.ts_vec_xyz(eLine.time,repmat([1 0 0],eLine.length,1)));
+ePlane2 = eLine.cross(ePlane1);
 
+iLine = dmpaB1.resample(iDist).norm;
+iPlane1 = iLine.cross(irf.ts_vec_xyz(iLine.time,repmat([1 0 0],iLine.length,1)));
+iPlane2 = iLine.cross(iPlane1);
+
+if2D = iDist.reduce('2D',iPlane1,iPlane2,'vint',vint); % reduced distribution perp to B
+ef2D = eDist.reduce('2D',ePlane1,ePlane2,'vint',vint); % reduced distribution perp to B
+%%
 tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim); toc % reduced distribution along B
 tic; if1D = iDist.reduce('1D',iLine,'vint',vint); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B

@@ -824,7 +824,7 @@ for it = 1251%:2:1381;%2260:2300%:1710%:2370;1420:1530;2340:2370;tind;589;%:650;
   
   % Perpendicular plane    
   hca = h2(isub); isub = isub + 1; 
-  xyz = [perp1;perp2;par]; vlabels = {'v_{ExB}','v_{perp2}','v_{||}'};
+  xyz = [perp1;perp1+[0.01 0.2 1];par]; vlabels = {'v_{ExB}','v_{perp2}','v_{||}'};
   mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels,'vectors',vectors);        
   %mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels);        
   hca.Title.String = '';
@@ -864,5 +864,5 @@ for it = 1251%:2:1381;%2260:2300%:1710%:2370;1420:1530;2340:2370;tind;589;%:650;
   for ii = 1:4
     colormap(h2(ii),strCMap)
   end
-  cn.print(['e_proj_fix_mms' num2str(ic) '_' timeUTC '_opengl'],'opengl','path',eventPath)
+  %cn.print(['e_proj_fix_mms' num2str(ic) '_' timeUTC '_opengl'],'opengl','path',eventPath)
 end
