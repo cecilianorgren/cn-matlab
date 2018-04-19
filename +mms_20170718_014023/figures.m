@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-18T01:40:31.00Z',2.5);
+tintZoom = irf.tint('2017-07-18T01:40:30.00Z',20);
 eint = [000 40000];
 vint = [-Inf Inf];
 
@@ -21,7 +21,7 @@ lineVi = vi.dot(iLine); % projection of Vi on B
 
 %% Plot
 ic = 1;
-npanels = 11;
+npanels = 12;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -82,7 +82,7 @@ end
 if 1 % Vi
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('Ve');
+  hca = irf_panel('Vi');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseVi?.x,gseVi?.y,gseVi?.z},''comp'');',ic)  
   hca.YLabel.String = {'v_i','(km/s)'};
@@ -106,12 +106,36 @@ if 1 % e psd vpar
   isub = isub + 1;
   hca = irf_panel('eLine');
   %irf_plot(hca,ef1D.specrec('velocity_1D'));
-  irf_spectrogram(hca,ef1D.specrec('velocity_1D'));
-  hold(hca,'on')
-  irf_plot(hca,{lineVe},'comp')
+  vscale = 1e-3;
+  if vscale == 1e-3
+    irf_spectrogram(hca,ef1D.specrec('velocity_1D','10^3 km/s'));
+  else
+    irf_spectrogram(hca,ef1D.specrec('velocity_1D'));
+  end
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVe},'comp')
   %irf_plot(hca,gseVi1)
-  hold(hca,'off')
-  hca.YLim = ef1D.depend{1}(1,[1 end]);
+  %hold(hca,'off')
+  hca.YLim = ef1D.depend{1}(1,[1 end])*vscale;
+  hca.YLabel.String = 'v_e (km/s)'; 
+  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+end
+if 1 % e psd vpar
+  isub = isub + 1;
+  hca = irf_panel('eLine f*v');
+  %irf_plot(hca,ef1D.specrec('velocity_1D'));
+  vscale = 1e-3;
+  if vscale == 1e-3
+    irf_spectrogram(hca,ef1D.specrec('v_f1D*v','10^3 km/s'));
+  else
+    irf_spectrogram(hca,ef1D.specrec('v_f1D*v'));
+  end
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVe},'comp')
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  hca.YLim = ef1D.depend{1}(1,[1 end])*vscale;
   hca.YLabel.String = 'v_e (km/s)'; 
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
   irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
@@ -119,10 +143,11 @@ end
 if 1 % Ve
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('Vi');
+  hca = irf_panel('Ve');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseVe?.x,gseVe?.y,gseVe?.z},''comp'');',ic)  
-  hca.YLabel.String = {'v_e','(km/s)'};
+  vscale = 1e-3;
+  c_eval('irf_plot(hca,{gseVe?.x*vscale,gseVe?.y*vscale,gseVe?.z*vscale},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end

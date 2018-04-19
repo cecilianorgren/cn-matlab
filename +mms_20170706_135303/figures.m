@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T13:53:50.00Z',25);
+tintZoom = irf.tint('2017-07-06T13:53:50.00Z',5);
 eint = [000 40000];
 vint = [-Inf Inf];
 
