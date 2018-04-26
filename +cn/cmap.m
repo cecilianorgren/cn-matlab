@@ -6,6 +6,21 @@ function out = cmap(map)
 %path = '/Users/Cecilia/MATLAB/colormaps/';
 path = datastore('colormaps','path');
 switch map
+    case 'green_yellow'
+        out = load([path 'green_yellow.mat']);
+        out = out.cmap;
+    case 'blue_white'
+        out = load([path 'blue_white.mat']);
+        out = out.cmap;
+    case 'white_blue'
+        out = load([path 'white_blue.mat']);
+        out = out.cmap;
+    case 'blue_red'
+        out = load([path 'blue_red.mat']);
+        out = out.cmap;
+    case 'blue_rust'
+        out = load([path 'blue_rust.mat']);
+        out = out.cmap;
     case 'white_jet'
         out = load([path 'white_jet.mat']);
         out = out.cmap;

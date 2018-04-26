@@ -47,12 +47,12 @@ mvaOhmGradPi = mvaGradPi/avNe.resample(mvaGradPi.time)/e*1e-9*1e-6; mvaOhmGradPi
 
 %% Gradient from 1 sc, using v_cs
 CS_normal_velocity = 1*70;
-c_eval('ne?_ = ne?.filt(0,10,[],3); dtne? = ne?_.time(2)-ne?_.time(1); dxne? = dtne?*CS_normal_velocity; dne? = ne?_.data(2:end)-ne?_.data(1:end-1); avne? = 0.5*(ne?_.data(2:end)+ne?_.data(1:end-1)); epsNe? = irf.ts_scalar(ne?_.time(1:end-1)+0.5*dtne,dne?./avne?/dxne?); epsNe?.units = ''1/km'';',1:4)
-c_eval('Te?_ = mvaTe?.trace/3;      dtTe? = Te?_.time(2)-Te?_.time(1); dxTe? = dtTe?*CS_normal_velocity; dTe? = Te?_.data(2:end)-Te?_.data(1:end-1); avTe? = 0.5*(Te?_.data(2:end)+Te?_.data(1:end-1)); epsTe? = irf.ts_scalar(Te?_.time(1:end-1)+0.5*dtTe,dTe?./avTe?/dxTe?); epsTe?.units = ''1/km'';',1:4)
-c_eval('Pe?_ = mvaPe?.trace/3;      dtPe? = Pe?_.time(2)-Pe?_.time(1); dxPe? = dtPe?*CS_normal_velocity; dPe? = Pe?_.data(2:end)-Pe?_.data(1:end-1); avPe? = 0.5*(Pe?_.data(2:end)+Pe?_.data(1:end-1)); epsPe? = irf.ts_scalar(Pe?_.time(1:end-1)+0.5*dtPe,dPe?./avPe?/dxPe?); epsPe?.units = ''1/km'';',1:4)
-c_eval('ni?_ = ni?.filt(0,3,[],3);  dtni? = ni?_.time(2)-ni?_.time(1); dxni? = dtni?*CS_normal_velocity; dni? = ni?_.data(2:end)-ni?_.data(1:end-1); avni? = 0.5*(ni?_.data(2:end)+ni?_.data(1:end-1)); epsNi? = irf.ts_scalar(ni?_.time(1:end-1)+0.5*dtni,dni?./avni?/dxni?); epsNi?.units = ''1/km'';',1:4)
-c_eval('Ti?_ = mvaTi?.trace/3;      dtTi? = Ti?_.time(2)-Ti?_.time(1); dxTi? = dtTi?*CS_normal_velocity; dTi? = Ti?_.data(2:end)-Ti?_.data(1:end-1); avTi? = 0.5*(Ti?_.data(2:end)+Ti?_.data(1:end-1)); epsTi? = irf.ts_scalar(Ti?_.time(1:end-1)+0.5*dtTi,dTi?./avTi?/dxTi?); epsTi?.units = ''1/km'';',1:4)
-c_eval('Pi?_ = mvaPi?.trace/3;      dtPi? = Pi?_.time(2)-Pi?_.time(1); dxPi? = dtPi?*CS_normal_velocity; dPi? = Pi?_.data(2:end)-Pi?_.data(1:end-1); avPi? = 0.5*(Pi?_.data(2:end)+Pi?_.data(1:end-1)); epsPi? = irf.ts_scalar(Pi?_.time(1:end-1)+0.5*dtPi,dPi?./avPi?/dxPi?); epsPi?.units = ''1/km'';',1:4)
+c_eval('ne?_ = ne?.filt(0,10,[],3); dtne? = ne?_.time(2)-ne?_.time(1); dxne? = dtne?*CS_normal_velocity; dne? = ne?_.data(2:end)-ne?_.data(1:end-1); avne? = 0.5*(ne?_.data(2:end)+ne?_.data(1:end-1)); epsNe? = irf.ts_scalar(ne?_.time(1:end-1)+0.5*dtne?,dne?./avne?/dxne?); epsNe?.units = ''1/km'';',1:4)
+c_eval('Te?_ = mvaTe?.trace/3;      dtTe? = Te?_.time(2)-Te?_.time(1); dxTe? = dtTe?*CS_normal_velocity; dTe? = Te?_.data(2:end)-Te?_.data(1:end-1); avTe? = 0.5*(Te?_.data(2:end)+Te?_.data(1:end-1)); epsTe? = irf.ts_scalar(Te?_.time(1:end-1)+0.5*dtTe?,dTe?./avTe?/dxTe?); epsTe?.units = ''1/km'';',1:4)
+c_eval('Pe?_ = mvaPe?.trace/3;      dtPe? = Pe?_.time(2)-Pe?_.time(1); dxPe? = dtPe?*CS_normal_velocity; dPe? = Pe?_.data(2:end)-Pe?_.data(1:end-1); avPe? = 0.5*(Pe?_.data(2:end)+Pe?_.data(1:end-1)); epsPe? = irf.ts_scalar(Pe?_.time(1:end-1)+0.5*dtPe?,dPe?./avPe?/dxPe?); epsPe?.units = ''1/km'';',1:4)
+c_eval('ni?_ = ni?.filt(0,3,[],3);  dtni? = ni?_.time(2)-ni?_.time(1); dxni? = dtni?*CS_normal_velocity; dni? = ni?_.data(2:end)-ni?_.data(1:end-1); avni? = 0.5*(ni?_.data(2:end)+ni?_.data(1:end-1)); epsNi? = irf.ts_scalar(ni?_.time(1:end-1)+0.5*dtni?,dni?./avni?/dxni?); epsNi?.units = ''1/km'';',1:4)
+c_eval('Ti?_ = mvaTi?.trace/3;      dtTi? = Ti?_.time(2)-Ti?_.time(1); dxTi? = dtTi?*CS_normal_velocity; dTi? = Ti?_.data(2:end)-Ti?_.data(1:end-1); avTi? = 0.5*(Ti?_.data(2:end)+Ti?_.data(1:end-1)); epsTi? = irf.ts_scalar(Ti?_.time(1:end-1)+0.5*dtTi?,dTi?./avTi?/dxTi?); epsTi?.units = ''1/km'';',1:4)
+c_eval('Pi?_ = mvaPi?.trace/3;      dtPi? = Pi?_.time(2)-Pi?_.time(1); dxPi? = dtPi?*CS_normal_velocity; dPi? = Pi?_.data(2:end)-Pi?_.data(1:end-1); avPi? = 0.5*(Pi?_.data(2:end)+Pi?_.data(1:end-1)); epsPi? = irf.ts_scalar(Pi?_.time(1:end-1)+0.5*dtPi?,dPi?./avPi?/dxPi?); epsPi?.units = ''1/km'';',1:4)
 
 mvaE1_fromTidivNe = mvaTi1.resample(epsNe1).trace/3*units.eV/units.e*epsNe1;
 c_eval('mvaE?_TiepsNe = mvaTi?.resample(epsNe?).trace/3*units.eV/units.e*epsNe?;',1:4)
@@ -104,7 +104,7 @@ if 0 % debug mvaE?_fromPe
   irf_zoom(h,'x',tintObs)
   irf_zoom(h,'y')
 end
-if 1
+if 0
   %%
   figure(10); 
   ic = 1;

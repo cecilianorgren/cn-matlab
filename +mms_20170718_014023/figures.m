@@ -8,7 +8,7 @@ eDist = ePDist1.tlim(tintZoom).elim(eint);
 iDist = iPDist1.tlim(tintZoom).elim(eint);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
 vi = gseVi1.tlim(iDist.time).resample(iDist);
-scpot_margin = 1.0;
+scpot_margin = 1.5;
 scpot_lim = scPot1.resample(eDist)*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
 iLine = dmpaB1.resample(iDist).norm;
@@ -120,6 +120,7 @@ if 1 % e psd vpar
   hca.YLabel.String = 'v_e (km/s)'; 
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
   irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+  colormap(hca,cn.cmap('blue_white'))
 end
 if 1 % e psd vpar
   isub = isub + 1;
@@ -138,7 +139,8 @@ if 1 % e psd vpar
   hca.YLim = ef1D.depend{1}(1,[1 end])*vscale;
   hca.YLabel.String = 'v_e (km/s)'; 
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
-  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',0*[1 1 1])
+  colormap(hca,cn.cmap('blue_red'))
 end
 if 1 % Ve
   isub = isub + 1;
@@ -194,6 +196,6 @@ irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 h(5).CLim = [-35 -28]+12
-colormap('jet');
+colormap(cn.cmap('blue_white'));
 
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];

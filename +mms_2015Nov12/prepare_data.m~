@@ -695,7 +695,7 @@ CS_normal_velocity = 70;
 c_eval('dtP = mvaPe?.time(2)-mvaPe?.time(1); LPNN?time = mvaPe?.time(1:end-1)+0.5*dtP;',ic)
 c_eval('sumP? = mvaPe?.zz.data(1:end-1)+mvaPe?.zz.data(2:end);',ic)
 c_eval('diffPe? = irf.ts_scalar(LPNN?time,mvaPe?.zz.data(2:end)-mvaPe?.zz.data(1:end-1));',ic)
-c_eval('gradPe? = diffPe?/dtP/CS_normal_velocity;',ic)
+c_eval('gradPe? = diffPe?/;',ic)
 c_eval('LPNN? = irf.ts_scalar(LPNN?time,0.5*sumP?./diff(mvaPe?.zz.data(:,1))*CS_normal_velocity*dtP);',ic)
 0.5*(0.055+0.03)/(0.055-0.03)*70*dtP;
 %%

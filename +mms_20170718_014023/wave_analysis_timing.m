@@ -165,6 +165,14 @@ for icell = 1:numel(esw_data)
   esw_data{icell} = esw_data{icell}(ind_sorted);
 end
   
+fid = fopen([matlabPath 'esw_properties_redo.txt'],'r');
+  
+tsVph = irf.ts_vec_xyz(char(esw_data{5}),[esw_data{6} esw_data{7} esw_data{8}]);
+tsVphpar = tsVph.dot(gseB1.norm.resample(tsVph));
+tsPhi = irf.ts_scalar(char(esw_data{5}),[esw_data{10} esw_data{11} esw_data{12} esw_data{13}]);
+tsVtrap = irf.ts_scalar(char(esw_data{5}),sqrt(2*units.e*esw_data{10}/units.me)*1e-3);
+c_eval('tsVtrap? = irf.ts_scalar(char(esw_data{5}),sqrt(2*units.e*esw_data{9+?}/units.me)*1e-3);',1:4)
+
 %%
 tsVph = irf.ts_vec_xyz(char(esw_data{5}),[esw_data{6} esw_data{7} esw_data{8}]);
 tsVphpar = tsVph.dot(gseB1.norm.resample(tsVph));
