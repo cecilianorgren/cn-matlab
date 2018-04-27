@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+tintZoom = irf.tint('2017-07-06T00:55:20.00Z',40);
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -24,7 +24,7 @@ lineVi = vi.dot(iLine); % projection of Vi on B
 
 %% Plot
 ic = 1;
-npanels = 11;
+npanels = 12;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -73,7 +73,7 @@ if 1 % iPDist pa 64
 end
 if 1 % i psd vpar
   isub = isub + 1;
-  hca = irf_panel('iLine');
+  hca = irf_panel('fi1D');
   irf_spectrogram(hca,if1D.specrec('velocity_1D'));
   hold(hca,'on')
   irf_plot(hca,{lineVi},'comp')
@@ -81,10 +81,12 @@ if 1 % i psd vpar
   hold(hca,'off')
   hca.YLim = if1D.depend{1}(1,[1 end]);
   hca.YLabel.String = 'v_i (km/s)'; 
+  hca.CLim = [-5 0];
+  %hca.CLim = max(abs(hca.CLim))*[-1 1];  
 end
 if 1 % i psd vpar
   isub = isub + 1;
-  hca = irf_panel('iLine');
+  hca = irf_panel('fi1D*v');
   irf_spectrogram(hca,if1D.specrec('v_f1D*v'));
   hold(hca,'on')
   irf_plot(hca,{lineVi},'comp')
@@ -92,6 +94,8 @@ if 1 % i psd vpar
   hold(hca,'off')
   hca.YLim = if1D.depend{1}(1,[1 end]);
   hca.YLabel.String = 'v_i (km/s)'; 
+  hca.CLim = max(abs(hca.CLim))*[-1 1]*0.3;
+  colormap(hca,cn.cmap('blue_red'))
 end
 if 1 % Vi
   isub = isub + 1;
@@ -195,8 +199,8 @@ irf_plot_axis_align
 %h(5).CLim = [-35 -28]+12
 colormap('jet');
 
-colormap(h(4),cn.cmap('blue_red'))
-h(4).CLim = 100*[-1 1];
+%colormap(h(4),cn.cmap('blue_red'))
+%h(4).CLim = 100*[-1 1];
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
 
 %% Plot fred, electrons
@@ -296,6 +300,7 @@ if 1 % e psd vpar
   hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
   irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+  hca.CLim = [-7 -2];
 end
 if 1 % fe*v vpar
   isub = isub + 1;
@@ -309,7 +314,8 @@ if 1 % fe*v vpar
   hca.YLim = ef1D.depend{1}(1,[1 end])*1e-3;
   hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
-  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])  
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
 end
 if 0 % fe*v^2 vpar
   isub = isub + 1;
@@ -385,7 +391,7 @@ irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(5).CLim = [-35 -28]+12;
-colormap(cn.cmap('blue_white'));
+colormap(h(3),cn.cmap('blue_white'));
 colormap(irf_panel('fe reduced * v'),cn.cmap('blue_red'))
 hca = irf_panel('phase velocity');
 hca.CLim = [-5 -2];

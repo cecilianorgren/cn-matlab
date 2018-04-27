@@ -333,6 +333,7 @@ if 1 % ePDist pa 64
   hca = irf_panel('e PA e64 deflux lowe');  
   
   eint = [1.5*max(scPot1.data) 40000];  
+  %eint = [100 10000];
   try
     c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   catch

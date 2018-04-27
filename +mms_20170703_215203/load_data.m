@@ -1,5 +1,6 @@
-ic = 1:4;
-tint = irf.tint('2017-07-06T08:16:03.00Z/2017-07-06T08:18:13.00Z');
+ic = 1;
+tint = irf.tint('2017-07-03T21:52:03.00Z/2017-07-03T21:54:03.00Z');
+%tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T09:56:03.00Z');
 
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
