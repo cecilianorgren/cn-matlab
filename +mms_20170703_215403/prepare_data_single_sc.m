@@ -1,4 +1,4 @@
-ic = 1:4;
+ic = 2:3;
 units = irf_units;
 
 %% Current
@@ -37,24 +37,25 @@ c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?));',ic)
 
 % Magnetic field curvature 
-if all(ic==[1:4])
-c_eval('R? = gseR?.resample(gseB1);',1:4)
-c_eval('B? = gseB?.resample(gseB1);',1:4)
-[gseCurvB,avB]=c_4_grad('R?','B?','curvature'); gseCurvB.name = 'curv B'; gseCurvB.coordinateSystem = 'GSE';
-curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
-end
+% if numel(ic) == 4 && all(ic==[1:4])
+% c_eval('R? = gseR?.resample(gseB1);',1:4)
+% c_eval('B? = gseB?.resample(gseB1);',1:4)
+% [gseCurvB,avB]=c_4_grad('R?','B?','curvature'); gseCurvB.name = 'curv B'; gseCurvB.coordinateSystem = 'GSE';
+% curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
+% end
 %% Pitchangle distributions
 if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
   %load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
 elseif 1
   %%
+  ictmp = ic;
   ic = 1;
   c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
   c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
   c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
   c_eval('ePitch?apar = ePDist?.pitchangles(dmpaB?,[165 180]);',ic)
-  ic = 1:4;
+  ic = ictmp;
 end
 
 %% Calculate some additional parameters, irf_plasma_calc

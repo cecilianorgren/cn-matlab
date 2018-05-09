@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+tintZoom = irf.tint('2017-07-03T21:54:30.00Z',60);
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -362,7 +362,7 @@ irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(5).CLim = [-35 -28]+12;
-colormap(cn.cmap('blue_white'));
+colormap('jet');
 colormap(irf_panel('fe reduced * v'),cn.cmap('blue_red'))
 hca = irf_panel('phase velocity');
 hca.CLim = [-5 -2];
@@ -587,21 +587,21 @@ colormap(cn.cmap('blue_white'));
 %% Plot 1D plot
 %if exist('fig') && ~isempty(fig) , close(fig); end
 units = irf_units;
-iesw = 4;
+iesw = 11;
 fig = figure(22);
 fig.Position = [729   765   442   260];
 vph = esw_data{9}(iesw);
 c_eval('phi(?) = esw_data{9+?}(iesw);',1:4)
 vtrap = sqrt(2*units.e*phi/units.me)*1e-3; % km/s
 vtrap = max(vtrap);
-time = EpochTT(esw_data{5}{iesw});
+time = EpochTT(esw_data{5}{iesw})
 
-tindPitch = find(abs(ePitch1.time-time) == min(abs(ePitch1.time-time)));
-tindF1D = find(abs(ef1D.time-time) == min(abs(ef1D.time-time)));
-epitch = ePitch1(tind);
+tindPitch = find(abs(ePitch1.time-time) == min(abs(ePitch1.time-time)))
+tindF1D =   find(abs(ef1D.time   -time) == min(abs(ef1D.time   -time)))
+epitch = ePitch1(tindPitch);
 ef1d = ef1D(tindF1D);
 
-ylim = [0 ]
+ylim = [0 1.4e-3];
 
 if 0
   xlim = [1e1 1e4];
@@ -621,6 +621,7 @@ hca = subplot(1,1,1);
 hline = plot(hca,ef1d.depend{1}*1e-3,squeeze(ef1d.data),'color',mms_colors('1'));
 hline.LineWidth = 2;
 hca.XLabel.String = 'v_{||} (10^3 km/s)';
+hca.YLim = ylim;
 %hca.YScale = 'log';
 hold(hca,'on')
 hvph = plot(hca,-vph*1e-3*[1 1],hca.YLim,'color',mms_colors('4')); 
@@ -631,7 +632,7 @@ hpatch.EdgeColor = hpatch.FaceColor;
 hpatch.EdgeAlpha = hpatch.FaceAlpha;
 hold(hca,'off')
 hca.XLim = [-30 30];
-hca.YLabel.String = ['f_{e,red} (' ef1d.units ')']
+hca.YLabel.String = ['f_{e,red} (' ef1d.units ')'];
 
 hca.Title.String = time.utc;
 

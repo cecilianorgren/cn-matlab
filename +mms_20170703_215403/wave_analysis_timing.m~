@@ -173,8 +173,8 @@ fprintf(fid,[data_format '\n'],...
   v_amplitude,...                               % 9  
   esw.phi_max,...                               % 10 11 12 13
   esw.peaktopeak,...                            % 14
-  esw.C,...                                      % 15 16 17 18
-  v_xcorr_all(2:3)...                                % 19 20
+  esw.C...                                      % 15 16 17 18
+  v_xcorr_all(2)...                                % 19 20
 );
 fid = fclose(fid);
 print_str = ...
@@ -192,7 +192,7 @@ fprintf('printed to file %sesw_properties.txt: %s /n',matlabPath,print_str)
 
 %% Load data from txt-file
 fid = fopen([matlabPath 'esw_properties.txt'],'r');
-data_format_read = '%s %s %s %s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f'; 
+data_format_read = '%s %s %s %s %s %f %f %f %f %f %f %f %f %f %f %f %f %f'; 
 esw_data = textscan(fid,[data_format_read]);
 fclose(fid)
 

@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+tintZoom = irf.tint('2017-07-03T21:54:30.00Z',60);
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -178,7 +178,7 @@ colormap('jet');
 
 %% Plot fred, electrons
 ic = 1;
-npanels = 7;
+npanels = 8;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -248,8 +248,13 @@ if 0 % Vi
 end
 if 1 % eDEF omni
   isub = isub + 1;
-  hca = irf_panel('eDEF');
-  [hout,hcb] = irf_spectrogram(hca,eDist.convertto('s^3/m^6').omni.specrec,'log');
+  hca = irf_panel('ePSD');
+  ePSDomni = eDist.convertto('s^3/m^6').omni;
+  ePSDomni_elim = ePSDomni.elim([100 10000]);
+  ePSDomni_elim.data(eDEFomni_elim.data==0) = NaN;
+  ePSDomni_max = log10(max(max(ePSDomni_elim.data)));
+  ePSDomni_min = log10(min(min(ePSDomni_elim.data)));
+  [hout,hcb] = irf_spectrogram(hca,ePSDomni.specrec,'log');
   hold(hca,'on')
   lineScpot = irf_plot(hca,scpot_lim,'k');
   lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
@@ -316,9 +321,10 @@ if 1 % Ve par
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve par');
+  vscale = 1e-3;
   set(hca,'ColorOrder',mms_colors('1'))
-  c_eval('irf_plot(hca,{gseVe?par},''comp'');',ic)  
-  hca.YLabel.String = {'v_{e,||}','(km/s)'};  
+  c_eval('irf_plot(hca,{gseVe?par*vscale},''comp'');',ic)  
+  hca.YLabel.String = {'v_{e,||}','(10^3 km/s)'};  
 end
 if 1 % Te par perp
   isub = isub + 1;
@@ -349,7 +355,7 @@ if 0 % E perp
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
-if 0 % ne
+if 1 % ne
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('n');
@@ -362,10 +368,15 @@ irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(5).CLim = [-35 -28]+12;
-colormap(cn.cmap('blue_white'));
+colormap('jet');
 colormap(irf_panel('fe reduced * v'),cn.cmap('blue_red'))
 hca = irf_panel('phase velocity');
 hca.CLim = [-5 -2];
+
+hca = irf_panel('ePSD');
+hca.CLim = [ePSDomni_min ePSDomni_max];
+hca = irf_panel('fe reduced * v');
+hca.CLim = 20*[-1 1];
 %colormap(irf_panel('fe reduced * v^2'),cn.cmap('white_blue'))
 
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
