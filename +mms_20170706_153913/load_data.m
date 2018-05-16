@@ -55,8 +55,8 @@ c_eval('tic; [iPDist?,iPDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_b
 c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
 
 % Remove all one-count "noise"
-c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
-c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
+%c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
+%c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 
 %% Pressure and temperature
 disp('Loading pressure and temperature...'); tic

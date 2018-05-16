@@ -29,6 +29,7 @@ for ic_ = 1:3
   di = -lags(i_shift);
   dt(ic_) = di*dt_sampling;
 end
+
 %%
 dRpar = nan(4,1);
 gseAvB = (gseB1+gseB2.resample(gseB1.time)+gseB3.resample(gseB1.time))/3; 
@@ -74,7 +75,6 @@ esw.v_trapping_max = sqrt(2*units.e*esw.phi_max/units.me)*1e-3;
 esw.peaktopeak = l*2;
 esw.debye_length = [Ld1.resample(t_center).data Ld2.resample(t_center).data Ld3.resample(t_center).data];
 esw.C = C;
-
 
 %% Plot 
 figure(10)
