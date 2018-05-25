@@ -145,7 +145,7 @@ c_eval('wavVe?perp.f_units = ''Hz''; wavVe?perp.f_label = ''f [Hz]''; wavVe?perp
 
 %% Scalings
 % Egedal2015, eq. 6
-c_eval('uepar? = 4*sqrt(units.me/units.mp)/sqrt(beta?e)*vte?.resample(beta?e);',ic)
+c_eval('uepar? = 4*sqrt(units.me/units.mp)/sqrt(beta?e)*vte?.re;',ic)
 
 %% Assume normal electric fields are directly proportional to ion pressure gradient at boundary
 c_eval('gseGradPi?_fromE = gseE?.resample(ne?)*ne?*units.e*1e-3*1e6*1e9*1e3; gseGradPi?_fromE.units = ''nPa/km'';',ic)

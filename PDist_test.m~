@@ -120,7 +120,7 @@ hca = h(isub); isub = isub + 1;
 
 %%
 
-times = ePDist1([1 end]).time; % nargout = 2 in subsref, working
-ePDist1([1 end]).time % nargout = 2 in subsref, not working
+times = ePDist1([1 end]).time % nargout = 2 in subsref
+ePDist1([1 end]).time % nargout = 2 in subsref
 gseB1([1 end]).time
 
