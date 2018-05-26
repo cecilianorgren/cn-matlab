@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+tintZoom = irf.tint('2017-07-06T08:16:35.00Z',5);
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -24,7 +24,7 @@ lineVi = vi.dot(iLine); % projection of Vi on B
 
 %% Plot
 ic = 1;
-npanels = 11;
+npanels = 12;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -73,7 +73,7 @@ if 1 % iPDist pa 64
 end
 if 1 % i psd vpar
   isub = isub + 1;
-  hca = irf_panel('iLine');
+  hca = irf_panel('fi1D');
   irf_spectrogram(hca,if1D.specrec('velocity_1D'));
   hold(hca,'on')
   irf_plot(hca,{lineVi},'comp')
@@ -84,7 +84,7 @@ if 1 % i psd vpar
 end
 if 1 % i psd vpar
   isub = isub + 1;
-  hca = irf_panel('iLine');
+  hca = irf_panel('fi1D*v');
   irf_spectrogram(hca,if1D.specrec('v_f1D*v'));
   hold(hca,'on')
   irf_plot(hca,{lineVi},'comp')
@@ -188,7 +188,7 @@ if 1 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
-
+ 
 irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align

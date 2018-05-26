@@ -1,6 +1,6 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T  14:07:14.000Z',20);
+tintZoom = irf.tint('2017-07-06T14:07:15.000Z',17);
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -301,6 +301,7 @@ if 1 % e psd vpar
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
   irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
   hca.CLim = [-7 -2];
+  
 end
 if 1 % fe*v vpar
   isub = isub + 1;
@@ -392,11 +393,15 @@ irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(5).CLim = [-35 -28]+12;
 colormap(h(3),cn.cmap('blue_white'));
+colormap(h(3),'jet');
 colormap(irf_panel('fe reduced * v'),cn.cmap('blue_red'))
 hca = irf_panel('phase velocity');
 hca.CLim = [-5 -2];
 %colormap(irf_panel('fe reduced * v^2'),cn.cmap('white_blue'))
 
+h(2).CLim = [-24 -16];
+h(3).YLim = 49*[-1 1];
+h(4).YLim = 49*[-1 1];
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
 
 %% Plot, including f proj and v phi and vtrap
