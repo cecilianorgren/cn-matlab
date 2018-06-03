@@ -1,21 +1,60 @@
 ic = 1;
-tint = irf.tint('2017-07-06T16:36:00.00Z',30);
-tint = irf.tint('2017-07-11T22:33:04.00Z',3);
+%tint = irf.tint('2017-07-06T16:36:00.00Z',30);
+%tint = irf.tint('2017-07-11T22:33:04.00Z',3);
+tint = irf.tint('2017-07-03T21:54:30.00Z/2017-07-03T21:54:50.00Z');
 
 % Load data
 c_eval('iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0]));',ic)
-c_eval('ePDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
-c_eval('gseB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+c_eval('iPDist = iPDist?.tlim(tint);',ic)
+%c_eval('ePDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
+%c_eval('gseB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 c_eval('dmpaB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
-c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic)
-c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
+%c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic)
+%c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 
-%% Make reduced distribution
-tintZoom = irf.tint('2017-07-06T16:36:05.00Z',3);
-vint = [0 1000];
-f1D = iPDist1.tlim(tintZoom).reduce('1D',gseB1,'vint',vint); % reduced distribution along B
-lineV1 = gseVi1.dot(gseB1.norm.resample(gseVi1)); % projection of Vi on B
+%% Make reduced distributions
+x = [1 0 0];
+y = [0 1 0];
+if1D = iPDist.reduce('1D',x); % reduced distribution along B
+if2D = iPDist.reduce('2D',x,y); % reduced distribution along B
 
+%% PDist.plot_plane
+nrows = 2;
+ncols = 3;
+npanels = nrows*ncols;
+for ipanel = 1:npanels
+  h(ipanel) = subplot(nrows,ncols,ipanel);
+end
+isub = 1;
+
+it = 10;
+
+
+hca = h(isub); isub = isub + 1;
+axes(hca)
+if2D(it).plot_plane;
+
+hca = h(isub); isub = isub + 1;
+[h1,h2,h3] = if2D(it).plot_plane(hca,'time',if2D.time(it));
+
+hca = h(isub); isub = isub + 1;
+[h1,h2,h3] = if2D(it).plot_plane(hca);
+
+hca = h(isub); isub = isub + 1;
+[h1,h2,h3] = iPDist(it).reduce('2D',x,y).plot_plane(hca);
+
+hca = h(isub); isub = isub + 1;
+[h1,h2,h3] = iPDist.reduce('2D',x,y,'time',iPDist.time(it)).plot_plane(hca);
+
+
+if 0
+  hca = h(isub); isub = isub + 1;
+  [h1,h2,h3] = iPDist(it-1).reduce('2D',x,y).plot_plane(hca);
+end
+if 0
+  hca = h(isub); isub = isub + 1;
+  [h1,h2,h3] = iPDist(it+1).reduce('2D',x,y).plot_plane(hca);
+end
 %% Plot
 npanels = 6;
 h = irf_plot(npanels);
