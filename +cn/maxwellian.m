@@ -24,9 +24,17 @@ end
 %do3D = 0;
 disp(['do3D = ' num2str(do3D)])
 
-v = torow(v)*1e3; % m/s
+if numel(v)>1
+    v = torow(v)*1e3; % m/s
+else
+    v = v*1e3; % m/s
+end
 vd = vd*1e3; % m/s
-n = tocolumn(n)*1e6; % m^-3
+if numel(n)>1  
+  n = tocolumn(n)*1e6; % m^-3
+else
+  n = n*1e6; % m^-3
+end
 T = T*e/kB; % K
 
 if any([strcmp(species,'i') strcmp(species,'p')]); % ions

@@ -1,30 +1,39 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+tintZoom = irf.tint('2017-07-06T08:16:35.00Z',5);
+tintZoom = tint;
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
 eint = [000 40000];
 vint = [-Inf Inf];
 
+%% electrons
 eDist = ePDist1.tlim(tintZoom).elim(eint);
-iDist = iPDist1.tlim(tintZoom).elim(eint);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
-vi = gseVi1.tlim(iDist.time).resample(iDist);
-scpot_margin = 1.5; % keep in mind that this also affects the velocity at lower energies
+scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
 scpot_lim = scPot1.resample(eDist)*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
-iLine = dmpaB1.resample(iDist).norm;
-
 tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim); toc % reduced distribution along B
-tic; if1D = iDist.reduce('1D',iLine,'vint',vint); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B
-lineVi = vi.dot(iLine); % projection of Vi on B
+
+%% ions
+iDist = iPDist1.tlim(tintZoom).elim(eint);
+vi = gseVi1.tlim(iDist.time).resample(iDist);
+
+iLine_par = dmpaB1.resample(iDist).norm;
+iLine_x = [1 0 0];
+iLine_y = [0 1 0];
+
+tic; if1D_x = iDist.reduce('1D',iLine_x,'vint',vint); toc % reduced distribution along B
+tic; if1D_y = iDist.reduce('1D',iLine_y,'vint',vint); toc % reduced distribution along B
+%tic; if1D_par = iDist.reduce('1D',iLine_par,'vint',vint); toc % reduced distribution along B
+lineVi_par = vi.dot(iLine_par); % projection of Vi on B
 
 
 %% Plot
 ic = 1;
-npanels = 11;
+npanels = 12;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -73,7 +82,7 @@ if 1 % iPDist pa 64
 end
 if 1 % i psd vpar
   isub = isub + 1;
-  hca = irf_panel('iLine');
+  hca = irf_panel('fi1D');
   irf_spectrogram(hca,if1D.specrec('velocity_1D'));
   hold(hca,'on')
   irf_plot(hca,{lineVi},'comp')
@@ -84,7 +93,7 @@ if 1 % i psd vpar
 end
 if 1 % i psd vpar
   isub = isub + 1;
-  hca = irf_panel('iLine');
+  hca = irf_panel('fi1D*v');
   irf_spectrogram(hca,if1D.specrec('v_f1D*v'));
   hold(hca,'on')
   irf_plot(hca,{lineVi},'comp')
@@ -188,7 +197,7 @@ if 1 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
-
+ 
 irf_zoom(h,'x',tintZoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
@@ -197,6 +206,282 @@ colormap('jet');
 
 colormap(h(4),cn.cmap('blue_red'))
 h(4).CLim = 100*[-1 1];
+%h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
+%% Plot fred, ions
+ic = 1;
+npanels = 9;
+h = irf_plot(npanels); 
+isub = 0;
+zoomy = [];
+
+if 0 % B abs
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('B abs');
+  irf_plot(hca,gseB1.abs);
+  hca.YLabel.String = 'B (nT)';
+end
+if 1 % B GSE
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{gseB?.x,gseB?.y,gseB?.z},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end 
+if 0 % Ve
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Ve');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVe?.x,gseVe?.y,gseVe?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+if 1 % Vi
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVi?.x,gseVi?.y,gseVi?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_i','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+if 0 % iPSD omni
+  isub = isub + 1;
+  hca = irf_panel('iPSD');  
+  [hout,hcb] = irf_spectrogram(hca,iDist.convertto('s^3/m^6').omni.specrec,'log');
+%   hold(hca,'on')
+%   lineScpot = irf_plot(hca,scPot1,'k');
+%   lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+%   hold(hca,'off')
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hca.YLabel.String = {'E_i','(eV)'};   
+end
+if 1 % iDEF omni
+  isub = isub + 1;
+  hca = irf_panel('iDEF');  
+  [hout,hcb] = irf_spectrogram(hca,iDist.deflux.omni.specrec,'log');
+%   hold(hca,'on')
+%   lineScpot = irf_plot(hca,scPot1,'k');
+%   lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+%   hold(hca,'off')
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hca.YLabel.String = {'E_i','(eV)'};   
+end
+if 0 % iPDist pa 64
+  isub = isub + 1;
+  hca = irf_panel('i PA e64 deflux lowe');  
+  eint = [100 40000];  
+  try
+    c_eval('irf_spectrogram(hca,iPitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  catch
+    c_eval('irf_spectrogram(hca,iPDist?.tlim(tint).pitchangles(dmpaB?,20).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  end
+  irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1])
+  hca.YLabel.String = {'\theta_{PA,i}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+end
+if 0 % i psd vpar
+  isub = isub + 1;
+  hca = irf_panel('iLine');
+  irf_spectrogram(hca,if1D_par.specrec('velocity_1D'));
+  hold(hca,'on')
+  irf_plot(hca,{lineVi_par},'comp')
+  %irf_plot(hca,gseVi1)
+  hold(hca,'off')
+  hca.YLim = if1D_par.depend{1}(1,[1 end]);
+  hca.YLabel.String = 'v_{i‚||} (km/s)'; 
+end
+if 1 % i psd vx
+  isub = isub + 1;
+  hca = irf_panel('iLine x');
+  irf_spectrogram(hca,if1D_x.specrec('velocity_1D'));
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVi},'comp')
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  hca.YLim = if1D_x.depend{1}(1,[1 end]);
+  hca.YLabel.String = {'v_{i,x}','(km/s)'}; 
+end
+if 1 % vA
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('vA');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{vA?},''comp'');',ic)
+  hca.YLabel.String = {'v_A','(km/s)'};  
+end
+if 1 % i psd vy
+  isub = isub + 1;
+  hca = irf_panel('iLine y');
+  irf_spectrogram(hca,if1D_y.specrec('velocity_1D'));
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVi},'comp')
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  hca.YLim = if1D_x.depend{1}(1,[1 end]);
+  hca.YLabel.String = {'v_{i,y}','(km/s)'}; 
+end
+if 1 % VExB flim
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  flim = 2;
+  hca = irf_panel('VXB flim');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVExB?.filt(0,flim,[],3).x,gseVExB?.filt(0,flim,[],3).y,gseVExB?.filt(0,flim,[],3).z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{ExB}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,['0<f<' num2str(flim) ' Hz'],[0.99 0.1],'color',0*[1 1 1])
+end
+if 0 % VExB
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('VXB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVExB?.x,gseVExB?.y,gseVExB?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{ExB}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+if 0 % eDEF omni
+  isub = isub + 1;
+  hca = irf_panel('eDEF');
+  [hout,hcb] = irf_spectrogram(hca,eDist.convertto('s^3/m^6').omni.specrec,'log');
+  hold(hca,'on')
+  lineScpot = irf_plot(hca,scpot_lim,'k');
+  lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+  hold(hca,'off')
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hca.YLabel.String = {'E_e','(eV)'};
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  irf_legend(hca,[num2str(scpot_margin) 'V_{sc}'],[0.99 0.1],'color',0*[1 1 1])
+end
+if 0 % e psd vpar
+  isub = isub + 1;
+  hca = irf_panel('fe reduced');
+  %irf_plot(hca,ef1D.specrec('velocity_1D'));
+  irf_spectrogram(hca,ef1D.specrec('velocity_1D','10^3 km/s'));
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVe},'comp')
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  hca.YLim = ef1D.depend{1}(1,[1 end])*1e-3;
+  hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
+  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+end
+if 0 % fe*v vpar
+  isub = isub + 1;
+  hca = irf_panel('fe reduced * v');
+  %irf_plot(hca,ef1D.specrec('velocity_1D'));
+  irf_spectrogram(hca,ef1D.specrec('v_f1D*v','10^3 km/s'));
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVe},'comp')
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  hca.YLim = ef1D.depend{1}(1,[1 end])*1e-3;
+  hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
+  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+end
+if 0 % fe*v^2 vpar
+  isub = isub + 1;
+  hca = irf_panel('fe reduced * v^2');
+  %irf_plot(hca,ef1D.specrec('velocity_1D'));
+  irf_spectrogram(hca,ef1D.specrec('v_f1D*v^2','10^3 km/s'));
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVe},'comp')
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  hca.YLim = ef1D.depend{1}(1,[1 end])*1e-3;
+  hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
+  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+end
+if 0 % Ve par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Ve par');
+  set(hca,'ColorOrder',mms_colors('1'))
+  c_eval('irf_plot(hca,{gseVe?par},''comp'');',ic)  
+  hca.YLabel.String = {'v_{e,||}','(km/s)'};  
+end
+if 0 % Te par perp
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[0.98 0.9],'fontsize',12);  
+end
+if 1 % E perp flim
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  flim = 2;
+  hca = irf_panel('E perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?perp.filt(0,flim,[],3).x,gseE?perp.filt(0,flim,[],3).y,gseE?perp.filt(0,flim,[],3).z},''comp'');',ic)
+  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+  irf_legend(hca,['0<f<' num2str(flim) ' Hz'],[0.99 0.1],'color',0*[1 1 1])
+end
+if 0 % E par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if 1 % ne
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n','(cm^{-3})'};
+end
+if 0 % beta
+  isub = isub + 1;  
+  hca = irf_panel('beta');
+  set(hca,'ColorOrder',mms_colors('123'))
+  c_eval('irf_plot(hca,{beta?e,beta?i,beta?},''comp'');',ic)
+  hca.YLabel.String = {'\beta'};
+  hca.YScale = 'log';
+  hca.YLim = [0.005 4];
+  hca.YMinorTick = 'on';
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'\beta_e','\beta_i','\beta'},[0.98 0.9],'fontsize',14);  
+  %hca.YMinorTick = [0.1:0.1:10 20:10:100 200];
+  hca.YTick = [0.001 0.01 0.1 1 10 100];
+end
+
+irf_zoom(h,'x',tintZoom)
+irf_zoom(h(zoomy),'y')
+irf_plot_axis_align
+set(irf_panel('iLine x'),'clim',[-4 -1])
+set(irf_panel('iLine y'),'clim',[-4 -1])
+%h(5).CLim = [-35 -28]+12;
+%colormap(cn.cmap('blue_white'));
+colormap('jet')
+%colormap(irf_panel('fe reduced * v'),cn.cmap('blue_red'))
+%hca = irf_panel('phase velocity');
+%hca.CLim = [-5 -2];
+%colormap(irf_panel('fe reduced * v^2'),cn.cmap('white_blue'))
+
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
 
 %% Plot fred, electrons
