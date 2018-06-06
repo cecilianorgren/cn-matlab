@@ -14,11 +14,11 @@ z = linspace(-3*L,3*L,100);
 
 %% B n
 hca = subplot(1,1,1);
-plot(hca,z,B(z),z,B(z).^2,z,n(z));
+plot(hca,z,B(z),z,B(z).^2,z,n(z),z,J(z),'--');
 hca.FontSize = 16;
 hca.XLabel.String = 'y/L';
 hca.YLabel.String = 'Normalized amplitudes';
-hleg = legend('B','|B|','n');
+hleg = legend('B','|B|','n','J');
 hleg.Box = 'off';
 %% v
 colors = mms_colors('matlab');

@@ -61,7 +61,6 @@ if 0 % iPDist omni 64
   colormap(hca,cmap)
 end
 
-hca = irf_panel('delete for space'); hca.Visible = 'off';
 
 if 1 % B
   hca = irf_panel('B brst');

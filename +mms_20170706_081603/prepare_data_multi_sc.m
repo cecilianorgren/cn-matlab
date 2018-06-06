@@ -16,6 +16,8 @@ gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 end
 
+
+
 %% Pressure and temperature divergences
 if all(ic==[1:4])
 gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km'; gseGradPe.name = 'div Pe';
@@ -54,7 +56,11 @@ gseAvVixB = (gseVixB1+gseVixB2.resample(gseVixB1.time)+gseVixB3.resample(gseVixB
 gseAvB = (gseB1+gseB2.resample(gseB1.time)+gseB3.resample(gseB1.time)+gseB4.resample(gseB1.time))/4;
 
 [gseGradPepar,gseGradPeperp] = irf_dec_parperp(gseAvB,gseGradPe); gseGradPepar.name = 'grad Pe par'; gseGradPeperp.name = 'grad Pe perp';
+[gseJcurlpar,gseJcurlperp] = irf_dec_parperp(gseAvB,gseJcurl); gseJcurlpar.name = 'J par'; gseJcurlperp.name = 'J perp';
 end
+
+
+
 %% Ohm's law terms
 if all(ic==[1:4])
 %gseAvEVexB = (gseEVexB1 + gseEVexB2.resample(gseEVexB1) + gseEVexB3.resample(gseEVexB1) + gseEVexB4.resample(gseEVexB1))/4;

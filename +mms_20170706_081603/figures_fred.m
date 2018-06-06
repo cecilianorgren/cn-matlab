@@ -1,7 +1,8 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',5);
-tintZoom = tint;
+tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+%tintZoom = irf.tint('2017-07-06T08:16:37.00Z',3);
+%tintZoom = tint;
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -11,10 +12,15 @@ vint = [-Inf Inf];
 %% electrons
 eDist = ePDist1.tlim(tintZoom).elim(eint);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
-scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
-scpot_lim = scPot1.resample(eDist)*scpot_margin;
+ % keep in mind that this also affects the velocity at lower energies
+scpot_lim = scPot1.resample(eDist);
+scpot_margin = 2.0;
+lowerelim = scpot_lim*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
-tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim); toc % reduced distribution along B
+energies = sqrt(2*eDist.depend{1}(1,:)*units.eV/units.me)/1000; % km/s
+vg = [-energies(end:-1:1) 0 energies];
+vg(abs(vg)>80000) = [];
+tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim',scpot_lim*2,'vg',vg); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B
 
 %% ions
@@ -297,7 +303,7 @@ if 0 % i psd vpar
   %irf_plot(hca,gseVi1)
   hold(hca,'off')
   hca.YLim = if1D_par.depend{1}(1,[1 end]);
-  hca.YLabel.String = 'v_{i‚||} (km/s)'; 
+  hca.YLabel.String = 'v_{i???||} (km/s)'; 
 end
 if 1 % i psd vx
   isub = isub + 1;
@@ -485,6 +491,8 @@ colormap('jet')
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
 
 %% Plot fred, electrons
+tintZoom1 = irf.tint('2017-07-06T08:16:36.00Z/2017-07-06T08:16:42.00Z');
+%tintZoom1 = tintZoom;
 ic = 1;
 npanels = 7;
 h = irf_plot(npanels); 
@@ -557,9 +565,23 @@ end
 if 1 % eDEF omni
   isub = isub + 1;
   hca = irf_panel('eDEF');
+  [hout,hcb] = irf_spectrogram(hca,eDist.deflux.omni.specrec,'log');
+  hold(hca,'on')
+  lineScpot = irf_plot(hca,lowerelim,'k');
+  lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+  hold(hca,'off')
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hca.YLabel.String = {'E_e','(eV)'};
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  irf_legend(hca,[num2str(scpot_margin) 'V_{sc}'],[0.99 0.1],'color',0*[1 1 1])
+end
+if 0 % ePSD omni
+  isub = isub + 1;
+  hca = irf_panel('ePSD');
   [hout,hcb] = irf_spectrogram(hca,eDist.convertto('s^3/m^6').omni.specrec,'log');
   hold(hca,'on')
-  lineScpot = irf_plot(hca,scpot_lim,'k');
+  lineScpot = irf_plot(hca,lowerelim,'k');
   lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
   hold(hca,'off')
   set(hca,'yscale','log');
@@ -593,6 +615,7 @@ if 1 % fe*v vpar
   %hold(hca,'off')
   hca.YLim = ef1D.depend{1}(1,[1 end])*1e-3;
   hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
   irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
   irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
 end
@@ -666,26 +689,31 @@ if 0 % ne
   hca.YLabel.String = {'n','(cm^{-3})'};
 end
 
-irf_zoom(h,'x',tintZoom)
+irf_zoom(h,'x',tintZoom1)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(5).CLim = [-35 -28]+12;
 colormap(cn.cmap('blue_white'));
+%colormap('jet');
 colormap(irf_panel('fe reduced * v'),cn.cmap('blue_red'))
-hca = irf_panel('phase velocity');
-hca.CLim = [-5 -2];
+hca = irf_panel('fe reduced * v'); hca.YLim = 60*[-1 1];
+hca = irf_panel('phase velocity'); hca.CLim = [-5 -2];
+%hca = irf_panel('ePSD'); hca.CLim = [-21 -15];
+hca = irf_panel('eDEF'); hca.CLim = [4 7.5];
+hca = irf_panel('fe reduced'); hca.CLim = [-6 -2]; hca.YLim = 60*[-1 1];
 %colormap(irf_panel('fe reduced * v^2'),cn.cmap('white_blue'))
 
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
 
 %% Plot, including f proj and v phi and vtrap
 ic = 1;
-npanels = 6;
+npanels = 4;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
 tint_zoom = tintZoom;
-%tint_zoom = irf.tint('2017-07-06T01:38:00.00Z/2017-07-18T01:39:00.00Z');
+%tint_zoom = irf.tint('2017-07-06T01:38:00.00Z/2017-07-18T01:39:03.00Z');
+tint_zoom = irf.tint('2017-07-06T08:16:38.00Z/2017-07-06T08:16:39.30Z');
 
 vmin = tsVphpar-tsVtrap;
 vmax = tsVphpar+tsVtrap;
@@ -768,7 +796,7 @@ if 0 % eDEF omni
   ylabel(hca,hca.YLabel.String,'interpreter','tex')
   irf_legend(hca,[num2str(scpot_margin) 'V_{sc}'],[0.99 0.1],'color',0*[1 1 1])
 end
-if 1 % e psd vpar
+if 0 % e psd vpar
   isub = isub + 1;
   hca = irf_panel('eLine');
   %irf_plot(hca,ef1D.specrec('velocity_1D'));
@@ -800,7 +828,8 @@ if 1 % Ve par
   hca = irf_panel('Ve par');
   set(hca,'ColorOrder',mms_colors('1'))
   c_eval('irf_plot(hca,{gseVe?par},''comp'');',ic)  
-  hca.YLabel.String = {'v_{e,||}','(km/s)'};  
+  hca.YLabel.String = {'v_{e,||}','(km/s)'};
+  irf_legend(hca,sprintf('mms%g',ic),[0.98 0.9],'fontsize',12)
 end
 if 1 % E par
   isub = isub + 1;
@@ -808,7 +837,8 @@ if 1 % E par
   hca = irf_panel('E par');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
-  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+  hca.YLabel.String = {'E_{||}','(mV/m)'}; 
+  irf_legend(hca,sprintf('mms%g',ic),[0.98 0.9],'fontsize',12)
 end
 if 0 % E perp
   isub = isub + 1;
@@ -869,7 +899,7 @@ if 1 % v phase + trap
   hline = findobj(hca.Children,'Type','Line');
   c_eval('hline(?).LineWidth = 1.5;',1:numel(hline))
 end
-if 1 % Te par perp
+if 0 % Te par perp
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Te');
@@ -886,13 +916,13 @@ hca = irf_panel('phase velocity');
 hca.CLim = [-5 -2.5];
 %colormap(hca,'jet')
 
-irf_zoom(h,'x',tintZoom)
+irf_zoom(h,'x',tint_zoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(4).CLim = [-35 -28]+12
 colormap(cn.cmap('blue_white'));
 
-%% Plot 1D plot
+%% Plot 1D plot, vph, vtrap 
 %if exist('fig') && ~isempty(fig) , close(fig); end
 units = irf_units;
 iesw = 11;
@@ -953,4 +983,71 @@ set(hca,'ColorOrder',[0 0 0;mms_colors('4');[0 1 1]])
 irf_legend(hca,{'f_e';'vph';'v_{trap}'},[0.95 0.95],'fontsize',14)
 hca.FontSize = 14;
 cn.print(sprintf('fred_e_vtrap_1time_%s',time.utc),'path',eventPath)
+
+
+%% Plot 1D plot for a few consecutive times
+%if exist('fig') && ~isempty(fig) , close(fig); end
+%tintZoom = irf.tint('2017-07-06T08:16:38.50Z',0.50);
+tintZoom = irf.tint('2017-07-06T08:16:37.00Z',4);
+units = irf_units;
+fig = figure(22);
+fig.Position = [729   765   342   260];
+
+[indZoom,timesZoom] = ef1D.time.tlim(tintZoom);
+
+epitch = ePitch1(indZoom);
+ef1d = ef1D(indZoom);
+%subindices = 1:3:ef1d.length;
+subindices = [1 55 ef1d.length];
+subtimes = ef1d.time(subindices);
+utctimes = subtimes.utc;
+
+allcolors = mms_colors('matlab');
+cmap = colormap('parula');
+allcolors = cmap(fix(linspace(1,size(cmap,1)-5,numel(subindices))),:);
+
+if 0
+for it = 1:5:ef1d.length
+  xlim = [1e1 1e4];
+  ylim = [1e-33 1e-25];  
+  hca = subplot(1,1,1);
+  plot(hca,epitch.depend{1},squeeze(epitch.data))
+  hca.XScale = 'log';
+  hca.YScale = 'log';
+  hca.XLim = xlim;
+  hca.YLim = ylim;
+  hold(hca,'on')
+
+  hold(hca,'off')
+end
+end
+iplot = 0;
+for it = subindices  
+  hca = subplot(1,1,1);
+  iplot = iplot + 1;
+  hline = plot(hca,ef1d.depend{1}(it,:)*1e-3,squeeze(ef1d.data(it,:)),'color',allcolors(iplot,:));
+  pause(0.1)
+  hline.LineWidth = 2;
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  %hca.YLim = ylim;
+  hca.YScale = 'log';
+  hca.YLabel.String = ['f_{e} (' ef1d.units ')'];
+  %hca.Title.String = time.utc;
+  if it == 1
+    hold(hca,'on')
+  end
+  hline = plot(hca,-ef1d.depend{1}(it,:)*1e-3,squeeze(ef1d.data(it,:)),'color',allcolors(iplot,:),'LineStyle','--');
+  hline.LineWidth = 2;
+end 
+hca.XLim = [-40 0];
+hca.YLim = 10.^[-5 -2.5];
+hold(hca,'off')
+legend(hca.Children(end:-2:2),utctimes(:,12:23),'location','southeast')
+%legend(utctimes(:,12:23),'location','southeast')
+%hca.XScale = 'log';
+%hca.YScale = 'log';
+%hca.XLim = xlim;
+
+%irf_legend()
+%cn.print(sprintf('fred_e_vtrap_1time_%s',time.utc),'path',eventPath)
 

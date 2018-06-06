@@ -14,8 +14,7 @@ nt = numel(t);
 
 
 
-%nx=851; ny=551;
-nx=121; ny=121;
+nx=851; ny=551;
 xlim = 10;
 ylim = 4;
 x=linspace(-xlim,xlim,nx);
@@ -41,12 +40,6 @@ for iA = 1:nA-1
   fvol(iA) = numel(indA);
 end
 
-Bref = Babs(-4,2,a,b,t);
-Thetaref = 90;
-BABS = Babs(X(:,:),Y(:,:),a,b,t);
-THETA = asind(sqrt(BABS/Bref*sind(Thetaref)));
-
-
 toplot_x=1:20:nx; 
 toplot_y=1:20:ny; 
 BX = Bx(X,Y,a,b,t);
@@ -54,7 +47,7 @@ BY = By(X,Y,a,b,t);
 
 %% figure
 fig = figure(10);
-nrows = 6; 
+nrows = 5; 
 ncols = 1; 
 npanels = nrows*ncols;
 for ipanel = 1:npanels
@@ -96,28 +89,7 @@ if 1 % B abs
   hca.YLim = ylim*[-1 1]; 
   hold(hca,'off')
   hca.CLim = [0 hca.CLim(2)];
-  hca.CLim = [0 17];
-  %pause(0.1)
-  colorbar('peer',hca)
-end
-if 1 % adiabatic invariant, THETA
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X(:,:),Y(:,:),real(THETA)); 
-  shading(hca,'flat')
-  hold(hca,'on'); 
-  [~,hc] = contour(hca,X(:,:),Y(:,:),Az(X(:,:),Y(:,:),a,b,t),minA:2:maxA,'k');   
-  %hc.LineWidth = 1.0;
-  quiver(hca,X(toplot_y,toplot_x),Y(toplot_y,toplot_x),BX(toplot_y,toplot_x),BY(toplot_y,toplot_x),'k');
-  hold(hca,'off'); 
-  hca.Title.String = '|B|';
-  hca.XLabel.String = 'X'; 
-  hca.YLabel.String = 'Y';   
-  axis(hca,'equal');  
-  hca.XLim = xlim*[-1 1]; 
-  hca.YLim = ylim*[-1 1]; 
-  hold(hca,'off')
-  %hca.CLim = [0 hca.CLim(2)];
-  hca.CLim = [0 90];
+  hca.CLim = [0 hca.CLim(2)];
   %pause(0.1)
   colorbar('peer',hca)
 end
@@ -180,12 +152,11 @@ if 1 % inverse size of fluxtube normalized
   %pause(0.1)
   colorbar('peer',hca)
 end
-
-colormap(cn.cmap('white_blue'));
+colormap(cn.cmap('blue_white'));
 
 for ipanel = 1:npanels
-  %h(ipanel).XLim = [-5 5];
-  %h(ipanel).YLim = [-2 2];
+  h(ipanel).XLim = [-5 5];
+  h(ipanel).YLim = [-2 2];
 end
 
 if 0 % divA
