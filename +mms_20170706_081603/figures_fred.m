@@ -1,7 +1,7 @@
 %% Separatrix streaming
 % Make reduced distribution
-tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
-%tintZoom = irf.tint('2017-07-06T08:16:37.00Z',3);
+%tintZoom = irf.tint('2017-07-06T08:16:35.00Z',25);
+tintZoom = irf.tint('2017-07-06T08:16:37.00Z',3);
 %tintZoom = tint;
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
@@ -925,7 +925,7 @@ colormap(cn.cmap('blue_white'));
 %% Plot 1D plot, vph, vtrap 
 %if exist('fig') && ~isempty(fig) , close(fig); end
 units = irf_units;
-iesw = 11;
+iesw = 5;
 fig = figure(22);
 fig.Position = [729   765   442   260];
 vph = esw_data{9}(iesw);

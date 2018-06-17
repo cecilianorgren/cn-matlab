@@ -182,7 +182,7 @@ c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E
 
 disp('Done.')
 %% Plot overview figure with focus on electrons
-npanels = 11;
+npanels = 7;
 cmap = 'jet';
 h = irf_plot(npanels);
 ic = 1;
@@ -190,6 +190,19 @@ iisub = 0;
 cmap = colormap('jet');
 zoomy = [];
 
+if 1 % e DEF omni 64
+  iisub = iisub + 1;
+  hca = irf_panel('e DEF omni 64');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hold(hca,'on')
+  c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+  lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+  hold(hca,'off')
+  hca.YLabel.String = {'E_e','(eV)'};   
+  colormap(hca,cmap) 
+end
 if 1 % B
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
@@ -220,7 +233,7 @@ if 0 % ne niiisub = iisub + 1;
   set(hca,'ColorOrder',mms_colors('12'))  
   irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
 end
-if 1 % J  iisub = iisub + 1;
+if 0 % J  iisub = iisub + 1;
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('J fpi');
@@ -254,7 +267,7 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 1 % Ve
+if 0 % Ve perp par
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Ve perp par');
@@ -277,7 +290,7 @@ if 0 % gradPe
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);    
   irf_legend(hca,{'4 spacecraft'},[0.05 0.9],'fontsize',12,'color','k');
 end
-if 1 % e DEF omni 64
+if 0 % e DEF omni 64
   iisub = iisub + 1;
   hca = irf_panel('e DEF omni 64');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
@@ -298,7 +311,7 @@ if 0 % e DEF omni 32
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3 1e4]);
 end
-if 1 % ePDist pa 64
+if 0 % ePDist pa 64
   iisub = iisub + 1;
   hca = irf_panel('e PA e64 deflux lowe');  
   eint = [1.5*max(scPot1.data) 40000];  
@@ -341,7 +354,7 @@ if 0 % E
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
 end
-if 1 % E perp
+if 0 % E perp
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('E perp');

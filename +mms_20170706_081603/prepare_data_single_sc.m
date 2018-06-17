@@ -1,6 +1,10 @@
 ic = 1:4;
 units = irf_units;
 
+%% New ion temperature
+c_eval('gseTi?_old = gseTi? ;',ic)
+c_eval('gseTi? = irf.ts_tensor_xyz(gsePi?.time,gsePi?.data*1e-9./repmat(ne?.resample(gsePi?).data*1e6,1,3,3)/units.kB*units.kB/units.e);',ic)
+
 %% Current
 % Currents from moments, use ne also for Ji 
 c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',ic);

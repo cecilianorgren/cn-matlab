@@ -21,6 +21,7 @@ end
 
 have_options = nargs > 1;
 while have_options
+  l = 0;
   switch(lower(args{1}))
     case {'zoom'} % time
       l = 1;

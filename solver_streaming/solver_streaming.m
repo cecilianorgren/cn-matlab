@@ -93,7 +93,7 @@ end
 
 %% Dispersion solver, one surface
 % Wavenumber vector
-nk = 500;
+nk = 100;
 k_min= 0.1; k_max = 0.5;
 knorm = min(Ld(1));  % length
 knorm_str = sprintf('L_{d%g}',1);

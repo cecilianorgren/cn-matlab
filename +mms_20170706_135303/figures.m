@@ -76,7 +76,7 @@ if 0 % iPDist pa 64
   hca.YLabel.String = {'\theta_{PA,i}','(\circ)'};   
   hca.YTick = [45 90 135];   
 end
-if 1 % i psd vpar
+if 0 % i psd vpar
   isub = isub + 1;
   hca = irf_panel('iLine');
   irf_spectrogram(hca,if1D.specrec('velocity_1D'));
@@ -110,7 +110,7 @@ if 1 % eDEF omni
   hca.YLabel.String = {'E_e','(eV)'};   
   irf_legend(hca,[num2str(scpot_margin) 'V_{sc}'],[0.99 0.1],'color',0*[1 1 1])
 end
-if 1 % e psd vpar
+if 0 % e psd vpar
   isub = isub + 1;
   hca = irf_panel('eLine');
   %irf_plot(hca,ef1D.specrec('velocity_1D'));

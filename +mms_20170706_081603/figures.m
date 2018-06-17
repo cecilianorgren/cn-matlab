@@ -20,21 +20,6 @@ if 1 % e DEF omni
   hca.YLabel.String = {'E_e','(eV)'};   
   colormap(hca,cmap) 
 end
-if 1 % Te par perp
-  iisub = iisub + 1;
-  zoomy = [zoomy iisub];
-  hca = irf_panel('Te');
-  set(hca,'ColorOrder',mms_colors('123'))
-  refTi = 10;
-  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2},''comp'');',ic)
-  hca.YLabel.String = {'T','(eV)'};
-  set(hca,'ColorOrder',mms_colors('123'))
-  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[0.98 0.9],'fontsize',12);
-  %hca.YScale = 'log'; %hca.YTick = [10:10:100 200:100:1000];
-  hca.YLim = [10 400];
-  %hca.YTick
-  irf_zoom(hca,'y')
-end
 if 1 % B
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
@@ -45,15 +30,6 @@ if 1 % B
   hca.YLabel.String = {'B','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
-end
-if 0 % ne
-  iisub = iisub + 1;
-  zoomy = [zoomy iisub];
-  hca = irf_panel('n');
-  set(hca,'ColorOrder',mms_colors('12'))
-  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
-  hca.YLabel.String = {'n_e','(cm^{-3})'};
-  set(hca,'ColorOrder',mms_colors('12'))    
 end
 if 0 % J
   iisub = iisub + 1;
@@ -136,6 +112,30 @@ if 0 % E perp
   hca.YLabel.String = {'E_{\perp}','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+end
+if 1 % ne
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n_e','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('12'))    
+end
+if 0 % Te par perp
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[0.98 0.9],'fontsize',12);
+  %hca.YScale = 'log'; %hca.YTick = [10:10:100 200:100:1000];
+  hca.YLim = [10 400];
+  %hca.YTick
+  irf_zoom(hca,'y')
 end
 if 1 % E par
   iisub = iisub + 1;
