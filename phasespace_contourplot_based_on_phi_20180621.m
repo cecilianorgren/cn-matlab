@@ -1,3 +1,7 @@
+% see also
+% open lic.phasespace
+% open lic.phasespace_1
+
 localuser = datastore('local','user');
 % Load MMS data
 if 0 % load data
@@ -33,23 +37,15 @@ doT = 1; % otherwise plot x;
 
 % Plasma properties
 units = irf_units;
-n = [0.045]*1e6;
+n = [0.05]*1e6;
 T = [400]; T_K = T*units.eV/units.kB; % use parallel temperature
-vd = [-0000]*1e3; % m/s
+vd = [0000]*1e3; % m/s
 
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
-dE_edi = 25; % eV
+dE_edi = 10; % eV
 dv_edi = sqrt(2*units.e*dE_edi./units.me); % m/s
-
-E_edi_plus = E_edi + dE_edi;
-E_edi_minus = E_edi - dE_edi;
-dv_edi_plus = sqrt(2*units.e*E_edi_plus./units.me)-v_edi; % m/s
-dv_edi_minus = -sqrt(2*units.e*E_edi_minus./units.me)+v_edi; % m/s
-if 0 % illustrate energy and velocity range
-  
-end
 
 % Physical parameters
 vt = sqrt(2*units.e*T./units.me); % m/s
@@ -62,182 +58,216 @@ Ld = vt./wp/sqrt(2);
 % x can be vph * t if w e want to comapre to time series
 % spatial grid (can also be time series, i.e. use directly)
 
-% eh model
-% observed/measured properties (konrad)
-data_tmp = load('/Users/cno062/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat');
-obs_eh_properties = data_tmp.EH_properties;
-obs_lpp = obs_eh_properties.Lpp; % peak to peak length
-obs_potential = obs_eh_properties.potential;
-obs_potential_max = obs_eh_properties.max_potential;
-obs_velocity = obs_eh_properties.vel;
-obs_neh = numel(velocity);
-c_eval('obs_t0_epoch_mms? = EH_properties.time_mms?;')
-c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
-c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
-
-%
-% Potential from observed E
-tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
-%tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.700Z');
-vph = -9000e3; % m/s, representative phase velocity
-ffilt = 20; % Hz
-phi_shift = 150; % to keep potential > 0
-c_eval('Etoint? = gseE?par.filt(ffilt,0,[],3);');    
-c_eval('intEdt? = irf_integrate(Etoint?.tlim(tint_phi));');    
-c_eval('phi? = intEdt?*vph*1e-3;')
-minpeakdistance = 150;
-c_eval('[PKS?,LOCS?,W?] = findpeaks(-phi?.data,''MinPeakDistance'',minpeakdistance);')
-
-c_eval('phi?_detrend = phi?; phi?_detrend.data = detrend(phi?_detrend.data,''linear'',LOCS?);')
-c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;')
-c_eval('phi?_detrend_shift.data(phi?_detrend_shift.data<0) = 0;')
-
-if 0 % plot different stages of phi: original from filtered E, detrend, shift
-figure(31)
-h = irf_plot(7); isub = 1;
-irf_plot(h(isub),{phi1,phi2,phi3,phi4},'comp'); isub = isub + 1;
-irf_plot(h(isub),{phi1_detrend,phi2_detrend,phi3_detrend,phi4_detrend},'comp'); isub = isub + 1;
-irf_plot(h(isub),{phi1_detrend_shift,phi2_detrend_shift,phi3_detrend_shift,phi4_detrend_shift},'comp'); isub = isub + 1;
-irf_plot(h(isub),{phi1,phi1_detrend,phi1_detrend_shift,phi1-phi1_detrend},'comp'); isub = isub + 1;
-irf_plot(h(isub),{phi2,phi2_detrend,phi2_detrend_shift,phi2-phi2_detrend},'comp'); isub = isub + 1;
-irf_plot(h(isub),{phi3,phi3_detrend,phi3_detrend_shift,phi3-phi3_detrend},'comp'); isub = isub + 1;
-irf_plot(h(isub),{phi4,phi4_detrend,phi4_detrend_shift,phi4-phi4_detrend},'comp'); isub = isub + 1;
-irf_zoom(h,'x',tint_phi)
-end
-
-t0 = tint_phi(1);
-x_vec = phi1.time - t0; % seconds
-nx = numel(x_vec);
-
-mms_id = 1; % chose potentiual between spacecraft
-c_eval('phi_vec = phi?_detrend_shift.data;',mms_id)
-c_eval('phi_vec_obs = obs_phi?.data;',mms_id)
-c_eval('epar_vec = Etoint?.tlim(tint_phi).data;',mms_id)
-c_eval('vph_vec_obs = obs_vph?.data;',mms_id)
-c_eval('x_vec_obs = obs_phi?.time-t0;',mms_id)
-c_eval('LOCS = LOCS?;',mms_id)
-c_eval('PKS = PKS?;',mms_id)
-
-option_vph = 'interp linear piecewise';
-%option_vph = 'constant';
-switch option_vph
+% phase velocity
+wave_vph = 'intE const vph';
+switch wave_vph
   case 'gradual'
-    vph_vec = vph*(1+0.5*x_vec/max(x_vec));
-  case 'constant'
-    vph_vec = repmat(vph,1,nx);
-  case 'interp linear piecewise' % piecewise linear interpolation of vph
-    c_eval('tmp_time = obs_t0_epoch_mms?-t0;',mms_id)
-    tmp_time = torow([tint_phi(1)-t0; tmp_time]);
-    c_eval('tmp_data = obs_vph?.data*1e3;',mms_id) % m/s
-    tmp_data = torow([vph; tmp_data]);        
-    vph_vec = interp_linear_piecewise(tmp_data,tmp_time,x_vec);
-    vph_vec = smooth(vph_vec,numel(x_vec)/50);
-    %plot(x_vec,vph_vec,'.',tmp_time,tmp_data,'*')
-end
-% adjust phi incase vph is variable (vph is used to get phi: phi = eint*vph)
-phi_vec = phi_vec.*reshape(vph_vec,size(phi_vec))/vph;
+    vph = 10000e3; % m/s
+    vph_vec = vph*(1+1*x/max(x));
+  case 'steps'
+    vph = 10000e3; % m/s
+    vph_vec = vph*ones(1,nx);
+    vph_vec(1:64) = vph_vec(1:64)*3;
+    vph_vec(65:130) = vph_vec(65:130)*0.5;
+  case 'konrad'    
+    mms_id = 3;
+    %load('/Users/cno062/GoogleDrive/Data/Events/2017-07-06_081603/')
+    EH_properties = load('/Users/cecilia/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat');
+    EH_properties = EH_properties.EH_properties;
+    neh = numel(EH_properties.velocity);
+    ts_epar = irf.ts_scalar([],[]);
+    ts_vph = irf.ts_scalar([],[]);
+    ts_phi = irf.ts_scalar([],[]);
+    ts_vph_ = irf.ts_scalar(EH_properties.time_mms1,EH_properties.velocity);
+    for ieh = 1:neh            
+      eh_T = 0.04;
+      c_eval('tint_tmp? = EH_properties.time_mms!(?) + eh_T*[-0.05 0.05];',ieh);      
+      c_eval('tint_tmp = tint_tmp?;',ieh)
+      c_eval('tidx_tmp = gseE?par.time.tlim(tint_tmp);',mms_id);      
+      c_eval('[idx_tmp,epoch_tmp] = gseE?par.time.tlim(tint_tmp);',mms_id)      
+      c_eval('data_tmp = gseE?par.tlim(tint_tmp).data;',mms_id);
+      c_eval('eint_tmp = gseEpardt?.tlim(tint_tmp).data;',mms_id);
+      c_eval('vph_tmp = EH_properties.velocity(?)*ones(1,numel(idx_tmp));',ieh);
+      phi_tmp = detrend(eint_tmp,'linear')*vph_tmp(1); % all vph_tmp are the same
+      %c_eval('EH_properties(?).time_mms!(?)+0.05[-0.5 0.5]',ieh,mms_id);
+      
+      c_eval('ts_eh? = irf.ts_scalar(epoch_tmp,data_tmp);',ieh);      
+      c_eval('ts_epar = combine(ts_epar,ts_eh?);',ieh)
+      
+      c_eval('ts_vph? = irf.ts_scalar(epoch_tmp,vph_tmp);',ieh);
+      
+      c_eval('ts_vph = combine(ts_vph,ts_vph?);',ieh)
+      
+      c_eval('ts_phi? = irf.ts_scalar(epoch_tmp,phi_tmp);',ieh);
+      c_eval('ts_phi = combine(ts_phi,ts_phi?);',ieh)
+    end
+    time_all = ts_Epar.time;
+    c_eval('intEdt = gseEpardt?.tlim(time_all);',mms_id)    
+    ts_vph_resamp = ts_vph.resample(intEdt);
+    ts_Phi_nondetrend = intEdt*ts_vph_resamp;
+    ts_Phi = ts_Phi_nondetrend.filt(50,0,[],3);
+  %c_eval('gsePhi?_detrend = gsePhi?; gsePhi?_detrend.data = detrend(gsePhi?_detrend.data,''linear'');')
+  case 'konrad2' % model based on phi0    
+    mms_id = 3;
+    % measured properties
+    EH_properties = load('/Users/cno062/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat');
+    EH_properties = EH_properties.EH_properties;
+    neh = numel(EH_properties.velocity);    
+    L_pp = EH_properties.L_pp;
+    potential = EH_properties.calc_Pot;
+    velocity = EH_properties.velocity;
+    c_eval('t0_epoch = EH_properties.time_mms?;',mms_id)
 
+    % model
+    phi_mod = @(x,l,phi0) phi0*exp(-x.^2/(2*l^2));
+    E_mod = @(x,l,phi0) (1/l^2)*phi0*x.*exp(-x.^2/(2*l^2));
+    dt = 0.001;
+    
+    % collect together
+    ts_epar = irf.ts_scalar([],[]);
+    ts_vph = irf.ts_scalar([],[]);
+    ts_phi = irf.ts_scalar([],[]);
+    
+    for ieh = 1:neh
+      l_tmp = L_pp(ieh)/2;
+      x_tmp = l_tmp*3;
+      vph_tmp = velocity(ieh);
+      %t_tmp = x_tmp/vph_tmp;
+      phi0_tmp = potential(ieh);
+      t0_epoch_tmp = t0_epoch(ieh);
+      
+      nx_tmp = 40;
+      x_vec_tmp = linspace(-x_tmp,x_tmp,nx_tmp); % km
+      vph_vec_tmp = repmat(vph_tmp,1,nx_tmp);
+      t_vec_tmp = -x_vec_tmp/vph_tmp;
+      t_vec_epoch_tmp = t0_epoch_tmp + t_vec_tmp;
+      
+      phi_tmp = phi_mod(x_vec_tmp,l_tmp,phi0_tmp);
+      e_tmp = E_mod(x_vec_tmp,l_tmp,phi0_tmp);
+      ts_e_tmp = irf.ts_scalar(t_vec_epoch_tmp,e_tmp);
+      ts_phi_tmp = irf.ts_scalar(t_vec_epoch_tmp,phi_tmp);
+      ts_vph_tmp = irf.ts_scalar(t_vec_epoch_tmp,vph_vec_tmp);
+      
+      %c_eval('ts_eh? = irf.ts_scalar(epoch_tmp,data_tmp);',ieh);      
+      %c_eval('ts_epar = combine(ts_epar,ts_eh?);',ieh)
+            
+      ts_vph = combine(ts_vph,ts_vph_tmp);            
+      ts_phi = combine(ts_phi,ts_phi_tmp);
+      ts_epar = combine(ts_epar,ts_e_tmp);               
+    end    
+    
+    % interp vectors    
+    timeline = gseE1par.tlim(ts_phi.time).time;
+    ts_vph = ts_vph.resample(timeline);
+    ts_phi = ts_phi.resample(timeline);
+    ts_epar = ts_epar.resample(timeline);
+    
+    vph_vec = ts_vph.data*1e3; % m/s
+    phi_vec = ts_phi.data;
+    
+    if doT, x_vec = timeline - timeline(1);
+    else x_vec = (timeline - timeline(1))*mean(ts_vph.data);
+    end
+    if 0 % plot
+      c_eval('h = irf_plot({gseE?par,-1*intEdt,ts_epar,ts_phi,ts_vph});',mms_id)
+      %irf_plot(h(end),ts_vph_,'*')
+      irf_zoom(h,'x',ts_Epar.time);
+      c_eval('hpl(!) = irf_pl_mark(h(!),tint_tmp?);',1:neh,1:numel(h))
+    end
+  case 'intE const vph'
+    vph = -10000e3; % m/s
+    tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.617Z');
+    ffilt = 20;
+    phi_shift = 200;
+    c_eval('Etoint? = gseE?par.filt(ffilt,0,[],3);');    
+    c_eval('intEdt? = irf_integrate(Etoint?.tlim(tint_phi));');    
+    c_eval('phi? = intEdt?*vph*1e-3+phi_shift;')
+    c_eval('phi?.data(phi?.data<0) = 0;')
+    %c_eval('gsePhi?_detrend = gsePhi?; gsePhi?_detrend.data = detrend(gsePhi?_detrend.data,''linear'');')
+    x_vec = phi1.time - phi1.time(1);
+    t0 = phi1.time(1);
+    nx = numel(x_vec);
+    vph_vec = repmat(vph,1,nx);
+    vph_vec = vph*(1+0.0*x_vec/max(x_vec));
+    phi_vec = phi1.data;
+    epar_vec = Etoint1.tlim(tint_phi).data;
+    [PKS,LOCS,W] = findpeaks(-phi_vec,'MinPeakDistance',50);
+    if 1
+      phi_vec_orig = phi_vec;
+      phi_vec = detrend(phi_vec,'linear',LOCS)+phi_shift;
+    end
+    ic = 1;
+  case 'constant'
+    vph_vec = vph*ones(1,nx);
+end
+
+%%
 % velocity grid
+% treat this as the initial velocity of a given particle
 vmax = 2*vt;
 nv = 1500;
 v = linspace(-vmax,vmax,nv);
-dv = v(2) - v(1);
+Ek = units.m*v.^2/2; % kinetic energy of particle
 t_to_x = -vph;
-if doT  
-  dx_vec = x_vec(2) - x_vec(1);
-  dx = dx_vec*t_to_x;
-else
-  dx_vec = x_vec(2) - x_vec(1);
-  dx = x_vec(2) - x_vec(1);
-end
 
 [X,V] = meshgrid(x_vec,v);
 VPH = repmat(torow(vph_vec),nv,1);
 PHI = repmat(torow(phi_vec),nv,1);
  
-beta = -5; % decides phase space depletion inside EH
-F = maxwellian_phi(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
-Fdv = F*dv;
-FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)
-FV2 = F.*V.^2; % (s1/m4)*(m1/s1)^2 = (1/m2s)
-FVdv = FV*dv; % (s1/m4)*(m1/s1)^2 = (1/m2s)
-FV2dv = FV2*dv; % (s1/m4)*(m1/s1)^3 = (1/ms2)
-
-% 'integrals'
-sumFdv = nansum(Fdv,1); % (s1/m4)*(m1/s1) = (1/m3) 
-sumFVdv = nansum(FVdv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
-sumFV2dv = nansum(FV2dv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
-
-%
 % charge density from observed phi
-efield_from_obs_phi = -diff(phi_vec,1)/dx;
-efield_from_obs_phi_x_vec = x_vec(1:end-1)+0.5*dx_vec;
-charge_density_from_obs_phi = diff(phi_vec,2)*units.eps0/dx/dx;
-electron_density_from_obs_phi = n*units.e-charge_density_from_obs_phi;
-charge_density_from_obs_phi_x_vec = x_vec(2:end-1);
+efield_from_obs_phi = diff(phi_vec,2)*units.eps0*(1/2/(x_vec(2)-x_vec(1)))*t_to_x;
+charge_density_from_obs_phi = diff(phi_vec,2)*units.eps0*(1/2/(x_vec(2)-x_vec(1)))*t_to_x;
+x_vec_diff2 = x_vec(2:end-1);
 
-
-% phi = phi0*exp(-x^2/2/l^2), 
-% dphi/dx = (-2*x/2/l^2)*phi0*exp(-x^2/2/l^2)
-% d2phi/dx2 = (-1/l^2)*phi0*exp(-x^2/2/l^2) + (-2*x/2/l^2)^2*phi0*exp(-x^2/2/l^2) 
-%           = [(-1/l^2) + (-x/l^2)^2]*phi0*exp(-x^2/2/l^2) 
-%           = -(1/l^2)[1 + (x/l)^2]*phi0*exp(-x^2/2/l^2) 
-%           == -(e/eps0)*(ni-ne)
-% @ x = 0: 
-% d2phi/dx2 = -(1/l^2)*phi0 = -(e/eps0)*(ni-ne)
-%   => (ni-ne) = eps0/e*(1/l^2)*phi0
 % potential from charge density
-dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
+beta = -5; % decides phase space depletion inside EH
+F = maxwellian_phi(V,n,vt,vd,PHI,VPH,beta);
 % Poissons equation, solve to find proper beta
 % integrate f: sumFdv
-model_density = sumFdv; % (s1/m4)*(m1/s1) = (1/m3) 
-model_charge_density = units.e*(n-model_density); % rho = e(ni-ne)
-model_charge_density = units.e*(mean(model_density)-model_density); % rho = e(ni-ne)
-model_efield = cumsum(  model_charge_density-0*mean(model_charge_density))/units.eps0*dx; % V/m
-model_efield = cumtrapz(model_charge_density-0*mean(model_charge_density))/units.eps0*dx; % V/m
-model_phi = -cumsum(model_efield)*dx;
+dv = v(2) - v(1);
+density = nansum(F*dv,1); % (s1/m4)*(m1/s1) = (1/m3) 
+charge_density = units.e*(density-n); % n is uniform density
+% charge_density_prep = charge_density-mean(charge_density);
+charge_density_prep = detrend(charge_density,'linear',[0:10:1100]);
+%charge_density_prep = charge_density;
+%d2phi/dx2 = charge_density
+%dx = vph*(x_vec(2)-x_vec(1));
 
-%efield = sign(vph)*(1/units.eps0)*tocolumn(cumtrapz(x_vec,charge_density_prep))*t_to_x;
-%potential = -1*tocolumn(cumtrapz(x_vec,efield))*t_to_x;
-%potential = detrend(potential,'linear');
+efield = sign(vph)*(1/units.eps0)*tocolumn(cumtrapz(x_vec,charge_density_prep))*t_to_x;
+potential = -1*tocolumn(cumtrapz(x_vec,efield))*t_to_x;
+potential = detrend(potential,'linear');
 %potential_fit = polyfit(x_vec,potential,3);
 %potential_dc = polyval(potential_fit,x_vec);
-if 0 % plot derivation of beta
-  figure(32)
-  clear h
-  nrows = 7;
-  ncols = 1;
-  npanels = nrows*ncols;
-  for ip = 1:npanels
-    h(ip) = subplot(nrows,ncols,ip);
-  end
-  isub = 1;
-  hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,epar_vec,efield_from_obs_phi_x_vec,efield_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,density,charge_density_from_obs_phi_x_vec,charge_density_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plotyy(hca,x_vec,density,charge_density_from_obs_phi_x_vec,charge_density_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plotyy(hca,x_vec,density,charge_density_from_obs_phi_x_vec,electron_density_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plotyy(hca,x_vec,model_density,x_vec,model_charge_density)  
-  hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,epar_vec,x_vec,detrend(model_efield*1e3,'linear',1:40:nx))  
-  hca = h(isub); isub = isub + 1; 
-  plotyy(hca,x_vec,phi_vec,x_vec,detrend(model_phi))  
-end
-%%
+
+FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)
+FV2 = F.*V.^2; % (s1/m4)*(m1/s1)^2 = (1/m2s)
+FVdv = FV*dv;
+Fdv = F*dv;
+
+FVdv_edi = FV*2*dv_edi;
+
+% counts
+sumF = nansum(F,1); % (s1/m4)
+sumFdv = nansum(Fdv,1); % (s1/m4)*(m1/s1) = (1/m3) 
+sumFV = nansum(FV,1); % (s1/m4)*(m1/s1) = (1/m3)
+sumFVdv = nansum(FVdv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
+
+
+
+% flux at single edi energy/velocity
+vind_edi_0 = find(abs(v-v_edi)==min(abs(v-v_edi)));
+vind_edi_180 = find(abs(v+v_edi)==min(abs(v+v_edi)));
+FVdv_edi_0 = FVdv_edi(vind_edi_0,:);
+FVdv_edi_180 = FVdv_edi(vind_edi_180,:);
+
 % flux at edi energy/velocity interval
 vind_edi_0 = intersect(find(v>v_edi-dv_edi),find(v<v_edi+dv_edi));
 vind_edi_180 = intersect(find(v>-v_edi-dv_edi),find(v<-v_edi+dv_edi));
 FVdv_edi_0 = nansum(FVdv(vind_edi_0,:));
 FVdv_edi_180 = nansum(FVdv(vind_edi_180,:));
 
-
 % plot
-figure(33)
 clear h;
 nrows = 7;
 ncols = 1;
@@ -293,37 +323,24 @@ if 1 % F
   hcb.YLabel.String = 'f (s^1/m^4)';
   colormap(hca,cn.cmap('white_blue'))
   %colormap(hca,cn.cmap('blue_white'))
+  hold(hca,'on')
+  line_color = [0.5 0.5 0.5]; [0.9290    0.6940    0.1250];
+  %hvph = plot(hca,x_vec,vph_vec*1e-6,'Color',line_color,'LineWidth',1.5);
+  %irf_legend(hca,{'v_{ph}'},[0.01 0.1],'color',line_color);
+  hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+  hlines(1).LineStyle = '--'; hlines(1).Color = [0 0 0];
+  hlines(2).LineStyle = '--'; hlines(2).Color = [0 0 0];
+  hlines = plot(hca,...
+    x_vec([1 end]),(v_edi-dv_edi)*1e-6*[1 1],...
+    x_vec([1 end]),(v_edi+dv_edi)*1e-6*[1 1],...
+    x_vec([1 end]),(-v_edi-dv_edi)*1e-6*[1 1],...
+    x_vec([1 end]),(-v_edi+dv_edi)*1e-6*[1 1],...
+    'LineWidth',1.5);
+  for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
   
-  if 1 % EDI energies
-    hold(hca,'on')
-    line_color = [0.5 0.5 0.5]; [0.9290    0.6940    0.1250];
-    hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
-    for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end
-    hlines = plot(hca,...
-      x_vec([1 end]),(v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(v_edi+dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi+dv_edi)*1e-6*[1 1],...
-      'LineWidth',1.5);
-    for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
-    irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);  
-    hold(hca,'off')
-  end
-  if 1 % model phase velocity
-    hold(hca,'on')
-    line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
-    hlines = plot(hca,x_vec,vph_vec*1e-6,'LineWidth',1.5,'Color',line_color(1,:),'LineStyle','-.');     
-    irf_legend(hca,{'-. v_{mod}'},[0.2 0.99],'color',hlines(1).Color);  
-    hold(hca,'off')
-  end
-  if 1 % observed phase velocity
-    hold(hca,'on')
-    hlines = plot(hca,x_vec_obs,vph_vec_obs*1e-3,'*k','LineWidth',1.5,'Color',[0 0 0]);
-    irf_legend(hca,{'* v_{obs}'},[0.1 0.99],'color',hlines(1).Color);  
-    hold(hca,'off')
-  end  
-  
-  irf_legend(hca,{sprintf('T_{bg}=%g eV, n_{bg}=%g cc, beta_{Schamel}=%g',T,n*1e-6,beta)},[0.99 0.99],'color',hlines(1).Color);    
+  irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);  
+  irf_legend(hca,{sprintf('T_{bg}=%g eV, n_{bg}=%g cc, beta_{Schamel}=%g',T,n*1e-6,beta)},[0.99 0.99],'color',hlines(1).Color);  
+  hold(hca,'off')
 end
 if 0 % e psd vpar
   hca = h(isub); isub = isub + 1;
@@ -392,33 +409,17 @@ if 1 % flux: F*v
   hcb.YLabel.String = 'f*v (1/m^3)'; 
   hca.CLim = hca.CLim(2)*[-1 1]; 
   hcb.YLim = hca.CLim;
-  if 1 % EDI energies
-    hold(hca,'on')
-    hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
-    for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
-    hlines = plot(hca,...
-      x_vec([1 end]),(v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(v_edi+dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi+dv_edi)*1e-6*[1 1],...
-      'LineWidth',1.5);
-    for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
-    irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
-    hold(hca,'off')
-  end
-  if 1 % model phase velocity
-    hold(hca,'on')
-    line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
-    hlines = plot(hca,x_vec,vph_vec*1e-6,'LineWidth',1.5,'Color',line_color(1,:),'LineStyle','-.');     
-    irf_legend(hca,{'-. v_{mod}'},[0.2 0.99],'color',hlines(1).Color);  
-    hold(hca,'off')
-  end
-  if 1 % observed phase velocity
-    hold(hca,'on')
-    hlines = plot(hca,x_vec_obs,vph_vec_obs*1e-3,'*k','LineWidth',1.5,'Color',[0 0 0]);
-    irf_legend(hca,{'* v_{obs}'},[0.1 0.99],'color',hlines(1).Color);  
-    hold(hca,'off')
-  end  
+  hold(hca,'on')
+  hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+  for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+  hlines = plot(hca,...
+    x_vec([1 end]),(v_edi-dv_edi)*1e-6*[1 1],...
+    x_vec([1 end]),(v_edi+dv_edi)*1e-6*[1 1],...
+    x_vec([1 end]),(-v_edi-dv_edi)*1e-6*[1 1],...
+    x_vec([1 end]),(-v_edi+dv_edi)*1e-6*[1 1],...
+    'LineWidth',1.5);
+  for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+  hold(hca,'off')
   colormap(hca,cn.cmap('blue_red'))
 end
 if 0 % flux at edi energy
