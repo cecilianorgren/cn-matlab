@@ -170,11 +170,12 @@ sumFV2dv = nansum(FV2dv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
 
 %
 % charge density from observed phi
+x_vec_diff1 = x_vec(1:end-1)+0.5*dx_vec;
+x_vec_diff2 = x_vec(2:end-1);
 efield_from_obs_phi = -diff(phi_vec,1)/dx;
-efield_from_obs_phi_x_vec = x_vec(1:end-1)+0.5*dx_vec;
-charge_density_from_obs_phi = diff(phi_vec,2)*units.eps0/dx/dx;
+density_diff_from_obs_phi = diff(phi_vec,2)*units.eps0/units.e/dx/dx;
 electron_density_from_obs_phi = n*units.e-charge_density_from_obs_phi;
-charge_density_from_obs_phi_x_vec = x_vec(2:end-1);
+
 
 
 % phi = phi0*exp(-x^2/2/l^2), 
@@ -203,7 +204,7 @@ model_phi = -cumsum(model_efield)*dx;
 %potential = detrend(potential,'linear');
 %potential_fit = polyfit(x_vec,potential,3);
 %potential_dc = polyval(potential_fit,x_vec);
-if 0 % plot derivation of beta
+if 1 % plot derivation of beta
   figure(32)
   clear h
   nrows = 7;
@@ -213,10 +214,18 @@ if 0 % plot derivation of beta
     h(ip) = subplot(nrows,ncols,ip);
   end
   isub = 1;
-  hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,epar_vec,efield_from_obs_phi_x_vec,efield_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,density,charge_density_from_obs_phi_x_vec,charge_density_from_obs_phi*1e3)
+  if 1 % efield
+    hca = h(isub); isub = isub + 1; 
+    plot(hca,x_vec,epar_vec,efield_from_obs_phi_x_vec,efield_from_obs_phi*1e3)
+    irf_legend(hca,{'E_{obs}'},[0.01 0.99])
+    hca.YLabel.String = {'E','mV/m'};
+  end
+  if 1 % density 
+    hca = h(isub); isub = isub + 1; 
+    plotyy(hca,x_vec,model_density*1e-6,x_vec_diff2,density_diff_from_obs_phi*1e-6+mean(model_density)*1e-6)
+    irf_legend(hca,{'n_{e,mod}','n_e-n_i'},[0.01 0.99])
+    hca.YLabel.String = {'n','cm^{-3}'};
+  end
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,density,charge_density_from_obs_phi_x_vec,charge_density_from_obs_phi*1e3)
   hca = h(isub); isub = isub + 1; 
@@ -224,7 +233,7 @@ if 0 % plot derivation of beta
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,model_density,x_vec,model_charge_density)  
   hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,epar_vec,x_vec,detrend(model_efield*1e3,'linear',1:40:nx))  
+  plotyy(hca,x_vec,epar_vec,x_vec,detrend(model_efield*1e3,'linear',1:40:nx))  
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,phi_vec,x_vec,detrend(model_phi))  
 end
