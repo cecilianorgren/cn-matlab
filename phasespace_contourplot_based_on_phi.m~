@@ -33,8 +33,8 @@ doT = 1; % otherwise plot x;
 
 % Plasma properties
 units = irf_units;
-n = [0.045]*1e6;
-T = [400]; T_K = T*units.eV/units.kB; % use parallel temperature
+n = [0.040]*1e6;
+T = [500]; T_K = T*units.eV/units.kB; % use parallel temperature
 vd = [-0000]*1e3; % m/s
 
 % EDI energy and corresponding velocity
@@ -64,14 +64,14 @@ Ld = vt./wp/sqrt(2);
 
 % eh model
 % observed/measured properties (konrad)
-data_tmp = load('/Users/cno062/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat');
+data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
 obs_eh_properties = data_tmp.EH_properties;
 obs_lpp = obs_eh_properties.Lpp; % peak to peak length
 obs_potential = obs_eh_properties.potential;
 obs_potential_max = obs_eh_properties.max_potential;
 obs_velocity = obs_eh_properties.vel;
-obs_neh = numel(velocity);
-c_eval('obs_t0_epoch_mms? = EH_properties.time_mms?;')
+obs_neh = numel(obs_velocity);
+c_eval('obs_t0_epoch_mms? = obs_eh_properties.time_mms?;')
 c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
 c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 
@@ -156,7 +156,7 @@ VPH = repmat(torow(vph_vec),nv,1);
 PHI = repmat(torow(phi_vec),nv,1);
  
 beta = -1; % decides phase space depletion inside EH
-F = maxwellian_phi(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
+F = fe_schamel(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
 Fdv = F*dv;
 FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)
 FV2 = F.*V.^2; % (s1/m4)*(m1/s1)^2 = (1/m2s)
@@ -170,13 +170,26 @@ sumFV2dv = nansum(FV2dv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
 
 %
 % charge density from observed phi
+x_vec_diff1 = x_vec(1:end-1)+0.5*dx_vec;
+x_vec_diff2 = x_vec(2:end-1);
 efield_from_obs_phi = -diff(phi_vec,1)/dx;
-efield_from_obs_phi_x_vec = x_vec(1:end-1)+0.5*dx_vec;
-charge_density_from_obs_phi = diff(phi_vec,2)*units.eps0/dx/dx;
-electron_density_from_obs_phi = n*units.e-charge_density_from_obs_phi;
-charge_density_from_obs_phi_x_vec = x_vec(2:end-1);
+density_diff_from_obs_phi = diff(phi_vec,2)*units.eps0/units.e/dx/dx;
+density_diff_from_obs_phi = -diff(epar_vec*1e-3,1)*units.eps0/units.e/dx;
+electron_density_from_obs_phi = n + density_diff_from_obs_phi;
+ne_vec = electron_density_from_obs_phi;
 
+
+% phi = phi0*exp(-x^2/2/l^2), 
+% dphi/dx = (-2*x/2/l^2)*phi0*exp(-x^2/2/l^2)
+% d2phi/dx2 = (-1/l^2)*phi0*exp(-x^2/2/l^2) + (-2*x/2/l^2)^2*phi0*exp(-x^2/2/l^2) 
+%           = [(-1/l^2) + (-x/l^2)^2]*phi0*exp(-x^2/2/l^2) 
+%           = -(1/l^2)[1 + (x/l)^2]*phi0*exp(-x^2/2/l^2) 
+%           == -(e/eps0)*(ni-ne)
+% @ x = 0: 
+% d2phi/dx2 = -(1/l^2)*phi0 = -(e/eps0)*(ni-ne)
+%   => (ni-ne) = eps0/e*(1/l^2)*phi0
 % potential from charge density
+dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
 % Poissons equation, solve to find proper beta
 % integrate f: sumFdv
@@ -202,18 +215,26 @@ if 0 % plot derivation of beta
     h(ip) = subplot(nrows,ncols,ip);
   end
   isub = 1;
+  if 1 % efield
+    hca = h(isub); isub = isub + 1; 
+    plot(hca,x_vec,epar_vec,x_vec_diff1 ,efield_from_obs_phi*1e3)
+    irf_legend(hca,{'E_{obs}'},[0.01 0.99])
+    hca.YLabel.String = {'E','mV/m'};
+  end
+  if 1 % density  
+    hca = h(isub); isub = isub + 1; 
+    plotyy(hca,x_vec,model_density*1e-6,x_vec_diff2,density_diff_from_obs_phi*1e-6+mean(model_density)*1e-6)
+    irf_legend(hca,{'n_{e,mod}','n_e-n_i'},[0.01 0.99])
+    hca.YLabel.String = {'n','cm^{-3}'};
+  end
   hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,epar_vec,efield_from_obs_phi_x_vec,efield_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,density,charge_density_from_obs_phi_x_vec,charge_density_from_obs_phi*1e3)
-  hca = h(isub); isub = isub + 1; 
-  plotyy(hca,x_vec,density,charge_density_from_obs_phi_x_vec,charge_density_from_obs_phi*1e3)
+  plotyy(hca,x_vec,density,x_vec_diff1,charge_density_from_obs_phi*1e3)
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,density,charge_density_from_obs_phi_x_vec,electron_density_from_obs_phi*1e3)
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,model_density,x_vec,model_charge_density)  
   hca = h(isub); isub = isub + 1; 
-  plot(hca,x_vec,epar_vec,x_vec,detrend(model_efield*1e3,'linear',1:40:nx))  
+  plotyy(hca,x_vec,epar_vec,x_vec,detrend(model_efield*1e3,'linear',1:40:nx))  
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,phi_vec,x_vec,detrend(model_phi))  
 end
@@ -226,6 +247,7 @@ FVdv_edi_180 = nansum(FVdv(vind_edi_180,:));
 
 
 % plot
+figure(33)
 clear h;
 nrows = 7;
 ncols = 1;
@@ -235,7 +257,7 @@ for ip = 1:npanels
 end
 isub = 1;
 
-c_eval('edi_tshift = 0*0.5*(flux180_mms?.time(2)-flux180_mms?.time(1));',ic)
+c_eval('edi_tshift = 2*0.5*(flux180_mms?.time(2)-flux180_mms?.time(1));',ic)
 if 0 % PHI, pcolor
   hca = h(isub); isub = isub + 1;
   pcolor(hca,x_vec,V*1e-6,PHI);
@@ -363,8 +385,12 @@ if 1 % sum F (density)
   hca = h(isub); isub = isub + 1;  
   plot(hca,x_vec,sumFdv*1e-6); % 1e-6 from 1/m3 > 1/cm3
   hold(hca,'on')
-  h_nmean = plot(hca,x_vec([1 end]),mean(sumFdv*1e-6)*[1 1]); % 1e-6 from 1/m3 > 1/cm3
-  irf_legend(hca,{'<n>'},[0.01 0.99],'color',h_nmean(1).Color);  
+  h_nmean = plot(hca,x_vec([1 end]),mean(sumFdv*1e-6)*[1 1],x_vec([1 end]),n*1e-6*[1 1],'--',x_vec_diff1,ne_vec*1e-6); % 1e-6 from 1/m3 > 1/cm3  
+  h_nmean(1).LineWidth = 1.5;
+  h_nmean(2).LineWidth = 1.5;
+  c_eval('h_nmean(?).Color = [0 0 0];',1)
+  h_leg = irf_legend(hca,{'<n>','n_0','n_{obs\phi}'},[0.01 0.2]);  
+  c_eval('h_leg(?).Color = h_nmean(?).Color;',1:numel(h_leg))
   hold(hca,'off')
   hca.YLabel.String = 'n (cm^{-3})';
   %yticks = hca.YTick;
