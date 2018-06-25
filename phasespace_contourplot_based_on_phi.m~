@@ -33,12 +33,12 @@ doT = 1; % otherwise plot x;
 
 % Plasma properties
 units = irf_units;
-n = [0.040]*1e6;
-T = [500]; T_K = T*units.eV/units.kB; % use parallel temperature
-vd = [-0000]*1e3; % m/s
+n = [0.04]*1e6;
+T = [300]; T_K = T*units.eV/units.kB; % use parallel temperature
+vd = [0000]*1e3; % m/s
 
 % EDI energy and corresponding velocity
-E_edi = 500; % eV
+E_edi = 400; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
 dE_edi = 25; % eV
 dv_edi = sqrt(2*units.e*dE_edi./units.me); % m/s
@@ -79,13 +79,14 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 % Potential from observed E
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
 %tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.700Z');
-vph = -9000e3; % m/s, representative phase velocity
+vph = -10000e3; % m/s, representative phase velocity
 ffilt = 20; % Hz
-phi_shift = 150; % to keep potential > 0
-c_eval('Etoint? = gseE?par.filt(ffilt,0,[],3);');    
+phi_shift = 200; % to keep potential > 0
+c_eval('Etoint? = gseE?par;')
+c_eval('Etoint? = Etoint?.filt(ffilt,0,[],3);');    
 c_eval('intEdt? = irf_integrate(Etoint?.tlim(tint_phi));');    
 c_eval('phi? = intEdt?*vph*1e-3;')
-minpeakdistance = 150;
+minpeakdistance = 50;
 c_eval('[PKS?,LOCS?,W?] = findpeaks(-phi?.data,''MinPeakDistance'',minpeakdistance);')
 
 c_eval('phi?_detrend = phi?; phi?_detrend.data = detrend(phi?_detrend.data,''linear'',LOCS?);')
@@ -119,7 +120,7 @@ c_eval('LOCS = LOCS?;',mms_id)
 c_eval('PKS = PKS?;',mms_id)
 
 option_vph = 'interp linear piecewise';
-%option_vph = 'constant';
+option_vph = 'constant';
 switch option_vph
   case 'gradual'
     vph_vec = vph*(1+0.5*x_vec/max(x_vec));
@@ -138,7 +139,7 @@ end
 phi_vec = phi_vec.*reshape(vph_vec,size(phi_vec))/vph;
 
 % velocity grid
-vmax = 2*vt;
+vmax = 30000e3;
 nv = 1500;
 v = linspace(-vmax,vmax,nv);
 dv = v(2) - v(1);
@@ -155,7 +156,7 @@ end
 VPH = repmat(torow(vph_vec),nv,1);
 PHI = repmat(torow(phi_vec),nv,1);
  
-beta = -1; % decides phase space depletion inside EH
+beta = -0.3; % decides phase space depletion inside EH
 F = fe_schamel(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
 Fdv = F*dv;
 FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)
@@ -164,9 +165,12 @@ FVdv = FV*dv; % (s1/m4)*(m1/s1)^2 = (1/m2s)
 FV2dv = FV2*dv; % (s1/m4)*(m1/s1)^3 = (1/ms2)
 
 % 'integrals'
-sumFdv = nansum(Fdv,1); % (s1/m4)*(m1/s1) = (1/m3) 
-sumFVdv = nansum(FVdv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
+sumFdv = nansum(Fdv,1); % n: (s1/m4)*(m1/s1) = (1/m3) 
+sumFVdv = nansum(FVdv,1); % nv: (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
 sumFV2dv = nansum(FV2dv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
+mod_density = sumFdv;
+mod_velocity = sumFVdv./sumFdv;
+FVbulk2 = F.*(V-mod_velocity).^2
 
 %
 % charge density from observed phi
@@ -238,7 +242,7 @@ if 0 % plot derivation of beta
   hca = h(isub); isub = isub + 1; 
   plotyy(hca,x_vec,phi_vec,x_vec,detrend(model_phi))  
 end
-%%
+%
 % flux at edi energy/velocity interval
 vind_edi_0 = intersect(find(v>v_edi-dv_edi),find(v<v_edi+dv_edi));
 vind_edi_180 = intersect(find(v>-v_edi-dv_edi),find(v<-v_edi+dv_edi));
@@ -249,7 +253,7 @@ FVdv_edi_180 = nansum(FVdv(vind_edi_180,:));
 % plot
 figure(33)
 clear h;
-nrows = 7;
+nrows = 9;
 ncols = 1;
 npanels = nrows*ncols;
 for ip = 1:npanels
@@ -257,7 +261,7 @@ for ip = 1:npanels
 end
 isub = 1;
 
-c_eval('edi_tshift = 2*0.5*(flux180_mms?.time(2)-flux180_mms?.time(1));',ic)
+c_eval('edi_tshift = 0*0.5*(flux180_mms?.time(2)-flux180_mms?.time(1));',ic)
 if 0 % PHI, pcolor
   hca = h(isub); isub = isub + 1;
   pcolor(hca,x_vec,V*1e-6,PHI);
@@ -383,15 +387,17 @@ if 0 % e psd vpar log 10
 end
 if 1 % sum F (density)
   hca = h(isub); isub = isub + 1;  
-  plot(hca,x_vec,sumFdv*1e-6); % 1e-6 from 1/m3 > 1/cm3
-  hold(hca,'on')
-  h_nmean = plot(hca,x_vec([1 end]),mean(sumFdv*1e-6)*[1 1],x_vec([1 end]),n*1e-6*[1 1],'--',x_vec_diff1,ne_vec*1e-6); % 1e-6 from 1/m3 > 1/cm3  
-  h_nmean(1).LineWidth = 1.5;
-  h_nmean(2).LineWidth = 1.5;
-  c_eval('h_nmean(?).Color = [0 0 0];',1)
-  h_leg = irf_legend(hca,{'<n>','n_0','n_{obs\phi}'},[0.01 0.2]);  
-  c_eval('h_leg(?).Color = h_nmean(?).Color;',1:numel(h_leg))
-  hold(hca,'off')
+  if 1    
+    plot(hca,x_vec,sumFdv*1e-6,x_vec([1 end]),mean(sumFdv*1e-6)*[1 1],x_vec([1 end]),n*1e-6*[1 1],'--',x_vec_diff1,ne_vec*1e-6); % 1e-6 from 1/m3 > 1/cm3
+    legend(hca,{'n_{mod}','<n_{mod}>','n_{0,\infty}','n_{obs,Poisson,1D}'},'location','eastoutside');
+    %h_nmean = plot(hca); % 1e-6 from 1/m3 > 1/cm3  
+    %h_nmean(1).LineWidth = 1.5;
+    %h_nmean(2).LineWidth = 1.5;
+    %c_eval('h_nmean(?).Color = [0 0 0];',1)
+    %h_leg = irf_legend(hca,{'n_{mod}','<n_{mod}>','n_0','n_{obs,Poisson,1D}'},[0.01 0.2]);    
+    %c_eval('h_leg(?).Color = h_nmean(?).Color;',1:numel(h_leg))  
+  end
+  
   hca.YLabel.String = 'n (cm^{-3})';
   %yticks = hca.YTick;
   %yticklabels = num2str(tocolumn(yticks),'%.3f');
@@ -481,37 +487,45 @@ if 0 % cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
 end
 if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
   hca = h(isub); isub = isub + 1;
-  c_eval('flux0 = flux0_mms?.tlim(tint_phi);',ic)
-  flux0_time = flux0.time-t0;
-  flux0_data = flux0.data;
-  c_eval('flux180 = flux180_mms?.tlim(tint_phi);',ic)
+  c_eval('flux180 = flux180_mms?.tlim(tint_phi);',mms_id)
   flux180_time = flux180.time-t0;
   flux180_data = flux180.data;
   nodes = 1:2;
   units_scale = 1e-4; % m^-2 > cm^-2 
   units_scale_2 = 1e6;
-  plot(hca,x_vec,abs(FVdv_edi_180)*units_scale/units_scale_2,flux180_time + edi_tshift,mean(flux180_data(:,nodes),2)/units_scale_2);  
+  plot_EDI = mean(flux180_data(:,nodes),2)/units_scale_2;
+  plot_model = abs(FVdv_edi_180)*units_scale/units_scale_2;
+  if 1
+    plot(hca,x_vec,plot_model,flux180_time + edi_tshift,plot_EDI,x_vec,plot_model-mean(plot_model)+mean(plot_EDI));  
+  else
+    plot(hca,x_vec,plot_model,flux180_time + edi_tshift,plot_EDI);  
+  end
   %hca.YLabel.String = 'flux (cm^{-2}s^{-1})';
   hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-  legend(hca,'model','EDI','location','eastoutside')
+  legend(hca,'model','EDI','model displaced','location','eastoutside')
   text(hca,0,hca.YLim(2),'180^o','verticalalignment','top')
+  hca.YLim(1) = 0;
 end
 if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
   hca = h(isub); isub = isub + 1;
-  c_eval('flux0 = flux0_mms?.tlim(tint_phi);',ic)
+  c_eval('flux0 = flux0_mms?.tlim(tint_phi);',mms_id)
   flux0_time = flux0.time-t0;
   flux0_data = flux0.data;
-  c_eval('flux180 = flux180_mms?.tlim(tint_phi);',ic)
-  flux180_time = flux180.time-t0;
-  flux180_data = flux180.data;
   nodes = 1:2;
   units_scale = 1e-4; % m^-2 > cm^-2 
   units_scale_2 = 1e6;
+  plot_EDI = mean(flux0_data(:,nodes),2)/units_scale_2;
+  plot_model = abs(FVdv_edi_0)*units_scale/units_scale_2;
+  if 1
+    plot(hca,x_vec,plot_model,flux0_time + edi_tshift,plot_EDI,x_vec,plot_model-mean(plot_model)+mean(plot_EDI));  
+  else
+    plot(hca,x_vec,plot_model,flux0_time + edi_tshift,plot_EDI);  
+  end
   %hca.YLabel.String = 'flux (cm^{-2}s^{-1})';
-  plot(hca,x_vec,abs(FVdv_edi_0)*units_scale/units_scale_2,flux0_time + edi_tshift,mean(flux0_data(:,nodes),2)/units_scale_2);  
   hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-  legend(hca,'model','EDI','location','eastoutside')
+  legend(hca,'model','EDI','model displaced','location','eastoutside')
   text(hca,0,hca.YLim(2),'0^o','verticalalignment','top')
+  hca.YLim(1) = 0;
 end
 if 0 % SI UNITS, comparing model flux with flux measured by EDI, at 180
   hca = h(isub); isub = isub + 1;
@@ -545,10 +559,15 @@ if 0 % F tot
   hca.CLim = hca.CLim(2)*[-1 1]; 
   colormap(hca,cn.cmap('blue_red'))
 end
-if 0 % sum FV
+if 1 % sum FVdv
   hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec,sumFV);  
-  hca.YLabel.String = 'v (#)';
+  plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
+  hca.YLabel.String = 'v (km/s)';
+end
+if 1 % sum FV2dv
+  hca = h(isub); isub = isub + 1;
+  plot(hca,x_vec,units.me*sumFV2dv/2/units.e);
+  hca.YLabel.String = 'v^2 (eV?)';
 end
 
 %colormap(cn.cmap('blue_red'))

@@ -34,8 +34,8 @@ doT = 1; % otherwise plot x;
 % Plasma properties
 units = irf_units;
 n = [0.040]*1e6;
-T = [500]; T_K = T*units.eV/units.kB; % use parallel temperature
-vd = [0000]*1e3; % m/s
+T = [300]; T_K = T*units.eV/units.kB; % use parallel temperature
+vd = [-2000]*1e3; % m/s
 
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
@@ -45,8 +45,11 @@ dv_edi = sqrt(2*units.e*dE_edi./units.me); % m/s
 
 E_edi_plus = E_edi + dE_edi;
 E_edi_minus = E_edi - dE_edi;
-dv_edi_plus = sqrt(2*units.e*E_edi_plus./units.me)-v_edi; % m/s
-dv_edi_minus = -sqrt(2*units.e*E_edi_minus./units.me)+v_edi; % m/s
+v_edi_plus = sqrt(2*units.e*E_edi_plus./units.me); % m/s
+v_edi_minus = sqrt(2*units.e*E_edi_minus./units.me); % m/s
+v_edi_plusminus = v_edi_plus-v_edi_minus;
+dv_edi_minus = v_edi_minus - v_edi;
+dv_edi_plus = v_edi_plus - v_edi;
 if 0 % illustrate energy and velocity range
   
 end
@@ -79,14 +82,15 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 % Potential from observed E
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
 %tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.700Z');
-vph = -9000e3; % m/s, representative phase velocity
+vph = -11000e3; % m/s, representative phase velocity
 ffilt = 20; % Hz
-phi_shift = 120; % to keep potential > 0
+phi_shift = 150; % to keep potential > 0
+phi_scaling = 1.0; % if we underestimate phi
 c_eval('Etoint? = gseE?par;')
 c_eval('Etoint? = Etoint?.filt(ffilt,0,[],3);');    
 c_eval('intEdt? = irf_integrate(Etoint?.tlim(tint_phi));');    
-c_eval('phi? = intEdt?*vph*1e-3;')
-minpeakdistance = 100;
+c_eval('phi? = intEdt?*vph*1e-3*phi_scaling;')
+minpeakdistance = 50;
 c_eval('[PKS?,LOCS?,W?] = findpeaks(-phi?.data,''MinPeakDistance'',minpeakdistance);')
 
 c_eval('phi?_detrend = phi?; phi?_detrend.data = detrend(phi?_detrend.data,''linear'',LOCS?);')
@@ -156,7 +160,7 @@ end
 VPH = repmat(torow(vph_vec),nv,1);
 PHI = repmat(torow(phi_vec),nv,1);
  
-beta = -1; % decides phase space depletion inside EH
+beta = -0.4; % decides phase space depletion inside EH
 F = fe_schamel(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
 Fdv = F*dv;
 FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)
@@ -165,16 +169,21 @@ FVdv = FV*dv; % (s1/m4)*(m1/s1)^2 = (1/m2s)
 FV2dv = FV2*dv; % (s1/m4)*(m1/s1)^3 = (1/ms2)
 
 % 'integrals'
-sumFdv = nansum(Fdv,1); % (s1/m4)*(m1/s1) = (1/m3) 
-sumFVdv = nansum(FVdv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
+sumFdv = nansum(Fdv,1); % n: (s1/m4)*(m1/s1) = (1/m3) 
+sumFVdv = nansum(FVdv,1); % nv: (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
 sumFV2dv = nansum(FV2dv,1); % (s1/m4)*(m1/s1)*(m1/s1) = (1/m2s)
+mod_density = sumFdv;
+mod_velocity = sumFVdv./sumFdv;
+FVrel2 = F.*(V-mod_velocity).^2;
+mod_pressure = units.me*nansum(FVrel2);
+mod_temp = mod_pressure./mod_density/units.kB;
 
 %
 % charge density from observed phi
 x_vec_diff1 = x_vec(1:end-1)+0.5*dx_vec;
 x_vec_diff2 = x_vec(2:end-1);
-efield_from_obs_phi = -diff(phi_vec,1)/dx;
-density_diff_from_obs_phi = diff(phi_vec,2)*units.eps0/units.e/dx/dx;
+efield_from_obs_phi = -diff(phi_vec,1)/dx*phi_scaling;
+%density_diff_from_obs_phi = diff(phi_vec,2)*units.eps0/units.e/dx/dx;
 density_diff_from_obs_phi = -diff(epar_vec*1e-3,1)*units.eps0/units.e/dx;
 electron_density_from_obs_phi = n + density_diff_from_obs_phi;
 ne_vec = electron_density_from_obs_phi;
@@ -241,8 +250,8 @@ if 0 % plot derivation of beta
 end
 %
 % flux at edi energy/velocity interval
-vind_edi_0 = intersect(find(v>v_edi-dv_edi),find(v<v_edi+dv_edi));
-vind_edi_180 = intersect(find(v>-v_edi-dv_edi),find(v<-v_edi+dv_edi));
+vind_edi_0 = intersect(find(v>v_edi_minus),find(v<v_edi_plus));
+vind_edi_180 = intersect(find(v<-v_edi_minus),find(v>-v_edi_plus));
 FVdv_edi_0 = nansum(FVdv(vind_edi_0,:));
 FVdv_edi_180 = nansum(FVdv(vind_edi_180,:));
 
@@ -311,10 +320,10 @@ if 1 % F
     hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
     for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end
     hlines = plot(hca,...
-      x_vec([1 end]),(v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(v_edi+dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi+dv_edi)*1e-6*[1 1],...
+      x_vec([1 end]),(v_edi_plus)*1e-6*[1 1],...
+      x_vec([1 end]),(v_edi_minus)*1e-6*[1 1],...
+      x_vec([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+      x_vec([1 end]),(-v_edi_minus)*1e-6*[1 1],...
       'LineWidth',1.5);
     for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
     irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);  
@@ -384,15 +393,17 @@ if 0 % e psd vpar log 10
 end
 if 1 % sum F (density)
   hca = h(isub); isub = isub + 1;  
-  plot(hca,x_vec,sumFdv*1e-6); % 1e-6 from 1/m3 > 1/cm3
-  hold(hca,'on')
-  h_nmean = plot(hca,x_vec([1 end]),mean(sumFdv*1e-6)*[1 1],x_vec([1 end]),n*1e-6*[1 1],'--',x_vec_diff1,ne_vec*1e-6); % 1e-6 from 1/m3 > 1/cm3  
-  h_nmean(1).LineWidth = 1.5;
-  h_nmean(2).LineWidth = 1.5;
-  c_eval('h_nmean(?).Color = [0 0 0];',1)
-  h_leg = irf_legend(hca,{'<n>','n_0','n_{obs,Poisson,1D}'},[0.01 0.2]);  
-  c_eval('h_leg(?).Color = h_nmean(?).Color;',1:numel(h_leg))
-  hold(hca,'off')
+  if 1    
+    plot(hca,x_vec,sumFdv*1e-6,x_vec([1 end]),mean(sumFdv*1e-6)*[1 1],x_vec([1 end]),n*1e-6*[1 1],'--',x_vec_diff1,ne_vec*1e-6); % 1e-6 from 1/m3 > 1/cm3
+    legend(hca,{'n_{mod}','<n_{mod}>','n_{0,\infty}','n_{obs,Poisson,1D}'},'location','eastoutside');
+    %h_nmean = plot(hca); % 1e-6 from 1/m3 > 1/cm3  
+    %h_nmean(1).LineWidth = 1.5;
+    %h_nmean(2).LineWidth = 1.5;
+    %c_eval('h_nmean(?).Color = [0 0 0];',1)
+    %h_leg = irf_legend(hca,{'n_{mod}','<n_{mod}>','n_0','n_{obs,Poisson,1D}'},[0.01 0.2]);    
+    %c_eval('h_leg(?).Color = h_nmean(?).Color;',1:numel(h_leg))  
+  end
+  
   hca.YLabel.String = 'n (cm^{-3})';
   %yticks = hca.YTick;
   %yticklabels = num2str(tocolumn(yticks),'%.3f');
@@ -412,10 +423,10 @@ if 1 % flux: F*v
     hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
     for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
     hlines = plot(hca,...
-      x_vec([1 end]),(v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(v_edi+dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi-dv_edi)*1e-6*[1 1],...
-      x_vec([1 end]),(-v_edi+dv_edi)*1e-6*[1 1],...
+      x_vec([1 end]),(v_edi_plus)*1e-6*[1 1],...
+      x_vec([1 end]),(v_edi_minus)*1e-6*[1 1],...
+      x_vec([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+      x_vec([1 end]),(-v_edi_minus)*1e-6*[1 1],...
       'LineWidth',1.5);
     for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
     irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
@@ -488,11 +499,18 @@ if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 18
   nodes = 1:2;
   units_scale = 1e-4; % m^-2 > cm^-2 
   units_scale_2 = 1e6;
-  plot(hca,x_vec,abs(FVdv_edi_180)*units_scale/units_scale_2,flux180_time + edi_tshift,mean(flux180_data(:,nodes),2)/units_scale_2);  
+  plot_EDI = mean(flux180_data(:,nodes),2)/units_scale_2;
+  plot_model = abs(FVdv_edi_180)*units_scale/units_scale_2;
+  if 1
+    plot(hca,x_vec,plot_model,flux180_time + edi_tshift,plot_EDI,x_vec,plot_model-mean(plot_model)+mean(plot_EDI));  
+  else
+    plot(hca,x_vec,plot_model,flux180_time + edi_tshift,plot_EDI);  
+  end
   %hca.YLabel.String = 'flux (cm^{-2}s^{-1})';
   hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-  legend(hca,'model','EDI','location','eastoutside')
+  legend(hca,'model','EDI','model displaced','location','eastoutside')
   text(hca,0,hca.YLim(2),'180^o','verticalalignment','top')
+  hca.YLim(1) = 0;
 end
 if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
   hca = h(isub); isub = isub + 1;
@@ -502,11 +520,18 @@ if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 18
   nodes = 1:2;
   units_scale = 1e-4; % m^-2 > cm^-2 
   units_scale_2 = 1e6;
+  plot_EDI = mean(flux0_data(:,nodes),2)/units_scale_2;
+  plot_model = abs(FVdv_edi_0)*units_scale/units_scale_2;
+  if 1
+    plot(hca,x_vec,plot_model,flux0_time + edi_tshift,plot_EDI,x_vec,plot_model-mean(plot_model)+mean(plot_EDI));  
+  else
+    plot(hca,x_vec,plot_model,flux0_time + edi_tshift,plot_EDI);  
+  end
   %hca.YLabel.String = 'flux (cm^{-2}s^{-1})';
-  plot(hca,x_vec,abs(FVdv_edi_0)*units_scale/units_scale_2,flux0_time + edi_tshift,mean(flux0_data(:,nodes),2)/units_scale_2);  
   hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-  legend(hca,'model','EDI','location','eastoutside')
+  legend(hca,'model','EDI','model displaced','location','eastoutside')
   text(hca,0,hca.YLim(2),'0^o','verticalalignment','top')
+  hca.YLim(1) = 0;
 end
 if 0 % SI UNITS, comparing model flux with flux measured by EDI, at 180
   hca = h(isub); isub = isub + 1;
@@ -540,10 +565,20 @@ if 0 % F tot
   hca.CLim = hca.CLim(2)*[-1 1]; 
   colormap(hca,cn.cmap('blue_red'))
 end
-if 0 % sum FV
+if 0 % sum FVdv, bulk velocity
   hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec,sumFV);  
-  hca.YLabel.String = 'v (#)';
+  plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
+  hca.YLabel.String = 'v (km/s)';
+end
+if 0 % pressure
+  hca = h(isub); isub = isub + 1;
+  plot(hca,x_vec,mod_pressure);
+  hca.YLabel.String = 'v^2 (eV?)';
+end
+if 0 % temperature
+  hca = h(isub); isub = isub + 1;
+  plot(hca,x_vec,mod_temp);
+  hca.YLabel.String = 'T (eV)';
 end
 
 %colormap(cn.cmap('blue_red'))
