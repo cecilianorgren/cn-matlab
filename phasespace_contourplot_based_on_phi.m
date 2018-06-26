@@ -34,14 +34,14 @@ doT = 1; % otherwise plot x;
 % Plasma properties
 units = irf_units;
 n = [0.040]*1e6;
-T = [300]; T_K = T*units.eV/units.kB; % use parallel temperature
-vd = [-2000]*1e3; % m/s
+T = [500]; T_K = T*units.eV/units.kB; % use parallel temperature
+vd = [-2500]*1e3; % m/s
 
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
 dE_edi = 25; % eV
-dv_edi = sqrt(2*units.e*dE_edi./units.me); % m/s
+
 
 E_edi_plus = E_edi + dE_edi;
 E_edi_minus = E_edi - dE_edi;
@@ -50,6 +50,7 @@ v_edi_minus = sqrt(2*units.e*E_edi_minus./units.me); % m/s
 v_edi_plusminus = v_edi_plus-v_edi_minus;
 dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
+dv_edi = dv_edi_plus - dv_edi_minus; % m/s
 if 0 % illustrate energy and velocity range
   
 end
@@ -82,7 +83,7 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 % Potential from observed E
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
 %tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.700Z');
-vph = -11000e3; % m/s, representative phase velocity
+vph = -10000e3; % m/s, representative phase velocity
 ffilt = 20; % Hz
 phi_shift = 150; % to keep potential > 0
 phi_scaling = 1.0; % if we underestimate phi
@@ -160,7 +161,7 @@ end
 VPH = repmat(torow(vph_vec),nv,1);
 PHI = repmat(torow(phi_vec),nv,1);
  
-beta = -0.4; % decides phase space depletion inside EH
+beta = -0.5; % decides phase space depletion inside EH
 F = fe_schamel(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
 Fdv = F*dv;
 FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)
@@ -259,7 +260,7 @@ FVdv_edi_180 = nansum(FVdv(vind_edi_180,:));
 % plot
 figure(33)
 clear h;
-nrows = 7;
+nrows = 10;
 ncols = 1;
 npanels = nrows*ncols;
 for ip = 1:npanels
@@ -343,7 +344,7 @@ if 1 % F
     hold(hca,'off')
   end  
   
-  irf_legend(hca,{sprintf('T_{bg}=%g eV, n_{bg}=%g cc, beta_{Schamel}=%g',T,n*1e-6,beta)},[0.99 0.99],'color',hlines(1).Color);    
+  irf_legend(hca,{sprintf('T_{bg}=%g eV, n_{bg}=%g cc, v_{d,bg}=%g km/s, beta_{Schamel}=%g',T,n*1e-6,vd*1e-3,beta)},[0.99 0.99],'color',hlines(1).Color);    
 end
 if 0 % e psd vpar
   hca = h(isub); isub = isub + 1;
@@ -565,17 +566,17 @@ if 0 % F tot
   hca.CLim = hca.CLim(2)*[-1 1]; 
   colormap(hca,cn.cmap('blue_red'))
 end
-if 0 % sum FVdv, bulk velocity
+if 1 % sum FVdv, bulk velocity
   hca = h(isub); isub = isub + 1;
   plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
   hca.YLabel.String = 'v (km/s)';
 end
-if 0 % pressure
+if 1 % pressure
   hca = h(isub); isub = isub + 1;
   plot(hca,x_vec,mod_pressure);
   hca.YLabel.String = 'v^2 (eV?)';
 end
-if 0 % temperature
+if 1 % temperature
   hca = h(isub); isub = isub + 1;
   plot(hca,x_vec,mod_temp);
   hca.YLabel.String = 'T (eV)';
