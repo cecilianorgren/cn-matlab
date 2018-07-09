@@ -41,7 +41,7 @@ v_fpi = mean(ts_f_fpi.depend{1},1);
 f_fpi = ts_f_fpi.data;
 
 % EDI flux
-edi_nodes = 1:2;
+edi_nodes = 1;
 c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint_phi).time,mean(flux180_mms?.tlim(tint_phi).data(:,edi_nodes),2));')
 c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint_phi).time,mean(flux0_mms?.tlim(tint_phi).data(:,edi_nodes),2));')
 
@@ -122,9 +122,9 @@ vec_N2 = ntot*(1-vec_R);
 T1_min = 150; T1_max = 400; nT1 = 10; vec_T1 = linspace(T1_min,T1_max,nT1);
 %T2_min = 50; T2_max = 400; nT2 = 10; vec_T2 = linspace(T2_min,T2_max,nT2);
 T2_min = 2000; T2_max = 400; nT2 = 10; vec_T2 = linspace(T2_min,T2_max,nT2);
-Vd1_min = -9000*1e3; Vd1_max = 0*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd);
+Vd1_min = -9000*1e3; Vd1_max = 0*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
-Vd2_min = 3000*1e3; Vd2_max = 5000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
+Vd2_min = 3000*1e3; Vd2_max = 5000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
 Beta_min = -0.9; Beta_max = -0.1; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
 
 mms_id = 1; % chose spacecraft to compare to
@@ -141,7 +141,7 @@ for iR = 1%:nN
           % Plasma properties
           R = vec_R(iR);
           n = ntot*[R 1-R];
-          T = [vec_T1(iT) vec_T2(iT)]; % eV
+          T = [vec_T1(iT1) vec_T2(iT2)]; % eV
           vd = [vec_Vd1(iVd1) vec_Vd2(iVd2)]; % m/s
           beta = vec_Beta(iBeta); % in principle, this could be varied between the two species
 
