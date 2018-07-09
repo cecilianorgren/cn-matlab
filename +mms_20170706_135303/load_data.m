@@ -92,7 +92,7 @@ fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
 dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-eventPath = ['/Users/cno062/Research/Events/' dirName '/'];  
-matlabPath = ['/Users/cno062/MATLAB/cn-matlab/' dirNameMatlab '/'];
+eventPath = ['/Users/' localuser '/Research/Events/' dirName '/'];  
+matlabPath = ['/Users/' localuser '/MATLAB/cn-matlab/' dirNameMatlab '/'];
   
 mkdir(eventPath)

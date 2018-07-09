@@ -34,13 +34,13 @@ doT = 1; % otherwise plot x;
 % Plasma properties
 units = irf_units;
 n = [0.040]*1e6;
-T = [500]; T_K = T*units.eV/units.kB; % use parallel temperature
+T = [400]; T_K = T*units.eV/units.kB; % use parallel temperature
 vd = [-2500]*1e3; % m/s
 
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
-dE_edi = 25; % eV
+dE_edi = 50; % eV
 
 
 E_edi_plus = E_edi + dE_edi;
@@ -161,7 +161,7 @@ end
 VPH = repmat(torow(vph_vec),nv,1);
 PHI = repmat(torow(phi_vec),nv,1);
  
-beta = -0.5; % decides phase space depletion inside EH
+beta = -0.4; % decides phase space depletion inside EH
 F = fe_schamel(V,n,vt,vd,PHI,VPH,beta); % distribution function, from Schamel 1986
 Fdv = F*dv;
 FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)

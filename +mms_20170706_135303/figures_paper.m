@@ -555,7 +555,7 @@ if 1 % eDEF omni
     irf_legend(hca,'V_{sc}',[0.01 0.1],'color',0*[1 1 1])
     hold(hca,'off')
   end
-  if 1 % lowerelim
+  if 0 % lowerelim
     hold(hca,'on')
     lineElow = irf_plot(hca,lowerelim,'k');
     lineElow.Color = 1+[0 0 0]; lineElow.LineWidth = 1.5; lineElow.LineStyle = '--';

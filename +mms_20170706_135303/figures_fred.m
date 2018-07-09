@@ -1,7 +1,8 @@
 %% Separatrix streaming
 % Make reduced distribution
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.617Z');
-tintZoom = tint_phi + [-2 2]; 
+tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
+tintZoom = tint_phi + 0*[-2 2]; 
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
@@ -15,14 +16,16 @@ iDist = iPDist1.tlim(tintZoom).elim(eint);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
 scpot = scPot1.resample(eDist);
 scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
-lowerelim = scpot*scpot_margin;
-eLine = dmpaB1.resample(eDist).norm;
-tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim'); toc % reduced distribution along B
-%tic; if1D = iDist.reduce('1D',iLine,'vint',vint); toc % reduced distribution along B
-%tic; if1D_x = iDist.reduce('1D',[1 0 0],'vint',vint); toc % reduced distribution along B
-lineVe = ve.dot(eLine); % projection of Vi on B
-%lineVi = vi.dot(iLine); % projection of Vi on B
-%lineVi_x = vi.dot([1 0 0]); % projection of Vi on [1 0 0]
+lowerelim = scpot/scpot*40;
+ePara = dmpaB1.resample(eDist).norm;
+ePerp1 = ePara.cross(irf.ts_vec_xyz(ePara.time,repmat([1 0 0],ePara.length,1)));
+ePerp2 = ePara.cross(ePerp1);
+tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc 
+tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc
+tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc
+%%
+tic; ef1D = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
+lineVe = ve.dot(ePara); % projection of Vi on B
 
 %% ions
 vi = gseVi1.tlim(iDist.time).resample(iDist);
@@ -1201,3 +1204,99 @@ irf_legend(hca,{'f_e';'vph';'v_{trap}'},[0.95 0.95],'fontsize',14)
 hca.FontSize = 14;
 cn.print(sprintf('fred_e_vtrap_1time_%s',time.utc),'path',eventPath)
 
+%% 2D plot to 
+fe_parperp1 = ef2D_parperp1.tlim(tint_phi);
+fe_parperp2 = ef2D_parperp2.tlim(tint_phi);
+fe_perp1perp2 = ef2D_perp1perp2.tlim(tint_phi);
+
+figure(36)
+clear h;
+nrows = 3;
+ncols = 4;
+npanels = nrows*ncols;
+for ip = 1:npanels
+  h(ip) = subplot(nrows,ncols,ip);
+end
+isub = 1;
+
+xlim = 30;
+ylim = 30;
+clim = [-13 -9];
+for it = 1:4 % parperp1
+  hca = h(isub); isub = isub + 1;
+  [h1,h2,h3] = fe_parperp1(it).plot_plane(hca);
+  hca.Title.String = fe_parperp2(it).time.utc;
+  hca.XLabel.String = 'v_B (10^3 km/s)';
+  hca.YLabel.String = 'v_{[1 0 0]xB} (10^3 km/s)';
+  h2.XLim = xlim*[-1 1];
+  h2.YLim = ylim*[-1 1];
+end
+for it = 1:4 % parperp2
+  hca = h(isub); isub = isub + 1;
+  [h1,h2,h3] = fe_parperp2(it).plot_plane(hca);
+  hca.XLabel.String = 'v_B (10^3 km/s)';
+  hca.YLabel.String = 'v_{Bx[1 0 0]xB} (10^3 km/s)';
+  h2.XLim = xlim*[-1 1];
+  h2.YLim = ylim*[-1 1];
+end
+for it = 1:4 % perp1perp2
+  hca = h(isub); isub = isub + 1;
+  [h1,h2,h3] = fe_perp1perp2(it).plot_plane(hca);  
+  hca.XLabel.String = 'v_{[1 0 0]xB} (10^3 km/s)';
+  hca.YLabel.String = 'v_{Bx[1 0 0]xB} (10^3 km/s)';
+  h2.XLim = xlim*[-1 1];
+  h2.YLim = ylim*[-1 1];
+end
+
+for ip = 1:npanels
+  h(ip).CLim = clim;
+end
+
+%% 1D plot to compare different lowerelim
+scpot = scPot1.resample(ePDist1).tlim(tint_phi);
+edist = ePDist1.tlim(tint_phi);
+vec_lowerelim = 20:10:80;
+n_vec_lowerelim = numel(vec_lowerelim);
+eLine = dmpaB1.resample(edist).norm;
+
+fe_parperp1 = ef2D_parperp1.tlim(tint_phi);
+fe_parperp2 = ef2D_parperp2.tlim(tint_phi);
+fe_perp1perp2 = ef2D_perp1perp2.tlim(tint_phi);
+
+figure(37)
+clear h;
+nrows = 2;
+ncols = (edist.length+mod(edist.length,2))/2;
+npanels = nrows*ncols;
+for ip = 1:npanels
+  h(ip) = subplot(nrows,ncols,ip);
+end
+isub = 1;
+
+xlim = [-10 10];
+v_scale = 1e-3;    
+for it = 1:edist.length  
+  holdon = 0;
+  hca = h(isub); isub = isub + 1;
+  str_legend = {};
+  c_eval('str_legend{?} = sprintf(''%g eV'',vec_lowerelim(?));',1:n_vec_lowerelim);
+  for iElow = 1:n_vec_lowerelim
+    lowerelim = vec_lowerelim(iElow);
+    efred = edist(it).reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim);
+    hlines = plot(hca,efred.depend{1}(1,:)*v_scale,efred.data(1,:),'-');    
+    if iElow == 1
+      hold(hca,'on')
+      holdon = 0;
+    elseif iElow == n_vec_lowerelim 
+      hold(hca,'off')
+    end    
+  end
+  hold(hca,'off')
+  hca.YLabel.String = {'f (s^1/m^4)'};
+  hca.XLabel.String = {'v (10^3 km/s)'};
+  hca.XLim = xlim;
+  
+  irf_legend(hca,sprintf('V_{sc}= %.0f V',scpot.data(it)),[0.01,0.98])
+  hleg = legend(hca,str_legend);
+  hleg.Box = 'off';
+end
