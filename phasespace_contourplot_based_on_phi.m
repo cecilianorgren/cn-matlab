@@ -1,19 +1,27 @@
 localuser = datastore('local','user');
 % Load MMS data
-if 0 % load data
+
+if 1 % load from .mat file
+  load /Users/cecilia/Data/20170706_135303_basic_eh
+elseif 0 % load data
   %%
   ic = 1:4;
   tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
   mms.db_init('local_file_db','/Volumes/Nexus/data');
   db_info = datastore('mms_db');   
-  c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
-  c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
-  c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
-  c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint); toc;',ic);
+  if 0
+    load('/Users/cecilia/Data/20170706_135303_basic_eh_mms1')
+  else
+    c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
+    c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
+    c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
+    c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint); toc;',ic);
+    mms.load_data_edi;  
+    c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
+  end
   c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
-  c_eval('intEdt? = irf_integrate(gseE?par);');    
-  mms.load_data_edi;  
-  c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
+  c_eval('intEdt? = irf_integrate(gseE?par);',ic);    
+  
   % Make reduced distribution
   tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.617Z');
   tintZoom = tint_phi + [-2 2];   
@@ -79,7 +87,6 @@ c_eval('obs_t0_epoch_mms? = obs_eh_properties.time_mms?;')
 c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
 c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 
-%
 % Potential from observed E
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
 %tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.700Z');
@@ -497,7 +504,7 @@ if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 18
   c_eval('flux180 = flux180_mms?.tlim(tint_phi);',mms_id)
   flux180_time = flux180.time-t0;
   flux180_data = flux180.data;
-  nodes = 1:2;
+  nodes = 1;
   units_scale = 1e-4; % m^-2 > cm^-2 
   units_scale_2 = 1e6;
   plot_EDI = mean(flux180_data(:,nodes),2)/units_scale_2;
@@ -518,7 +525,7 @@ if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 18
   c_eval('flux0 = flux0_mms?.tlim(tint_phi);',mms_id)
   flux0_time = flux0.time-t0;
   flux0_data = flux0.data;
-  nodes = 1:2;
+  nodes = 1;
   units_scale = 1e-4; % m^-2 > cm^-2 
   units_scale_2 = 1e6;
   plot_EDI = mean(flux0_data(:,nodes),2)/units_scale_2;

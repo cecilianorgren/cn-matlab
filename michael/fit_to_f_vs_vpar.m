@@ -1,3 +1,28 @@
+%% Load data to make fit to
+path_dir = '/Users/cecilia/GoogleDrive/Research/Michael_Separatrix_EH/f_vs_vpar_72.50/';
+list_of_files = dir([path_dir '*.txt']);
+nfiles = numel(list_of_files);
+fileids = cell(nfiles,1);
+for ifile = 1:nfiles
+  fileid = ['f_' list_of_files(ifile).name(7) '_' list_of_files(ifile).name(9:10)];
+  fileids{ifile} = fileid;
+  data_tmp = load([path_dir list_of_files(ifile).name]);
+  eval(sprintf('%s.v = data_tmp(:,1); %s.f = data_tmp(:,2);',fileid,fileid))
+end
+
+if 0 % plot distributions
+  hca = subplot(1,1,1);
+  set(hca,'LineStyleOrder','-|--|:')
+  hold(hca,'on')
+  for ifile = 1:nfiles
+    eval(sprintf('plot(hca,%s.v,%s.f)',fileids{ifile},fileids{ifile}))  
+  end
+  hca.XLabel.String = 'v_{||}';
+  hca.YLabel.String = 'f';
+  legend(fileids,'Interpreter','none')
+  hold(hca,'off')
+end
+%% Solver
 % Multi-species streaming instability
 % Solver for 1D unmagnetized plasma
 % If solution is not as expected, change initial guess: x = 0; 
@@ -17,7 +42,7 @@ kB = 1.381e-23;
 c = 299792458;
 
 % Plasma properties for the different species
-input = 4;
+input = 6;
 switch input
   case 1    
     B = 10e-9; % not used
@@ -46,7 +71,21 @@ switch input
     T = [15 50]; T_K = T*units.eV/kB; % use parallel temperature
     m = [1 1]*me;
     q = [-1 -1]*qe; 
-    vd = [-0.8e7 0.3e7]; % m/s    
+    vd = [-0.8e7 0.3e7]; % m/s 
+  case 5 % f_2_43
+    B = 10e-9; % not used
+    n = [10e4 1e4];
+    T = [30 8]; T_K = T*units.eV/kB; % use parallel temperature
+    m = [1 1]*me;
+    q = [-1 -1]*qe; 
+    vd = [-0.010e7 0.65e7]; % m/s 
+  case 6 % f_3_13
+    B = 10e-9; % not used
+    n = [20e4 1e4];
+    T = [30 8]; T_K = T*units.eV/kB; % use parallel temperature
+    m = [1 1]*me;
+    q = [-1 -1]*qe; 
+    vd = [-0.010e7 0.75e7]; % m/s     
 end
 nsp = numel(n); % number of species
 
@@ -110,7 +149,7 @@ end
 %% Dispersion solver, one surface
 % Wavenumber vector
 nk = 100;
-k_min= 0.1; k_max = 0.5;
+k_min= 0.05; k_max = 0.5;
 knorm = min(Ld(1));  % length
 knorm_str = sprintf('L_{d%g}',1);
 kvec = linspace(k_min,k_max,nk)/knorm;
@@ -118,13 +157,13 @@ kvec = linspace(k_min,k_max,nk)/knorm;
 wr_store = nan(1,nk);
 wi_store = nan(1,nk);
 fval_store = nan(1,nk);
-x = -1000;
+x = 2500;k_min*mean(vd);
 for ik = 1:nk  
   xguess = x;
   %xguess = vd(2)*kvec(ik);
   
   af = @(temp) D_streaming(temp,kvec(ik),vt,wp,vd);   
-  options = optimset('GradObj','on','display','off','TolFun',1e-12);  
+  options = optimset('GradObj','on','display','off','TolFun',1e-14);  
   [x,FVAL,EXITFLAG] = fsolve(af,xguess,options);    
   fprintf('x = %g + %gi \n',real(x),imag(x))
   fval_store(ik) = FVAL; 
@@ -151,17 +190,22 @@ figure(81)
 fig = gcf;
 ud = get(fig);
 delete(ud.Children)
-fig.Position = [10 10 400 1100];
+fig.Position = [10 10 1000 1100];
 
 wnorm = wp(1); wnorm_str = sprintf('w_{p%g}',1);
 
 do_normf = 0;
 
-nrows = 4;
-ncols = 1;
+clear h;
+nrows = 3;
+ncols = 2;
 npanels = nrows*ncols;
-for ip = 1:npanels
-  h(ip) = subplot(nrows,ncols,ip);
+isub = 0;
+for icol = 1:ncols
+  for irow = 1:nrows  
+    isub = isub + 1;         
+    h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  end
 end
 isub = 1;
 
@@ -184,7 +228,21 @@ if 1 % input info
   hca.Visible = 'off';
   text(hca,0,1,info_str,'verticalalignment','top')
 end
-
+if 1 % simulation distributions  
+  hca = h(isub); isub = isub + 1;  
+  set(hca,'LineStyleOrder','-|--|:')
+  hold(hca,'on')
+  for ifile = 1:nfiles
+    eval(sprintf('plot(hca,%s.v,%s.f)',fileids{ifile},fileids{ifile}))  
+  end
+  hold(hca,'off')
+  hca.XLabel.String = 'v_{||}';
+  hca.YLabel.String = 'f';
+  legend(hca,fileids,'Interpreter','none','location','northwest')
+  hca.XLim = [-14 14];
+  hca.Title.String = 'Simulation distributions';
+  hca.Box = 'on';
+end
 if 1 % input distributions
   hca = h(isub); isub = isub + 1;
   vmax = max(2*vt + vd);
@@ -211,10 +269,6 @@ if 1 % input distributions
   % obtained phase velocity
   plot(hca,vphmax*1e-6*[1 1],[0 fmaxtot],'-','linewidth',1.5,'color',0.8+[0 0 0])
   hold(hca,'on')
-  
-
-  
-
 
   plot(hca,vvec*1e-6,ftot/fnormtot,'-','linewidth',1,'color',[0 0 0])   
   
@@ -235,16 +289,18 @@ if 1 % input distributions
     %f_legends{isp} = sprintf('f_%.0f/%g',isp,max(f(vvec,n(isp),vt(isp),vd(isp))));
     f_legends{isp} = sprintf('f_%.0f/%g',isp,fnorm(isp));
   end   
-  hl = legend(hca,{'v_{ph} @ max w_i',sprintf('f_{tot}/%g',max(ftot)),f_legends{:}},'location','northoutside','box','off');
-  hl.Position(3) = 0.75;
-  hl.Position(2) = hl.Position(2)+0.08;
+  hl = legend(hca,{'v_{ph} @ max w_i',sprintf('f_{tot}/%g',fnormtot),f_legends{:}},'location','northwest','box','off');
+  %hl.Position(3) = 0.75;
+  %hl.Position(2) = hl.Position(2)+0.08;
   hca.XLabel.String = 'v (10^3 km/s)';
   if do_normf, hca.YLabel.String = 'f/max(f)'; else, hca.YLabel.String = 'f'; end
-  plot(hca,vvec*1e-6,ftot/fnormtot,'-','linewidth',1,'color',[0 0 0])   
-  hca.XLim = vvec([1 end])*1e-6;  
+  %plot(hca,vvec*1e-6,ftot/fnormtot,'-','linewidth',1,'color',[0 0 0])   
+  hca.XLim = vvec([1 end])*1e-6; 
+  hca.XLim = [-14 14];
   hold(hca,'off')
+  hca.Title.String = 'Solver input distribution';
 end
-if 1 % solution, wr wi
+if 0 % solution, wr wi
   hca = h(isub); isub = isub + 1;    
   if 1
     ax = plotyy(hca,kvec*knorm,wr_store/wnorm,kvec*knorm,wi_store/wnorm);
@@ -275,6 +331,49 @@ if 1 % solution, wr wi
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   text(hca,hca.XLim(1),hca.YLim(2),sprintf('w_r @ w_{i,max} = %g\nw_{i,max} = %g',wrmax,wimax),'horizontalalignment','left','verticalalignment','top')
+  hca.Title.String = 'Dispersion relation';
+end
+if 1 % solution, wi
+  hca = h(isub); isub = isub + 1;    
+  plot(hca,kvec*knorm,wi_store/wnorm,kmax*knorm,wimax/wnorm,'*','linewidth',1.5);    
+  hca.XLim = kvec([1 end])*knorm;   
+  hca.XLabel.String = sprintf('k%s',knorm_str);
+  if wnorm ~= 1
+    hca.YLabel.String = sprintf('w_i/%s',wnorm_str);
+  else
+    hca.YLabel.String = '2\pi f_i (2\pi Hz)';
+  end
+  if 0% wimax>1
+    hca.YLim(1) = -wimax/wnorm;
+  end
+  if 0;%wrmax>1
+    hca.YLim(2) = 2*wrmax/wnorm;
+  end
+  %hca.XGrid = 'on';
+  %hca.YGrid = 'on';
+  text(hca,hca.XLim(1),hca.YLim(2),sprintf('w_r @ w_{i,max} = %g\nw_{i,max} = %g',wrmax,wimax),'horizontalalignment','left','verticalalignment','top')
+  hca.Title.String = 'Dispersion relation';
+end
+if 1 % solution, wr
+  hca = h(isub); isub = isub + 1;    
+  plot(hca,kvec*knorm,wr_store/wnorm,kmax*knorm,wrmax/wnorm,'*','linewidth',1.5);    
+  hca.XLim = kvec([1 end])*knorm;   
+  hca.XLabel.String = sprintf('k%s',knorm_str);
+  if wnorm ~= 1
+    hca.YLabel.String = sprintf('w_r/%s',wnorm_str);
+  else
+    hca.YLabel.String = '2\pi f_r (2\pi Hz)';
+  end
+  if 0% wimax>1
+    hca.YLim(1) = -wimax/wnorm;
+  end
+  if 0;%wrmax>1
+    hca.YLim(2) = 2*wrmax/wnorm;
+  end
+  %hca.XGrid = 'on';
+  %hca.YGrid = 'on';
+  text(hca,hca.XLim(1),hca.YLim(2),sprintf('w_r @ w_{i,max} = %g\nw_{i,max} = %g',wrmax,wimax),'horizontalalignment','left','verticalalignment','top')
+  %hca.Title.String = 'Dispersion relation: Real frequency';
 end
 if 1 % phase velocity
   hca = h(isub); isub = isub + 1;
