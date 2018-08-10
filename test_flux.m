@@ -29,7 +29,7 @@ if 1
   hcb.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(flux_scale));
   hca.YLabel.String = 'Polar angle';
   hca.XLabel.String = 'Azimuthal angle';
-  hca.Title.String = 'Where electrons are going';
+  hca.Title.String = 'Where electrons are coming from';
   view(hca,[0 0 1])
   hca.XLim = [0 360];
   hca.YLim = [0 180];

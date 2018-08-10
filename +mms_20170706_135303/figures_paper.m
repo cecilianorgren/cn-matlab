@@ -14,8 +14,8 @@ iDist = iPDist1.tlim(tintZoom).elim(eint);
 %% electrons
 ve = gseVe1.tlim(eDist.time).resample(eDist);
 scpot = scPot1.resample(eDist);
-scpot_margin = 2.0; % keep in mind that this also affects the velocity at lower energies
-lowerelim = scpot/scpot*40;
+scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
+lowerelim = scpot*0 + 40;
 eLine = dmpaB1.resample(eDist).norm;
 %tic; ef1D_ = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
 tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
@@ -512,7 +512,7 @@ end
 if 1 % Vi
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('Ve');
+  hca = irf_panel('Vi');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseVi?.x,gseVi?.y,gseVi?.z},''comp'');',ic)  
   hca.YLabel.String = {'v_i','(km/s)'};
@@ -522,7 +522,7 @@ end
 if 1 % Ve
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('Vi');
+  hca = irf_panel('Ve');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseVe?.x,gseVe?.y,gseVe?.z},''comp'');',ic)  
   hca.YLabel.String = {'v_e','(km/s)'};
@@ -728,14 +728,15 @@ if 1 % v phase + trap
   c_eval('hline(?).LineWidth = 1.5;',1:numel(hline))
 end
 
-c_eval('h(?).Position(2) = h(?).Position(2)-0.05;',isub_short)
-
+c_eval('h(?).Position(2) = h(?).Position(2)-0.03;',isub_short)
+c_eval('h(?).Position(2) = h(?).Position(2)+0.02;',isub_long)
 
 
 irf_zoom(h(isub_long),'x',tint)
 irf_zoom(h(isub_short),'x',tint_zoom)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
+h(isub_long(end)).XLabel.String = [];
 
 [hline1,hline2] = irf_plot_zoomin_lines_between_panels(h(isub_long(end)),h(isub_short(1))); 
 c_eval('h_mark1(?) = irf_pl_mark(h(?),tint_zoom(1),[0 0 0]);',isub_long)
@@ -746,6 +747,9 @@ colormap(cn.cmap('blue_white'))
 hca = irf_panel('eDEF'); hca.XGrid = 'off'; hca.YGrid = 'off'; hca.CLim = [4 7.5];
 hca = irf_panel('fred'); hca.CLim = [-6.5 -2]; hca.YLim = [-70 70];
 hca = irf_panel('fred vph vtrap'); hcbar.Position(2) = hca.Position(2); hca.YLim = [-35 15]; hca.CLim = [-6.5 -2];
+hca = irf_panel('Vi'); hca.YLim = [-799 399];
+hca = irf_panel('n'); hca.YLim = [0 0.199]; hca.YTick = [0 0.05 0.1 0.15];
+
 
 %% Plot fred, electrons
 ic = 1;

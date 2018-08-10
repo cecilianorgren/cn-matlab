@@ -103,8 +103,8 @@ dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
 
 % velocity grid
-vmax = 40000e3;
-nv = 2000;
+vmax = 50000e3;
+nv = 3000;
 v_vec = linspace(-vmax,vmax,nv);
 dv = v_vec(2) - v_vec(1);
 
@@ -127,17 +127,17 @@ phi_scaling = 1.0; % if we underestimate phi
 % Parameters to vary
 % two populations, f1 and f2
 nPop = 2;
-ntot = 0.04*1e6;
-R_min = 0.55; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
+ntot = 0.035*1e6;
+R_min = 0.50; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
 vec_N1 = ntot*vec_R; 
 vec_N2 = ntot*(1-vec_R);
 T1_min = 150; T1_max = 300; nT1 = 3; vec_T1 = linspace(T1_min,T1_max,nT1);
 %T2_min = 50; T2_max = 400; nT2 = 10; vec_T2 = linspace(T2_min,T2_max,nT2);
-T2_min = 3000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
-Vd1_min = -11000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
+T2_min = 4000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
+Vd1_min = -10000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
-Vd2_min = 000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
-Beta_min = -0.99; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
+Vd2_min = 4000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
+Beta_min = -0.60; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
 
 mms_id = 1; % chose spacecraft to compare to
 c_eval('LOCS = LOCS?; PKS = PKS?;',mms_id)
@@ -305,6 +305,7 @@ for iR = 1%:nR
               
               isub = 1;
 
+              vlim_f = 30;
               if 1 % Epar, plot
                 hca = h(isub); isub = isub + 1;
                 plot(hca,x_vec,epar_vec);  
@@ -339,7 +340,8 @@ for iR = 1%:nR
                 hcb.YLabel.String = 'f (s^1/m^4)';
                 colormap(hca,cn.cmap('white_blue'))
                 %colormap(hca,cn.cmap('blue_white'))
-
+                hca.YLim = vlim_f*[-1 1];
+                
                 if 1 % EDI energies
                   hold(hca,'on')
                   line_color = [0.5 0.5 0.5]; [0.9290    0.6940    0.1250];
@@ -400,11 +402,9 @@ for iR = 1%:nR
                 hca.YLabel.String = {'n','(cm^{-3})'};
               end
               if 1 % sum F (density,free,trap,all)
-                hca = h(isub); isub = isub + 1;  
-                if 1
-                  plot(hca,x_vec([1 end]),ntot*1e-6*[1 1],x_vec,mod_density*1e-6,x_vec,mod_density_free*1e-6,x_vec,mod_density_trap*1e-6,x_vec,net*1e-6); % 1e-6 from 1/m3 > 1/cm3
-                  legend(hca,{'n_{mod,\phi=0}','n_{mod}','n_{mod,free}','n_{mod,trap}','n_{mod,\phi=0} - n_{mod,free}+\delta n'},'location','eastoutside');
-                end
+                hca = h(isub); isub = isub + 1;                  
+                plot(hca,x_vec([1 end]),ntot*1e-6*[1 1],x_vec,mod_density*1e-6,x_vec,mod_density_free*1e-6,x_vec,mod_density_trap*1e-6,x_vec,net*1e-6); % 1e-6 from 1/m3 > 1/cm3
+                legend(hca,{'n_{mod,\phi=0}','n_{mod}','n_{mod,free}','n_{mod,trap}','n_{mod,\phi=0} - n_{mod,free}+\delta n'},'location','eastoutside');
                 hca.YLabel.String = {'n','(cm^{-3})'};
               end
               if 1 % sum F (density)
@@ -428,6 +428,7 @@ for iR = 1%:nR
                 hcb.YLabel.String = 'f*v (1/m^3)'; 
                 hca.CLim = hca.CLim(2)*[-1 1]; 
                 hcb.YLim = hca.CLim;
+                hca.YLim = vlim_f*[-1 1];
                 if 1 % EDI energies
                   hold(hca,'on')
                   hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
@@ -554,14 +555,14 @@ for iR = 1%:nR
                   end
                 end
               end
-              if 1 % flat skymap, to check how normalization is done
+              if 0 % flat skymap, to check how normalization is done
                 %h = subplot(nrows,3,[3 6 9 12]);
                 h = subplot(nrows,2,[2 4]+8);
                 h.Position = [0.65    0.35    0.3    0.2];
                 isub = 1;
                 if 1 % F, 
                   hca = h(isub); isub = isub + 1;
-                  [ax,hcb] = mms.plot_skymap(hca,ePDist1.convertto('s^3/cm^6'),'flat','tint',tint_phi,'energy',480,'vectors',{mean(dmpaB1.tlim(tint_phi).norm.data,1),'B'});
+                  [ax,hcb] = mms.plot_skymap(hca,ePDist1,'flat','tint',tint_phi,'energy',480,'vectors',{mean(dmpaB1.tlim(tint_phi).norm.data,1),'B'});
                   %hca.YLabel.String = {'f','(s^1/m^4)'};
                   %hca.XLabel.String = {'v','(10^3 km/s)'};
                   str_lines = {'<f_{mod}>';'f_{mod,\phi=0}';...
@@ -573,7 +574,7 @@ for iR = 1%:nR
                   %irf_legend(hca,str_lines,[0.99 0.99])                  
                 end
               end
-              if 1 % flat skymap, units of flux, to check how normalization is done
+              if 0 % flat skymap, units of flux, to check how normalization is done
                 %%
                 %h = subplot(nrows,3,[3 6 9 12]);
                 h = subplot(nrows,2,[2 4]+14);
@@ -617,7 +618,7 @@ for iR = 1%:nR
                   sprintf('-- fpi: %s',fpi_utc(4,12:23))};
               end
               if doPrint
-                cn.print(sprintf('schamel_2F_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g',vph,ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta))
+                cn.print(sprintf('schamel_2F_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g_phishift%g',vph,ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta,phi_shift))
               end
               
               if 0 % average over time, comaprison to FPI

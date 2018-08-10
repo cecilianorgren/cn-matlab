@@ -219,7 +219,7 @@ end
 
 fall(itrap) = ftrap(itrap);
 fall(ifree) = ffree(ifree);
-imagesc(fall)
+%imagesc(fall)
 
 %%
 varargout{1} = fall;

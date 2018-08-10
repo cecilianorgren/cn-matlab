@@ -17,7 +17,7 @@ kB = 1.381e-23;
 c = 299792458;
 
 % Plasma properties for the different species
-input = 4;
+input = 5;
 switch input
   case 1    
     B = 10e-9; % not used
@@ -46,7 +46,14 @@ switch input
     T = [15 50]; T_K = T*units.eV/kB; % use parallel temperature
     m = [1 1]*me;
     q = [-1 -1]*qe; 
-    vd = [-0.8e7 0.3e7]; % m/s    
+    vd = [-0.8e7 0.3e7]; % m/s 
+  case 5 % paper, eh, example
+    B = 10e-9; % not used
+    n = [0.05e6 0.2e6];
+    T = [100 2000]; T_K = T*units.eV/kB; % use parallel temperature
+    m = [1 1]*me;
+    q = [-1 -1]*qe; 
+    vd = [20000e3 -2000e3]; % m/s 
 end
 nsp = numel(n); % number of species
 
@@ -118,7 +125,7 @@ kvec = linspace(k_min,k_max,nk)/knorm;
 wr_store = nan(1,nk);
 wi_store = nan(1,nk);
 fval_store = nan(1,nk);
-x = -1000;
+x = 1000;
 for ik = 1:nk  
   xguess = x;
   %xguess = vd(2)*kvec(ik);

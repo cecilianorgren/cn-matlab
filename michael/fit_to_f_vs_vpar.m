@@ -42,7 +42,8 @@ kB = 1.381e-23;
 c = 299792458;
 
 % Plasma properties for the different species
-input = 6;
+str_fit_info = '';
+input = 5;
 switch input
   case 1    
     B = 10e-9; % not used
@@ -72,20 +73,22 @@ switch input
     m = [1 1]*me;
     q = [-1 -1]*qe; 
     vd = [-0.8e7 0.3e7]; % m/s 
-  case 5 % f_2_43
+  case 5 % f_3_13
     B = 10e-9; % not used
-    n = [10e4 1e4];
-    T = [30 8]; T_K = T*units.eV/kB; % use parallel temperature
+    n = [1e4 10e4]/2;
+    T = [15 130]; T_K = T*units.eV/kB; % use parallel temperature
     m = [1 1]*me;
     q = [-1 -1]*qe; 
-    vd = [-0.010e7 0.65e7]; % m/s 
-  case 6 % f_3_13
+    vd = [-10000e3 5000e3]; % m/s 
+    str_fit_info = ': fit to f at z=3.13';
+  case 6 % f_2_43
     B = 10e-9; % not used
-    n = [20e4 1e4];
-    T = [30 8]; T_K = T*units.eV/kB; % use parallel temperature
+    n = [1e4 3e4];
+    T = [70 140]; T_K = T*units.eV/kB; % use parallel temperature
     m = [1 1]*me;
     q = [-1 -1]*qe; 
-    vd = [-0.010e7 0.75e7]; % m/s     
+    vd = [-8000e3 5000e3]; % m/s   
+    str_fit_info = ': fit to f at z=2.43';  
 end
 nsp = numel(n); % number of species
 
@@ -157,7 +160,7 @@ kvec = linspace(k_min,k_max,nk)/knorm;
 wr_store = nan(1,nk);
 wi_store = nan(1,nk);
 fval_store = nan(1,nk);
-x = 2500;k_min*mean(vd);
+x = -400;k_min*mean(vd);
 for ik = 1:nk  
   xguess = x;
   %xguess = vd(2)*kvec(ik);
@@ -238,8 +241,8 @@ if 1 % simulation distributions
   hold(hca,'off')
   hca.XLabel.String = 'v_{||}';
   hca.YLabel.String = 'f';
-  legend(hca,fileids,'Interpreter','none','location','northwest')
-  hca.XLim = [-14 14];
+  legend(hca,fileids,'Interpreter','none','location','northeast')
+  hca.XLim = [-20 20];
   hca.Title.String = 'Simulation distributions';
   hca.Box = 'on';
 end
@@ -296,9 +299,9 @@ if 1 % input distributions
   if do_normf, hca.YLabel.String = 'f/max(f)'; else, hca.YLabel.String = 'f'; end
   %plot(hca,vvec*1e-6,ftot/fnormtot,'-','linewidth',1,'color',[0 0 0])   
   hca.XLim = vvec([1 end])*1e-6; 
-  hca.XLim = [-14 14];
+  hca.XLim = [-20 20];
   hold(hca,'off')
-  hca.Title.String = 'Solver input distribution';
+  hca.Title.String = ['Solver input distribution' str_fit_info];  
 end
 if 0 % solution, wr wi
   hca = h(isub); isub = isub + 1;    
