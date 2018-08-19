@@ -9,7 +9,7 @@ if 0 % load from .mat file
 elseif 0 % load data
   ic = 1:4;
   tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-  mms.db_init('local_file_db','/Volumes/Nexus/data');
+  mms.db_init('loca_file_db','/Volumes/Nexus/data');
   db_info = datastore('mms_db');   
   c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
   c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
@@ -211,17 +211,17 @@ for iR = 1%:nR
             Ffree = zeros(size(V));
             Ftrap = zeros(size(V));
             Fmax = zeros(size(V));
-            for iPop = 1:nPop
-              Fmax_tmp = fe_maxwellian(V,n(iPop),vt(iPop),vd(iPop)); % distribution function, from Schamel 1986
-              c_eval('Fmax? = Fmax_tmp;',iPop)
-              Fmax = Fmax + Fmax_tmp;
-
-              [Ftmp,Ftmp_all] = fe_schamel(V,n(iPop),vt(iPop),vd(iPop),PHI,VPH,beta); % distribution function, from Schamel 1986
-              c_eval('F? = Ftmp;',iPop)              
-              F = F + Ftmp; 
-              Ffree = Ffree + Ftmp_all.free; 
-              Ftrap = Ftrap + Ftmp_all.trap; 
-            end                    
+%             for iPop = 1:nPop
+%               Fmax_tmp = fe_maxwellian(V,n(iPop),vt(iPop),vd(iPop)); % distribution function, from Schamel 1986
+%               c_eval('Fmax? = Fmax_tmp;',iPop)
+%               Fmax = Fmax + Fmax_tmp;
+% 
+%               [Ftmp,Ftmp_all] = fe_schamel(V,n(iPop),vt(iPop),vd(iPop),PHI,VPH,beta); % distribution function, from Schamel 1986
+%               c_eval('F? = Ftmp;',iPop)              
+%               F = F + Ftmp; 
+%               Ffree = Ffree + Ftmp_all.free; 
+%               Ftrap = Ftrap + Ftmp_all.trap; 
+%             end                    
             
             
             % 'moments'

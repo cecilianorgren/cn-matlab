@@ -36,6 +36,7 @@ for iz_ = 1:numel(z_picks)
   iz(iz_) = find(min(abs(z-z_picks(iz_))) == abs(z-z_picks(iz_)));
 end
 n_picks = ne(iz); 
+B_picks = Bx(iz);
 n0 = 0.1;
 
 %figure(83)
@@ -48,12 +49,12 @@ str_fit_info = '';
 
 dists = [1:2];
 ndists = numel(dists);
-for idist_ind = 1:ndists
+for idist_ind = 1
   idist = dists(idist_ind);
   [B,n,T,m,q,vd,str_fit_info,x] = get_input(idist);
   nsp = numel(n); % number of species
 
-  % Physical parameters
+  % Physical parameters  
   vt = sqrt(2*units.e*T./m); % m/s
   wp = sqrt(n.*q.^2./(m*units.eps0)); % Hz
   wc = q*B./m; % not used, although it can affect stability of phase space holes
@@ -61,7 +62,8 @@ for idist_ind = 1:ndists
   Lin = units.c./wp;
   Ld = vt./wp/sqrt(2);
 
-  ntot = sum(n); wptot = sqrt(ntot.*q(1).^2./(m(1)*units.eps0)); % Hz
+  ntot = sum(n); 
+  wptot = sqrt(ntot.*q(1).^2./(m(1)*units.eps0)); % Hz
 
   disp('----------------------------------------------')
   fprintf('check quasi-neutrality: sum(qn) = %g\n',sum(q.*n))
@@ -113,7 +115,7 @@ for idist_ind = 1:ndists
   % Dispersion solver, one surface
   % Wavenumber vector
   nk = 100;
-  k_min= 0.02; k_max = 0.8;
+  k_min= 0.005; k_max = 0.8;
   knorm = min(Ld(1));  % length
   knorm_str = sprintf('L_{d%g}',1);
   kvec = linspace(k_min,k_max,nk)/knorm;
@@ -128,7 +130,7 @@ for idist_ind = 1:ndists
     af = @(temp) D_streaming(temp,kvec(ik),vt,wp,vd);   
     options = optimset('GradObj','on','display','off','TolFun',1e-14);  
     [x,FVAL,EXITFLAG] = fsolve(af,xguess,options);    
-    %fprintf('x = %g + %gi \n',real(x),imag(x))
+    fprintf('x = %g + %gi \n',real(x),imag(x))
     fval_store(ik) = FVAL; 
     wr(ik) = real(x);
     wi(ik) = imag(x);  
@@ -169,7 +171,7 @@ delete(ud.Children)
 fig.Position = [10 10 1000 1100];
 
 [B,n,T,m,q,vd,str_fit_info,x] = get_input(0);
-%Va  = B./sqrt(units.mu0*n*units.mp);
+Va  = B./sqrt(units.mu0*n*units.mp);
 %wp = sqrt(n.*q.^2./(m*units.eps0)); % Hz
 vt = sqrt(2*units.e*T./m); % m/s
 
@@ -280,6 +282,7 @@ end
 if 1 % input distributions,all
   hca = h(isub); isub = isub + 1;
   vvec = linspace(-4*vt,4*vt,1000); 
+  vvec = linspace(-20*Va,20*Va,1000); 
   ftot(1,:) = get_ftot(1,vvec);
   ftot(2,:) = get_ftot(2,vvec);
   plot(hca,vvec*1e-6,ftot','-','linewidth',1)   
@@ -299,7 +302,7 @@ if 1 % input distributions,all
   hca.XLabel.String = 'v (10^3 km/s)';
   hca.YLabel.String = 'f';  
   hca.XLim = vvec([1 end])*1e-6; 
-  hca.XLim = [-20 20];  
+  %hca.XLim = [-20 20];  
   hca.Title.String = 'Solver input distributions';  
 end
 if 1 % solution, wi
@@ -460,10 +463,12 @@ delete(ud.Children)
 fig.Position = [700 200 500 250];
 
 [B,n,T,m,q,vd,str_fit_info,x] = get_input(0);
-Va  = B./sqrt(units.mu0*n*units.mp);
+mp = units.mp; % mass ratio doesn't matter in normalized units since c = 20*vA
+Va  = B./sqrt(units.mu0*sum(n)*mp);
+c = 20*Va;
 wp = sqrt(n.*q.^2./(m*units.eps0)); % Hz
 vt = sqrt(2*units.e*T./m); % m/s
-Lin = units.c./wp;
+Lin = c./wp;
   
 vnorm = Va; vnorm_str = 'v_A';
 wnorm = wp; wnorm_str = '\omega_{pe}';
@@ -505,13 +510,14 @@ if 0 % input info
 end
 if 1 % simulation + input distributions
   hca = h(isub); isub = isub + 1;  
-  vvec = linspace(-4*vt,4*vt,1000);  
+  vvec = linspace(-20*Va,20*Va,1000);  
   ftot = get_ftot(idist_solv,vvec);  
-  ftot_scale = 0.40e20;
+  ftot_scale = 0.80e20;
+  ftot_scale = 4e21;
   set(hca,'LineStyleOrder','-|--|:')    
   eval(sprintf('plot(hca,%s.v,%s.f,vvec/vnorm,ftot*ftot_scale,''LineWidth'',1.5)',fileids{idist_sim},fileids{idist_sim}))    
   hca.XLabel.String = 'v_{||}/v_A';
-  hca.YLabel.String = 'f';
+  hca.YLabel.String = 'f [arb. units]';
   %legend(hca,fileids,'Interpreter','none','location','northeast')
   hca.XLim = [-20 20];
   hca.Title.String = 'Reduced electron distribution';
@@ -548,20 +554,69 @@ for ipanel = 1:npanels
   h(ipanel).Position(2) = 0.2;
   h(ipanel).Position(4) = 0.6;
 end
-h(2).XLim = [0 30];
-h(2).YLim = [-0.05 0.5];
+h(2).XLim = [0 0.7];
+h(2).YLim = [-0.03 0.2];
+
+hl = irf_legend(h(1),'a)',[0.03 0.98],'k'); hl.FontSize = 14;
+hl = irf_legend(h(2),'b)',[0.03 0.98],'k'); hl.FontSize = 14;
+ 
+%% Get all normalizations in order
+% Normalization
+[B0,n0,T0,m0,q0,vd,~,~] = get_input(0);
+mp = units.mp;
+Va0  = B0./sqrt(units.mu0*n0*mp);
+c0 = 20*Va0;
+wp0 = sqrt(n0.*q0.^2./(m0*units.eps0)); % Hz
+wc0 = units.e*B0/units.me;
+vt0 = sqrt(2*units.e*T0./m0); % m/s
+Lin0 = c0./wp0;
+wp0/wc0;
+
+% Solver input
+[B,n,T,m,~,vd,~,~] = get_input(2);
+mp = units.mp;
+Va  = B./sqrt(units.mu0*n*mp);
+Vatot  = B./sqrt(units.mu0*sum(n)*mp);
+c = c0;
+wp = sqrt(n.*q.^2./(m*units.eps0)); % Hz
+wc = units.e*B./m;
+wptot = sqrt(sum(n).*q.^2./(m*units.eps0)); % Hz
+vt = sqrt(2*units.e*T./m); % m/s
+Lin = c./wp;
+
+
+disp('----------------------------------------------')
+fprintf('check quasi-neutrality: sum(qn) = %g\n',sum(q.*n))
+fprintf('B0 = %g, B = %g = %g B0\n',B0,B,B/B0)
+fprintf('n = ['); fprintf(' %g',n*1e-6); fprintf('] cc = ['); fprintf(' %g',n/n0); fprintf('] n0\n');
+fprintf('m = ['); fprintf(' %g',m/units.me); fprintf('] me\n');
+fprintf('q = ['); fprintf(' %g',q/units.e); fprintf('] e\n');
+fprintf('T = ['); fprintf(' %g',T); fprintf('] eV\n');
+fprintf('vt = ['); fprintf(' %.0f',vt*1e-3); fprintf('] km/s = ['); fprintf(' %g',vt/Va0); fprintf('] Va0\n');
+fprintf('vd = ['); fprintf(' %.0f',vd*1e-3); fprintf('] km/s = ['); fprintf(' %g',vd/Va0); fprintf('] Va0\n');
+fprintf('wp = ['); fprintf(' %g',wp); fprintf('] Hz = ['); fprintf(' %g',wp/wp0); fprintf('] wp0\n');
+fprintf('wc = ['); fprintf(' %g',wc); fprintf('] Hz\n');
+fprintf('ro = ['); fprintf(' %g',ro*1e-3); fprintf('] km\n');
+fprintf('Lin = ['); fprintf(' %g',Lin*1e-3); fprintf('] km = ['); fprintf(' %g',Lin/Lin0); fprintf('] Lin0\n');
+fprintf('Ld = ['); fprintf(' %g',Ld*1e-3); fprintf('] km\n');
+fprintf('wp0/wc0 = %g, wp/wc = %g\n',wp0/wc0,wp/wc)
+fprintf('vA0 = %g m/s, vA = %g m/s\n',Va0,Vatot)
+fprintf('vA0 = %g c0, vA = %g c0\n',Va0/c0,Vatot/c0)
+disp('----------------------------------------------')
 
 %% Aid functions
 function [B,n,T,m,q,vd,str_fit_info,x] = get_input(index)
   % normalize to simulations and to n0_cc  
   units = irf_units;
-  n0 = 0.1e6;  
+  n0 = 0.024e6; 
+  B0 = 25e-9; 
   switch index % set up input parameters
     case 0 % normalization
-      nref = 0.1;
-      B = 13e-9; % not used
+      nref = 1;
+      Bref = 1;
+      B = B0*Bref; % not used
       n = [0.1]*1e6;
-      T = [100]; % use parallel temperature
+      T = 4*[100]; % use parallel temperature
       m = [1]*units.me;
       q = [-1]*units.e; 
       vd = [0]; % m/s   
@@ -569,29 +624,54 @@ function [B,n,T,m,q,vd,str_fit_info,x] = get_input(index)
       x = -400; % xguess
       n = nref*n/sum(n);
     case 1 % f_2_43
-      nref = 0.1227*1.3;
-      B = 10e-9; % not used
+      nref = 0.1227;
+      Bref = 0.6833;
+      B = B0*Bref; % not used
       n = [0.08 0.30]*1e6;
-      T = [70 140]; % use parallel temperature
+      T = 7.5*[70 140]; % use parallel temperature
       m = [1 1]*units.me;
       q = [-1 -1]*units.e; 
-      vd = [-9000e3 4500e3]; % m/s   
+      vd = 3.0*[-9000e3 4500e3]; % m/s   
       str_fit_info = ': fit to f at z=2.43'; 
       x = -20; % xguess
-      n = nref*n/sum(n);
+      n = nref*n/sum(n);       
     case 2 % f_3_13
       nref = 0.0355;
-      B = 10e-9; % not used
+      Bref = 0.8051;
+      B = B0*Bref; % not used
       n = [0.01 0.09]*1e6;
-      T = [15 130]; % use parallel temperature
+      T = 1*8*[15 130]; % use parallel temperature
       m = [1 1]*units.me;
       q = [-1 -1]*units.e; 
-      vd = [-11000e3 5500e3]; % m/s 
+      vd = 1*3*[-12000e3 6000e3]; % m/s 
+      str_fit_info = ': fit to f at z=3.13';
+      x = -10; % xguess
+      n = nref*n/sum(n);   
+    case 22 % f_3_13 % copy 2
+      nref = 0.0355;
+      Bref = 0.6833;
+      B = B0*Bref; % not used
+      n = [0.01 0.09]*1e6;
+      T = 4*[15 130]; % use parallel temperature
+      m = [1 1]*units.me;
+      q = [-1 -1]*units.e; 
+      vd = 2*[-11000e3 5500e3]; % m/s 
       str_fit_info = ': fit to f at z=3.13';
       x = -100; % xguess
-      n = nref*n/sum(n);      
+      n = nref*n/sum(n); 
+    case 3 % f_3_13
+      nref = 0.0355;
+      Bref = 0.8051;
+      B = B0*Bref; % not used
+      n = [0.01 0.09]*1e6;
+      T = 10*[15 130]; % use parallel temperature
+      m = [1 1]*units.me;
+      q = [-1 -1]*units.e; 
+      vd = 10*[-11000e3 5500e3]; % m/s 
+      str_fit_info = ': fit to f at z=3.13';
+      x = -100; % xguess
+      n = nref*n/sum(n);   
   end
-  B = 5e-9;
   %[~,n0,~,~,~,~,~,~] = get_input(index);
   %ntot = sum(n);
   %n = n/ntot*n0;
