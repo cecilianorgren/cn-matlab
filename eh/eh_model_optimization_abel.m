@@ -25,21 +25,21 @@ elseif 0 % load data
   strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
   eint = [000 40000];
   vint = [-Inf Inf];
-  eDist = ePDist1.tlim(tintZoom).elim(eint);   
+  
+  c_eval('eDist? = ePDist?.tlim(tintZoom).elim(eint);')
   scpot = scPot1.resample(eDist);
   scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
   lowerelim = scpot/scpot*50;
   eLine = dmpaB1.resample(eDist).norm;
-  tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B  
+  tic; 
+  c_eval('ef1D? = eDist?.reduce(''1D'',dmpaB?.resample(eDist?).norm,''vint'',vint,''scpot'',scPot1.resample(eDist?),''lowerelim'',lowerelim);',1:4)
+  toc % reduced distribution along B  
 end
 
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
 t0 = tint_phi(1);
 
-% FPI distribution
-ts_f_fpi = ef1D.tlim(tint_phi);
-v_fpi = mean(ts_f_fpi.depend{1},1);
-f_fpi = ts_f_fpi.data;
+% FPI distribution, done below
 
 % EDI flux
 edi_nodes = 1;
@@ -66,7 +66,7 @@ ffilt = 30; % Hz
 c_eval('Etoint? = gseE?par;')
 c_eval('Etoint? = Etoint?.filt(ffilt,0,[],3).tlim(tint_phi);');    
 c_eval('intEdt? = irf_integrate(Etoint?);');    
-minpeakdistance = 30;
+minpeakdistance = 50;
 c_eval('[PKS?,LOCS?,W?] = findpeaks(intEdt?.data,''MinPeakDistance'',minpeakdistance);')
 c_eval('intEdt?_detrend = intEdt?; intEdt?_detrend.data = detrend(intEdt?_detrend.data,''linear'',LOCS?);')
 
@@ -127,8 +127,8 @@ phi_scaling = 1.0; % if we underestimate phi
 % Parameters to vary
 % two populations, f1 and f2
 nPop = 2;
-ntot = 0.035*1e6;
-R_min = 0.50; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
+ntot = 0.04*1e6;
+R_min = 0.60; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
 vec_N1 = ntot*vec_R; 
 vec_N2 = ntot*(1-vec_R);
 T1_min = 200; T1_max = 300; nT1 = 3; vec_T1 = linspace(T1_min,T1_max,nT1);
@@ -137,9 +137,15 @@ T2_min = 4000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
 Vd1_min = -10000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
 Vd2_min = 4000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
-Beta_min = -0.80; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
+Beta_min = -0.60; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
 
-mms_id = 1; % chose spacecraft to compare to
+% chose spacecraft to compare to
+mms_id = 4;
+
+c_eval('ts_f_fpi = ef1D?.tlim(tint_phi);',mms_id)
+v_fpi = mean(ts_f_fpi.depend{1},1);
+f_fpi = ts_f_fpi.data;
+
 c_eval('LOCS = LOCS?; PKS = PKS?;',mms_id)
 c_eval('obs_eh_xvec = obs_t0_epoch_mms?-t0;',mms_id)
 c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
@@ -159,7 +165,6 @@ for iR = 1%:nR
             vd = [vec_Vd1(iVd1) vec_Vd2(iVd2)]; % m/s
             beta = vec_Beta(iBeta); % in principle, this could be varied between the two species
             
-
             % Physical parameters
             vt = sqrt(2*units.e*T./units.me); % m/s
 
@@ -200,7 +205,7 @@ for iR = 1%:nR
               dx = x_vec(2) - x_vec(1);
             end
 
-            [X,V] = meshgrid(x_vec,v_vec);
+            [X,V] = meshgrid(x_vec,v_vec); %X = permute(X,[2 1]); V = permute(V,[2 1]);
             VPH = repmat(torow(vph_vec),nv,1);
             PHI = repmat(torow(phi_vec),nv,1);
                        
@@ -209,7 +214,9 @@ for iR = 1%:nR
             obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
             dn = obs_density_diff; dn = [0; dn];
             
-            if 0 % Abel, Bernstein1957
+            Fmax = get_f_maxwellian(V,n,vt,vd);
+            
+            if 1 % Abel, Bernstein1957
               [Fflat,Fflat_free,Fflat_trap] = get_f_flat(V',n,vt,vd,PHI',VPH');
               nfree = nansum(Fflat_free,2)*dv;
               ntrap_flat = nansum(Fflat_trap,2)*dv;
@@ -244,11 +251,8 @@ for iR = 1%:nR
             Fdv = F*dv;
             FV = F.*V; % (s1/m4)*(m1/s1) = (1/m3)  
             FVdv = FV*dv; % (s1/m4)*(m1/s1)^2 = (1/m2s)
-            %Fdv_trap = F*dv; Fdv_trap(Ftmp_all.ifree) = NaN; % (s1/m4)*(m1/s1)^2 = (1/m2s)
-            %Fdv_free = F*dv; Fdv_free(Ftmp_all.itrap) = NaN; % (s1/m4)*(m1/s1)^2 = (1/m2s)
             Fdv_trap = F*dv; Fdv_trap(ifree) = NaN; % (s1/m4)*(m1/s1)^2 = (1/m2s)
             Fdv_free = F*dv; Fdv_free(itrap) = NaN; % (s1/m4)*(m1/s1)^2 = (1/m2s)
-
             
             % 'integrals'
             sumFdv = nansum(Fdv,1); % n: (s1/m4)*(m1/s1) = (1/m3) 
@@ -280,7 +284,7 @@ for iR = 1%:nR
             %net_di0ff_ephi = diff(net)/units.e
 
             % BGK approach
-            [Ftmp_bgk,Ftmp_bgk_all] = fe_bgk(V,n,vt,vd,PHI,VPH,obs_density_diff,phi_vec); % distribution function, from Schamel 1986
+            %[Ftmp_bgk,Ftmp_bgk_all] = fe_bgk(V,n,vt,vd,PHI,VPH,obs_density_diff,phi_vec); % distribution function, from Schamel 1986
                         
             % model flux
             model_flux_edi_0 = nansum(FVdv(vind_edi_0,:));
@@ -310,7 +314,7 @@ for iR = 1%:nR
               fig.Position = figurePostition;
               clear h;
       
-              nrows = 9;
+              nrows = 8;
               ncols = 2;
               npanels = nrows*1;
               isub = 1;
@@ -333,7 +337,14 @@ for iR = 1%:nR
               if 1 % PHI, plot
                 hca = h(isub); isub = isub + 1;
                 plot(hca,x_vec,phi_vec);  
-                if 1
+                if 1 % plot locations and phi from konrad
+                  hold(hca,'on')
+                  c_eval('plotx = obs_t0_epoch_mms?-tint_phi(1);',mms_id)
+                  c_eval('ploty = obs_phi?.data;',mms_id)
+                  plot(hca,plotx,ploty,'+',plotx,obs_potential_max,'>')
+                  hold(hca,'off')
+                end
+                if 1 % plot locations for detrending
                   hold(hca,'on')
                   plot(hca,x_vec(LOCS),phi_vec(LOCS),'*')
                   hold(hca,'off')
@@ -420,7 +431,7 @@ for iR = 1%:nR
                 end
                 hca.YLabel.String = {'n','(cm^{-3})'};
               end
-              if 1 % sum F (density,free,trap,all)
+              if 0 % sum F (density,free,trap,all)
                 hca = h(isub); isub = isub + 1;                  
                 plot(hca,x_vec([1 end]),ntot*1e-6*[1 1],x_vec,mod_density*1e-6,x_vec,mod_density_free*1e-6,x_vec,mod_density_trap*1e-6,x_vec,net*1e-6); % 1e-6 from 1/m3 > 1/cm3
                 legend(hca,{'n_{mod,\phi=0}','n_{mod}','n_{mod,free}','n_{mod,trap}','n_{mod,\phi=0} - n_{mod,free}+\delta n'},'location','eastoutside');
@@ -445,7 +456,7 @@ for iR = 1%:nR
                 hca.YLabel.String = {'v','(10^3 km/s)'};
                 hcb = colorbar('peer',hca);
                 hcb.YLabel.String = 'f*v (1/m^3)'; 
-                hca.CLim = hca.CLim(2)*[-1 1]; 
+                hca.CLim = hca.CLim(2)*[-1 1]*1.5; 
                 hcb.YLim = hca.CLim;
                 hca.YLim = vlim_f*[-1 1];
                 if 1 % EDI energies
@@ -573,6 +584,16 @@ for iR = 1%:nR
                     hold(hca,'off')
                   end
                 end
+              end
+              if 1 % nt(phi)        
+                %%
+                h = subplot(nrows,2,[2 4 6 8]+8);
+                h.Position = [0.65    0.10    0.3    0.3];
+                isub = 1;                
+                hca = h(isub); isub = isub + 1;
+                plot(hca,phi_vec,dntrap,'.')%,phi_vec,fun_net(phi_vec))  
+                hca.XLabel.String = '\phi (V)';
+                hca.YLabel.String = '\delta n - n_{t,flat} (m^{-3})';                  
               end
               if 0 % flat skymap, to check how normalization is done
                 %h = subplot(nrows,3,[3 6 9 12]);

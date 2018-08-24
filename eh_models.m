@@ -15,24 +15,45 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 % charge separation assuming potential structure is single gaussian
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
+dntrap_all = cell(numel(obs_velocity),1);
+phi_all = cell(numel(obs_velocity),1);
+x_all = cell(numel(obs_velocity),1);
+fun_fit_all = cell(numel(obs_velocity),1);
 
-%for ih = 2:numel(obs_velocity)
-phi_input = 3;
+
+for ih = 10%:numel(obs_velocity)
+phi_input = 2;
 switch phi_input
-  case 1
+  case 1 % Gaussian of choice
     lx = 1300; 
     nx = 207;
     x = linspace(-5*lx,5*lx,nx);
     phimax = 100;
     phi = fun_phi(phimax,x,lx);
     vph = -10000e3;
-  case 2 % single one from observations
+    x_obs = x;
+    phi_obs = phi;
+  case 2 % single one from observations, Gaussian from lx and phimax
+    mms_id = 1;
+    
+    %ih = 10;
     phimax = obs_potential_max(ih);
     lx = obs_lpp(ih)/2*1e3;
-    nx = 200;
+    nx = 10001;
     x = linspace(-5*lx,5*lx,nx);
     vph = obs_velocity(ih)*1e3;
-    phi = fun_phi(phimax,x,lx);
+    phi = fun_phi(phimax,x,lx);    
+    c_eval('tint = obs_t0_epoch_mms?(ih) + 6*lx/abs(vph)*[-1 1];',mms_id)
+    c_eval('phi_obs = irf_integrate(gseE?par.tlim(tint));',mms_id)    
+    t_obs = phi_obs.time-phi_obs.time(1);
+    t_obs = t_obs - mean(t_obs);
+    x_obs = t_obs*vph;
+    phi_obs = phi_obs.data*vph*1e-3;
+    
+    phi = detrend(phi_obs)';
+    phi = phi - min(phi);
+    x = x_obs';
+    nx = numel(x);
   case 3 % all observations
     %load /Users/cecilia/Data/20170706_135303_basic_eh
     tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
@@ -52,6 +73,7 @@ switch phi_input
     nx = numel(x_vec);
     x_vec_diff1 = x_vec(1:end-1)+0.5*dx_vec;
     x_vec_diff2 = x_vec(2:end-1);
+    x = x_vec;
 
     % Remove phi baselevel
     %c_eval('phi_baselevel = interp_linear_piecewise(intEdt?.data,x_vec,x_vec(LOCS?));')
@@ -60,8 +82,30 @@ switch phi_input
     %c_eval('ts_phi_baselevel? = irf.ts_scalar(intEdt?.time,phi_baselevel?);')
     c_eval('ts_phi_baselevel? = ts_locs?.resample(intEdt?);')
     c_eval('intEdt?_detrend = intEdt?-ts_phi_baselevel?;')
-end
 
+    vph = -9000e3; % m/s, representative phase velocity
+    phi_shift = 00; % to keep potential > 0
+    phi_scaling = 1.0; % if we underestimate phi    
+
+    % Potential from observed E
+    mms_id = 1;
+    c_eval('phi_timeline = intEdt?_detrend.time;',mms_id)
+    c_eval('phi?_detrend = intEdt?_detrend*vph*1e-3*phi_scaling;',mms_id)
+    c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;',mms_id)
+    c_eval('phi?_detrend_shift.data(phi?_detrend_shift.data<0) = 0;',mms_id)                
+    c_eval('phi_vec = phi?_detrend_shift.data;',mms_id)
+    phi = phi_vec;
+    
+    c_eval('epar_vec = Etoint?.data;',mms_id)
+    
+    % charge density from observed phi        
+    obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
+    %obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
+    %obs_density = mod_density_average + obs_density_diff; % ni + ne - ni = ne,  assuming ion density is unperturbed  
+    ts_obs_density = irf.ts_scalar(phi_timeline(1:end-1) + 0.5*(phi_timeline(2)-phi_timeline(1)),obs_density);
+            
+end
+%%
 % F0
 n = [0.02 0.02]*1e6; % m-3
 ntot = 0.04*1e6;
@@ -88,6 +132,7 @@ dv = v(2) - v(1);
 
 [X,V] = meshgrid(x,v); X = permute(X,[2 1]); V = permute(V,[2 1]);
 PHI = fun_phi(phimax,X,lx);
+PHI = repmat(phi',1,nv);
 VPH = V*0 + vph;
 E = units.me*(V-vph).^2/2 - units.e*PHI;
 
@@ -106,142 +151,162 @@ Fflat = V*0; Fflat(E<0) = Ftrap_flat(E<0); Fflat(E>0) = Ffree(E>0);
 [F_scha,F_scha_free,F_scha_trap,beta] = get_f_schamel(V,n,vt,vd,PHI,VPH,ntrap);
 %plot(x,ntrap,x,nansum(F_scha_trap,2)*dv,x,nansum(F_abel_trap,2)*dv)
 
-% Plot
-figure(92)
-nrows = 3;
-ncols = 3;
-npanels = nrows*ncols;
-isub = 0;
-for icol = 1:ncols
-  for irow = 1:nrows  
-    isub = isub + 1;         
-    h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+%% Plot
+if 1
+  figure(92)
+  nrows = 3;
+  ncols = 5;
+  npanels = nrows*ncols;
+  isub = 0;
+  for icol = 1:ncols
+    for irow = 1:nrows  
+      isub = isub + 1;         
+      h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+    end
   end
-end
-isub = 1;
+  isub = 1;
 
-vlim = 30000e3;
-if 1 % F flat
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X,V,Fflat)
-  shading(hca,'flat') 
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x';
-  hca.YLabel.String = 'v';
-  hcb.YLabel.String = 'f_{flat} (...)';  
-  hca.YLim = vlim*[-1 1];
-  colormap(hca,cn.cmap('white_blue'))    
-end
-if 1 % F_trap - Fflat
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X,V,F_abel-Fflat)  
-  shading(hca,'flat') 
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x';
-  hca.YLabel.String = 'v';
-  hcb.YLabel.String = 'f_{Abel}-f_{flat} (...)';  
-  colormap(hca,cn.cmap('blue_red'))
-  hca.CLim = max(abs(hca.CLim))*[-1 1];
-  hca.YLim = vlim*[-1 1];
-end
-if 1 % F abel
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X,V,real(F_abel))  
-  shading(hca,'flat') 
-  if 0 % E contours
-    hold(hca,'on')
-    levels_E = linspace(min(E(:)),0,6); 
-    %levels_E = logspace(log(min(E(:))),log(max(E(:))),100);     
-    levels_E = levels_E + min(abs(levels_E));
-    hc = contour(hca,X,V,E,levels_E);
-    hold(hca,'off')
+  vlim = 30000e3;
+  if 1 % phi(x)
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x,phi,x_obs,phi_obs)
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = '\phi (V)';
   end
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x';
-  hca.YLabel.String = 'v';
-  hcb.YLabel.String = 'f_{Abel} (...)';  
-  hca.YLim = vlim*[-1 1];
-  colormap(hca,cn.cmap('white_blue'))    
-end
-if 1 % F schamel
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X,V,F_scha)  
-  shading(hca,'flat') 
-  if 0 % E contours
-    hold(hca,'on')
-    levels_E = linspace(min(E(:)),0,6); 
-    %levels_E = logspace(log(min(E(:))),log(max(E(:))),100);     
-    levels_E = levels_E + min(abs(levels_E));
-    hc = contour(hca,X,V,E,levels_E);
-    hold(hca,'off')
+  if 1 % F flat
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X,V,Fflat)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = 'v';
+    hcb.YLabel.String = 'f_{flat} (...)';  
+    hca.YLim = vlim*[-1 1];
+    colormap(hca,cn.cmap('white_blue'))    
   end
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x';
-  hca.YLabel.String = 'v';
-  hcb.YLabel.String = 'f_{Scham} (...)';
-  hca.YLim = vlim*[-1 1];
-  colormap(hca,cn.cmap('white_blue'))    
+  if 1 % F_trap - Fflat
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X,V,F_abel-Fflat)  
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = 'v';
+    hcb.YLabel.String = 'f_{Abel}-f_{flat} (...)';  
+    colormap(hca,cn.cmap('blue_red'))
+    hca.CLim = max(abs(hca.CLim))*[-1 1];
+    hca.YLim = vlim*[-1 1];
+  end
+  if 1 % F abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X,V,real(F_abel))  
+    shading(hca,'flat') 
+     if 0 % E contours
+      hold(hca,'on')
+      levels_E = linspace(min(E(:)),0,6); 
+      %levels_E = logspace(log(min(E(:))),log(max(E(:))),100);     
+      levels_E = levels_E + min(abs(levels_E));
+      hc = contour(hca,X,V,E,levels_E);
+      hold(hca,'off')
+    end
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = 'v';
+    hcb.YLabel.String = 'f_{Abel} (...)';  
+    hca.YLim = vlim*[-1 1];
+    colormap(hca,cn.cmap('white_blue'))    
+  end
+  if 1 % F schamel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X,V,F_scha)  
+    shading(hca,'flat') 
+    if 0 % E contours
+      hold(hca,'on')
+      levels_E = linspace(min(E(:)),0,6); 
+      %levels_E = logspace(log(min(E(:))),log(max(E(:))),100);     
+      levels_E = levels_E + min(abs(levels_E));
+      hc = contour(hca,X,V,E,levels_E);
+      hold(hca,'off')
+    end
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = 'v';
+    hcb.YLabel.String = 'f_{Scham} (...)';
+    hca.YLim = vlim*[-1 1];
+    colormap(hca,cn.cmap('white_blue'))    
+  end
+  if 1 % F_Abel - F_Scha
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X,V,F_abel-F_scha)  
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = 'v';
+    hcb.YLabel.String = 'f_{Abel}-f_{Scha} (...)';  
+    colormap(hca,cn.cmap('blue_red'))
+    hca.CLim = max(abs(hca.CLim))*[-1 1];
+    hca.YLim = vlim*[-1 1];
+  end
+  if 1 % Trapped densities
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x,ntrap,x,nansum(F_abel_trap,2)*dv,x,nansum(F_scha_trap,2)*dv)
+    hca.YLabel.String = 'n_t';
+    legend(hca,{'n_0-n_f+\delta n','n_{t,Abel}','n_{t,Scha}'},'Box','off')
+    irf_legend(hca,{sprintf('B_{Scha}=%g',beta)},[0.99 0.1],'color',[0 0 0])
+  end
+  if 1 % Total densities
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x,n0+dn,x,nansum(F_abel,2)*dv,x,nansum(F_scha,2)*dv)
+    hca.YLabel.String = 'n';
+    legend(hca,{'n_0+dn','n_{Abel}','n_{Scha}'},'Box','off')
+    irf_legend(hca,{sprintf('B_{Scha}=%g',beta)},[0.99 0.1],'color',[0 0 0])
+  end
+  if 1 % nt(phi)
+    hca = h(isub); isub = isub + 1;
+    [fitreslts,gof,fun_net,fun_net_prime] = createFit(torow(phi),torow(dntrap));
+    plot(hca,phi,dntrap,'.',phi,fun_net(phi))
+    hca.YLabel.String = 'n_t (m^{-3})';  
+    hca.XLabel.String = '\phi (V)';  
+  end
+  if 1 % dnt/dphi)
+    hca = h(isub); isub = isub + 1;
+    [fitreslts,gof,fun_net,fun_net_prime] = createFit(torow(phi),torow(dntrap));
+    plot(hca,phi,fun_net_prime(phi))
+    hca.YLabel.String = 'dn_t/d\phi (m^{-3}/V)';  
+    hca.XLabel.String = '~\phi (V)';
+  end
+  if 1 % F at a few x's
+    hca = h(isub); isub = isub + 1; 
+    colors = mms_colors('matlab');  
+    set(hca,'ColorOrder',colors(1:3,:))
+    indx = fix(nx./[6 4 2]);
+    %set(hca,'LineStyleOrder',{'-','--'})
+  %   plot(hca,v,F_abel(fix(nx/6),:),v,F_abel(fix(nx/4),:),v,F_abel(fix(nx/2),:),...
+  %            v,F_scha(fix(nx/6),:),v,F_scha(fix(nx/4),:),v,F_scha(fix(nx/2),:))
+    set(hca,'ColorOrder',colors(1:3,:))
+    plot(hca,v,F_abel(indx(1),:),v,F_abel(indx(2),:),v,F_abel(indx(3),:))
+    hold(hca,'on'),
+    set(hca,'ColorOrder',colors(1:3,:))
+    plot(hca,v,F_scha(indx(1),:),'--',v,F_scha(indx(2),:),'--',v,F_scha(indx(3),:),'--')
+    hold(hca,'off')
+    %hca.YScale = 'log';
+    hca.YLabel.String = 'F';  
+    hca.XLabel.String = 'v';
+    hca.XLim = vph+vtrap*[-1 1]*1.5;
+    irf_legend(hca,{sprintf('x=%.0f',x(indx(1))),sprintf('x=%.0f',x(indx(2))),sprintf('x=%.0f',x(indx(3)))},[0.1 0.15])
+    irf_legend(hca,{'- Abel','--Scha'},[0.1 0.05],'color',[0 0 0])
+  end
+  %cn.print(sprintf('AbelScha_obs_eh%g__',ih))
 end
-if 1 % F_Abel - F_Scha
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X,V,F_abel-F_scha)  
-  shading(hca,'flat') 
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x';
-  hca.YLabel.String = 'v';
-  hcb.YLabel.String = 'f_{Abel}-f_{Scha} (...)';  
-  colormap(hca,cn.cmap('blue_red'))
-  hca.CLim = max(abs(hca.CLim))*[-1 1];
-  hca.YLim = vlim*[-1 1];
+
+%% Collect for all eh
+[fitreslts,gof,fun_net,fun_net_prime] = createFit(torow(phi),torow(dntrap));
+dntrap_all{ih} = dntrap;
+x_all{ih} = x;
+phi_all{ih} = phi;
+fun_fit_all{ih} = fun_net;
+
 end
-if 1 % Trapped densities
-  hca = h(isub); isub = isub + 1;
-  plot(hca,x,ntrap,x,nansum(F_abel_trap,2)*dv,x,nansum(F_scha_trap,2)*dv)
-  hca.YLabel.String = 'n_t';
-  legend(hca,{'n_0-n_f+\delta n','n_{t,Abel}','n_{t,Scha}'},'Box','off')
-  irf_legend(hca,{sprintf('B_{Scha}=%g',beta)},[0.99 0.1],'color',[0 0 0])
-end
-if 1 % Total densities
-  hca = h(isub); isub = isub + 1;
-  plot(hca,x,n0+dn,x,nansum(F_abel,2)*dv,x,nansum(F_scha,2)*dv)
-  hca.YLabel.String = 'n';
-  legend(hca,{'n_0+dn','n_{Abel}','n_{Scha}'},'Box','off')
-  irf_legend(hca,{sprintf('B_{Scha}=%g',beta)},[0.99 0.1],'color',[0 0 0])
-end
-if 1 % nt(phi)
-  hca = h(isub); isub = isub + 1;
-  [fitreslts,gof,fun_net,fun_net_prime] = createFit(torow(phi),torow(dntrap));
-%     a = fitreslts.a;
-%     b = fitreslts.b; % b = 0.5;
-%     c = fitreslts.c;
-%     d = fitreslts.d;
-  plot(hca,phi,dntrap,'.',phi,fun_net(phi))
-  hca.YLabel.String = 'n_t (m^{-3})';  
-  hca.XLabel.String = '\phi (V)';  
-end
-if 1 % F at a few x's
-  hca = h(isub); isub = isub + 1; 
-  colors = mms_colors('matlab');  
-  set(hca,'ColorOrder',colors(1:3,:))
-  indx = fix(nx./[6 4 2]);
-  %set(hca,'LineStyleOrder',{'-','--'})
-%   plot(hca,v,F_abel(fix(nx/6),:),v,F_abel(fix(nx/4),:),v,F_abel(fix(nx/2),:),...
-%            v,F_scha(fix(nx/6),:),v,F_scha(fix(nx/4),:),v,F_scha(fix(nx/2),:))
-  set(hca,'ColorOrder',colors(1:3,:))
-  plot(hca,v,F_abel(indx(1),:),v,F_abel(indx(2),:),v,F_abel(indx(3),:))
-  hold(hca,'on'),
-  set(hca,'ColorOrder',colors(1:3,:))
-  plot(hca,v,F_scha(indx(1),:),'--',v,F_scha(indx(2),:),'--',v,F_scha(indx(3),:),'--')
-  hold(hca,'off')
-  %hca.YScale = 'log';
-  hca.YLabel.String = 'F';  
-  hca.XLabel.String = 'v';
-  hca.XLim = vph+vtrap*[-1 1]*1.5;
-  irf_legend(hca,{sprintf('x=%.0f',x(indx(1))),sprintf('x=%.0f',x(indx(2))),sprintf('x=%.0f',x(indx(3)))},[0.1 0.15])
-  irf_legend(hca,{'- Abel','--Scha'},[0.1 0.05],'color',[0 0 0])
-end
-cn.print(sprintf('AbelScha_obs_eh%g',ih))
-%end
+
 %% Plot
 figure(91)
 nrows = 8;
@@ -662,5 +727,3 @@ eval(fun_eval_str_deriv)
 % ylabel dntrap
 % grid on
 end
-
-
