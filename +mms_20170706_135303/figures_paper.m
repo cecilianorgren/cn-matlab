@@ -1204,3 +1204,40 @@ hca.CLim = 20*[-1 1];
 
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
 
+%% 4 fred, vph/trapping range, EDI range, average flux from model, and f0 of model
+% average over time, comaprison to FPI, add to right side of figure
+hca = subplot(1,1,1);
+if 1 % reduced f fpi
+  v_scale = 1e-3;
+  hlines = plot(hca,v_vec*v_scale*1e-3,mod_f_average,v_vec*v_scale*1e-3,mod_fmax_average,v_fpi*v_scale,f_fpi,'--');
+  hca.YLabel.String = {'f (s^1/m^4)'};
+  hca.XLabel.String = {'v (10^3 km/s)'};
+  hca.XLim = [-40 40];
+  fpi_utc = ts_f_fpi.time.utc;
+  str_lines = {'<f_{mod}>';'f_{mod,\phi=0}';...
+    sprintf('-- fpi: %s',fpi_utc(1,12:23));...
+    sprintf('-- fpi: %s',fpi_utc(2,12:23));...
+    sprintf('-- fpi: %s',fpi_utc(3,12:23));...
+    sprintf('-- fpi: %s',fpi_utc(4,12:23))};
+  %legend(hlines,str_lines)
+  irf_legend(hca,str_lines,[0.99 0.99])
+  str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+    ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+    ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+    sprintf('beta_{Schamel}=%g',beta);...
+    };
+  set(hca,'ColorOrder',zeros(10,3))
+  irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+end
+if 1 % trapping range
+  hold(hca,'on')
+  hold(hca,'off')
+end
+if 1 % EDI range
+  hold(hca,'on')
+  all_edi_plusminus = [v_edi_minus; v_edi_plus; -v_edi_minus; -v_edi_plus]*[1 1];   
+  plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+  %irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])   
+  hold(hca,'off')
+end
+

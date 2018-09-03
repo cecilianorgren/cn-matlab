@@ -18,21 +18,54 @@ function [fitresult, gof, fun_out, fun_deriv_out] = createFit(phi, dntrap)
 [xData, yData] = prepareCurveData( phi, dntrap );
 
 % Set up fittype and options.
-ft = fittype( 'poly8' );
+fit_type = 'poly4';
+switch fit_type
+  case 'poly8'
+    ft = fittype( 'poly8' );
 
-% Fit model to data.
-[fitresult, gof] = fit( xData, yData, ft );
+    % Fit model to data.
+    [fitresult, gof] = fit( xData, yData, ft );
 
-fun_eval_str = sprintf(...
-  'fun_out = @(x) %g*x.^8 + %g*x.^7 + %g*x.^6 + %g*x.^5 + %g*x.^4 + %g*x.^3 + %g*x.^2 + %g*x + %g;',...
-  fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5,fitresult.p6,fitresult.p7,fitresult.p8,fitresult.p9);
-eval(fun_eval_str)
+    fun_eval_str = sprintf(...
+      'fun_out = @(x) %g*x.^8 + %g*x.^7 + %g*x.^6 + %g*x.^5 + %g*x.^4 + %g*x.^3 + %g*x.^2 + %g*x + %g;',...
+      fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5,fitresult.p6,fitresult.p7,fitresult.p8,fitresult.p9);
+    eval(fun_eval_str)
 
-fun_eval_str_deriv = sprintf(...
-  'fun_deriv_out = @(x) 8*%g*x.^(8-1) + 7*%g*x.^(7-1) + 6*%g*x.^(6-1) + 5*%g*x.^(5-1) + 4*%g*x.^(4-1) + 3*%g*x.^(3-1) + 2*%g*x.^(2-1) + 1*%g*x.^(1-1) + 0*%g;',...
-  fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5,fitresult.p6,fitresult.p7,fitresult.p8,fitresult.p9);
-eval(fun_eval_str_deriv)
+    fun_eval_str_deriv = sprintf(...
+      'fun_deriv_out = @(x) 8*%g*x.^(8-1) + 7*%g*x.^(7-1) + 6*%g*x.^(6-1) + 5*%g*x.^(5-1) + 4*%g*x.^(4-1) + 3*%g*x.^(3-1) + 2*%g*x.^(2-1) + 1*%g*x.^(1-1) + 0*%g;',...
+      fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5,fitresult.p6,fitresult.p7,fitresult.p8,fitresult.p9);
+    eval(fun_eval_str_deriv)
+  case 'poly7'
+    ft = fittype( 'poly7' );
 
+    % Fit model to data.
+    [fitresult, gof] = fit( xData, yData, ft );
+
+    fun_eval_str = sprintf(...
+      'fun_out = @(x) %g*x.^7 + %g*x.^6 + %g*x.^5 + %g*x.^4 + %g*x.^3 + %g*x.^2 + %g*x + %g;',...
+      fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5,fitresult.p6,fitresult.p7,fitresult.p8);
+    eval(fun_eval_str)
+
+    fun_eval_str_deriv = sprintf(...
+      'fun_deriv_out = @(x) 7*%g*x.^(7-1) + 6*%g*x.^(6-1) + 5*%g*x.^(5-1) + 4*%g*x.^(4-1) + 3*%g*x.^(3-1) + 2*%g*x.^(2-1) + 1*%g*x.^(1-1) + 0*%g;',...
+      fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5,fitresult.p6,fitresult.p7,fitresult.p8);
+    eval(fun_eval_str_deriv)
+  case 'poly4'
+    ft = fittype( 'poly4' );
+
+    % Fit model to data.
+    [fitresult, gof] = fit( xData, yData, ft );
+
+    fun_eval_str = sprintf(...
+      'fun_out = @(x) %g*x.^4 + %g*x.^3 + %g*x.^2 + %g*x + %g;',...
+      fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5);
+    eval(fun_eval_str)
+
+    fun_eval_str_deriv = sprintf(...
+      'fun_deriv_out = @(x) 4*%g*x.^(4-1) + 3*%g*x.^(3-1) + 2*%g*x.^(2-1) + 1*%g*x.^(1-1) + 0*%g;',...
+      fitresult.p1,fitresult.p2,fitresult.p3,fitresult.p4,fitresult.p5);
+    eval(fun_eval_str_deriv)
+end
 % Plot fit with data.
 % figure( 'Name', 'untitled fit 1' );
 % h = plot( fitresult, xData, yData );

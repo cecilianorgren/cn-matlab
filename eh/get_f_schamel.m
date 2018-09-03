@@ -37,7 +37,7 @@ while loop_iter < n_iter
       Ftrap = Ftrap + Ftmp_all.trap;
     end
     nt_tmp = nansum(Ftrap,2)*dv;
-    nt_diff_tmp = sum(abs(nt_tmp-nt));
+    nt_diff_tmp = sum(abs(tocolumn(nt_tmp)-tocolumn(nt)));
     if 0 % plot
       hca = subplot(2,1,1);
       imagesc(hca,F')
@@ -46,7 +46,8 @@ while loop_iter < n_iter
       hold(hca,'off')
       hcb = colorbar('peer',hca);
       hca = subplot(2,1,2);
-      plot(hca,1:200,nt,1:200,nt_tmp)
+      plot(hca,1:numel(nt),nt,1:numel(nt),nt_tmp)
+      hca.Title.String = sprintf('beta = %g,  ntdiff = %g',beta_vec(ibeta),nt_diff_tmp);
       1;
     end
     if nt_diff_tmp < nt_diff

@@ -80,17 +80,22 @@ for ix = 1:nx % something wrong with uneven numel(itrap_ngtvE)
   nu = numel(itrap_v);
   phi_tmp = phi(ix);
 
-  fun_int = @(u,V) 0.51*(1/units.e)*(2*units.me)^0.5/pi*fun_net_prime(V/units.e).*(-(units.me*(u-vph).^2/2-units.e*phi_tmp)-V).^-0.5;
+  fun_int = @(u,V) (1/units.e)*(units.me/2)^0.5/pi*fun_net_prime(V/units.e).*(-(units.me*(u-vph).^2/2-units.e*phi_tmp)-V).^-0.5;
   %fun_int = @(u,V) (1/units.e)*(2*units.me)^0.5/pi*fun_net_prime(V/units.e,a,b,c,d).*(-(units.me*u.^2/2-units.e*phi_tmp)-V).^-0.5;    
   for iu_ = 1:nu
     u_tmp = v(itrap_v(iu_));
     nV = 500;    
     Vmax = units.e*phi_tmp-units.me*(u_tmp-vph)^2/2;    
-    Vmin = 0.001*Vmax;
-    V_tmp = linspace(Vmin,Vmax*0.999,nV);
+    Vmin = 0.000*Vmax;
+    V_tmp = linspace(Vmin,Vmax*0.9995,nV);
 
-    INT = fun_int(u_tmp,V_tmp);
-    f_tmp = trapz(V_tmp,INT);
+    if 1 % integral()
+      fun_int_tmp = @(V)fun_int(u_tmp,V);
+      f_tmp = integral(fun_int_tmp,0,Vmax);
+    else % trapz()
+      INT = fun_int(u_tmp,V_tmp);
+      f_tmp = trapz(V_tmp,INT);
+    end
     %f_tmp_cum = cumtrapz(V_tmp,INT);
     %plot(V_tmp,f_tmp_cum)
     %hold(gca,'on')
