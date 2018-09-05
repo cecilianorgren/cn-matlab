@@ -5,7 +5,8 @@ ntot = 0.04*1e6;
 R = 0.7;
 n = [R (1-R)]*ntot;
 T = [150 4000]; % eV
-vd = [-11000e3 4000e3]; % ms-1 
+vd = [-11000e3 4000e3]; % ms-1 oa
+%vd = [-3000e3 4000e3]; % ms-1 
 vt = sqrt(2*units.e*T./units.me); % m/s
 n0 = sum(n);
 ni = n0;
@@ -19,7 +20,7 @@ str_info = {'unperturbed f:';...
 %% Gaussian potential
 lx = 3100; 
 nx = 207;
-phimax = 340;
+phimax = 2000; % 340
 vph = -9000e3;
 
 x_vec = linspace(-7*lx,7*lx,nx);
@@ -131,7 +132,7 @@ if 1 % E(x)
 end
 if 1 % dn(x)
   hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec*1e-3,dn(x_vec)*1e-6,x_vec*1e-3,(nansum(Fabel,2)*dv-n0)*1e-6)
+  plot(hca,x_vec*1e-3,dn(x_vec)*1e-6)
   hca.XLabel.String = 'x (km)';
   hca.YLabel.String = '(\epsilon_0/e)\nabla^2\phi (cm^{-3})';
 end

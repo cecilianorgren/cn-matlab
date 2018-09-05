@@ -35,6 +35,95 @@ fileInfo = regexp(files(imodel).name, ...
 bgdist_p0 = get_variable(tmpDataObj,'mms_des_bgdist_p0_brst');
 bgdist_p1 = get_variable(tmpDataObj,'mms_des_bgdist_p1_brst');
 
+model = {};
+model_ = {};
+% Load all three
+for imodel = 1:numel(files)
+  tmp_file = [files(imodel).folder filesep files(imodel).name];
+  tmp_dataobj = dataobj(file);
+  tmp_fileInfo = regexp(files(imodel).name, ...
+  'mms_fpi_(?<tmMode>(fast|brst))_(?<datalevel>\w*)_(?<detector>\w*)-bgdist_(?<version>\w*.\w*.\w*)_(?<model>\w*-\w*).cdf', 'names');
+  tmp_dist = get_variable(tmpDataObj,'mms_des_bgdist_p0_brst');
+  c_eval('bgDist? = tmp_dist;',imodel)
+  model{imodel} = tmp_fileInfo.model;
+  model_{imodel} = tmp_fileInfo.model; model_{imodel}(model{imodel}=='-') = '_';
+end
+%% Plots to see how the models look, compare the three of them
+figure(81)
+nrows = 4;
+ncols = 4;
+npanels = nrows*ncols;
+isub = 0;
+for icol = 1:ncols 
+  for irow = 1:nrows 
+    isub = isub + 1;         
+    h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  end
+end
+isub = 1;
+  
+
+iDist  = 1;
+% order of depend is delphi, azim, pol, en
+% while order of data seems to be delphi, en, azim, pol
+if 1 % iE vs iAz, for a few iPol, 4x4
+  iDelPhi = 140;
+  clim = [0 3e-25];
+  for iE = 1:ceil(32/npanels):32
+    hca = h(isub); isub = isub + 1;
+    c_eval('plx = bgDist?.DEPEND_1.data;',iDist)
+    c_eval('ply = bgDist?.DEPEND_2.data;',iDist)
+    c_eval('pldata = squeeze(bgDist?.data(iDelPhi,iE,:,:));',iDist)      
+    pcolor(hca,plx,ply,pldata')
+    shading(hca,'flat')
+    hca.XLabel.String = 'Az index';
+    hca.YLabel.String = 'Pol index';
+    hca.Title.String = sprintf('iDelPhi = %g, iE = %g',iDelPhi,iE);      
+    %hca.CLim = clim;
+    hcb = colorbar('peer',hca);
+    hcb.Position(1) = hcb.Position(1) + 2.5*hcb.Position(3);
+  end  
+  %hcb = colorbar('peer',hca);
+  %hcb.Position(1) = hcb.Position(1) + 4*hcb.Position(3);
+end
+if 0 % iE vs iAz, for a few iPol, 4x4
+  iDelPhi = 1;
+  clim = [0 3e-25];
+  for iPol = 1:16    
+    hca = h(isub); isub = isub + 1;
+    c_eval('plx = bgDist?.DEPEND_1.data;',iDist)
+    c_eval('ply = bgDist?.DEPEND_3.data;',iDist)
+    c_eval('pldata = squeeze(bgDist?.data(iDelPhi,:,:,iPol));',iDist)      
+    pcolor(hca,plx,ply,pldata')
+    shading(hca,'flat')
+    hca.XLabel.String = 'Az index';
+    hca.YLabel.String = 'E index';
+    hca.Title.String = sprintf('iDelPhi = %g, iPol = %g',iDelPhi,iPol);      
+    hca.CLim = clim;
+  end  
+  hcb = colorbar('peer',hca);
+  hcb.Position(1) = hcb.Position(1) + 4*hcb.Position(3);
+end
+if 0 % del_phi vs E, for a few iAz and iPol, 4x6
+  clim = [0 3e-25];
+  for iAz = 1:ceil(32/ncols):32
+    for iPol = 1:ceil(16/nrows):16    
+      hca = h(isub); isub = isub + 1;
+      c_eval('plx = bgDist?.DEPEND_0.data;',iDist)
+      c_eval('ply = bgDist?.DEPEND_3.data;',iDist)
+      c_eval('pldata = squeeze(bgDist?.data(:,:,iAz,iPol));',iDist)      
+      pcolor(hca,plx,ply,pldata')
+      shading(hca,'flat')
+      hca.XLabel.String = 'del phi';
+      hca.YLabel.String = 'E index';
+      hca.Title.String = sprintf('iAz = %g, iPol = %g',iAz,iPol);      
+      hca.CLim = clim;
+    end
+  end
+  hcb = colorbar('peer',hca);
+  hcb.Position(1) = hcb.Position(1) + 4*hcb.Position(3);
+end
+
 %% Assign right phase bg dist
 bgdist = bgdist_p0;
 %BGDist_p0 = BGDist;

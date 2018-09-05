@@ -9,10 +9,10 @@ eint = [000 40000];
 vint = [-Inf Inf];
 
 eDist = ePDist1.tlim(tintZoom).elim(eint);
-iDist = iPDist1.tlim(tintZoom).elim(eint);
+%iDist = iPDist1.tlim(tintZoom).elim(eint);
 
 %% electrons
-ve = gseVe1.tlim(eDist.time).resample(eDist);
+%ve = gseVe1.tlim(eDist.time).resample(eDist);
 scpot = scPot1.resample(eDist);
 scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
 lowerelim = scpot*0 + 40;
