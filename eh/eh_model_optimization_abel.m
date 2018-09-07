@@ -124,15 +124,6 @@ option_vph = 'constant';
 % chose spacecraft to compare to
 mms_id = 1;
 
-% Potential from observed E
-c_eval('phi_timeline = intEdt?_detrend.time;',mms_id)
-c_eval('phi?_detrend = intEdt?_detrend*vph*1e-3*phi_scaling;')
-c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;')
-c_eval('phi?_detrend_shift.data(phi?_detrend_shift.data<0) = 0;')
-c_eval('phi_vec = phi?_detrend_shift.data;',mms_id)
-
-c_eval('epar_vec = Etoint?.data;',mms_id)
-c_eval('epar_vec_nofilt = gseE?par.tlim(tint_phi).data;',mms_id)
    
 switch option_vph
   case 'gradual'
@@ -148,6 +139,22 @@ switch option_vph
     vph_vec = smooth(vph_vec,numel(x_vec)/50);
     %plot(x_vec,vph_vec,'.',tmp_time,tmp_data,'*')
 end
+
+% Phase speed and potential zero level shift
+vph = -9000e3; % m/s, representative phase velocity
+phi_shift = 00; % to keep potential > 0
+phi_scaling = 1.0; % if we underestimate phi
+
+% Potential from observed E
+c_eval('phi_timeline = intEdt?_detrend.time;',mms_id)
+c_eval('phi?_detrend = intEdt?_detrend*vph*1e-3*phi_scaling;')
+c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;')
+c_eval('phi?_detrend_shift.data(phi?_detrend_shift.data<0) = 0;')
+c_eval('phi_vec = phi?_detrend_shift.data;',mms_id)
+
+c_eval('epar_vec = Etoint?.data;',mms_id)
+c_eval('epar_vec_nofilt = gseE?par.tlim(tint_phi).data;',mms_id)
+
 
 % adjust phi incase vph is variable (vph is used to get phi: phi = eint*vph)
 phi_vec = phi_vec.*reshape(vph_vec,size(phi_vec))/vph;
@@ -182,7 +189,7 @@ c_eval('LOCS = LOCS?; PKS = PKS?;',mms_id)
 c_eval('obs_eh_xvec = obs_t0_epoch_mms?-t0;',mms_id)
 c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
 c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
-nN = nR*nT1*nT2*nVd1*nVd2*nBeta;
+
 
 if 0 % phi construction, TSeries
   %%
@@ -604,11 +611,6 @@ end
 
 doPrint = 0;
 
-% Phase speed and potential zero level shift
-vph = -9000e3; % m/s, representative phase velocity
-phi_shift = 00; % to keep potential > 0
-phi_scaling = 1.0; % if we underestimate phi
-
 % Parameters to vary
 % two populations, f1 and f2
 nPop = 2;
@@ -623,6 +625,8 @@ Vd1_min = -10000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
 Vd2_min = 4000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
 Beta_min = -0.60; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
+
+nN = nR*nT1*nT2*nVd1*nVd2*nBeta;
 
 for iR = 1%:nR
   for iT1 = 1%:nT1
@@ -640,15 +644,10 @@ for iR = 1%:nR
             % Physical parameters
             vt = sqrt(2*units.e*T./units.me); % m/s
 
-           
-
-
-
             [X,V] = meshgrid(x_vec,v_vec); %X = permute(X,[2 1]); V = permute(V,[2 1]);
             VPH = repmat(torow(vph_vec),nv,1);
             PHI = repmat(torow(phi_vec),nv,1);
-                                   
-            
+                                               
             Fmax = get_f_maxwellian(V,n,vt,vd);
             
             if 1 % Abel, Bernstein1957
@@ -657,6 +656,8 @@ for iR = 1%:nR
               ntrap_flat = nansum(Fflat_trap,2)*dv;
               ntrap = ntot - torow(nfree) + torow(dn);
               dntrap = ntrap - torow(ntrap_flat);
+              dntrap_scaling = 1.1;
+              dntrap = dntrap*dntrap_scaling;
               [Fabel,Fabel_free,Fabel_trap] = get_f_abel(V',n,vt,vd,PHI',VPH',dntrap);
               Fabel = Fabel + Fflat_trap;
               F = Fabel';
@@ -1378,13 +1379,27 @@ for iR = 1%:nR
               end
               if 1 % nt(phi)        
                 %%
-                h = subplot(nrows,2,[2 4 6 8]+8);
-                h.Position = [0.65    0.10    0.3    0.3];
+                h = subplot(10,10,100);
+                h.Position = [0.65    0.35    0.3    0.2];
                 isub = 1;                
                 hca = h(isub); isub = isub + 1;
-                plot(hca,phi_vec,dntrap,'.')%,phi_vec,fun_net(phi_vec))  
+                [fitresult, gof, fun_net, fun_net_prime] = createFit(phi_vec, dntrap);
+                [fitresult, gof, fun_net_noscaling, fun_net_prime_noscaling] = createFit(phi_vec, dntrap/dntrap_scaling);
+                plot(hca,phi_vec,dntrap,'.',phi_vec,fun_net(phi_vec),phi_vec,dntrap/dntrap_scaling,'.',phi_vec,fun_net_noscaling(phi_vec))  
                 hca.XLabel.String = '\phi (V)';
                 hca.YLabel.String = '\delta n - n_{t,flat} (m^{-3})';                  
+                irf_legend(hca,{'data used';'fit with scaling';'data original';'fit no scaling/original'},[0.98 0.98])
+              end
+              if 1 % dnt(phi) function
+                %%
+                h = subplot(10,10,99);
+                h.Position = [0.65    0.10    0.3    0.2];
+                isub = 1;                
+                hca = h(isub); isub = isub + 1;
+                [fitresult, gof, fun_net, fun_net_prime] = createFit(phi_vec, dntrap);
+                plot(hca,phi_vec,fun_net_prime(phi_vec))  
+                hca.XLabel.String = '\phi (V)';
+                hca.YLabel.String = 'd(\delta n - n_{t,flat})/d\phi (m^{-3}V^{-1})';
               end
               if 0 % flat skymap, to check how normalization is done
                 %h = subplot(nrows,3,[3 6 9 12]);
