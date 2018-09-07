@@ -432,7 +432,7 @@ colormap(cn.cmap('blue_white'));
 
 %% Plot, local plasma properties, wave properties from observations combined, larger time + zoomin
 ic = 1;
-npanels = 10;
+npanels = 8;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -529,6 +529,16 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
+if 0 % Vi,Ve x
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vex,Vix');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{gseVi?.x*10,gseVe?.x},''comp'');',ic)  
+  hca.YLabel.String = {'v_x','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'V_i','V_e'},[0.98 0.9],'fontsize',12);
+end
 if 0 % ePSD omni
   isub = isub + 1;
   hca = irf_panel('ePSD');
@@ -548,11 +558,19 @@ if 1 % eDEF omni
   isub = isub + 1;
   hca = irf_panel('eDEF');
   [hout,hcb] = irf_spectrogram(hca,eDist.deflux.omni.specrec,'log');
-  if 1
+  if 1 % scpot
     hold(hca,'on')
-    lineScpot = irf_plot(hca,scpot,'k');
-    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
-    irf_legend(hca,'V_{sc}',[0.01 0.1],'color',0*[1 1 1])
+    lineScpot = irf_plot(hca,scpot,'k-');
+    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.0;
+    irf_legend(hca,'V_{sc}',[0.01 0.3],'color',0*[1 1 1])
+    hold(hca,'off')
+  end
+  if 1 % temperature
+     hold(hca,'on')
+    lineTemp = irf_plot(hca,gseTe1.trace/3,'k-');
+    lineTemp.Color = [0 0 0]; lineTemp.LineWidth = 1.0;
+    
+    irf_legend(hca,'T_{e}',[0.01 0.98],'color',0*[1 1 1])
     hold(hca,'off')
   end
   if 0 % lowerelim
@@ -571,7 +589,6 @@ end
 if 1 % e psd vpar
   isub = isub + 1;
   hca = irf_panel('fred');
-  %irf_plot(hca,ef1D.specrec('velocity_1D'));
   irf_spectrogram(hca,ef1D.specrec('velocity_1D','10^3 km/s'));
   if 0 % electron moment along projection line
     hold(hca,'on')
@@ -581,8 +598,10 @@ if 1 % e psd vpar
   end
   %hca.YLim = ef1D.depend{1}(1,[1 end]);
   hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
-  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.1],'color',1*[1 1 1])
-  %irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+  %irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.1],'color',1*[1 1 1])
+  if unique(ef1D.ancillary.lowerelim) == 1
+    irf_legend(hca,['E_{e} >' num2str(unique(ef1D.ancillary.lowerelim)) 'V_{sc}'],[0.99 0.1],'color',1*[1 1 1])
+  end
 end
 if 0 % fe*v vpar
   isub = isub + 1;
@@ -609,7 +628,7 @@ if 0 % Te par perp, Ti
   set(hca,'ColorOrder',mms_colors('123'))
   irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_i/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);  
 end
-if 1 % Te par perp, no Ti
+if 0 % Te par perp, no Ti
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Te');
@@ -629,7 +648,7 @@ if 0 % E perp
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
-if 1 % ne
+if 0 % ne
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('n');
@@ -642,6 +661,10 @@ end
 isub_long = 1:isub;
 isub_short = (isub+1):npanels;
 
+% common time shifts
+dt = [0.0000  -0.0012  -0.0009  -0.0012];
+dt = dt+0.0008;
+  
 if 0 % E par, 4 sc
   isub = isub + 1;
   zoomy = [zoomy isub];
@@ -658,8 +681,6 @@ if 1 % E par, 4 sc, time shifted for visibility
   zoomy = [zoomy isub];
   hca = irf_panel('E par dt');
   set(hca,'ColorOrder',mms_colors('1234'))
-  dt = [0.0000  -0.0012  -0.0009  -0.0012];
-  dt = dt+0.0008;
   irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp','dt',dt);
   set(hca,'ColorOrder',mms_colors('12341'))
   irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
@@ -676,19 +697,30 @@ if 0 % E par
   c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
   hca.YLabel.String = {'E_{||}','(mV/m)'};  
 end
-if 1 % Phi
+if 0 % Phi
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Phi');
   set(hca,'ColorOrder',mms_colors('1234'))
   hh = irf_plot(hca,{obs_phi1,obs_phi2,obs_phi3,obs_phi4},'comp');
-  c_eval('hh.Children(?).Marker = ''.'';',1:4)
+  %c_eval('hh.Children(?).Marker = ''.'';',1:4)
   hca.YLabel.String = {'\Phi_{||}','(V)'};  
   ylabel(hca,hca.YLabel.String,'interpreter','tex')
   set(hca,'ColorOrder',mms_colors('1234'))
   %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
 end
-if 1 % v phase + trap
+if 1 % Phi, use eh_model_optimization_abel to get phi?
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  hh = irf_plot(hca,{phi1,phi2,phi3,phi4},'comp','dt',dt);  
+  hca.YLabel.String = {'\phi','(V)'};  
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  %set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+end
+if 0 % v phase + trap
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('fred vph vtrap');
@@ -727,6 +759,26 @@ if 1 % v phase + trap
   hline = findobj(hca.Children,'Type','Line');
   c_eval('hline(?).LineWidth = 1.5;',1:numel(hline))
 end
+if 0 % edi flux 0 180 1 sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('edi flux');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{flux0_mms?,flux180_mms?},''comp'',''dt'',dt);',ic)
+  hca.YLabel.String = {'flux 180^o','10^6 s^{-1}m^{-2})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  %irf_legend(hca,{'0^o','180^o'},[0.98 0.9],'fontsize',12);
+end
+if 1 % edi flux 180 4sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('edi flux');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  hca.YLabel.String = {'flux','(10^6 s^{-1}cm^{-2})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'EDI 180^o'},[0.01 0.99],'fontsize',12);
+end
 
 c_eval('h(?).Position(2) = h(?).Position(2)-0.03;',isub_short)
 c_eval('h(?).Position(2) = h(?).Position(2)+0.02;',isub_long)
@@ -734,6 +786,7 @@ c_eval('h(?).Position(2) = h(?).Position(2)+0.02;',isub_long)
 
 irf_zoom(h(isub_long),'x',tint)
 irf_zoom(h(isub_short),'x',tint_zoom)
+irf_zoom(h(isub_short),'x',phi1.time)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 h(isub_long(end)).XLabel.String = [];
@@ -746,9 +799,9 @@ colormap(cn.cmap('blue_white'))
 %colormap(cn.cmap('white_blue'))
 hca = irf_panel('eDEF'); hca.XGrid = 'off'; hca.YGrid = 'off'; hca.CLim = [4 7.5];
 hca = irf_panel('fred'); hca.CLim = [-6.5 -2]; hca.YLim = [-70 70];
-hca = irf_panel('fred vph vtrap'); hcbar.Position(2) = hca.Position(2); hca.YLim = [-35 15]; hca.CLim = [-6.5 -2];
+%hca = irf_panel('fred vph vtrap'); hcbar.Position(2) = hca.Position(2); hca.YLim = [-35 15]; hca.CLim = [-6.5 -2];
 hca = irf_panel('Vi'); hca.YLim = [-799 399];
-hca = irf_panel('n'); hca.YLim = [0 0.199]; hca.YTick = [0 0.05 0.1 0.15];
+%hca = irf_panel('n'); hca.YLim = [0 0.199]; hca.YTick = [0 0.05 0.1 0.15];
 
 
 %% Plot fred, electrons

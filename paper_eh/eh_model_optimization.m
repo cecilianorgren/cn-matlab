@@ -6,10 +6,10 @@ units = irf_units;
 % Load MMS data
 if 0 % load from .mat file
   load /Users/cecilia/Data/20170706_135303_basic_eh
-elseif 0 % load data
+elseif 1 % load data
   ic = 1:4;
   tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-  mms.db_init('loca_file_db','/Volumes/Nexus/data');
+  mms.db_init('loca_file_db','/Volumes/Nexus/data');x
   db_info = datastore('mms_db');   
   c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
   c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);

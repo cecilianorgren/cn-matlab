@@ -54,7 +54,8 @@ end
 Ftrap_flat(itrap) = fsep;
 ntrap_flat = sum(Ftrap_flat,2)*dv;
 
-[fitresult, gof, fun_net, fun_net_prime] = createFit(phi, nt);
+%[fitresult, gof, fun_net, fun_net_prime] = createFit(phi, nt);
+[fitresult, gof, fun_net, fun_net_prime] = createFit(phi(phi>10), nt(phi>10));
 
 if 0 % plot
   figure(22)

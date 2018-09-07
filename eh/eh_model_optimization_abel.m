@@ -30,9 +30,9 @@ elseif 0 % load data
   scpot = scPot1.resample(eDist);
   scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
   lowerelim = scpot/scpot*50;
-  eLine = dmpaB1.resample(eDist).norm;
+  %eLine = dmpaB1.resample(eDist).norm;
   tic; 
-  c_eval('ef1D? = eDist?.reduce(''1D'',dmpaB?.resample(eDist?).norm,''vint'',vint,''scpot'',scPot1.resample(eDist?),''lowerelim'',lowerelim);',1:4)
+  c_eval('ef1D? = eDist?.reduce(''1D'',dmpaB?.resample(eDist?).norm,''vint'',vint,''scpot'',scPot?.resample(eDist?),''lowerelim'',lowerelim);',1:4)
   toc % reduced distribution along B  
 end
 
@@ -124,6 +124,10 @@ option_vph = 'constant';
 % chose spacecraft to compare to
 mms_id = 1;
 
+% Phase speed and potential zero level shift
+vph = -9000e3; % m/s, representative phase velocity
+phi_shift = 00; % to keep potential > 0
+phi_scaling = 1.0; % if we underestimate phi
    
 switch option_vph
   case 'gradual'
@@ -140,10 +144,6 @@ switch option_vph
     %plot(x_vec,vph_vec,'.',tmp_time,tmp_data,'*')
 end
 
-% Phase speed and potential zero level shift
-vph = -9000e3; % m/s, representative phase velocity
-phi_shift = 00; % to keep potential > 0
-phi_scaling = 1.0; % if we underestimate phi
 
 % Potential from observed E
 c_eval('phi_timeline = intEdt?_detrend.time;',mms_id)
@@ -151,6 +151,7 @@ c_eval('phi?_detrend = intEdt?_detrend*vph*1e-3*phi_scaling;')
 c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;')
 c_eval('phi?_detrend_shift.data(phi?_detrend_shift.data<0) = 0;')
 c_eval('phi_vec = phi?_detrend_shift.data;',mms_id)
+c_eval('phi? = phi?_detrend_shift;')
 
 c_eval('epar_vec = Etoint?.data;',mms_id)
 c_eval('epar_vec_nofilt = gseE?par.tlim(tint_phi).data;',mms_id)
@@ -178,7 +179,9 @@ c_eval('ts_dn? = ts_dn?.resample(gseE?par);')
 % charge density from observed phi        
 obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
 obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
-dn = obs_density_diff; dn = [0; dn];
+dn_orig = obs_density_diff; dn_orig = [0; dn_orig];
+dn_scaled = dn_orig.*(1+2*phi_vec/max(phi_vec));
+dn = dn_scaled;
             
 % FPI data
 c_eval('ts_f_fpi = ef1D?.tlim(tint_phi);',mms_id)
@@ -618,10 +621,10 @@ ntot = 0.04*1e6;
 R_min = 0.60; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
 vec_N1 = ntot*vec_R; 
 vec_N2 = ntot*(1-vec_R);
-T1_min = 200; T1_max = 300; nT1 = 3; vec_T1 = linspace(T1_min,T1_max,nT1);
+T1_min = 150; T1_max = 300; nT1 = 3; vec_T1 = linspace(T1_min,T1_max,nT1);
 %T2_min = 50; T2_max = 400; nT2 = 10; vec_T2 = linspace(T2_min,T2_max,nT2);
 T2_min = 4000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
-Vd1_min = -10000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
+Vd1_min = -9000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
 Vd2_min = 4000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
 Beta_min = -0.60; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);
@@ -656,7 +659,7 @@ for iR = 1%:nR
               ntrap_flat = nansum(Fflat_trap,2)*dv;
               ntrap = ntot - torow(nfree) + torow(dn);
               dntrap = ntrap - torow(ntrap_flat);
-              dntrap_scaling = 1.1;
+              dntrap_scaling = 1.0;
               dntrap = dntrap*dntrap_scaling;
               [Fabel,Fabel_free,Fabel_trap] = get_f_abel(V',n,vt,vd,PHI',VPH',dntrap);
               Fabel = Fabel + Fflat_trap;
