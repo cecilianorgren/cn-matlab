@@ -1,81 +1,8 @@
 %% Load data
 ic = 2;
-
-tint = irf.tint('2015-11-12T06:42:04.00Z/2015-11-12T06:43:00.00Z'); %20151112064204
-tint = irf.tint('2016-12-25T16:00:14.00Z',30); %20161225160014, or 20161225160144. Dec 25 2016 - at about 16.00
-% time is redefined to brst whole interval
-tint = irf.tint('2016-11-28T08:25:40.00Z/2016-11-28T08:27:30.00Z');
-tint = irf.tint('2016-11-25T08:03:10.00Z/2016-11-25T08:03:50.00Z');
-tint = irf.tint('2016-12-29T11:12:14.00Z/2016-12-29T11:13:53.00Z'); % mms1_sp_20161229_111214_111353
-tint = irf.tint('2017-01-01T13:59:30.00Z/2017-01-01T14:00:00.00Z');
-tint = irf.tint('2015-12-02T01:14:30.00Z/2015-12-02T01:15:15.00Z');
-tint = irf.tint('2015-10-18T15:11:30.00Z/2015-10-18T15:12:45.00Z'); 
-
-tint = irf.tint('2017-07-06T15:36:43.00Z/2017-07-06T15:41:13.00Z'); % 20170706153643
-tint = irf.tint('2017-07-06T15:39:12.00Z/2017-07-06T15:40:13.00Z'); % 20170706153913
-%tint = irf.tint('2017-07-06T15:41:33.00Z/2017-07-06T15:42:33.00Z'); % 20170706154133
-%tint = irf.tint('2017-07-06T15:44:03.00Z/2017-07-06T15:45:33.00Z'); % 20170706154403
-%tint = irf.tint('2017-07-06T15:46:23.00Z/2017-07-06T15:47:43.00Z'); % 20170706154623
-%tint = irf.tint('2017-07-06T15:48:53.00Z/2017-07-06T15:50:43.00Z'); % 20170706154853
-%tint = irf.tint('2017-07-06T15:51:13.00Z/2017-07-06T15:52:43.00Z'); % 20170706155113
-%tint = irf.tint('2017-07-06T15:53:43.00Z/2017-07-06T15:54:43.00Z'); % 20170706155343
-%tint = irf.tint('2017-07-06T15:56:03.00Z/2017-07-06T15:57:43.00Z'); % 20170706155603
-%
-%
-%tint = irf.tint('2017-07 -11T22:29:23.00Z/2017-07-11T22:31:43.00Z'); % 20170711222923
-%tint = irf.tint('2017-07-11T22:33:23.00Z/2017-07-11T22:34:43.00Z'); % 20170711223323, major X-line moving tailward
-%tint = irf.tint('2017-07-11T22:37:23.00Z/2017-07-11T22:38:43.00Z'); % 20170711223723
-
-%tint = irf.tint('2017-07-09T10:45:13.00Z/2017-07-09T10:46:43.00Z'); % 20170709104513
-%tint = irf.tint('2017-07-09T10:47:03.00Z/2017-07-09T10:48:43.00Z'); % 20170709104703
-%tint = irf.tint('2017-07-09T10:49:03.00Z/2017-07-09T10:51:03.00Z'); % 20170709104903
-
-% 
-tint = irf.tint('2017-06-11T17:24:53.00Z',1); % 20170611172453
-tint = irf.tint('2017-06-11T17:32:53.00Z',1); % 20170611173253
-tint = irf.tint('2017-06-11T17:35:03.00Z',1); % 20170611173503
-tint = irf.tint('2017-06-11T17:37:03.00Z',1); % 20170611173703
-tint = irf.tint('2017-06-11T17:39:13.00Z',1); % 20170611173913
-tint = irf.tint('2017-06-11T17:41:23.00Z',1); % 20170611174123
-%tint = irf.tint('2017-06-11T17:43:23.00Z',1); % 20170611174323
-% tint = irf.tint('2017-06-11T17:52:23.00Z',1); % 20170611175223
-% 
-% tint = irf.tint('2017-06-19T10:41:23.00Z',1); % 20170619104123
-% tint = irf.tint('2017-06-19T10:43:43.00Z',1); % 20170619104343
-% tint = irf.tint('2017-06-19T10:46:13.00Z',1); % 20170619104613
-% tint = irf.tint('2017-06-19T10:48:43.00Z',1); % 20170619104843
-% tint = irf.tint('2017-06-19T10:51:13.00Z',1); % 20170619105113
-% tint = irf.tint('2017-06-19T10:38:53.00Z',1); % 20170619103853 - not done
-% tint = irf.tint('2017-06-19T10:36:23.00Z',1); % 20170619103623 - not done
-
-% tint = irf.tint('2017-07-03T21:52:13.00Z',1); % 20170703215213
-% tint = irf.tint('2017-07-03T21:54:03.00Z',1); % 20170703215403
-% tint = irf.tint('2017-07-03T21:55:13.00Z',1); % 20170703215553
-% tint = irf.tint('2017-07-03T21:57:43.00Z',1); % 20170703215743
-% tint = irf.tint('2017-07-03T21:59:33.00Z',1); % 20170703215933
-% tint = irf.tint('2017-07-03T22:01:23.00Z',1); % 20170703220123
-% tint = irf.tint('2017-07-03T22:03:23.00Z',1); % 20170703220323
-% tint = irf.tint('2017-07-03T22:05:33.00Z',1); % 20170703220533
-
-tint = irf.tint('2015-10-16T13:06:00.00Z',60); % 20170703220533
-% Tail separatrix
-%tint = irf.tint('2017-07-04T06:26:03.00Z',60); % not downloaded yet
-%tint = irf.tint('2017-07-06T06:24:03.00Z',60);
-%tint = irf.tint('2017-07-06T08:16:03.00Z',60);
-%tint = irf.tint('2017-07-06T08:18:13.00Z',60); % not done
-%tint = irf.tint('2017-07-06T13:53:03.00Z',60);
-%tint = irf.tint('2017-07-06T14:04:53.00Z',60);
-%tint = irf.tint('2017-07-06T14:06:53.00Z',60);
-%tint = irf.tint('2017-07-06T14:08:53.00Z',60);
-%tint = irf.tint('2017-07-06T15:28:03.00Z',60);
-%tint = irf.tint('2017-07-06T15:41:33.00Z',60);
-%tint = irf.tint('2017-07-06T15:46:23.00Z',60);
-%tint = irf.tint('2017-07-06T15:51:13.00Z',60);
-%tint = irf.tint('2017-07-06T16:02:13.00Z',60);
-tint = irf.tint('2017-07-06T16:38:12.00Z',60); % not done
-
-% selections from mms database
+% Selections from mms database
 tint = irf.tint('2016-03-07T02:02:24.00Z',60);
+
 % Set datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
@@ -188,8 +115,25 @@ disp('Done.')
 
 %% Prepare data
 c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
+
+% Magnetic field curvature 
+if all(ic==[1:4])
+c_eval('R? = gseR?.resample(gseB1);',1:4)
+c_eval('B? = gseB?.resample(gseB1);',1:4)
+[gseCurvB,avB]=c_4_grad('R?','B?','curvature'); gseCurvB.name = 'curv B'; gseCurvB.coordinateSystem = 'GSE';
+curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
+end
+if all(ic==[1:4])
+gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km'; gseGradPe.name = 'div Pe';
+gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
+gseGradTe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';
+gseGradTi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';
+gseGradNe = c_4_grad('gseR?','ne?','grad');
+gseGradNi = c_4_grad('gseR?','ni?','grad');
+end
+
 %% Plot overview figure with focus on electrons
-npanels = 8;
+npanels = 11;
 cmap = 'jet';
 h = irf_plot(npanels);
 ic = 2;
@@ -274,7 +218,7 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 0 % Ve perp par
+if 1 % Ve perp par
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Ve perp par');
@@ -286,7 +230,7 @@ if 0 % Ve perp par
   irf_legend(hca,{'x_{\perp}','y_{\perp}','z_{\perp}','v_{e,||}'},[0.98 0.9],'fontsize',12);  
   %hca.YLim = [-1100 1100];  
 end
-if 0 % gradPe
+if 1 % gradPe
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('gradPe');

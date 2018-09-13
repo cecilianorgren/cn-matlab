@@ -5,11 +5,11 @@ query = ['select X,Y,Z from MMS1a limit 20'];
 clear query;
 
 %% Load all locations
-query = ['select X,Y,Z from MMS1a'];
-[X,Y,Z] = mysql(query); %SymH assumed equal to DST
+query = ['select X,Y,Z,Bmin from MMS1 where Bmin<10'];
+[X,Y,Z,Bmin] = mysql(query); %SymH assumed equal to DST
 clear query;
-plot3(X,Y,Z,'o')
-axis equal
+scatter3(X,Y,Z,Bmin,Bmin)
+colorbar
 
 %% Plot all Bmin at all locations
 query = ['select EventId,DateStart,X,Y,Z,Bmin from MMS1a'];
@@ -126,10 +126,73 @@ if 1 % scatter Bmin, Bshear
   hca.Title.String = 'B_{2}-B_{1}';   
 end
 
-
-
 %% Get B profile
 query = ['select B_profile from MMS1_profiles'];
 [B_profile] = mysql(query); %SymH assumed equal to DST
 clear query;
 
+%%
+query = ['select MMS1.X,MMS1.Y,MMS1.Z,MMS1.FlagStr from MMS1 where MMS1.FlagStr like(''%msh%'') limit 100'];
+[X,Y,Z,FlagStr] = mysql(query); %SymH assumed equal to DST
+clear query
+%% Load Vimax at Bmin < 10
+%query = ['select X,Y,Z,Vmax_tbrst,Bmin from MMS1 join MMS1_ions where MMS1_ions.Bmin<10'];
+query = ['select MMS1.X,MMS1.Y,MMS1.Z,MMS1_ions.Vmax_tbrst,MMS1.Bmin from MMS1 join MMS1_ions on MMS1_ions.EventID = MMS1.EventId where MMS1_ions.Vmax_tbrst>100 and MMS1.FlagStr like(''mp%'')'];
+[X,Y,Z,Vimax,Bmin] = mysql(query); %SymH assumed equal to DST
+clear query;
+%%
+query = ['select MMS1.X,MMS1.Y,MMS1.Z,MMS1_ions.Vmax_tbrst,MMS1.Bmin from MMS1 join MMS1_ions on MMS1_ions.EventID = MMS1.EventId where MMS1.FlagStr like(''mp%'')'];
+[mpX,mpY,mpZ,mpVimax,mpBmin] = mysql(query); %SymH assumed equal to DST
+clear query
+query = ['select MMS1.X,MMS1.Y,MMS1.Z,MMS1_ions.Vmax_tbrst,MMS1.Bmin from MMS1 join MMS1_ions on MMS1_ions.EventID = MMS1.EventId where MMS1.FlagStr like(''msh%'')'];
+[mshX,mshY,mshZ,mshVimax,mshBmin] = mysql(query); %SymH assumed equal to DST
+clear query
+
+%% find science event in database
+query = ['select MMS1.X,MMS1.Y,MMS1.Z,MMS1_ions.Vmax_tbrst,MMS1.Bmin,MMS1.DateStart from MMS1 join MMS1_ions on MMS1_ions.EventID = MMS1.EventId where MMS1.DateStart like(''%20151016_%'')'];
+[X,Y,Z,Vimax,Bmin] = mysql(query); %SymH assumed equal to DST
+clear query
+
+%% find science event in database
+query = ['select MMS1.X,MMS1.Y,MMS1.Z,MMS1_ions.Vmax_tbrst,MMS1.Bmin,MMS1.DateStart from MMS1 join MMS1_ions on MMS1_ions.EventID = MMS1.EventId where MMS1.DateStart like(''%20151016_%'')'];
+[X,Y,Z,Vimax,Bmin] = mysql(query); %SymH assumed equal to DST
+clear query
+
+
+%% plot
+colors = mms_colors('matlab');
+figure(42)
+nrows = 2;
+ncols = 2;
+npanels = nrows*ncols;
+isub = 0;
+for icol = 1:ncols
+  for irow = 1:nrows  
+    isub = isub + 1;         
+    h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  end
+end
+isub = 1;
+if 0
+  hca = h(isub); isub = isub + 1;
+  scatter(hca,Bmin,Vimax)
+  hca.XLabel.String = 'B_{min}';
+  hca.YLabel.String = 'V_{max}';
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  scatter3(hca,mpX,mpY,mpZ,mpBmin,colors(1,:))
+  hold(hca,'on')
+  scatter3(hca,mshX,mshY,mshZ,mshBmin,colors(2,:))
+  hold(hca,'off')
+  hca.XLabel.String = 'X';
+  hca.YLabel.String = 'Y';
+  hca.ZLabel.String = 'Z';
+end
+if 0
+  hca = h(isub); isub = isub + 1;
+  scatter3(hca,X,Y,Z,Bmin,Vimax)
+  hca.XLabel.String = 'X';
+  hca.YLabel.String = 'Y';
+  hca.ZLabel.String = 'Z';
+end

@@ -53,8 +53,8 @@ str_info = {'unperturbed f:';...
             };
                
 beta_range = [-2.5 0];
-for ih = 1:numel(obs_velocity)
-phi_input = 2;
+for ih = 10%:numel(obs_velocity)
+phi_input = 4;
 switch phi_input
   case 1 % Gaussian of choice
     lx = 1300; 
@@ -158,7 +158,66 @@ switch phi_input
     obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
     %obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
     %obs_density = mod_density_average + obs_density_diff; % ni + ne - ni = ne,  assuming ion density is unperturbed  
-    ts_obs_density = irf.ts_scalar(phi_timeline(1:end-1) + 0.5*(phi_timeline(2)-phi_timeline(1)),obs_density);            
+    ts_obs_density = irf.ts_scalar(phi_timeline(1:end-1) + 0.5*(phi_timeline(2)-phi_timeline(1)),obs_density); 
+  case 4 % single from observations, but taken from the timeseries obtained for all, using time and rescaling vph from konrad
+    %load /Users/cecilia/Data/20170706_135303_basic_eh
+    tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
+    t0 = tint_phi(1);
+    ffilt = 30; % Hz
+    c_eval('Etoint? = gseE?par;')
+    c_eval('Etoint? = Etoint?.filt(ffilt,0,[],3).tlim(tint_phi);');    
+    c_eval('intEdt? = irf_integrate(Etoint?);');    
+    minpeakdistance = 50;
+    c_eval('[PKS?,LOCS?,W?] = findpeaks(intEdt?.data,''MinPeakDistance'',minpeakdistance);')
+    c_eval('intEdt?_detrend = intEdt?; intEdt?_detrend.data = detrend(intEdt?_detrend.data,''linear'',LOCS?);')
+
+    % Remove phi baselevel
+    c_eval('ts_locs? = irf.ts_scalar(intEdt?.time([1; LOCS?; end]),intEdt?.data([1; LOCS?; end]));')
+    c_eval('ts_phi_baselevel? = ts_locs?.resample(intEdt?);')
+    c_eval('intEdt?_detrend = intEdt?-ts_phi_baselevel?;')
+
+    vph_avg = -9000e3; % m/s, representative phase velocity
+    phi_shift = 00; % to keep potential > 0
+    phi_scaling = 1.0; % if we underestimate phi    
+
+    % Potential from observed E
+    mms_id = 1;
+    c_eval('phi_timeline = intEdt?_detrend.time;',mms_id)
+    c_eval('phi?_detrend = intEdt?_detrend*vph_avg*1e-3*phi_scaling;',mms_id)
+    c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;',mms_id)
+    c_eval('phi?_detrend_shift.data(phi?_detrend_shift.data<0) = 0;',mms_id) 
+    
+    % Get shorter time interval
+    phimax = obs_potential_max(ih);
+    lx = obs_lpp(ih)/2*1e3;
+    nx = 10001;
+    
+    vph = obs_velocity(ih)*1e3;        
+    c_eval('tint_phi_one = obs_t0_epoch_mms?(ih) + 5*lx/abs(vph)*[-1 1];',mms_id)
+    t0 = tint_phi_one(1);
+    tcenter = mean(tint_phi_one-tint_phi_one(1));
+    
+    c_eval('phi_vec = phi?_detrend_shift.tlim(tint_phi_one).data*vph/vph_avg;',mms_id)
+    phi = phi_vec;
+    
+    c_eval('epar_vec = Etoint?.tlim(tint_phi_one).data;',mms_id)
+    
+    % Plotting options
+    doT = 1; % otherwise plot x;
+    x_vec = intEdt1.tlim(tint_phi_one).time - t0; % seconds
+    dx_vec = x_vec(2)-x_vec(1);
+    dx = dx_vec; 
+    nx = numel(x_vec);
+    x_vec_diff1 = x_vec(1:end-1)+0.5*dx_vec;
+    x_vec_diff2 = x_vec(2:end-1);
+    x = x_vec;
+    
+    % charge density from observed phi        
+    obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
+    %obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
+    %obs_density = mod_density_average + obs_density_diff; % ni + ne - ni = ne,  assuming ion density is unperturbed  
+    %ts_obs_density = irf.ts_scalar(phi_timeline(1:end-1) + 0.5*(phi_timeline(2)-phi_timeline(1)),obs_density);
+    
 end
 
 % Get electric field and n

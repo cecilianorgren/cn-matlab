@@ -54,8 +54,11 @@ end
 Ftrap_flat(itrap) = fsep;
 ntrap_flat = sum(Ftrap_flat,2)*dv;
 
-%[fitresult, gof, fun_net, fun_net_prime] = createFit(phi, nt);
-[fitresult, gof, fun_net, fun_net_prime] = createFit(phi(phi>10), nt(phi>10));
+[fitresult, gof, fun_net, fun_net_prime] = createFit(phi, nt);
+%[fitresult, gof, fun_net, fun_net_prime] = createFit(phi(phi>10), nt(phi>10));
+phi_fit = phi;
+max_ind = find(phi_fit == max(phi_fit));
+[fitresult, gof, fun_net, fun_net_prime] = createFit(phi(max_ind:end), nt(max_ind:end));
 
 if 0 % plot
   figure(22)
