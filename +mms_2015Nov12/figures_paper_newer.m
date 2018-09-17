@@ -1222,6 +1222,7 @@ h1(1).Title.String = irf_ssub('MMS ?',ic);
 
 h1 = h1(1:3);
 
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
 ipanel = 0;
 pshift = 0; legshift = 0;
 for ii = 1:3
@@ -1830,6 +1831,415 @@ h2(ip).Position(3) = [originalPosition{ip}(3)+00];
 h2(ip).Position([3 4]) = [originalPosition{ip}([3 4])*xyfactor];
 h2(ip).YLabel = []; h2(ip).YTick = [];
 end
+
+%% Figure 5: Crescents MMS3, right side only, 1x3
+
+% Initialize figure
+figure(101)
+nrows = 1;
+ncols = 3;
+npanels = nrows*ncols;
+isub = 0;
+for icol = 1:ncols
+  for irow = 1:nrows  
+    isub = isub + 1;         
+    h2(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  end
+end
+isub = 1;
+    
+cmap = 'jet';
+ic = 3;
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+
+% Plot crescents
+tind_mms1 = [903 905 907 909 911 913];
+tind_mms3 = [900 901 902 907 908 909];
+tind_mms3 = [900 907 901 908 902 909]; % sorted into columns
+legends = {'a)','b)','c)','d)','g)','e)','h)','f)','i)'};
+c_eval('tind = tind_mms?(2:2:end);',ic)
+
+% Plot format input
+vlim = 12*1e3;
+elevlim = 15;
+strCMap = 'jet';
+projclim = [0 5];  
+
+isub = 1;
+for ii=1:nrows*ncols  
+  it = tind(ii);
+  time = times(it);
+  timeUTC = time.utc; 
+  c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
+  c_eval('scpot = scPot?;',ic)
+  c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
+  c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
+
+  % Projection coordinate system
+  c_eval('hatE = dslE?slow.resample(time).data/dslE?slow.resample(time).abs.data;',ic)
+  c_eval('hatB = dmpaB?slow.resample(time).data/dmpaB?slow.resample(time).abs.data;',ic)
+  c_eval('hatExB = cross(hatE,hatB);',ic)
+
+  y = hatE;
+  z = hatB;
+  x = cross(y,z)/norm(cross(y,z)); % ExB
+  y = cross(z,x); % Bx(ExB)
+  perp1 = x;
+  perp2 = y;
+  par = z;
+
+  %x = L;
+  %y = M;
+  %z = N;
+
+  if 1
+    %vectors = {hatExB,'ExB'; hatE,'E';[1 0 0],'x';[0 1 0],'y';[0 0 1],'z'};
+    %vectors = {[1 0 0],'x';[0 1 0],'y';[0 0 1],'z';L,'L';M,'M';N,'N'};
+    vectors = {L,'L';M,'M';N,'N'};
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;perp2;par]; vlabels = {'v_{ExB}','v_E','v_B'};
+    mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels,'vectors',vectors);            
+    hca.Title.String = '';
+    hca.Title.String = timeUTC(12:23);
+    hca.FontWeight = 'normal';
+    hca.FontSize = 12;
+    colormap(hca,strCMap);
+  end
+  
+  if 0
+    hca = h2(isub); isub = isub + 1; 
+    set(hca,'ColorOrder',colors)
+    indPA = [1 7 8 12];
+    c_eval('plot(hca,ePitch?(it).depend{1},squeeze(ePitch?(it).convertto(''s^3/km^6'').data(1,:,indPA)))',ic)
+    hca.YScale = 'log'; hca.XScale = 'log';
+    hca.YLabel.String = 'f_e (s^3/km^6)'; hca.XLabel.String = 'E (eV)';
+    hca.YLim = [1e-1 1e5]; hca.XLim = [1e1 1e3];
+    hca.YTick = [1e-1 1e0 1e1 1e2 1e3 1e4 1e5];
+    %legend(hca,num2str(ePitch3.depend{2}(indPA)'),'location','southwest')
+    hca.Title.String = timeUTC(12:23);
+  end
+  
+end
+ipanel = 0;
+for ii = 1:(nrows*ncols)
+  originalPosition{ii} = h2(ii).Position;  
+  h2(ii).XGrid = 'on';
+  h2(ii).YGrid = 'on';
+  ipanel = ipanel + 1;
+  irf_legend(h2(ipanel),legends{ipanel},[0.06 0.98],'color',[0 0 0],'fontsize',14);  
+end
+
+
+hcf = gcf;
+hCB = findall(hcf,'type','ColorBar'); 
+delete(hCB(2:end)); hCB = hCB(1);
+%hCBx = hCB.Position(1);
+%hCB.Position(1) = hCBx-0.02;
+%xyfactor = 1.2;
+%dy = 0.055;
+%leftdx = 0.1;
+%rightdx = 0.05;
+hCB.Position(1) = hCB.Position(1)+0.01;
+drawnow
+ip = 2;
+h2(ip).Position(1) = h2(ip-1).Position(1) + h2(ip-1).Position(3) + 0.001;
+h2(ip).YLabel = []; h2(ip).YTick = [];
+ip = 3;
+h2(ip).Position(1) = h2(ip-1).Position(1) + h2(ip-1).Position(3) + 0.001;
+h2(ip).YLabel = []; h2(ip).YTick = [];
+
+hCB.Position(1) = h2(ip).Position(1) + h2(ip-1).Position(3) + 0.001;
+hCB.Position(2) = h2(ip).Position(2);
+hCB.Position(4) = h2(ip).Position(4);
+
+%% Figure 5: Crescents MMS3, right side only, 1x3, comparison to drifting Maxwellian
+ic = 3;
+% Make model pdist
+%c_eval('modelPDist = mms.make_model_dist(ePDist?,dmpaB?.resample(ePDist?),scPot?.resample(ePDist?),ne?.resample(ePDist?),gseVe?.resample(ePDist?),gseTe?.resample(ePDist?));',ic)
+
+% Initialize figure
+figure(101)
+nrows = 2;
+ncols = 3;
+npanels = nrows*ncols;
+isub = 0;
+for irow = 1:nrows  
+  for icol = 1:ncols
+    isub = isub + 1;         
+    h2(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  end
+end
+isub = 1;
+    
+cmap = 'jet';
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+
+% Plot crescents
+tind_mms1 = [903 905 907 909 911 913];
+tind_mms3 = [900 901 902 907 908 909];
+tind_mms3 = [900 907 901 908 902 909]; % sorted into columns
+legends = {'a)','b)','c)','d)','g)','e)','h)','f)','i)'};
+c_eval('tind = tind_mms?(2:2:end);',ic)
+
+% Plot format input
+vlim = 12*1e3;
+elevlim = 15;
+strCMap = 'jet';
+projclim = [0 5];  
+
+isub = 1;
+for ii=1:numel(tind)  
+  it = tind(ii);
+  time = times(it);
+  timeUTC = time.utc; 
+  c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
+  c_eval('scpot = scPot?;',ic)
+  c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
+  c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
+
+  % Projection coordinate system
+  c_eval('hatE = dslE?slow.resample(time).data/dslE?slow.resample(time).abs.data;',ic)
+  c_eval('hatB = dmpaB?slow.resample(time).data/dmpaB?slow.resample(time).abs.data;',ic)
+  c_eval('hatExB = cross(hatE,hatB);',ic)
+
+  y = hatE;
+  z = hatB;
+  x = cross(y,z)/norm(cross(y,z)); % ExB
+  y = cross(z,x); % Bx(ExB)
+  perp1 = x;
+  perp2 = y;
+  par = z;
+
+  %x = L;
+  %y = M;
+  %z = N;
+
+  if 1
+    %vectors = {hatExB,'ExB'; hatE,'E';[1 0 0],'x';[0 1 0],'y';[0 0 1],'z'};
+    %vectors = {[1 0 0],'x';[0 1 0],'y';[0 0 1],'z';L,'L';M,'M';N,'N'};
+    vectors = {L,'L';M,'M';N,'N'};
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;perp2;par]; vlabels = {'v_{ExB}','v_{Bx(ExB)}','v_B'};
+    mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels,'vectors',vectors);            
+    hca.Title.String = '';
+    hca.Title.String = timeUTC(12:23);
+    hca.FontWeight = 'normal';
+    hca.FontSize = 12;
+    colormap(hca,strCMap);
+  end
+  
+  if 0
+    hca = h2(isub); isub = isub + 1; 
+    set(hca,'ColorOrder',colors)
+    indPA = [1 7 8 12];
+    c_eval('plot(hca,ePitch?(it).depend{1},squeeze(ePitch?(it).convertto(''s^3/km^6'').data(1,:,indPA)))',ic)
+    hca.YScale = 'log'; hca.XScale = 'log';
+    hca.YLabel.String = 'f_e (s^3/km^6)'; hca.XLabel.String = 'E (eV)';
+    hca.YLim = [1e-1 1e5]; hca.XLim = [1e1 1e3];
+    hca.YTick = [1e-1 1e0 1e1 1e2 1e3 1e4 1e5];
+    %legend(hca,num2str(ePitch3.depend{2}(indPA)'),'location','southwest')
+    hca.Title.String = timeUTC(12:23);
+  end  
+end
+for ii=1:numel(tind)  
+  it = tind(ii);
+  time = times(it);
+  timeUTC = time.utc; 
+  dist = modelPDist.convertto('s^3/km^6');
+  c_eval('scpot = scPot?;',ic)
+  c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
+  c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
+
+  % Projection coordinate system
+  c_eval('hatE = dslE?slow.resample(time).data/dslE?slow.resample(time).abs.data;',ic)
+  c_eval('hatB = dmpaB?slow.resample(time).data/dmpaB?slow.resample(time).abs.data;',ic)
+  c_eval('hatExB = cross(hatE,hatB);',ic)
+
+  y = hatE;
+  z = hatB;
+  x = cross(y,z)/norm(cross(y,z)); % ExB
+  y = cross(z,x); % Bx(ExB)
+  perp1 = x;
+  perp2 = y;
+  par = z;
+
+  %x = L;
+  %y = M;
+  %z = N;
+
+  if 1
+    %vectors = {hatExB,'ExB'; hatE,'E';[1 0 0],'x';[0 1 0],'y';[0 0 1],'z'};
+    %vectors = {[1 0 0],'x';[0 1 0],'y';[0 0 1],'z';L,'L';M,'M';N,'N'};
+    vectors = {L,'L';M,'M';N,'N'};
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;perp2;par]; vlabels = {'v_{ExB}','v_{Bx(ExB)}','v_B'};
+    mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'vlabel',vlabels,'vectors',vectors);            
+    hca.Title.String = '';
+    hca.Title.String = timeUTC(12:23);
+    hca.FontWeight = 'normal';
+    hca.FontSize = 12;
+    colormap(hca,strCMap);
+  end
+  
+  if 0
+    hca = h2(isub); isub = isub + 1; 
+    set(hca,'ColorOrder',colors)
+    indPA = [1 7 8 12];
+    c_eval('plot(hca,ePitch?(it).depend{1},squeeze(ePitch?(it).convertto(''s^3/km^6'').data(1,:,indPA)))',ic)
+    hca.YScale = 'log'; hca.XScale = 'log';
+    hca.YLabel.String = 'f_e (s^3/km^6)'; hca.XLabel.String = 'E (eV)';
+    hca.YLim = [1e-1 1e5]; hca.XLim = [1e1 1e3];
+    hca.YTick = [1e-1 1e0 1e1 1e2 1e3 1e4 1e5];
+    %legend(hca,num2str(ePitch3.depend{2}(indPA)'),'location','southwest')
+    hca.Title.String = timeUTC(12:23);
+  end  
+end
+
+%% Figure 5: Crescents MMS3, right side only, 1x3, comparison vwith and without scPot correction
+ic = 3;
+% Make model pdist
+%c_eval('modelPDist = mms.make_model_dist(ePDist?,dmpaB?.resample(ePDist?),scPot?.resample(ePDist?),ne?.resample(ePDist?),gseVe?.resample(ePDist?),gseTe?.resample(ePDist?));',ic)
+
+% Initialize figure
+figure(101)
+nrows = 1;
+ncols = 2;
+npanels = nrows*ncols;
+isub = 0;
+for irow = 1:nrows  
+  for icol = 1:ncols
+    isub = isub + 1;         
+    h2(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  end
+end
+isub = 1;
+    
+cmap = 'jet';
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)'};
+
+% Plot crescents
+tind_mms1 = [903 905 907 909 911 913];
+tind_mms3 = [900 901 902 907 908 909];
+tind_mms3 = [900 907 901 908 902 909]; % sorted into columns
+legends = {'a)','b)','c)','d)','g)','e)','h)','f)','i)'};
+c_eval('tind = tind_mms?(end);',ic)
+
+% Plot format input
+vlim = 12*1e3;
+elevlim = 15;
+strCMap = 'jet';
+projclim = [0 5];  
+
+isub = 1;
+for ii=1:numel(tind)  
+  it = tind(ii);
+  time = times(it);
+  timeUTC = time.utc; 
+  c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
+  c_eval('scpot = scPot?;',ic)
+  c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
+  c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
+
+  % Projection coordinate system
+  c_eval('hatE = dslE?slow.resample(time).data/dslE?slow.resample(time).abs.data;',ic)
+  c_eval('hatB = dmpaB?slow.resample(time).data/dmpaB?slow.resample(time).abs.data;',ic)
+  c_eval('hatExB = cross(hatE,hatB);',ic)
+
+  y = hatE;
+  z = hatB;
+  x = cross(y,z)/norm(cross(y,z)); % ExB
+  y = cross(z,x); % Bx(ExB)
+  perp1 = x;
+  perp2 = y;
+  par = z;
+
+  %x = L;
+  %y = M;
+  %z = N;
+
+  if 1
+    %vectors = {hatExB,'ExB'; hatE,'E';[1 0 0],'x';[0 1 0],'y';[0 0 1],'z'};
+    %vectors = {[1 0 0],'x';[0 1 0],'y';[0 0 1],'z';L,'L';M,'M';N,'N'};
+    vectors = {L,'L';M,'M';N,'N'};
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;perp2;par]; vlabels = {'v_{ExB}','v_{Bx(ExB)}','v_B'};
+    mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'vlabel',vlabels,'vectors',vectors);            
+    hca.Title.String = '';
+    hca.Title.String = timeUTC(12:23);
+    hca.FontWeight = 'normal';
+    hca.FontSize = 12;
+    colormap(hca,strCMap);
+  end
+  
+  if 0
+    hca = h2(isub); isub = isub + 1; 
+    set(hca,'ColorOrder',colors)
+    indPA = [1 7 8 12];
+    c_eval('plot(hca,ePitch?(it).depend{1},squeeze(ePitch?(it).convertto(''s^3/km^6'').data(1,:,indPA)))',ic)
+    hca.YScale = 'log'; hca.XScale = 'log';
+    hca.YLabel.String = 'f_e (s^3/km^6)'; hca.XLabel.String = 'E (eV)';
+    hca.YLim = [1e-1 1e5]; hca.XLim = [1e1 1e3];
+    hca.YTick = [1e-1 1e0 1e1 1e2 1e3 1e4 1e5];
+    %legend(hca,num2str(ePitch3.depend{2}(indPA)'),'location','southwest')
+    hca.Title.String = timeUTC(12:23);
+  end  
+end
+for ii=1:numel(tind)  
+  it = tind(ii);
+  time = times(it);
+  timeUTC = time.utc; 
+  c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
+  c_eval('scpot = scPot?;',ic)
+  c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
+  c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
+
+  % Projection coordinate system
+  c_eval('hatE = dslE?slow.resample(time).data/dslE?slow.resample(time).abs.data;',ic)
+  c_eval('hatB = dmpaB?slow.resample(time).data/dmpaB?slow.resample(time).abs.data;',ic)
+  c_eval('hatExB = cross(hatE,hatB);',ic)
+
+  y = hatE;
+  z = hatB;
+  x = cross(y,z)/norm(cross(y,z)); % ExB
+  y = cross(z,x); % Bx(ExB)
+  perp1 = x;
+  perp2 = y;
+  par = z;
+
+  %x = L;
+  %y = M;
+  %z = N;
+
+  if 1
+    %vectors = {hatExB,'ExB'; hatE,'E';[1 0 0],'x';[0 1 0],'y';[0 0 1],'z'};
+    %vectors = {[1 0 0],'x';[0 1 0],'y';[0 0 1],'z';L,'L';M,'M';N,'N'};
+    vectors = {L,'L';M,'M';N,'N'};
+    hca = h2(isub); isub = isub + 1; 
+    xyz = [perp1;perp2;par]; vlabels = {'v_{ExB}','v_{Bx(ExB)}','v_B'};
+    mms.plot_projection(hca,dist,'tint',time,'xyz',xyz,'elevationlim',elevlim,'vlim',vlim,'clim',projclim,'scpot',scpot,'vlabel',vlabels,'vectors',vectors);            
+    hca.Title.String = '';
+    hca.Title.String = timeUTC(12:23);
+    hca.FontWeight = 'normal';
+    hca.FontSize = 12;
+    colormap(hca,strCMap);
+  end
+  
+  if 0
+    hca = h2(isub); isub = isub + 1; 
+    set(hca,'ColorOrder',colors)
+    indPA = [1 7 8 12];
+    c_eval('plot(hca,ePitch?(it).depend{1},squeeze(ePitch?(it).convertto(''s^3/km^6'').data(1,:,indPA)))',ic)
+    hca.YScale = 'log'; hca.XScale = 'log';
+    hca.YLabel.String = 'f_e (s^3/km^6)'; hca.XLabel.String = 'E (eV)';
+    hca.YLim = [1e-1 1e5]; hca.XLim = [1e1 1e3];
+    hca.YTick = [1e-1 1e0 1e1 1e2 1e3 1e4 1e5];
+    %legend(hca,num2str(ePitch3.depend{2}(indPA)'),'location','southwest')
+    hca.Title.String = timeUTC(12:23);
+  end  
+end
+
 
 %% Figure 6, TSeries Bmod, Emod 4 electrons, 3 planes E = 0
 close

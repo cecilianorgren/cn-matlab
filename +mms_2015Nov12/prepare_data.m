@@ -35,10 +35,12 @@ c_eval('[dslE?par_new,dslE?perp_new] = irf_dec_parperp(dmpaB?,dslE?_new); dslE?p
 
 %[~,computername]=system('hostname');
 %if strfind(computername,'ift0227887')
-  load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
+ % load(['/Users/cno062/Data/MMS/' dirName '/defatt.mat'])
 %else
 %  load /Users/Cecilia/Data/MMS/2015Nov12/defatt.mat
 %end
+
+load(['/Users/cecilia/GoogleDrive/defatt.mat'])
 
 c_eval('gseE?_new = mms_dsl2gse(dslE?_new,defatt?);',ic)
 c_eval('[gseE?par_new,gseE?perp_new] = irf_dec_parperp(gseB?,gseE?_new); gseE?par_new.name = ''E par''; gseE?perp_new.name = ''E perp'';',ic)

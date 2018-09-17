@@ -1,5 +1,5 @@
 %% Load data
-ic = 2;
+ic = [1 3 4];
 % Selections from mms database
 tint = irf.tint('2016-03-07T02:02:24.00Z',60);
 
@@ -114,6 +114,7 @@ c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E
 disp('Done.')
 
 %% Prepare data
+ic = 1:4;
 c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
 
 % Magnetic field curvature 
@@ -131,6 +132,7 @@ gseGradTi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gse
 gseGradNe = c_4_grad('gseR?','ne?','grad');
 gseGradNi = c_4_grad('gseR?','ni?','grad');
 end
+disp('Done.')
 
 %% Plot overview figure with focus on electrons
 npanels = 11;

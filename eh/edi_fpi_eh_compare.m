@@ -1,5 +1,10 @@
 %load /Users/cecilia/Data/20170706_135303_basic_eh
 units = irf_units;
+
+E_fpi = 484;
+v_fpi_484 = sqrt(2*units.e*E_fpi/units.me); % m/s
+
+
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
@@ -14,7 +19,7 @@ dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
 
-% Figur
+%% Figure
 nrows = 2;
 ncols = 3;
 npanels = ncols*nrows;
@@ -23,8 +28,6 @@ for ipanel = 1:npanels
 end
 isub = 1;
 
-Efpi = 480;
-v_fpi_480 = sqrt(2*units.e*Efpi/units.me); % m/s
 f_flux_scale = 1e-4; % from s-1 m-2 > s-1 cm-2
 
 for mms_id = 1:2 %mms_id = 1;
@@ -138,20 +141,74 @@ it = 0;
 if 0 % Flat skymap at energu Efpi (= 480)
   hca = h(isub); isub = isub + 1;
   it = it + 1;
-  [ax,hcb] = mms.plot_skymap(hca,epdist(it),'energy',Efpi,'flat','tint',epdist1.time(it));
+  [ax,hcb] = mms.plot_skymap(hca,epdist(it),'energy',E_fpi,'flat','tint',epdist1.time(it));
 end
 if 0 % Flat skymap at energu Efpi (= 480)
   hca = h(isub); isub = isub + 1;
   it = it + 1;
-  [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',Efpi,'flat','tint',epdist1.time(it));
+  [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',E_fpi,'flat','tint',epdist1.time(it));
 end
 if 0 % Flat skymap at energu Efpi (= 480)
   hca = h(isub); isub = isub + 1;
   it = it + 1;
-  [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',Efpi,'flat','tint',epdist1.time(it));
+  [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',E_fpi,'flat','tint',epdist1.time(it));
 end
 if 0 % Flat skymap at energu Efpi (= 480)
   hca = h(isub); isub = isub + 1;
   it = it + 1;
-  [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',Efpi,'flat','tint',epdist1.time(it));
+  [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',E_fpi,'flat','tint',epdist1.time(it));
+end
+
+
+%% Plot with the steradian thing checked out
+mms_id = 1;
+nrows = 3;
+ncols = 3;
+npanels = ncols*nrows;
+for ipanel = 1:npanels
+  h(ipanel) = subplot(nrows,ncols,ipanel);
+end
+isub = 1;
+
+c_eval('ePDist = ePDist?.tlim(tint_phi);',mms_id)
+c_eval('dmpaB = dmpaB?.resample(ePDist);',mms_id)
+c_eval('scPot = scPot?.resample(ePDist);',mms_id)
+ePitch = ePDist.pitchangles(dmpaB,16);
+ePitch8 = ePDist.pitchangles(dmpaB,8);
+
+for it  = 1 % four times during tint_phi
+  if 1 % Flat skymap at energu E_fpi
+    hca = h(isub); isub = isub + 1;
+    [ax,hcb] = mms.plot_skymap(hca,ePDist(it),'energy',E_fpi,'flat','tint',ePDist.time(it),'vectors',{dmpaB.norm.data,'B'});    
+  end
+  if 1
+    hca = h(isub); isub = isub + 1;
+    [ax,plot0_data] = ePitch(it).plot_pad_polar(hca,'scpot',scPot(it)); 
+    hca.Title.String = 'Corrected for scPot';   
+  end
+  if 1 %
+    hca = h(isub); isub = isub + 1;
+    ax = ePitch(it).plot_pad_polar(hca);
+    hca.Title.String = 'Not corrected for scPot';
+  end
+  if 1 % pitchangle psd
+    hca = h(isub); isub = isub + 1;
+    ax = loglog(hca,ePitch(1).depend{1},squeeze(ePitch(1).data(1,:,[1 end]))');
+  end
+  if 1 % pitchangle flux
+    hca = h(isub); isub = isub + 1;
+    ax = loglog(hca,ePitch(1).depend{1},squeeze(ePitch(1).pa_flux.data(1,:,[1 end]))');    
+  end
+  if 1 % pitchangle flux per steradian
+    hca = h(isub); isub = isub + 1;
+    ax = loglog(hca,ePitch(1).depend{1},squeeze(ePitch(1).pa_flux('sr').data(1,:,[1 end]))');    
+  end
+  if 1 % pitchangle flux
+    hca = h(isub); isub = isub + 1;
+    ax = loglog(hca,ePitch8(1).depend{1},squeeze(ePitch8(1).pa_flux.data(1,:,[1 end]))');    
+  end
+  if 1 % pitchangle flux per steradian
+    hca = h(isub); isub = isub + 1;
+    ax = loglog(hca,ePitch8(1).depend{1},squeeze(ePitch8(1).pa_flux('sr').data(1,:,[1 end]))');    
+  end
 end
