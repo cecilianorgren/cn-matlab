@@ -592,7 +592,7 @@ pitchangles_edges8 = [0 15:30:165 180];
 thetas = 5:5:35;
 
 
-if 1 % dont use scpot to correct for stuff  
+if 0 % dont use scpot to correct for stuff  
   eFlux = ePDist.vd3v('sr');
   eFluxPitch = eFlux.pitchangles(dmpaB,pitchangles_edges,'meanorsum','sum_weighted');
   c_eval('eFluxPitch_0_? = ePDist.vd3v(''sr'').pitchangles(dmpaB,[180-? 180],''meanorsum'',''sum_weighted'');',thetas)  
@@ -606,8 +606,6 @@ if 1 % dont use scpot to correct for stuff
   c_eval('scPot = scPot?.resample(ePDist?);',mms_id)
   lowerelim = irf.ts_scalar(ePDist.time,repmat(00,1,ePDist.length));
   ePDist1D = ePDist.elim(eint).reduce('1D',dmpaB.resample(ePDist).norm,'vint',vint);
-  c_eval('ePDist1D_0_? = ePDist.elim(eint).reduce(''1D'',dmpaB.resample(ePDist).norm,''vint'',v_edi*sind(?)*[-1 1]*1e-3);',thetas)
-  
   eFlux1D = ePDist1D.red_flux;
   c_eval('eFlux1D_0_? = ePDist1D_0_?.red_flux;',thetas);
 else
@@ -625,26 +623,20 @@ else
   lowerelim = irf.ts_scalar(ePDist.time,repmat(00,1,ePDist.length));
   ePDist1D      = ePDist.elim(eint).reduce('1D',dmpaB.resample(ePDist).norm,'vint',vint                      ,'scpot',scPot.resample(ePDist),'lowerelim',lowerelim);
   c_eval('ePDist1D_0_? = ePDist.elim(eint).reduce(''1D'',dmpaB.resample(ePDist).norm,''vint'',v_edi*sind(?)*[-1 1]*1e-3,''scpot'',scPot.resample(ePDist),''lowerelim'',lowerelim);',thetas)
-  
+
   eFlux1D = ePDist1D.red_flux;
   c_eval('eFlux1D_0_? = ePDist1D_0_?.red_flux;',thetas);
 end
 
 % This is not how it should be
 % 
-eFlux1D_allthetas_data = nan(eFlux1D.length,size(eFlux1D.depend{1},2),numel(thetas));
-for ith = 1:numel(thetas)
-  c_eval('eFlux1D_allthetas_data(:,:,ith) = eFlux1D_0_?.data;',thetas(ith))
-end
-v_edi_ind = find(abs(eFlux1D_allthetas.userData.depend{1}(1,:)--v_edi*1e-3)==min(abs(eFlux1D_allthetas.userData.depend{1}(1,:)--v_edi*1e-3)));
-eFlux1D_allthetas = irf.ts_scalar(eFlux1D.time,eFlux1D_allthetas_data);
-eFlux1D_allthetas.userData.depend{1} = eFlux1D.depend{1};
-eFlux1D_allthetas.userData.depend{2} = thetas;
-eFlux1D_allthetas.units = eFlux1D.units;
-
-eFlux1D_allthetas_vedi = irf.ts_scalar(eFlux1D_allthetas.time,squeeze(eFlux1D_allthetas.data(:,v_edi_ind,:)));
-eFlux1D_allthetas_vedi.userData.depend = {eFlux1D_allthetas.userData.depend{2}};
-eFlux1D_allthetas_vedi.units = eFlux1D.units;
+% ePDist1D_allthetas_data = nan(ePDist1D.length,size(ePDist1D.depend{1},2),numel(thetas));
+% for ith = 1:numel(thetas)
+%   c_eval('ePDist1D_allthetas_data(:,:,ith) = ePDist1D_0_?.data;',thetas(ith))
+% end
+% ePDist1D_allthetas = irf.ts_scalar(ePDist1D.time,ePDist1D_allthetas_data);
+% ePDist1D_allthetas.userData.depend{1} = ePDist1D.depend{1};
+% ePDist1D_allthetas.userData.depend{2} = thetas;
   
 
 it  = 1; % four times during tint_phi

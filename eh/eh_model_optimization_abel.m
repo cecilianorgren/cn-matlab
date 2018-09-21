@@ -6,10 +6,11 @@ units = irf_units;
 % Load MMS data
 if 0 % load from .mat file
   load /Users/cecilia/Data/20170706_135303_basic_eh
-elseif 0 % load data
+elseif 1 % load data
+  %%
   ic = 1:4;
   tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-  mms.db_init('loca_file_db','/Volumes/Nexus/data');
+  mms.db_init('local_file_db','/Volumes/Nexus/data');
   db_info = datastore('mms_db');   
   c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
   c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
@@ -25,14 +26,14 @@ elseif 0 % load data
   strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
   eint = [000 40000];
   vint = [-Inf Inf];
-  
+  %%
   c_eval('eDist? = ePDist?.tlim(tintZoom).elim(eint);')
-  scpot = scPot1.resample(eDist);
+  c_eval('scpot = scPot?.resample(eDist?);')
   scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
-  lowerelim = scpot/scpot*50;
+  c_eval('lowerelim? = irf.ts_scalar(eDist?.time,50);')
   %eLine = dmpaB1.resample(eDist).norm;
   tic; 
-  c_eval('ef1D? = eDist?.reduce(''1D'',dmpaB?.resample(eDist?).norm,''vint'',vint,''scpot'',scPot?.resample(eDist?),''lowerelim'',lowerelim);',1:4)
+  c_eval('ef1D? = eDist?.reduce(''1D'',dmpaB?.resample(eDist?).norm,''vint'',vint,''scpot'',scPot?.resample(eDist?),''lowerelim'',lowerelim?);',1:4)
   toc % reduced distribution along B  
 end
 
