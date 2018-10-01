@@ -2453,6 +2453,8 @@ if 0 % Curvature of magnetic field, obs+mod
 end
 if 1 % EL, EM, EN, no absolute value
   hca = h(isub); isub = isub + 1;
+  zObs = (obsE.time.epochUnix-mean(obsE.time.epochUnix))*CS_normal_velocity;  
+  
   % Colors
   B_colors = mms_colors('xyz1');
   
@@ -2747,15 +2749,14 @@ c_eval([...
 'obsB = mvaB?.tlim(tintObs);'...
 'modB = modB.tlim(tintObs);'...
 'obsE = mvaE?.tlim(tintObs); obsE = obsE.resample(obsB);'...
-'obsPDist = ePDist?.tlim(tintObs);'...
-'obsPDistMap = tsFmap.tlim(tintObs);'...
+'obsPDist = ePDist?.tlim(tintObs);'...%'obsPDistMap = tsFmap.tlim(tintObs);'...
 'obsPitch = ePitch?.tlim(tintObs);'...
 ],ic)
 zObsB = (obsB.time.epochUnix-mean(obsB.time.epochUnix))*CS_normal_velocity;
 zModB = (modB.time.epochUnix-mean(modB.time.epochUnix))*CS_normal_velocity;
 zObsE = (obsE.time.epochUnix-mean(obsE.time.epochUnix))*CS_normal_velocity;
-zObsPDist = (obsPDist.time.epochUnix-mean(obsPDist.time.epochUnix))*CS_normal_velocity;
-zObsPDistMap = (obsPDistMap.time.epochUnix-mean(obsPDistMap.time.epochUnix))*CS_normal_velocity;
+%zObsPDist = (obsPDist.time.epochUnix-mean(obsPDist.time.epochUnix))*CS_normal_velocity;
+%zObsPDistMap = (obsPDistMap.time.epochUnix-mean(obsPDistMap.time.epochUnix))*CS_normal_velocity;
 
 fig = figure(106);
 fig.Position = [100   100   475   542];
@@ -3557,7 +3558,9 @@ h = irf_plot(npanels);
 ic = 1;
 pshift = 0;
 scrsz = get(groot,'ScreenSize');
-figurePostition = scrsz; figurePostition(3)=figurePostition(3)*0.3; figurePostition(4)=figurePostition(4)*0.7;
+figurePostition = scrsz; 
+figurePostition(3)=figurePostition(3)*0.4; 
+figurePostition(4)=figurePostition(4)*1;
 hcf = gcf; hcf.Position = figurePostition;
 
 cmap = 'jet';
@@ -3614,14 +3617,6 @@ if 1 % E
   irf_zoom(hca,'y')
 end
 
-if 1 % E + Ve x B  N
-  hca = irf_panel('EVexB e N');
-  set(hca,'ColorOrder',mms_colors('1234b'))
-  irf_plot(hca,{mvaEVexB1.z,mvaEVexB2.z,mvaEVexB3.z,mvaEVexB4.z},'comp');
-  hca.YLabel.String = {'(E + v_exB)_N','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('1234b'))
-  irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.95],'fontsize',14);
-end
 if 1 % gradPe
   hca = irf_panel('gradPe');
   set(hca,'ColorOrder',mms_colors('xyz'))
@@ -3631,12 +3626,28 @@ if 1 % gradPe
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);  
   %irf_legend(hca,{'4 spacecraft'},[0.05 0.9],'fontsize',12,'color','k');
 end
+if 1 % EOM e z
+  hca = irf_panel('EOM e N 2');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaAvEVexB.z,-1*mvaOhmGradPe.z},'comp');
+  hca.YLabel.String = {'E_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'<E>_{4sc}+<v_e\times B>_{4sc}','-\nabla P_e/ne'},[0.98 0.2],'fontsize',12);
+end
+if 1 % E + Ve x B  N
+  hca = irf_panel('EVexB e N');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaEVexB1.z,mvaEVexB2.z,mvaEVexB3.z,mvaEVexB4.z},'comp');
+  hca.YLabel.String = {'(E + v_exB)_N','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.2],'fontsize',12);
+end
 if 1 % epsilon e, N
   hca = irf_panel('eps n T P, N');
   set(hca,'ColorOrder',mms_colors('xyz'))
   irf_plot(hca,{mvaEpsNe.z,mvaEpsTe.z,mvaEpsPe.z},'comp');
   hca.YLabel.String = {'\epsilon_N','(1/km)'};
-  irf_legend(hca,{'\nabla n_e/n_e','\nabla T_e/T_e','\nabla P_e/P_e'},[0.98 0.9],'fontsize',14);
+  irf_legend(hca,{'\nabla n_e/n_e','\nabla T_e/T_e','\nabla P_e/P_e'},[0.98 0.9],'fontsize',12);
 end
 if 0 % V ExB
   hca = irf_panel('VExB');
@@ -3655,14 +3666,6 @@ if 0 % EOM e z
   hca.YLabel.String = {'E_N','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('1234b'))
   irf_legend(hca,{'<E>_{4sc}','-<v_e\times B>_{4sc}','\nabla P_e/ne'},[0.98 0.9],'fontsize',14);
-end
-if 1 % EOM e z
-  hca = irf_panel('EOM e N 2');
-  set(hca,'ColorOrder',mms_colors('1234b'))
-  irf_plot(hca,{mvaAvEVexB.z,-1*mvaOhmGradPe.z},'comp');
-  hca.YLabel.String = {'E_N','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('1234b'))
-  irf_legend(hca,{'<E>_{4sc}+<v_e\times B>_{4sc}','-\nabla P_e/ne'},[0.98 0.9],'fontsize',14);
 end
 if 0 % Ohm's law x
   hca = irf_panel('Ohm L');

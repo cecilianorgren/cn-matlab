@@ -54,7 +54,7 @@ str_info = {'unperturbed f:';...
                
 beta_range = [-2.5 0];
 for ih = 10%:numel(obs_velocity)
-phi_input = 4;
+phi_input = 3;
 switch phi_input
   case 1 % Gaussian of choice
     lx = 1300; 
@@ -211,6 +211,7 @@ switch phi_input
     x_vec_diff1 = x_vec(1:end-1)+0.5*dx_vec;
     x_vec_diff2 = x_vec(2:end-1);
     x = x_vec;
+    x_obs = x_vec;
     
     % charge density from observed phi        
     obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
@@ -228,6 +229,7 @@ Efield_obs = -diff(phi_obs)/dx_obs;
 c_eval('Efield_obs = gseE?par.tlim(tint).data;',mms_id)
 dn_obs = diff(phi_obs,2)/dx_obs/dx_obs*units.eps0/units.e;
 dn_obs = [dn_obs(1); tocolumn(dn_obs); dn_obs(end)]; % assume phi -> at edges
+%dn_obs = dn_obs.*phi_obs'/max(phi_obs)*2;
 
 dx_mod = x_mod(2) - x_mod(1);
 x_mod_diff1 = x_mod(1:end-1) + 0.5*dx_mod;
@@ -438,7 +440,7 @@ if 0 % plot 1
   end
   %cn.print(sprintf('AbelScha_obs_eh%g_mms%g',ih,mms_id))
 end
-if 1 % plot 2
+if 0 % plot 2
   figure(93)
   nrows = 3;
   ncols = 4;
@@ -765,7 +767,213 @@ if 1 % plot 2
     irf_legend(hca,{'- Abel','--Scha'},[0.1 0.05],'color',[0 0 0])
     hca.Title.String = 'based on \phi_{obs}';
   end
-  cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
+  %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
+end
+if 1 % plot 3
+  figure(93)
+  nrows = 2;
+  ncols = 3;
+  npanels = nrows*ncols;
+  isub = 0;
+  for icol = 1:ncols
+    for irow = 1:nrows  
+      isub = isub + 1;         
+      h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+    end
+  end
+  isub = 1;
+
+  all_hcb = {};
+  ihcb = 1;
+  vlim = 30000e3;
+  shiftcb = 0.01;
+  xlim = [-15 15];
+  if 1 % phi(x)
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x_obs*1e-3,phi_obs)
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = '\phi (V)';
+    %legend(hca,{'obs','mod, Gaussian','obs no detrend'},'Box','off')
+    %irf_legend(hca,{'obs';{'mod:','Gaussian'};{'obs:','no detrend'}},[0.02,0.98])
+    %hca.Title.String = sprintf('tint_{obs} = %s - %s',tint_utc(1,:),tint_utc(2,:));
+    irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',vph*1e-3)},[0.99,0.99],'Color',[0 0 0])
+    hca.XLim = xlim;
+  end
+  if 1 % E
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e)
+    %contourf(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'U/e (eV)';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    hca.CLim = max(abs(E_obs(:)/units.e))*[-1 1];
+    hca.CLim = 0.5e3*[-1 1];
+    colormap(hca,cn.cmap('blue_red'))
+     if 1 % E contours
+      hold(hca,'on')
+      %levels_E = [linspace(min(E_obs(:)),0,6) linspace(0,max(E_obs(:)),50)]; 
+      levels_E = linspace(min(E_obs(:)),0,5); 
+      levels_E = [levels_E 0:levels_E(2)-levels_E(1):max(E_obs(:))];                   
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,levels_E/units.e,'k');
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,0,'k','LineWidth',2);
+      hold(hca,'off')
+    end
+    hcb.YLim = [min(E_obs(:)) hca.CLim(2)*units.e]/units.e;
+    hca.XLim = xlim;
+    hcb.Position(1) = hcb.Position(1)+shiftcb;
+    %hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
+  end
+  if 1 % Ff obs, Abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fabel_free_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'f_e (s^1m^{-4})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    colormap(hca,cn.cmap('white_blue'));
+    hcb.Position(1) = hcb.Position(1)+shiftcb;
+    hcb.Position(1) = hcb.Position(1)-shiftcb;
+    %hca.Title.String = 'Abel obs';    
+    hca.XLim = xlim;
+  end
+  if 0 % F obs, Abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fabel_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'f_e (s^1m^{-4})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    colormap(hca,cn.cmap('white_blue'));
+    hcb.Position(1) = hcb.Position(1)+shiftcb;
+    hcb.Position(1) = hcb.Position(1)-shiftcb;
+    %hca.Title.String = 'Abel obs';    
+    hca.XLim = xlim;
+  end  
+  if 1 % free,, and total densities
+    hca = h(isub); isub = isub + 1;
+    hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6...
+                      );
+    %hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n (cm^{-3})';
+    %hca.Title.String = 'n_t = n_0-n_f+(\epsilon_0/e)\nabla^2\phi';
+    irf_legend(hca,{'n_{0}+(\epsilon_0/e)\nabla^2\phi';'n_{f}';''},...
+                    [0.02 0.3])
+%                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
+    %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
+    hca.YLim = [0 0.042];
+    hca.XLim = xlim;
+  end
+  if 0 % free, trapped, and total densities
+    hca = h(isub); isub = isub + 1;
+    hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6...
+                      );
+    %hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n (cm^{-3})';
+    hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
+    irf_legend(hca,{'n_{0}+(\epsilon_0/e)\nabla^2\phi';'n_{f}';'n_{t}'},...
+                    [0.02 0.3])    
+%                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
+    %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
+    hca.YLim = [0 0.042];
+    hca.XLim = xlim;
+  end
+  if 1 % FV obs, Abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,FVabel_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'flux/\Delta v (m^{-3})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    hca.CLim = max(abs(FVabel_obs(:)))*[-1 1];    
+    colormap(hca,cn.cmap('blue_red'))  
+    if 1 % EDI energies
+      hold(hca,'on')
+      hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+      hlines = plot(hca,...
+        x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+        'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+      irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
+      hold(hca,'off')
+    end
+    hca.XLim = xlim;
+    hcb.Position(1) = hcb.Position(1)+shiftcb;
+    hcb.Position(1) = hcb.Position(1)-shiftcb;
+  end
+  if 1 % plotyy 10^6 cm^{-2}s^{-1}, 10^6 cm^{-2}s^{-1}sr{-1}, comparing model flux with flux measured by EDI, at 0 and 180
+    hca = h(isub); isub = isub + 1;    
+    nodes = 1;
+    units_scale = 1e-4; % m^-2 > cm^-2 
+    units_scale_2 = 1e6;
+    plot_EDI_0 = mean(flux0.data(:,nodes),2)/units_scale_2;
+    plot_abel_0 = abs(FVdv_abel_obs_edi_0)*units_scale/units_scale_2;
+    plot_abel_mod_0 = abs(FVdv_abel_mod_edi_0)*units_scale/units_scale_2;
+    plot_scha_0 = abs(FVdv_scha_obs_edi_0)*units_scale/units_scale_2;    
+    plot_EDI_180 = mean(flux180.data(:,nodes),2)/units_scale_2;
+    plot_abel_180 = abs(FVdv_abel_obs_edi_180)*units_scale/units_scale_2;
+    plot_abel_mod_180 = abs(FVdv_abel_mod_edi_180)*units_scale/units_scale_2;
+    plot_scha_180 = abs(FVdv_scha_obs_edi_180)*units_scale/units_scale_2;    
+    
+    ax = plotyy(hca,x_obs*1e-3,[plot_abel_0 plot_abel_180]',x_edi_0*1e-3,[plot_EDI_0 plot_EDI_180]');
+    colors = mms_colors('matlab');    
+    nlines = 2;
+    c_eval('ax(1).Children(?).Color = colors(1,:);',1:nlines)
+    c_eval('ax(2).Children(?).Color = colors(2,:);',1:nlines)
+    
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
+    ax(2).YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));
+    irf_legend(hca,{'Model';'EDI'},[0.02 0.6])
+    text(hca,0.5*hca.XLim(2),0.2*hca.YLim(2),'0^o','verticalalignment','bottom')
+    text(hca,0.5*hca.XLim(2),1.0*hca.YLim(2),'180^o','verticalalignment','top')
+    hca.YLim(1) = 0;    
+    hca.XLim = xlim;
+  end  
+  %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
+  width = h(1).Position(3)*0.8;
+  for ip = 1:npanels
+    h(ip).Position(3) = width;
+    h(ip).FontSize = 10;
+  end
+  all_hcb{1}.Position(1) = h(2).Position(1) + h(2).Position(3) - all_hcb{1}.Position(3);
+  all_hcb{2}.Position(1) = h(3).Position(1) + h(3).Position(3) - all_hcb{2}.Position(3);
+  all_hcb{3}.Position(1) = h(5).Position(1) + h(5).Position(3) - all_hcb{3}.Position(3);
+  
+  %all_hcb{1}.FontSize = 10;
+  if 0
+  h(1).Position(1) = h(1).Position(1) - 0.06;
+  h(2).Position(1) = h(2).Position(1) - 0.06;
+  h(3).Position(1) = h(3).Position(1) - 0.04;
+  h(4).Position(1) = h(4).Position(1) - 0.04;
+  h(5).Position(1) = h(5).Position(1) - 0.02;
+  h(6).Position(1) = h(6).Position(1) - 0.02;
+  width = h(1).Position(3)*0.9;
+  for ip = 1:npanels
+    h(ip).Position(3) = width;
+  end
+  end
 end
 %% Collect for all eh
 %[fitreslts,gof,fun_net,fun_net_prime] = createFit(torow(phi),torow(dntrap));

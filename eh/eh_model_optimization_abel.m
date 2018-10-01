@@ -6,7 +6,7 @@ units = irf_units;
 % Load MMS data
 if 0 % load from .mat file
   load /Users/cecilia/Data/20170706_135303_basic_eh
-elseif 1 % load data
+elseif 0 % load data
   %%
   ic = 1:4;
   tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
@@ -38,7 +38,7 @@ elseif 1 % load data
 end
 
 tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
-tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.680Z');
+%tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.680Z');
 t0 = tint_phi(1);
 
 % FPI distribution, done below
@@ -662,6 +662,9 @@ for iR = 1%:nR
               dntrap = ntrap - torow(ntrap_flat);
               dntrap_scaling = 1.0;
               dntrap = dntrap*dntrap_scaling;
+              if 1 % limit dntrap to given time interval
+                
+              end
               [Fabel,Fabel_free,Fabel_trap] = get_f_abel(V',n,vt,vd,PHI',VPH',dntrap);
               Fabel = Fabel + Fflat_trap;
               F = Fabel';
@@ -742,7 +745,7 @@ for iR = 1%:nR
             [Q_Flux_xcorr,Q_Flux_area] = quality_of_fit(ts_edi_flux180.data,ts_mod_flux_180.resample(ts_edi_flux180).data);
             [Q_Density_xcorr,Q_Density_area] = quality_of_fit(ts_obs_density.data,ts_mod_density.resample(ts_obs_density).data);
             
-            if 1 % plot, time series, minimal
+            if 0 % plot, time series, minimal
               %% time series
               fig = figure(36);
               scrsz = get(groot,'ScreenSize');
@@ -1098,7 +1101,7 @@ for iR = 1%:nR
               end
               end
             end
-            if 1 % plot, for diagnostics etc
+            if 0 % plot, for diagnostics etc
               %% time series
               fig = figure(33);
               scrsz = get(groot,'ScreenSize');
@@ -1395,6 +1398,426 @@ for iR = 1%:nR
                 irf_legend(hca,{'data used';'fit with scaling';'data original';'fit no scaling/original'},[0.98 0.98])
               end
               if 1 % dnt(phi) function
+                %%
+                h = subplot(10,10,99);
+                h.Position = [0.65    0.10    0.3    0.2];
+                isub = 1;                
+                hca = h(isub); isub = isub + 1;
+                [fitresult, gof, fun_net, fun_net_prime] = createFit(phi_vec, dntrap);
+                plot(hca,phi_vec,fun_net_prime(phi_vec))  
+                hca.XLabel.String = '\phi (V)';
+                hca.YLabel.String = 'd(\delta n - n_{t,flat})/d\phi (m^{-3}V^{-1})';
+              end
+              if 0 % flat skymap, to check how normalization is done
+                %h = subplot(nrows,3,[3 6 9 12]);
+                h = subplot(nrows,2,[2 4]+8);
+                h.Position = [0.65    0.35    0.3    0.2];
+                isub = 1;
+                if 1 % F, 
+                  hca = h(isub); isub = isub + 1;
+                  [ax,hcb] = mms.plot_skymap(hca,ePDist1,'flat','tint',tint_phi,'energy',480,'vectors',{mean(dmpaB1.tlim(tint_phi).norm.data,1),'B'});
+                  %hca.YLabel.String = {'f','(s^1/m^4)'};
+                  %hca.XLabel.String = {'v','(10^3 km/s)'};
+                  str_lines = {'<f_{mod}>';'f_{mod,\phi=0}';...
+                    sprintf('-- fpi: %s',fpi_utc(1,12:23));...
+                    sprintf('-- fpi: %s',fpi_utc(2,12:23));...
+                    sprintf('-- fpi: %s',fpi_utc(3,12:23));...
+                    sprintf('-- fpi: %s',fpi_utc(4,12:23))};
+                  %legend(hlines,str_lines)
+                  %irf_legend(hca,str_lines,[0.99 0.99])                  
+                end
+              end
+              if 0 % flat skymap, units of flux, to check how normalization is done
+                %%
+                %h = subplot(nrows,3,[3 6 9 12]);
+                h = subplot(nrows,2,[2 4]+14);
+                h.Position = [0.65    0.05    0.3    0.2];
+                isub = 1;                
+                hca = h(isub); isub = isub + 1;
+                if 1
+                echannel = 17;
+                E_fpi = mean(ePDist1.tlim(tint_phi).depend{1}(:,echannel),1);
+                f_485 = squeeze(mean(ePDist1.convertto('s^3/m^6').tlim(tint_phi).data(:,echannel,:,:)));
+                ang_polar = ePDist1.tlim(tint_phi).depend{3};
+                ang_azim = mean(ePDist1.tlim(tint_phi).depend{2},1);
+                d_azim = pi/16;
+                d_pol = 1 - cosd(180/16);
+                d_vel_vec = linspace(v_edi_minus,v_edi_plus,100);
+                d_vel = trapz(d_vel_vec,d_vel_vec.^2); % [v^2dv] = m3/s3
+                v_fpi = sqrt(2*units.e*E_fpi./units.me); % m/s
+                f_vol = d_vel*d_azim*d_pol;
+                flux_fpi_485 = f_485*v_fpi*f_vol; % m-2s-1, (to make into cm-2s-1, multiply with 1e-4)
+                flux_scale = 1e6;
+                surf(hca,ang_azim,ang_polar,flux_fpi_485'*1e-4/flux_scale); % cm-2s-1
+                hcb = colorbar('peer',hca);
+                hcb.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(flux_scale));
+                hca.YLabel.String = 'Polar angle';
+                hca.XLabel.String = 'Azimuthal angle';
+                hca.Title.String = 'Where electrons are going';
+                view(hca,[0 0 1])
+                hca.XLim = [0 360];
+                hca.YLim = [0 180];
+                %[ax,hcb] = mms.plot_skymap(hca,ePDist1.convertto('s^3/m^6'),'flat','tint',tint_phi,'energy',480,'vectors',{mean(dmpaB1.tlim(tint_phi).norm.data,1),'B'});
+                else
+                  %%
+                  [ax,hcb] = mms.plot_skymap(hca,ePDist1.vd3v,'flat','tint',tint_phi,'energy',480,'vectors',{mean(dmpaB1.tlim(tint_phi).norm.data,1),'B'});
+                end
+                %hca.YLabel.String = {'f','(s^1/m^4)'};
+                %hca.XLabel.String = {'v','(10^3 km/s)'};
+                str_lines = {'<f_{mod}>';'f_{mod,\phi=0}';...
+                  sprintf('-- fpi: %s',fpi_utc(1,12:23));...
+                  sprintf('-- fpi: %s',fpi_utc(2,12:23));...
+                  sprintf('-- fpi: %s',fpi_utc(3,12:23));...
+                  sprintf('-- fpi: %s',fpi_utc(4,12:23))};
+              end
+              if doPrint
+                cn.print(sprintf('schamel_2F_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g_phishift%g',vph,ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta,phi_shift))
+              end
+              
+              if 0 % average over time, comaprison to FPI
+                figure(34)
+                hca = subplot(nrows,3,[3 6 9]);
+                clear h;
+                nrows = 1;
+                ncols = 1;
+                npanels = nrows*ncols;
+                for ip = 1:npanels
+                  h(ip) = subplot(nrows,ncols,ip);
+                end
+                isub = 1;
+                if 1 % F, 
+                  hca = h(isub); isub = isub + 1;
+                  v_scale = 1e-3;
+                  hlines = plot(hca,v_vec*v_scale*1e-3,mod_f_average,v_vec*v_scale*1e-3,mod_fmax_average,v_fpi*v_scale,f_fpi,'--');
+                  hca.YLabel.String = {'f','(s^1/m^4)'};
+                  hca.XLabel.String = {'v','(10^3 km/s)'};
+                  hca.XLim = [-40 40];
+                  str_lines = {'f_{mod}';'f_{mod,\phi=0}';'-- fpi';'-- fpi';'-- fpi';'-- fpi'};
+                  %legend(hlines,str_lines)
+                  irf_legend(hca,str_lines,[0.99 0.99])
+                  str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+                    ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+                    ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+                    sprintf('beta_{Schamel}=%g',beta);...
+                    };
+                  set(hca,'ColorOrder',zeros(10,3))
+                  irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+                  if 1 % EDI velocities                
+                    hold(hca,'on')
+                    all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                               -v_edi_minus; -v_edi_plus]*[1 1];
+                     if 1
+                       plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+                       irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
+                     end
+                    hold(hca,'off')
+                  end
+                end
+                if doPrint 
+                cn.print(sprintf('schamel_2F_average_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g',ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta))
+              end
+              end
+            end
+            if 0 % plot, timeseries, for presentation
+              %% time series
+              fig = figure(39);
+              scrsz = get(groot,'ScreenSize');
+              figurePostition = scrsz; 
+              figurePostition(1) = 100;
+              figurePostition(2) = 100;
+              figurePostition(3) = figurePostition(3)*0.4; 
+              figurePostition(4) = figurePostition(4)*0.8;
+              fig.Position = figurePostition;
+              clear h;
+      
+              nrows = 5;
+              ncols = 1;
+              npanels = nrows*1;
+              isub = 1;
+              for irow = 1:nrows
+                for icol = 1
+                  ipanel = 1+(irow-1)*ncols;
+                  h(isub) = subplot(nrows,ncols,ipanel);
+                  isub = isub + 1;
+                end
+              end
+              
+              isub = 1;
+
+              vlim_f = 30;
+              if 1 % Epar, plot
+                hca = h(isub); isub = isub + 1;
+                plot(hca,x_vec,epar_vec);  
+                hca.YLabel.String = {'E_{||}','(mV/m)'};
+              end
+              if 1 % PHI, plot
+                hca = h(isub); isub = isub + 1;
+                plot(hca,x_vec,phi_vec);  
+                if 0 % plot locations and phi from konrad
+                  hold(hca,'on')
+                  c_eval('plotx = obs_t0_epoch_mms?-tint_phi(1);',mms_id)
+                  c_eval('ploty = obs_phi?.data;',mms_id)
+                  plot(hca,plotx,ploty,'+',plotx,obs_potential_max,'>')
+                  hold(hca,'off')
+                end
+                if 0 % plot locations for detrending
+                  hold(hca,'on')
+                  plot(hca,x_vec(LOCS),phi_vec(LOCS),'*')
+                  hold(hca,'off')
+                end
+                %irf_legend(hca,{sprintf('v_{ph}=%gx10^3 km/s, phi_{shift}=%g V, f_{filt,E}=%g Hz',vph*1e-6,phi_shift,ffilt)},[0.01 0.99],'color',[0 0 0]);
+                irf_legend(hca,{sprintf('v_{ph}= %g km/s',vph*1e-3)},[0.01 0.99],'color',[0 0 0]);
+                hca.YLabel.String = {'\phi','(V)'};  
+              end
+              if 0 % diff E (Poisson) (density)
+                hca = h(isub); isub = isub + 1;  
+                if 1
+                  nscale = 1e-3;
+                  plot(hca,x_vec_diff1,obs_density_diff*1e-6/nscale); % 1e-6 from 1/m3 > 1/cm3
+                  %legend(hca,{'n_{obs,Poisson,1D}'},'location','eastoutside');
+                end
+                hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
+              end
+              if 1 % F
+                hca = h(isub); isub = isub + 1;
+                pcolor(hca,X,V*1e-6,(F));
+                shading(hca,'flat')
+                hca.YLabel.String = {'v','(10^3 km/s)'};
+                hcb = colorbar('peer',hca);
+                hcb.YLabel.String = 'f (s^1/m^4)';
+                colormap(hca,cn.cmap('white_blue'))
+                %colormap(hca,cn.cmap('blue_white'))
+                hca.YLim = vlim_f*[-1 1];
+                
+                if 1 % EDI energies
+                  hold(hca,'on')
+                  line_color = [0.5 0.5 0.5]; [0.9290    0.6940    0.1250];
+                  hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+                  for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end
+                  hlines = plot(hca,...
+                    x_vec([1 end]),(v_edi_plus)*1e-6*[1 1],...
+                    x_vec([1 end]),(v_edi_minus)*1e-6*[1 1],...
+                    x_vec([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+                    x_vec([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+                    'LineWidth',1.5);
+                  for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+                  irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);  
+                  hold(hca,'off')
+                end
+                if 1 % model phase velocity
+                  hold(hca,'on')
+                  line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
+                  hlines = plot(hca,x_vec,vph_vec*1e-6,'LineWidth',1.5,'Color',line_color(1,:),'LineStyle','-.');     
+                  irf_legend(hca,{'-. v_{mod}'},[0.2 0.99],'color',hlines(1).Color);  
+                  hold(hca,'off')
+                end
+                if 1 % observed phase velocity
+                  hold(hca,'on')
+                  hlines = plot(hca,obs_eh_xvec,obs_velocity*1e-3,'*k','LineWidth',1.5,'Color',[0 0 0]);
+                  irf_legend(hca,{'* v_{obs}'},[0.1 0.99],'color',hlines(1).Color);  
+                  hold(hca,'off')
+                end  
+                if 0 % str info
+                str_info = {'unperturbed f:';...
+                  ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+                  ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+                  ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+                  sprintf('beta_{Schamel}=%g',beta);...
+                  };
+                irf_legend(hca,str_info,[1.01 1.4],'color',hlines(1).Color);    
+                end
+                %irf_legend(hca,{sprintf('T_{bg}=%g eV, n_{bg}=%g cc, v_{d,bg}=%g km/s, beta_{Schamel}=%g',T,n*1e-6,vd*1e-3,beta)},[0.99 0.99],'color',hlines(1).Color);    
+              end
+              if 0 % e psd vpar
+                hca = h(isub); isub = isub + 1;
+                specrec = ef1D.tlim(tint_phi).specrec('velocity_1D','10^3 km/s');
+                time_fred = ef1D.tlim(tint_phi).time-tint_phi(1);
+                imagesc(hca,time_fred,specrec.f(1,:),specrec.p');
+                hcb = colorbar('peer',hca);
+                colormap(cn.cmap('white_blue'))
+                hca.CLim = [0 3]*1e-3; 
+
+                hca.YLim = ef1D.depend{1}(1,[1 end])*1e-3;
+                hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
+                irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+                irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+              end
+              if 0 % sum F (density,free,trap,all)
+                hca = h(isub); isub = isub + 1;  
+                if 1
+                  plot(hca,x_vec([1 end]),ntot*1e-6*[1 1],x_vec,nef*1e-6,x_vec,net*1e-6,x_vec,(ntot+n_diff)*1e-6); % 1e-6 from 1/m3 > 1/cm3
+                  legend(hca,{'n_{mod,\phi=0}','n_{mod,free}','n_{mod,trap}'},'location','eastoutside');
+                end
+                hca.YLabel.String = {'n','(cm^{-3})'};
+              end
+              if 0 % sum F (density,free,trap,all)
+                hca = h(isub); isub = isub + 1;                  
+                plot(hca,x_vec([1 end]),ntot*1e-6*[1 1],x_vec,mod_density*1e-6,x_vec,mod_density_free*1e-6,x_vec,mod_density_trap*1e-6,x_vec,net*1e-6); % 1e-6 from 1/m3 > 1/cm3
+                legend(hca,{'n_{mod,\phi=0}','n_{mod}','n_{mod,free}','n_{mod,trap}','n_{mod,\phi=0} - n_{mod,free}+\delta n'},'location','eastoutside');
+                hca.YLabel.String = {'n','(cm^{-3})'};
+              end
+              if 1 % sum F (density)
+                hca = h(isub); isub = isub + 1;  
+                if 1
+                  plot(hca,x_vec,mod_density*1e-6,x_vec_diff1,obs_density*1e-6); % 1e-6 from 1/m3 > 1/cm3
+                  legend(hca,{'n_{mod}','n_{0} + (\epsilon_0/e)\nabla^2\phi'},'location','southwest','box','off');
+                  %irf_legend(hca,{sprintf('Q_X=%.2f, Q_A=%g',Q_Density_xcorr,Q_Density_area)},[0.01 0.1],'color',[0 0 0])
+                else
+                  plot(hca,x_vec([1 end]),ntot*1e-6*[1 1],x_vec,mod_density*1e-6,x_vec([1 end]),mean(mod_density*1e-6)*[1 1],x_vec_diff1,obs_density*1e-6); % 1e-6 from 1/m3 > 1/cm3
+                  legend(hca,{'n_{mod,\phi=0}','n_{mod}','<n_{mod}>','n_{obs,Poisson,1D}'},'location','eastoutside');
+                end
+                hca.YLabel.String = {'n','(cm^{-3})'};
+              end
+              if 0 % flux: F*v
+                hca = h(isub); isub = isub + 1;
+                pcolor(hca,X,V*1e-6,FV);
+                shading(hca,'flat')
+                hca.YLabel.String = {'v','(10^3 km/s)'};
+                hcb = colorbar('peer',hca);
+                hcb.YLabel.String = 'f*v (1/m^3)'; 
+                hca.CLim = hca.CLim(2)*[-1 1]*1.5; 
+                hcb.YLim = hca.CLim;
+                hca.YLim = vlim_f*[-1 1];
+                if 1 % EDI energies
+                  hold(hca,'on')
+                  hlines = plot(hca,x_vec([1 end]),v_edi*1e-6*[1 1],x_vec([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+                  for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+                  hlines = plot(hca,...
+                    x_vec([1 end]),(v_edi_plus)*1e-6*[1 1],...
+                    x_vec([1 end]),(v_edi_minus)*1e-6*[1 1],...
+                    x_vec([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+                    x_vec([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+                    'LineWidth',1.5);
+                  for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+                  irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
+                  hold(hca,'off')
+                end
+                if 1 % model phase velocity
+                  hold(hca,'on')
+                  line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
+                  hlines = plot(hca,x_vec,vph_vec*1e-6,'LineWidth',1.5,'Color',line_color(1,:),'LineStyle','-.');     
+                  irf_legend(hca,{'-. v_{mod}'},[0.2 0.99],'color',hlines(1).Color);  
+                  hold(hca,'off')
+                end
+                if 1 % observed phase velocity
+                  hold(hca,'on')
+                  hlines = plot(hca,obs_eh_xvec,obs_velocity*1e-3,'*k','LineWidth',1.5,'Color',[0 0 0]);
+                  irf_legend(hca,{'* v_{obs}'},[0.1 0.99],'color',hlines(1).Color);  
+                  hold(hca,'off')
+                end  
+                colormap(hca,cn.cmap('blue_red'))
+              end
+              if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
+                hca = h(isub); isub = isub + 1;
+                units_scale_2 = 1e6;
+                plot_EDI = ts_edi_flux180.data/units_scale_2;
+                plot_model = ts_mod_flux_180.data/units_scale_2;
+                axx = plot(hca,x_vec,plot_model,ts_edi_flux180.time-t0,plot_EDI);
+                hca.YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                legend(hca,{'model','EDI'},'location','northeast','box','off')
+                text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')
+                hca.YLim(1) = 0;
+                %irf_legend(hca,{sprintf('Q_X=%.2f, Q_A=%g',Q_Flux_xcorr,Q_Flux_area)},[0.01 0.1],'color',[0 0 0])
+              end
+              if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
+                hca = h(isub); isub = isub + 1;
+                units_scale_2 = 1e6;
+                plot_EDI = ts_edi_flux0.data/units_scale_2;
+                plot_model = ts_mod_flux_0.data/units_scale_2;
+                plot(hca,x_vec,plot_model,ts_edi_flux0.time-t0,plot_EDI);                 
+                hca.YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                legend(hca,'.model','EDI','model displaced','location','eastoutside')
+                text(hca,0,hca.YLim(2),'0^o','verticalalignment','top')
+                hca.YLim(1) = 0;
+              end
+              if 0 % F tot
+                hca = h(isub); isub = isub + 1;
+                pcolor(hca,X,V*1e-6,Ftot);
+                shading(hca,'flat')
+                hca.YLabel.String = 'v (km/s)';
+                hcb = colorbar('peer',hca);
+                hcb.YLabel.String = 'F';
+                hca.CLim = hca.CLim(2)*[-1 1]; 
+                colormap(hca,cn.cmap('blue_red'))
+              end
+              if 0 % sum FVdv, bulk velocity
+                hca = h(isub); isub = isub + 1;
+                plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
+                hca.YLabel.String = {'v','(km/s)'};
+              end          
+
+              axes_width = 0.70;
+              axes_x = 0.15;
+              for ipanel = 1:npanels
+                hca = h(ipanel);
+                hca.Position(1) = axes_x;
+                hca.Position(3) = axes_width;
+                hca.Position(4) = hca.Position(4)*1.3;
+                hca.Position(3);
+                hca.XLim = x_vec([1 end]);
+              end
+              for ipanel = 1:(npanels-1)
+                hca = h(ipanel);
+                hca.XTickLabel = [];  
+              end
+              h(end).XLabel.String = sprintf('time since %s (s)',tint_phi(1).utc);
+              linkaxes(h,'x')
+              irf_plot_axis_align          
+              h(1).YLim = [-49 49];
+
+              if 0 % average over time, comaprison to FPI, add to right side of figure
+                %h = subplot(nrows,3,[3 6 9 12]);
+                h = subplot(nrows,2,[2 4 6 8]+0);
+                h.Position = [0.65    0.65    0.3    0.3];
+                isub = 1;
+                if 1 % F, 
+                  hca = h(isub); isub = isub + 1;
+                  v_scale = 1e-3;
+                  hlines = plot(hca,v_vec*v_scale*1e-3,mod_f_average,v_vec*v_scale*1e-3,mod_fmax_average,v_fpi*v_scale,f_fpi,'--');
+                  hca.YLabel.String = {'f (s^1/m^4)'};
+                  hca.XLabel.String = {'v (10^3 km/s)'};
+                  hca.XLim = [-40 40];
+                  fpi_utc = ts_f_fpi.time.utc;
+                  str_lines = {'<f_{mod}>';'f_{mod,\phi=0}';...
+                    sprintf('-- fpi: %s',fpi_utc(1,12:23));...
+                    sprintf('-- fpi: %s',fpi_utc(2,12:23));...
+                    sprintf('-- fpi: %s',fpi_utc(3,12:23));...
+                    sprintf('-- fpi: %s',fpi_utc(4,12:23))};
+                  %legend(hlines,str_lines)
+                  irf_legend(hca,str_lines,[0.99 0.99])
+                  str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+                    ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+                    ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+                    sprintf('beta_{Schamel}=%g',beta);...
+                    };
+                  set(hca,'ColorOrder',zeros(10,3))
+                  irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+                  if 1 % EDI velocities                
+                    hold(hca,'on')
+                    all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                               -v_edi_minus; -v_edi_plus]*[1 1];
+                     if 1
+                       plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+                       irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
+                     end
+                    hold(hca,'off')
+                  end
+                end
+              end
+              if 0 % nt(phi)        
+                %%
+                h = subplot(10,10,100);
+                h.Position = [0.65    0.35    0.3    0.2];
+                isub = 1;                
+                hca = h(isub); isub = isub + 1;
+                [fitresult, gof, fun_net, fun_net_prime] = createFit(phi_vec, dntrap);
+                [fitresult, gof, fun_net_noscaling, fun_net_prime_noscaling] = createFit(phi_vec, dntrap/dntrap_scaling);
+                plot(hca,phi_vec,dntrap,'.',phi_vec,fun_net(phi_vec),phi_vec,dntrap/dntrap_scaling,'.',phi_vec,fun_net_noscaling(phi_vec))  
+                hca.XLabel.String = '\phi (V)';
+                hca.YLabel.String = '\delta n - n_{t,flat} (m^{-3})';                  
+                irf_legend(hca,{'data used';'fit with scaling';'data original';'fit no scaling/original'},[0.98 0.98])
+              end
+              if 0 % dnt(phi) function
                 %%
                 h = subplot(10,10,99);
                 h.Position = [0.65    0.10    0.3    0.2];

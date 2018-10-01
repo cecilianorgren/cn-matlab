@@ -109,8 +109,8 @@ if 1
 end
 
 Ex = @(x,y,z) x*0 + y*0 + z*0 + 0*EL*(-exp(-(z.^2)/d^2));
-Ey = @(x,y,z) x*0 + y*0 + z*0 + 0*(Er*(exp(-((z-dzEr).^2)/g^2))) + Ey_inflow;
-%Ez = @(x,y,z) x*0 + y*0 + z*0 + 1*(E0*sin((z-dzE)/dE).*exp(-(z-dzE).^2/(2*b^2)) + 1*Enas*exp(-(z-offsEnas).^2./d.^2) + -0.8*Enas*exp(-(z+offsEnas).^2./2/d.^2));
+Ey = @(x,y,z) x*0 + y*0 + z*0 + 1*(Er*(exp(-((z-dzEr).^2)/g^2))) + Ey_inflow;
+Ez = @(x,y,z) x*0 + y*0 + z*0 + 0*(E0*sin((z-dzE)/dE).*exp(-(z-dzE).^2/(2*b^2)) + 1*Enas*exp(-(z-offsEnas).^2./d.^2) + -0.8*Enas*exp(-(z+offsEnas).^2./2/d.^2));
 Ez = @(x,y,z) x*0 + y*0 + z*0 + 0*(2e-3*exp(-(z+0*1e3).^2/((7*1e3)^2)) - 2*1e-3*exp(-(z-10*1e3).^2/((7*1e3)^2))); % N
 
 B = @(x,y,z) sqrt(Bx(x,y,z).^2 + By(x,y,z).^2 + Bz(x,y,z).^2);

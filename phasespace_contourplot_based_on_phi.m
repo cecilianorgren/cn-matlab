@@ -1,7 +1,7 @@
 localuser = datastore('local','user');
 % Load MMS data
 
-if 1 % load from .mat file
+if 0 % load from .mat file
   load /Users/cecilia/Data/20170706_135303_basic_eh
 elseif 0 % load data
   %%

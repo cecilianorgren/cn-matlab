@@ -7,6 +7,15 @@ units = irf_units;
 c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.units = ''mV/m'';',ic)
 c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = ''mV/m'';',ic)
 
+% Get newer version electric field
+dobj_E1 = dataobj('/Users/cecilia/Data/MMS/mms1_edp_brst_l2_dce_20151112071854_v2.2.0.cdf');
+dobj_E2 = dataobj('/Users/cecilia/Data/MMS/mms2_edp_brst_l2_dce_20151112071854_v2.2.0.cdf');
+dobj_E3 = dataobj('/Users/cecilia/Data/MMS/mms3_edp_brst_l2_dce_20151112071854_v2.2.0.cdf');
+dobj_E4 = dataobj('/Users/cecilia/Data/MMS/mms4_edp_brst_l2_dce_20151112071854_v2.2.0.cdf');
+gseE1_v22 = mms.variable2ts(get_variable(dobj_E1,'mms1_edp_dce_gse_brst_l2'));
+gseE2_v22 = mms.variable2ts(get_variable(dobj_E2,'mms2_edp_dce_gse_brst_l2'));
+gseE3_v22 = mms.variable2ts(get_variable(dobj_E3,'mms3_edp_dce_gse_brst_l2'));
+gseE4_v22 = mms.variable2ts(get_variable(dobj_E4,'mms4_edp_dce_gse_brst_l2'));
 %% Make new electric field
 % Reconstruct Electric field from probe voltages
 baselength = 2*14.5;
@@ -51,6 +60,8 @@ c_eval('gseEVexB?_new = gseE?_new.resample(gseVexB?.time) + gseVexB?; gseEVexB?_
 gseAvE_new = 0.25*(gseE1_new + gseE2_new.resample(gseE1_new) + gseE3_new.resample(gseE1_new) + gseE4_new.resample(gseE1_new)); gseAvE_new.name = 'av E new';
 %gseAvVexB = 0.25*(gseVexB1 + gseVexB2.resample(gseVexB1) + gseVexB3.resample(gseVexB1) + gseVexB4.resample(gseVexB1)); gseVexB.name = 'av Ve new';
 c_eval('gseE?_old = gseE?; gseE? = gseE?_new;',ic)
+
+c_eval('gseE? = gseE?_v22;',ic)
 
 % Current from magnetic field (curlometer) 
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
@@ -298,7 +309,7 @@ c_eval('wavVe?perp.f_units = ''Hz''; wavVe?perp.f_label = ''f [Hz]''; wavVe?perp
 %% Average properties
 
 gseAvE = (gseE1+gseE2.resample(gseE1.time)+gseE3.resample(gseE1.time)+gseE4.resample(gseE1.time))/4; gseAvE.name = 'avg E (gse)';
-gseAvE_old = (gseE1_old+gseE2_old.resample(gseE1.time)+gseE3_old.resample(gseE1.time)+gseE4_old.resample(gseE1.time))/4; gseAvE_old.name = 'avg E (gse)';
+gseAvE_old = (gseE1_old.resample(gseE1.time)+gseE2_old.resample(gseE1.time)+gseE3_old.resample(gseE1.time)+gseE4_old.resample(gseE1.time))/4; gseAvE_old.name = 'avg E (gse)';
 
 avPB = (PB1 + PB2.resample(PB1) + PB3.resample(PB1) + PB4.resample(PB1))/4;
 
