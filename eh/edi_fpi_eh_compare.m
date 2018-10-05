@@ -191,8 +191,8 @@ pitchangles_edges8 = [0 15:30:165 180];
 ePitch = ePDist.pitchangles(dmpaB,pitchangles_edges,'meanorsum','mean');
 ePitch8 = ePDist.pitchangles(dmpaB,pitchangles_edges8,'meanorsum','mean');
 
-eSr = ePitch.sr;
-eSr8 = ePitch8.sr;
+eSr = ePitch.solidangle;
+eSr8 = ePitch8.solidangle;
 
 ePitchSum = ePDist.pitchangles(dmpaB,pitchangles_edges,'meanorsum','sum');
 ePitchSum8 = ePDist.pitchangles(dmpaB,pitchangles_edges8,'meanorsum','sum');
