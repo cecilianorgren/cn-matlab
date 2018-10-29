@@ -14,9 +14,12 @@
 % EDIen = single(energy1.data(1));
 
 %%
-ic = 1:4;
+%ic = 1:4;
 Tint = tint;
+
 tmp = ['tmpDataObj? = dataobj(mms.get_filepath(''mms?_edi_brst_l2_amb-pm2'',Tint(1)+20));'];
+%tmp = ['tmpDataObj? = dataobj(mms.get_filepath(''mms?_edi_brst_l2_amb'',Tint(1)+20));'];
+
 c_eval(tmp,ic);
 
 % to browse all data provided

@@ -126,8 +126,8 @@ Fspecrec.f = v_vec*1e-6;
 Fspecrec.f_label = 'v (10^{3} km/s)';
 
 %% flux at edi energy/velocity interval
-vind_edi_0 = intersect(find(v>v_edi_minus),find(v<v_edi_plus));
-vind_edi_180 = intersect(find(v<-v_edi_minus),find(v>-v_edi_plus));
+vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
+vind_edi_180 = intersect(find(v_vec<-v_edi_minus),find(v_vec>-v_edi_plus));
 FVdv_abel_obs_edi_0 = nansum(FVabel_obs(:,vind_edi_0),2)*dv;
 FVdv_abel_obs_edi_180 = nansum(FVabel_obs(:,vind_edi_180),2)*dv;
 FVdv_scha_obs_edi_0 = nansum(FVscha_obs(:,vind_edi_0),2)*dv;
@@ -150,6 +150,7 @@ dntrap_long = dntrap_obs;
   
 
 %% Plot
+tint_phi = tint_all;
 if 0 % plot 1
   figure(93)
   nrows = 2;
@@ -634,7 +635,7 @@ isub = 1;
 vlim_f = 30;
 if 1 % Epar
   hca = h(isub); isub = isub + 1;
-  irf_plot(hca,{phi_progressive.Etoint,Epar.tlim(tint_phi),tsEfieldFromPhi},'comp');  
+  irf_plot(hca,{phi_progressive.Etoint,Epar.tlim(tint_all),tsEfieldFromPhi},'comp');  
   hca.YLabel.String = {'E_{||}','(mV/m)'};
   hca.YLabel.Interpreter = 'tex';
 end

@@ -3,6 +3,10 @@
 localuser = datastore('local','user');
 units = irf_units;
 
+ 
+% chose spacecraft to compare to
+mms_id = 1;
+
 % Load MMS data
 if 0 % load from .mat file
   load /Users/cecilia/Data/20170706_135303_basic_eh
@@ -20,17 +24,16 @@ elseif 0 % load data
   c_eval('intEdt? = irf_integrate(gseE?par);');    
   mms.load_data_edi;  
   c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
-  % Make reduced distribution
+  %% Make reduced distribution
   tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.617Z');
   tintZoom = tint_phi + [-2 2];   
   strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
   eint = [000 40000];
   vint = [-Inf Inf];
-  %%
   c_eval('eDist? = ePDist?.tlim(tintZoom).elim(eint);')
   c_eval('scpot = scPot?.resample(eDist?);')
   scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
-  c_eval('lowerelim? = irf.ts_scalar(eDist?.time,50);')
+  c_eval('lowerelim? = irf.ts_scalar(eDist?.time,repmat(0,eDist?.length,1));')
   %eLine = dmpaB1.resample(eDist).norm;
   tic; 
   c_eval('ef1D? = eDist?.reduce(''1D'',dmpaB?.resample(eDist?).norm,''vint'',vint,''scpot'',scPot?.resample(eDist?),''lowerelim'',lowerelim?);',1:4)
@@ -43,10 +46,6 @@ t0 = tint_phi(1);
 
 % FPI distribution, done below
 
-% EDI flux
-edi_nodes = 1;
-c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint_phi).time,mean(flux180_mms?.tlim(tint_phi).data(:,edi_nodes),2));')
-c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint_phi).time,mean(flux0_mms?.tlim(tint_phi).data(:,edi_nodes),2));')
 
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
@@ -61,6 +60,12 @@ v_edi_plusminus = v_edi_plus-v_edi_minus;
 dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
+
+% EDI flux
+edi_nodes = 1;
+c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint_phi).time,mean(flux180_mms?.tlim(tint_phi).data(:,edi_nodes),2));')
+c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint_phi).time,mean(flux0_mms?.tlim(tint_phi).data(:,edi_nodes),2));')
+
 
 % Prepare electric field
 % later we need just to multiply with vph
@@ -121,10 +126,8 @@ option_vph = 'interp linear piecewise';
 option_vph = 'constant';
 
 %% Choosing mms_id
- 
-% chose spacecraft to compare to
-mms_id = 1;
 
+c_eval('lowerelim = lowerelim?;',mms_id)
 % Phase speed and potential zero level shift
 vph = -9000e3; % m/s, representative phase velocity
 phi_shift = 00; % to keep potential > 0
@@ -183,6 +186,7 @@ obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sig
 dn_orig = obs_density_diff; dn_orig = [0; dn_orig];
 dn_scaled = dn_orig.*(1+2*phi_vec/max(phi_vec));
 dn = dn_scaled;
+dn = dn_orig;
             
 % FPI data
 c_eval('ts_f_fpi = ef1D?.tlim(tint_phi);',mms_id)
@@ -624,7 +628,7 @@ vec_N1 = ntot*vec_R;
 vec_N2 = ntot*(1-vec_R);
 T1_min = 150; T1_max = 300; nT1 = 3; vec_T1 = linspace(T1_min,T1_max,nT1);
 %T2_min = 50; T2_max = 400; nT2 = 10; vec_T2 = linspace(T2_min,T2_max,nT2);
-T2_min = 4000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
+T2_min = 2000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
 Vd1_min = -9000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
 Vd2_min = 4000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
@@ -858,7 +862,7 @@ for iR = 1%:nR
                 plot_EDI_0 = ts_edi_flux0.data/units_scale_2;
                 plot_EDI_180 = ts_edi_flux180.data/units_scale_2;
                 plot(hca,ts_edi_flux0.time-t0,plot_EDI_0,ts_edi_flux180.time-t0,plot_EDI_180);
-                hca.YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                hca.YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2))};
                 hleg = legend(hca,'0^o','180^0');
                 hleg.Box = 'off';
                 hca.YLim(1) = 0;                
@@ -871,7 +875,7 @@ for iR = 1%:nR
                 ax = plotyy(hca,x_vec,phi_vec,ts_edi_flux180.time-t0,plot_EDI_180);
                 hca.YLim(1) = 0;  
                 ax(1).YLabel.String = {'\phi','(V)'};
-                ax(2).YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                ax(2).YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2))};
                 ax(1).XLim = [0 ts_edi_flux180.time(end)-t0];
                 ax(2).XLim = [0 x_vec(end)];                         
               end        
@@ -896,7 +900,7 @@ for iR = 1%:nR
               %irf_plot_axis_align          
               h(1).YLim = [-49 49];
             end            
-            if 1 % plot, FPI
+            if 0 % plot, FPI
               %% time series
               fig = figure(37);
       
@@ -942,11 +946,12 @@ for iR = 1%:nR
                 colors = mms_colors('matlab');
                 %irf_pl_mark(hca,ts_f_fpi.time.epochUnix)
                 c_eval('hl = irf_pl_mark(hca,ts_f_fpi.time(?),colors(?,:)); hl.LineWidth = 1.5;',1:4)
-                irf_legend(hca,{sprintf('v_{ph}=%gx10^3 km/s, phi_{shift}=%g V, f_{filt,E}=%g Hz',vph*1e-6,phi_shift,ffilt)},[0.01 0.99],'color',[0 0 0]);
+                %irf_legend(hca,{sprintf('v_{ph}=%gx10^3 km/s, phi_{shift}=%g V, f_{filt,E}=%g Hz',vph*1e-6,phi_shift,ffilt)},[0.01 0.99],'color',[0 0 0]);
+                irf_legend(hca,{sprintf('v_{ph}=%.0f km/s',vph*1e-3)},[0.01 0.99],'color',[0 0 0]);
                 hca.YLabel.String = {'\phi','(V)'}; 
                 hca.YLabel.Interpreter = 'tex';
               end
-              if 1 % average over time, comaprison to FPI, add to right side of figure                                
+              if 1 % FPI, 4 times
                 if 1 % f 
                   hca = h(isub); isub = isub + 1;
                   v_scale = 1e-3;
@@ -962,7 +967,7 @@ for iR = 1%:nR
                     sprintf('-- fpi: %s',fpi_utc(4,12:23))};                  
                   irf_legend(hca,str_lines,[0.99 0.99])
                   set(hca,'ColorOrder',zeros(10,3))
-                  irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
+                  %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
                   hca.XLim = [-30 30];
                 end
                 if 1 % vph 
@@ -978,7 +983,7 @@ for iR = 1%:nR
                     hpatch.FaceAlpha = 0.2;
                     hpatch.EdgeAlpha = 0.3;
                   end
-                  hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 0.95],[0 0 0]);
+                  hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 1.01],[0 0 0]);
                   %hleg.BackgroundColor = [1 1 1];
                   hleg.HorizontalAlignment = 'center';
                   hold(hca,'off')
@@ -1007,19 +1012,27 @@ for iR = 1%:nR
                     hpatch.FaceAlpha = 0.2;
                     hpatch.EdgeAlpha = 0.3;
                   end
-                  hleg = irf_legend(hca,'vph-vtrap',[0.5*12/hca.XLim(2) 0.95],[0 0 0]);
+                  hleg = irf_legend(hca,'vph-vtrap',[0.5*12/hca.XLim(2) 1.01],[0 0 0]);
                   %hleg.BackgroundColor = [1 1 1];
                   hleg.HorizontalAlignment = 'center';
                   
-                  hleg = irf_legend(hca,'vph+vtrap',[0.5*30/hca.XLim(2) 0.95],[0 0 0]);
+                  hleg = irf_legend(hca,'vph+vtrap',[0.5*30/hca.XLim(2) 1.01],[0 0 0]);
                   %hleg.BackgroundColor = [1 1 1];
                   hleg.HorizontalAlignment = 'center';
                   hold(hca,'off')
                 end
-                
+                if 1 % EDI velocities
+                  hold(hca,'on')
+                  all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                             -v_edi_minus; -v_edi_plus]*[1 1];
+                   if 1
+                     plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+                     irf_legend(hca,'EDI',[-0.02 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.7],[0 0 0])
+                   end
+                  hold(hca,'off')
+                end
               end
-              
-              if 1 % average over time, comaprison to FPI, add to right side of figure                                
+              if 0 % average over time, comaprison to FPI
                 if 1 % F, 
                   hca = h(isub); isub = isub + 1;
                   v_scale = 1e-3;
@@ -1035,9 +1048,9 @@ for iR = 1%:nR
                     sprintf('-- fpi: %s',fpi_utc(4,12:23))};
                   %legend(hlines,str_lines)
                   irf_legend(hca,str_lines,[0.99 0.99])
-                  str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
-                    ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
-                    ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+                  str_info = {['T_{0}= [' sprintf('%g  ',T) '] eV'];...
+                    ['n_{0}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+                    ['v_{d,0}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
                     };
                   set(hca,'ColorOrder',zeros(10,3))
                   irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
@@ -1052,7 +1065,100 @@ for iR = 1%:nR
                     hold(hca,'off')
                   end
                 end
-              end              
+              end
+              if 1 % average over time, comaprison to average FPI
+                if 1 % F, 
+                  hca = h(isub); isub = isub + 1;
+                  v_scale = 1e-3;
+                  hlines = plot(hca,v_vec*v_scale*1e-3,mod_f_average,v_vec*v_scale*1e-3,mod_fmax_average,v_fpi*v_scale,mean(f_fpi(1:end,:),1),'-');
+                  hca.YLabel.String = {'f (s^1/m^4)'};
+                  hca.XLabel.String = {'v (10^3 km/s)'};
+                  hca.XLim = [-30 30];
+                  fpi_utc = ts_f_fpi.time.utc;
+%                   str_lines = {'<f_{mod}>';'f_{mod,\phi=0}';...
+%                     sprintf('-- fpi: %s',fpi_utc(1,12:23));...
+%                     sprintf('-- fpi: %s',fpi_utc(2,12:23));...
+%                     sprintf('-- fpi: %s',fpi_utc(3,12:23));...
+%                     sprintf('-- fpi: %s',fpi_utc(4,12:23))};
+                  %legend(hlines,str_lines)
+%                   irf_legend(hca,str_lines,[0.99 0.99])
+                  hlines(1).LineWidth = 1.5;
+                  hlines(2).LineWidth = 1.5;
+                  hlines(3).LineWidth = 1.5;
+                  str_info = {['T_{0}= [' sprintf('%g  ',T) '] eV'];...
+                    ['n_{0}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+                    ['v_{d,0}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+                    };
+                  set(hca,'ColorOrder',zeros(10,3))
+                  hleg = irf_legend(hca,str_info,[0.99 0.90],[0 0 0]);
+                  c_eval('hleg(?).BackgroundColor = [1 1 1];',1:3)
+                end
+                hca.YLim = [0 3]*1e-3;
+                if 1 % EDI velocities
+                  hold(hca,'on')
+                  all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                             -v_edi_minus; -v_edi_plus]*[1 1];
+                   if 1
+                     plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+                     irf_legend(hca,'EDI',[-0.02 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.8],[0 0 0])
+                   end
+                    hold(hca,'off')
+                end
+                hca.XLim = [-30 30];   
+                if 1 % vph 
+                  hold(hca,'on')
+                  all_vph = [mean(obs_velocity)-std(obs_velocity);...
+                             mean(obs_velocity);...
+                             mean(obs_velocity)+std(obs_velocity)]*[1 1]; 
+                  if 0 % plot dashed lines
+                    plot(hca,all_vph*1e-3,hca.YLim,'k-.')
+                  else % plot patch                    
+                    hpatch = patch(hca,1e-3*[all_vph(1,1),all_vph(end,1) all_vph(end,1) all_vph(1,1)],...
+                      [0 0 hca.YLim(2) hca.YLim(2)],[0.8 0.8 0.8]);
+                    hpatch.FaceAlpha = 0.2;
+                    hpatch.EdgeAlpha = 0.3;
+                  end
+                  hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 1.01],[0 0 0]);
+                  %hleg.BackgroundColor = [1 1 1];
+                  hleg.HorizontalAlignment = 'center';
+                  hold(hca,'off')
+                end
+                if 1 % vtrap
+                  hold(hca,'on')
+                  obs_vtrap = obs_vtrap_all(:,mms_id);
+                  vtrap_plus = obs_velocity + obs_vtrap*1e-3;
+                  vtrap_minus = obs_velocity - obs_vtrap*1e-3;
+                  plot_vtrap_plus = [mean(vtrap_plus)-std(vtrap_plus);...
+                                     mean(vtrap_plus);...
+                                     mean(vtrap_plus)+std(vtrap_plus)]*[1 1]; 
+                  plot_vtrap_minus = [mean(vtrap_minus)-std(vtrap_minus);...
+                                      mean(vtrap_minus);...
+                                      mean(vtrap_minus)+std(vtrap_minus)]*[1 1]; 
+                  if 0 % plot dashed lines
+                    plot(hca,plot_vtrap_minus*1e-3,hca.YLim,'k-.',plot_vtrap_plus*1e-3,hca.YLim,'k-.')
+                  else % plot patch
+                    hpatch = patch(hca,1e-3*[plot_vtrap_plus(1,1),plot_vtrap_plus(end,1) plot_vtrap_plus(end,1) plot_vtrap_plus(1,1)],...
+                      [0 0 hca.YLim(2) hca.YLim(2)],[0.8 0.8 0.8]);
+                    hpatch.FaceAlpha = 0.2;
+                    hpatch.EdgeAlpha = 0.3;
+                    
+                    hpatch = patch(hca,1e-3*[plot_vtrap_minus(1,1),plot_vtrap_minus(end,1) plot_vtrap_minus(end,1) plot_vtrap_minus(1,1)],...
+                      [0 0 hca.YLim(2) hca.YLim(2)],[0.8 0.8 0.8]);
+                    hpatch.FaceAlpha = 0.2;
+                    hpatch.EdgeAlpha = 0.3;
+                  end
+                  hleg = irf_legend(hca,'vph-vtrap',[0.5*12/hca.XLim(2) 1.01],[0 0 0]);
+                  %hleg.BackgroundColor = [1 1 1];
+                  hleg.HorizontalAlignment = 'center';
+                  
+                  hleg = irf_legend(hca,'vph+vtrap',[0.5*30/hca.XLim(2) 1.01],[0 0 0]);
+                  %hleg.BackgroundColor = [1 1 1];
+                  hleg.HorizontalAlignment = 'center';
+                  hold(hca,'off')
+                end
+              end
+              set(hca,'ColorOrder',mms_colors('matlab'))
+              irf_legend(hca,{'perturbed f';'unperturbed f_0';'measured f (FPI)'},[0.01 0.99]);
               if doPrint
                 cn.print(sprintf('schamel_2F_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g_phishift%g',vph,ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta,phi_shift))
               end
@@ -1518,9 +1624,10 @@ for iR = 1%:nR
               end
               end
             end
-            if 0 % plot, timeseries, for presentation
+            if 1 % plot, timeseries, for presentation
               %% time series
               fig = figure(39);
+              if 0
               scrsz = get(groot,'ScreenSize');
               figurePostition = scrsz; 
               figurePostition(1) = 100;
@@ -1528,6 +1635,7 @@ for iR = 1%:nR
               figurePostition(3) = figurePostition(3)*0.4; 
               figurePostition(4) = figurePostition(4)*0.8;
               fig.Position = figurePostition;
+              end
               clear h;
       
               nrows = 5;
@@ -1712,12 +1820,21 @@ for iR = 1%:nR
                 units_scale_2 = 1e6;
                 plot_EDI = ts_edi_flux180.data/units_scale_2;
                 plot_model = ts_mod_flux_180.data/units_scale_2;
-                axx = plot(hca,x_vec,plot_model,ts_edi_flux180.time-t0,plot_EDI);
-                hca.YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                ax = plotyy(hca,x_vec,plot_model,ts_edi_flux180.time-t0,plot_EDI);
                 legend(hca,{'model','EDI'},'location','northeast','box','off')
                 text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')
-                hca.YLim(1) = 0;
-                %irf_legend(hca,{sprintf('Q_X=%.2f, Q_A=%g',Q_Flux_xcorr,Q_Flux_area)},[0.01 0.1],'color',[0 0 0])
+                
+                ax(1).YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                
+                ax(1).YLim(1) = 0;
+                ax(2).YLim(1) = 0;   
+                ax(1).YLim(2) = ax(2).YLim(2);
+                %ax(2).YLim(2) = 0;
+                ax(1).YTick = ax(2).YTick;
+                ax(1).YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1})',log10(units_scale_2))};
+                ax(2).YLabel.String = {'flux',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2))};
+                ax(1).XLim = [0 ts_edi_flux180.time(end)-t0];
+                ax(2).XLim = [0 x_vec(end)];       
               end
               if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
                 hca = h(isub); isub = isub + 1;

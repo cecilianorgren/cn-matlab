@@ -11,6 +11,21 @@ vint = [-Inf Inf];
 eDist = ePDist1.tlim(tintZoom).elim(eint);
 %iDist = iPDist1.tlim(tintZoom).elim(eint);
 
+%% Remove background electrons
+[eDist1_bgremoved, eDist1_bg, ephoto_scale] = ...
+             mms.remove_edist_background(eDist, 'tint', tintZoom);
+ 
+%%
+tintZoom = irf.tint('2017-07-06T13:53:40.00Z/2017-07-06T13:53:50.00Z');
+[eDist1_bgremoved, eDist1_bg, ephoto_scale] = ...
+             mms.remove_edist_background(ePDist1, 'tint', tintZoom, ...
+             'Nphotoe_art', 0.1, 'nSecondary', 0.4, 'ZeroNaN', 0);
+h=irf_plot({eDist1_bgremoved.omni.specrec,ePDist1.omni.specrec});
+h(1).YScale = 'log';
+h(2).YScale = 'log';
+h(2).CLim = [-35 -25];
+h(1).CLim = [-35 -25];
+irf_zoom(h,'x',tintZoom)
 %% electrons
 %ve = gseVe1.tlim(eDist.time).resample(eDist);
 scpot = scPot1.resample(eDist);
@@ -1293,4 +1308,6 @@ if 1 % EDI range
   %irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])   
   hold(hca,'off')
 end
+
+%% phi and flux
 

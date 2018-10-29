@@ -54,7 +54,7 @@ str_info = {'unperturbed f:';...
                
 beta_range = [-2.5 0];
 for ih = 10%:numel(obs_velocity)
-phi_input = 3;
+phi_input = 2;
 switch phi_input
   case 1 % Gaussian of choice
     lx = 1300; 
@@ -111,16 +111,17 @@ switch phi_input
     nx_obs = numel(x_obs);
     nx_mod = numel(x_mod);
   case 3 % all observations
+    ic = 1;
     %load /Users/cecilia/Data/20170706_135303_basic_eh
     tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
     t0 = tint_phi(1);
     ffilt = 30; % Hz
-    c_eval('Etoint? = gseE?par;')
-    c_eval('Etoint? = Etoint?.filt(ffilt,0,[],3).tlim(tint_phi);');    
-    c_eval('intEdt? = irf_integrate(Etoint?);');    
+    c_eval('Etoint? = gseE?par;',ic)
+    c_eval('Etoint? = Etoint?.filt(ffilt,0,[],3).tlim(tint_phi);',ic);    
+    c_eval('intEdt? = irf_integrate(Etoint?);',ic);    
     minpeakdistance = 50;
-    c_eval('[PKS?,LOCS?,W?] = findpeaks(intEdt?.data,''MinPeakDistance'',minpeakdistance);')
-    c_eval('intEdt?_detrend = intEdt?; intEdt?_detrend.data = detrend(intEdt?_detrend.data,''linear'',LOCS?);')
+    c_eval('[PKS?,LOCS?,W?] = findpeaks(intEdt?.data,''MinPeakDistance'',minpeakdistance);',ic)
+    c_eval('intEdt?_detrend = intEdt?; intEdt?_detrend.data = detrend(intEdt?_detrend.data,''linear'',LOCS?);',ic)
 
     % Plotting options
     doT = 1; % otherwise plot x;
@@ -133,18 +134,18 @@ switch phi_input
 
     % Remove phi baselevel
     %c_eval('phi_baselevel = interp_linear_piecewise(intEdt?.data,x_vec,x_vec(LOCS?));')
-    c_eval('ts_locs? = irf.ts_scalar(intEdt?.time([1; LOCS?; end]),intEdt?.data([1; LOCS?; end]));')
+    c_eval('ts_locs? = irf.ts_scalar(intEdt?.time([1; LOCS?; end]),intEdt?.data([1; LOCS?; end]));',ic)
     %c_eval('phi_baselevel? = interp_linear_piecewise(intEdt?.data([1; LOCS?; end]),x_vec([1; LOCS?; end]),x_vec);')
     %c_eval('ts_phi_baselevel? = irf.ts_scalar(intEdt?.time,phi_baselevel?);')
-    c_eval('ts_phi_baselevel? = ts_locs?.resample(intEdt?);')
-    c_eval('intEdt?_detrend = intEdt?-ts_phi_baselevel?;')
+    c_eval('ts_phi_baselevel? = ts_locs?.resample(intEdt?);',ic)
+    c_eval('intEdt?_detrend = intEdt?-ts_phi_baselevel?;',ic)
 
     vph = -9000e3; % m/s, representative phase velocity
     phi_shift = 00; % to keep potential > 0
     phi_scaling = 1.0; % if we underestimate phi    
 
     % Potential from observed E
-    mms_id = 1;
+    mms_id = ic;
     c_eval('phi_timeline = intEdt?_detrend.time;',mms_id)
     c_eval('phi?_detrend = intEdt?_detrend*vph*1e-3*phi_scaling;',mms_id)
     c_eval('phi?_detrend_shift = phi?_detrend + phi_shift;',mms_id)
@@ -155,10 +156,10 @@ switch phi_input
     c_eval('epar_vec = Etoint?.data;',mms_id)
     
     % charge density from observed phi        
-    obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
+    %obs_density_diff = -diff(epar_vec*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
     %obs_density_diff_nofilt = -diff(epar_vec_nofilt*1e-3,1)*units.eps0/units.e/(-sign(vph)*dx); % ne-ni
     %obs_density = mod_density_average + obs_density_diff; % ni + ne - ni = ne,  assuming ion density is unperturbed  
-    ts_obs_density = irf.ts_scalar(phi_timeline(1:end-1) + 0.5*(phi_timeline(2)-phi_timeline(1)),obs_density); 
+    %ts_obs_density = irf.ts_scalar(phi_timeline(1:end-1) + 0.5*(phi_timeline(2)-phi_timeline(1)),obs_density); 
   case 4 % single from observations, but taken from the timeseries obtained for all, using time and rescaling vph from konrad
     %load /Users/cecilia/Data/20170706_135303_basic_eh
     tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
@@ -769,6 +770,14 @@ if 0 % plot 2
   end
   %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
 end
+if 0 % only n mod and n poisson
+  hca =subplot(1,1,1)
+  hlines = plot(hca,x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,x_obs*1e-3,(n0+dn_obs)*1e-6);
+  irf_legend(hca,{'n_{mod}';'n_{0}+(\epsilon_0/e)\nabla^2\phi'},[0.02 0.3])
+  hca.YLabel.String = {'n (cm^{-3})'};  
+  hca.XLim = x_obs([end 1])*1e-3;
+  hca.XLabel.String = {'x (km)'};  
+end
 if 1 % plot 3
   figure(93)
   nrows = 2;
@@ -796,7 +805,8 @@ if 1 % plot 3
     %legend(hca,{'obs','mod, Gaussian','obs no detrend'},'Box','off')
     %irf_legend(hca,{'obs';{'mod:','Gaussian'};{'obs:','no detrend'}},[0.02,0.98])
     %hca.Title.String = sprintf('tint_{obs} = %s - %s',tint_utc(1,:),tint_utc(2,:));
-    irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',vph*1e-3)},[0.99,0.99],'Color',[0 0 0])
+    %irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',vph*1e-3)},[0.99,0.99],'Color',[0 0 0])
+    hca.Title.String = sprintf('v_{ph}= %.0f km/s',vph*1e-3);
     hca.XLim = xlim;
   end
   if 1 % E
@@ -811,8 +821,10 @@ if 1 % plot 3
     hcb.YLabel.String = 'U/e (eV)';  
     hca.YLim = vlim*[-1 1]*1e-6;
     hca.CLim = max(abs(E_obs(:)/units.e))*[-1 1];
-    hca.CLim = 0.5e3*[-1 1];
-    colormap(hca,cn.cmap('blue_red'))
+    hca.CLim = 0.9e3*[-1 1];
+    cmap = cn.cmap('blue_red'); 
+    cmap_ = cmap([1:96 (end-95):end],:);
+    colormap(hca,cmap_)
      if 1 % E contours
       hold(hca,'on')
       %levels_E = [linspace(min(E_obs(:)),0,6) linspace(0,max(E_obs(:)),50)]; 
@@ -827,7 +839,7 @@ if 1 % plot 3
     hcb.Position(1) = hcb.Position(1)+shiftcb;
     %hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
   end
-  if 1 % Ff obs, Abel
+  if 0 % Ff obs, Abel
     hca = h(isub); isub = isub + 1;
     pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fabel_free_obs)
     shading(hca,'flat') 
@@ -843,7 +855,7 @@ if 1 % plot 3
     %hca.Title.String = 'Abel obs';    
     hca.XLim = xlim;
   end
-  if 0 % F obs, Abel
+  if 1 % F obs, Abel
     hca = h(isub); isub = isub + 1;
     pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fabel_obs)
     shading(hca,'flat') 
@@ -859,7 +871,7 @@ if 1 % plot 3
     %hca.Title.String = 'Abel obs';    
     hca.XLim = xlim;
   end  
-  if 1 % free,, and total densities
+  if 0 % free,, and total densities
     hca = h(isub); isub = isub + 1;
     hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
                       x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6...
@@ -875,17 +887,18 @@ if 1 % plot 3
     hca.YLim = [0 0.042];
     hca.XLim = xlim;
   end
-  if 0 % free, trapped, and total densities
+  if 1 % free, trapped, and total densities
     hca = h(isub); isub = isub + 1;
     hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
                       x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6,...
-                      x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6...
+                      x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6...
                       );
     %hlines(1).LineWidth = 1.5;
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = 'n (cm^{-3})';
     hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
-    irf_legend(hca,{'n_{0}+(\epsilon_0/e)\nabla^2\phi';'n_{f}';'n_{t}'},...
+    irf_legend(hca,{'n_{0}+(\epsilon_0/e)\nabla^2\phi';'n_{f}';'n_{t}';'n_{mod}'},...
                     [0.02 0.3])    
 %                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
     %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
@@ -942,6 +955,9 @@ if 1 % plot 3
     c_eval('ax(1).Children(?).Color = colors(1,:);',1:nlines)
     c_eval('ax(2).Children(?).Color = colors(2,:);',1:nlines)
     
+    c_eval('ax(?).YColor = colors(?,:);',1:2)
+    
+        
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
     ax(2).YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));

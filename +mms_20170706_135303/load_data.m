@@ -3,7 +3,8 @@ tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
 localuser = datastore('local','user');
 
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Nexus/data');
+%mms.db_init('local_file_db','/Volumes/Nexus/data');
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load defatt, for coordinate tranformation
@@ -34,13 +35,16 @@ c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_p
 
 %% Load spacecraft position
 disp('Loading spacecraft position...')
+try
 R = mms.get_data('R_gse',tint);
 if size(R.gseR1,2) == 4
   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
 else
   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
 end
-
+catch
+  disp('Could not load spacecraft position.')
+end
 %% Spacecraft potential
 disp('Loading spacecraft potential...')
 c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint); toc;',ic);

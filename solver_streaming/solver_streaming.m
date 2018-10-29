@@ -17,7 +17,7 @@ kB = 1.381e-23;
 c = 299792458;
 
 % Plasma properties for the different species
-input = 5;
+input = 7;
 switch input
   case 1    
     B = 10e-9; % not used
@@ -54,6 +54,24 @@ switch input
     m = [1 1]*me;
     q = [-1 -1]*qe; 
     vd = [20000e3 -2000e3]; % m/s 
+  case 6
+    B = 10e-9; % not used    
+    m = [1 1]*me;
+    q = [-1 -1]*qe; 
+    
+    [f_inst,params_inst] = mms_20170706_135303.get_f0(2);
+    n = params_inst.n;
+    T = params_inst.T;
+    vd = params_inst.vd;
+  case 7
+    B = 10e-9; % not used    
+    m = [1 1 1836]*me;
+    q = [-1 -1 1]*qe; 
+    
+    [f_inst,params_inst] = mms_20170706_135303.get_f0(2);
+    n = [params_inst.n sum(params_inst.n)];
+    T = [params_inst.T 7000];
+    vd = [params_inst.vd 1000];
 end
 nsp = numel(n); % number of species
 
@@ -83,7 +101,9 @@ fprintf('Ld = ['); fprintf(' %g',Ld*1e-3); fprintf('] km\n');
 disp('----------------------------------------------')
 
 % Plot distributions
-f = @(v,n,vt,vd) n*(1/pi/vt^2)^(3/2)*exp(-(v-vd).^2/vt.^2);
+f = @(v,n,vt,vd) n*(1/pi/vt^2)^(3/2)*exp(-(v-vd).^2/vt.^2); % this is not reduced
+f = @(v,n,vt,vd) n*(1/pi/vt^2)^(1/2)*exp(-(v-vd).^2/vt.^2); % this is reduced
+
 if 0 % also done below after solver
   figure(52)
   f_legends = cell(nsp,1);
@@ -125,7 +145,7 @@ kvec = linspace(k_min,k_max,nk)/knorm;
 wr_store = nan(1,nk);
 wi_store = nan(1,nk);
 fval_store = nan(1,nk);
-x = 1000;
+x = -1000;
 for ik = 1:nk  
   xguess = x;
   %xguess = vd(2)*kvec(ik);

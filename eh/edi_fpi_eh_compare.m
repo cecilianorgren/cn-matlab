@@ -19,8 +19,96 @@ dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
 
+%% Make pitch angle distributions of FPI
+edi_pitchangles = [0:11.25:180];
 
-  
+c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,edi_pitchangles);',1:4)
+c_eval('eFlux? = ePitch?.flux;',1:4)
+
+%% Figure, tseries of edi and fpi flux
+npanels = 7;
+%h = irf_plot(npanels);
+[h, h2] = initialize_combined_plot(npanels,4,1,0.7,'vertical');
+
+isub = 1;
+flux_scale = 1e-6;
+
+if 1 % Flux EDI
+  hca = h(isub); isub = isub + 1;
+  irf_plot(hca,{flux180_mms1*flux_scale,flux180_mms2*flux_scale,flux180_mms3*flux_scale,flux180_mms4*flux_scale},'comp')
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,'EDI',[0.02 0.98],[0 0 0])
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.01 0.98],[0 0 0])
+end
+if 1 % Flux EDI
+  hca = h(isub); isub = isub + 1;
+  irf_plot(hca,{flux180_mms1.resample(ePitch1)*flux_scale,flux180_mms2.resample(ePitch2)*flux_scale,flux180_mms3.resample(ePitch3)*flux_scale,flux180_mms4.resample(ePitch4)*flux_scale},'comp')
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,'EDI resampled to FPI',[0.02 0.98],[0 0 0])
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.01 0.98],[0 0 0])
+end
+if 1 % Flux FPI
+  hca = h(isub); isub = isub + 1;
+  irf_plot(hca,{ePitch1.elim(500).flux*flux_scale,ePitch2.elim(500).flux*flux_scale,ePitch3.elim(500).flux*flux_scale,ePitch4.elim(500).flux*flux_scale},'comp')
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,'FPI',[0.02 0.98],[0 0 0])
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.01 0.98],[0 0 0])
+end
+if 1
+  ic = 1;
+  hca = h(isub); isub = isub + 1;
+  c_eval('irf_plot(hca,{flux180_mms?*flux_scale,ePitch?.elim(500).flux*660/1760*flux_scale},''comp'')',ic)
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,{'EDI';'FPI'},[1.01 0.98],[0 0 0])
+  irf_legend(hca,sprintf('mms%g',ic),[0.02 0.98],[0 0 0])
+end
+if 1
+  ic = 2;
+  hca = h(isub); isub = isub + 1;
+  c_eval('irf_plot(hca,{flux180_mms?*flux_scale,ePitch?.elim(500).flux*660/1760*flux_scale},''comp'')',ic)
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,{'EDI';'FPI'},[1.01 0.98],[0 0 0])
+  irf_legend(hca,sprintf('mms%g',ic),[0.02 0.98],[0 0 0])
+end
+if 1
+  ic = 3;
+  hca = h(isub); isub = isub + 1;
+  c_eval('irf_plot(hca,{flux180_mms?*flux_scale,ePitch?.elim(500).flux*660/1760*flux_scale},''comp'')',ic)
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,{'EDI';'FPI'},[1.01 0.98],[0 0 0])
+  irf_legend(hca,sprintf('mms%g',ic),[0.02 0.98],[0 0 0])
+end
+if 1
+  ic = 4;
+  hca = h(isub); isub = isub + 1;
+  c_eval('irf_plot(hca,{flux180_mms?*flux_scale,ePitch?.elim(500).flux*660/1760*flux_scale},''comp'')',ic)
+  hca.YLabel.String = {'Flux',sprintf('(10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale))};
+  irf_legend(hca,{'EDI';'FPI'},[1.01 0.98],[0 0 0])
+  irf_legend(hca,sprintf('mms%g',ic),[0.02 0.98],[0 0 0])
+end
+
+h(1).Title.String = 'Comparison of flux for EDI and FPI at 180^\circ';
+irf_plot_axis_align
+irf_zoom(h,'x',ePitch1.time)
+
+for ipanel = 1:npanels
+  h(ipanel).FontSize = 10;
+end
+
+isub = 1;
+for ic = 1:4
+  if 1
+    hca = h2(isub); isub = isub + 1;    
+    c_eval('scatter(hca,ePitch?.elim(500).flux.data*660/1760*flux_scale,flux180_mms?.resample(ePitch?).data*flux_scale,''.'')',ic)
+    hca.XLabel.String = sprintf(' Flux FPI (10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale));
+    hca.YLabel.String = sprintf(' Flux EDI (10^%g cm^{-1}s^{-1}sr^{-1})',log10(1/flux_scale));
+    irf_legend(hca,sprintf('mms%g',ic),[0.02 0.98],[0 0 0])
+    hold(hca,'on')
+    plot(hca,[0 max([hca.XLim(2) hca.YLim(2)])],[0 max([hca.XLim(2) hca.YLim(2)])])
+    hold(hca,'off')
+    axis(hca,'square')
+  end
+end
 %% Figure
 nrows = 2;
 ncols = 3;
@@ -162,7 +250,6 @@ if 0 % Flat skymap at energu Efpi (= 480)
   it = it + 1;
   [ax,hcb] = mms.plot_skymap(hca,epdist1(it),'energy',E_fpi,'flat','tint',epdist1.time(it));
 end
-
 
 %% Plot with the steradian thing checked out
 mms_id = 1;
