@@ -34,6 +34,24 @@ c_eval('B? = gseB?.resample(gseB1);',1:4)
 curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
 end
 
+%% Divergence of E, charge pertubation
+if 1
+  %%
+  c_eval('R? = gseR?.resample(gseE1)*1e3;',1:4)
+  c_eval('E? = gseE?.resample(gseE1)*1e-3;',1:4)
+  [divE,avE]=c_4_grad('R?','E?','div'); divE.name = 'div E';
+  dn_divE = divE*units.eps0/units.e*1e-6; 
+  dn_divE.name = 'dn from div E';
+  dn_divE.units = 'cm^-3';
+  %% using only Epar
+  c_eval('R? = gseR?.resample(gseE1)*1e3;',1:4)
+  c_eval('E?parvec = gseE?.dot(gseB?.resample(gseE?).norm)*gseB?.resample(gseE?).norm;',1:4)
+  c_eval('E?_paronly =E?parvec.resample(gseE1)*1e-3;',1:4)
+  [divE_paronly,avE]=c_4_grad('R?','E?_paronly','div'); divE_paronly.name = 'div E';
+  dn_divE_par = divE_paronly*units.eps0/units.e*1e-6; 
+  dn_divE_par.name = 'dn from div E';
+  dn_divE_par.units = 'cm^-3';
+end
 %% Inertial term, div(ve)
 if all(ic==[1:4])
   divVe = c_4_grad('gseR?','gseVe?','div'); divVe.name = 'div Ve';

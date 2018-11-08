@@ -623,13 +623,13 @@ doPrint = 0;
 % two populations, f1 and f2
 nPop = 2;
 ntot = 0.04*1e6;
-R_min = 0.70; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
+R_min = 0.50; R_max = 0.7; nR = 3; vec_R = linspace(R_min,R_max,nR); % rato of f1 to f2
 vec_N1 = ntot*vec_R; 
 vec_N2 = ntot*(1-vec_R);
 T1_min = 150; T1_max = 300; nT1 = 3; vec_T1 = linspace(T1_min,T1_max,nT1);
 %T2_min = 50; T2_max = 400; nT2 = 10; vec_T2 = linspace(T2_min,T2_max,nT2);
 T2_min = 4000; T2_max = 2000; nT2 = 1; vec_T2 = linspace(T2_min,T2_max,nT2);
-Vd1_min = -11000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
+Vd1_min = -9000*1e3; Vd1_max = -7000*1e3; nVd1 = 3; vec_Vd1 = linspace(Vd1_min,Vd1_max,nVd1);
 %Vd2_min = 0000*1e3; Vd2_max = 4000*1e3; nVd2 = 3; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd);
 Vd2_min = 4000*1e3; Vd2_max = 3000*1e3; nVd2 = 1; vec_Vd2 = linspace(Vd2_min,Vd2_max,nVd2);
 Beta_min = -0.60; Beta_max = -0.2; nBeta = 5; vec_Beta = linspace(Beta_min,Beta_max,nBeta);

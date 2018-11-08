@@ -179,3 +179,117 @@ h(5).CLim = [-35 -28]+12;
 colormap('jet');
 
 %h=irf_plot({gseB1,gseVi1,iPDist1.deflux.omni.specrec('energy'),f1D.specrec('velocity_1D')}); h(3).YScale = 'log'; %h(4).YLim = [-1000 1000];
+
+%% Density perturbation
+npanels = 8;
+h = irf_plot(npanels);
+dt = [0.0000  -0.0012  -0.0009  -0.0012];
+dt = dt+0.0008;
+  
+if 1 % E par, 4 sc
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if 1 % E par, 4 sc, time shifted for visibility
+  hca = irf_panel('E par dt');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp','dt',dt);
+  set(hca,'ColorOrder',mms_colors('12341'))
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  format_ms = '%.1f';
+  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],num2str(dt(2)*1e3,format_ms),num2str(dt(3)*1e3,format_ms),num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if 0 % E par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if 0 % Phi
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  hh = irf_plot(hca,{obs_phi1,obs_phi2,obs_phi3,obs_phi4},'comp');
+  %c_eval('hh.Children(?).Marker = ''.'';',1:4)
+  hca.YLabel.String = {'\Phi_{||}','(V)'};  
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+end
+if 1 % Phi, use eh_model_optimization_abel to get phi?
+  hca = irf_panel('Phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  hh = irf_plot(hca,{phi1,phi2,phi3,phi4},'comp','dt',dt);  
+  hca.YLabel.String = {'\phi','(V)'};  
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  %set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],num2str(dt(2)*1e3,format_ms),num2str(dt(3)*1e3,format_ms),num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+end
+if 0 % v phase + trap
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('fred vph vtrap');
+  
+  [hsurf,hcbar] = irf_spectrogram(hca,ef1D.specrec('velocity_1D','10^3 km/s'));
+  hold(hca,'on')
+  c_eval('vmin? = obs_vph? - obs_vtrap?;',1:4)
+  c_eval('vmax? = obs_vph? + obs_vtrap?;',1:4)
+  
+  %set(hca,'ColorOrder',mms_colors('111223344'))
+  set(hca,'ColorOrder',mms_colors('111223344'))
+  vscale = 1e-3;
+  hlines = irf_plot(hca,{obs_vph1*vscale,vmin1*vscale,vmax1*vscale,vmin2*vscale,vmax2*vscale,vmin3*vscale,vmax3*vscale,vmin4*vscale,vmax4*vscale},'comp');
+  
+  htrap = hlines.Children(1:end-2);
+  hvph = hlines.Children(end-1);
+  c_eval('htrap(?).Marker = ''.'';',1:numel(htrap))
+  hvph.LineStyle = '--';
+  
+  %irf_patch(hca,{vmin,vmax})
+  %hca.YLim = sort(real([max([vmax1.data; vmax2.data; vmax3.data; vmax4.data]) min([vmin1.data; vmin2.data; vmin3.data; vmin4.data])]));
+  hold(hca,'off')
+  hca.YLabel.String = {'v_{||}','(10^3 km/s)'};  
+  if 0 % label vtrap vph vtrap
+    set(hca,'ColorOrder',mms_colors('122'))
+    irf_legend(hca,{'v_{ph}'},[0.4 0.7],'fontsize',12);
+    irf_legend(hca,{'v_{trap}'},[0.4 0.99],'fontsize',12);
+    irf_legend(hca,{'v_{trap}'},[0.4 0.3],'fontsize',12);
+  end
+  if 1 % label -- vph
+    set(hca,'ColorOrder',mms_colors('1'))
+    irf_legend(hca,{'-- v_{ph}'},[0.01 0.98],'fontsize',12);    
+  end
+  hsurf = findobj(hca.Children,'Type','Surface');
+  hsurf.FaceAlpha = 1;
+  hline = findobj(hca.Children,'Type','Line');
+  c_eval('hline(?).LineWidth = 1.5;',1:numel(hline))
+end
+if 0 % edi flux 0 180 1 sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('edi flux');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{flux0_mms?,flux180_mms?},''comp'',''dt'',dt);',ic)
+  hca.YLabel.String = {'flux 180^o','10^6 s^{-1}m^{-2})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  %irf_legend(hca,{'0^o','180^o'},[0.98 0.9],'fontsize',12);
+end
+if 1 % edi flux 180 4sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('edi flux');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  hca.YLabel.String = {'flux','(10^6 s^{-1}cm^{-2})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'EDI 180^o'},[0.01 0.99],'fontsize',12);
+end

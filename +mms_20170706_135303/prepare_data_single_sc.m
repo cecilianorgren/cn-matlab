@@ -22,6 +22,15 @@ try
 c_eval('[gseE?hmfepar,gseE?hmfeperp] = irf_dec_parperp(gseB?,gseE?hmfe); gseE?hmfepar.name = ''E par hmfe''; gseE?hmfeperp.name = ''E perp hmfe'';',ic)
 end
 
+%% Diff E, proxy of Gauss law density perturbation
+c_eval('dtE? = gseE?.time(2) - gseE?.time(1);',ic)
+c_eval('diffE? = irf.ts_vec_xyz([gseE?.time(1:end-1)+0.5*dtE?],diff(gseE?.data,1));',ic)
+c_eval('diffE?par = diffE?.dot(gseB?.resample(diffE?).norm);',ic)
+c_eval('dn_E?par = diffE?par*units.eps0/units.e*1e-3;',ic)
+if all(ic==[1:4])
+  avDiffEpar = 0.25*(diffE1par + diffE2par.resample(diffE1par) + diffE3par.resample(diffE1par) + diffE4par.resample(diffE1par));
+end
+%dn_obs = -diff(Efield_obs_todiff.data,1)*1e-3/(sign(vph)*dx_obs)*units.eps0/units.e;
 %% Cross products
 % ExB drift
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s

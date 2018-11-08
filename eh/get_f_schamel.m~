@@ -33,13 +33,19 @@ while loop_iter < n_iter
     nPop = numel(n);
     for iPop = 1:nPop
       [Ftmp,Ftmp_all] = fe_schamel(V,n(iPop),vt(iPop),vd(iPop),PHI,VPH,beta_vec(ibeta)); % distribution function, from Schamel 1986
-      F = F + Ftmp;         
-      Ffree = Ffree + Ftmp_all.free;
-      Ftrap = Ftrap + Ftmp_all.trap;    
+      F = F + Ftmp; 
+      figure(74); pcolor(Ffree'); shading flat, colorbar
+      if 1
+        Ffree = Ffree + Ftmp_all.free;
+        Ftrap = Ftrap + Ftmp_all.trap;
+      else
+        Ffree = nansum(cat(3,Ffree,Ftmp_all.free),3); 
+        Ftrap = nansum(cat(3,Ftrap,Ftmp_all.trap),3); 
+      end
     end
-    nt_tmp = nansum(Ftrap,2)*dv;    
-    % if phi = 0, ntrap = 0, and nt_tmp will have NaN values
-    nt_diff_tmp = nansum(abs(tocolumn(nt_tmp)-tocolumn(nt)));
+    nt_tmp = nansum(Ftrap,2)*dv;
+    nt_tmp(isnan(nt_tmp)) = 0,
+    nt_diff_tmp = sum(abs(tocolumn(nt_tmp)-tocolumn(nt)));
     if 0 % plot
       hca = subplot(2,1,1);
       imagesc(hca,F')

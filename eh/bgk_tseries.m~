@@ -107,11 +107,10 @@ else % from E
 end
 % Divergence of E
 if 1
-  %%
-  c_eval('R? = gseR?.resample(gseE1).tlim(tint_all)*1e3;',1:4)
-  c_eval('E? = gseE?.resample(gseE1).tlim(tint_all)*1e-3;',1:4)
-  [divE,avE]=c_4_grad('R?','E?','div'); divE.name = 'div E';
-  dn_divE = divE*units.eps0/units.e ; dn_divE.name = 'dn from div E';
+  c_eval('R? = gseR?.resample(gseE1).tlim(tint_all);',1:4)
+  c_eval('E? = gseE?.resample(gseE1).tlim(tint_all);',1:4)
+  [divE,avE]=c_4_grad('R?','E?','div_b'); divE.name = 'div E';
+  curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
 end
 
 
