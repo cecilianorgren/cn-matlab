@@ -30,7 +30,7 @@ irf_zoom(h,'x',tintZoom)
 %ve = gseVe1.tlim(eDist.time).resample(eDist);
 scpot = scPot1.resample(eDist);
 scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
-lowerelim = scpot*0 + 40;
+lowerelim = scpot*0 + 0;
 eLine = dmpaB1.resample(eDist).norm;
 %tic; ef1D_ = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
 tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B

@@ -1,4 +1,4 @@
-function [f0,params] = get_f0(inp);
+function [f0,params] = get_f0(inp)
 
 switch inp 
   case 1
@@ -42,3 +42,4 @@ params.n = [n1 n2];
 params.vd = [vd1 vd2];
 params.T = [T1 T2];
 params.vt = vt;
+params.R = R;

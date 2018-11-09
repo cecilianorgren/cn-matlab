@@ -26,7 +26,7 @@ end
 c_eval('dtE? = gseE?.time(2) - gseE?.time(1);',ic)
 c_eval('diffE? = irf.ts_vec_xyz([gseE?.time(1:end-1)+0.5*dtE?],diff(gseE?.data,1));',ic)
 c_eval('diffE?par = diffE?.dot(gseB?.resample(diffE?).norm);',ic)
-c_eval('dn_E?par = diffE?par*units.eps0/units.e*1e-3;',ic)
+c_eval('dn_E?par = diffE?par*1e-3/dtE?*units.eps0/units.e;',ic)
 if all(ic==[1:4])
   avDiffEpar = 0.25*(diffE1par + diffE2par.resample(diffE1par) + diffE3par.resample(diffE1par) + diffE4par.resample(diffE1par));
 end

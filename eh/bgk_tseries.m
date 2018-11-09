@@ -47,7 +47,7 @@ c_eval('obs_vph = obs_vph?;',mms_id)
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
 % Get potential from Efield
-tint_all = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
+tint_all = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.650Z');
 vph = -9000*1e3;    
 tsVph = irf.ts_scalar(tint_all,vph*ones(tint_all.length,1));
 tint_single = tint_all;
@@ -64,14 +64,24 @@ fun_fit_all = cell(numel(obs_lpp),1);
 
 
 % F0
-n = [0.02 0.02]*1e6; % m-3
-ntot = 0.04*1e6;
-R = 0.7;
-n = [R (1-R)]*ntot;
-T = [150 4000]; % eV
-vd = [-11000e3 4000e3]; % ms-1 
-vt = sqrt(2*units.e*T./units.me); % m/s
-n0 = sum(n);
+if 1
+  [f0,params] = mms_20170706_135303.get_f0(1);
+  n = params.n;
+  ntot = sum(n);
+  R = n(1)/ntot;
+  T = params.T;
+  vd = params.vd;
+  vt = params.vt;
+else
+  n = [0.02 0.02]*1e6; % m-3
+  ntot = sum(n);
+  R = 0.7;
+  n = [R (1-R)]*ntot;
+  T = [150 4000]; % eV
+  vd = [-11000e3 4000e3]; % ms-1 
+  vt = sqrt(2*units.e*T./units.me); % m/s
+  n0 = sum(n);
+end
 
 str_info = {'unperturbed f:';...
             ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
@@ -1027,8 +1037,9 @@ end
 end
 end
 if 1 % plot, timeseries, for paper
+  %%
   fig = figure(39);
-  h = irf_plot(6);
+  h = irf_plot(5);
   clear h_all;
   h_all = h;
   isub = 1;
@@ -1090,7 +1101,8 @@ if 1 % plot, timeseries, for paper
     irf_plot(hca,{tsDnFromPhi/nscale,(tsDnModel-ntot*1e-6)/nscale},'comp')
     hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
     hca.YLabel.Interpreter = 'tex';
-    irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
+    %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
+    irf_legend(hca,{'n_{et}^{obs}  ','  n_{et}^{mod}'},[0.01 0.10]);
   end  
   if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
     hca = h(isub); isub = isub + 1;
@@ -1119,11 +1131,11 @@ if 1 % plot, timeseries, for paper
     ax1.YLabel.Interpreter = 'tex';
     irf_legend(hca,{'EDI','model'},[0.02 0.98])
     %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
-    ax1.YLim = [0 4];
-    ax2.YLim = [0 4];
+    ax1.YLim = [0 3.8];
+    ax2.YLim = [0 3.8];
     h_all = [h_all,ax2];
   end
-  if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
+  if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
     hca = h(isub); isub = isub + 1;
     %%        
     f_scale = 1e6;
@@ -1160,20 +1172,25 @@ if 1 % plot, timeseries, for paper
     plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
     hca.YLabel.String = {'v','(km/s)'};
   end   
-  
+    
   irf_plot_axis_align(h)
   
   h(3).YLabel.String = {'v_{||}','(10^3 km/s)'};
   h(3).YLabel.Interpreter = 'tex';
   
   iref = 1;
-  h_all(iref+6).Position = h_all(iref+4).Position;
-  h_all(iref+7).Position = h_all(iref+5).Position;
+  ijmp = 1;
+  h_all(iref+4+ijmp).Position = h_all(iref+4).Position;
+  %h_all(iref+7).Position = h_all(iref+5).Position;
   
-  irf_zoom(h_all,'x',tint_phi)
+  irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
   
-  h_all(iref+6).XLabel = [];
-  h_all(iref+7).XLabel = [];
+  h_all(iref+4+ijmp).XLabel = [];
+  
+  h(1).YLim = [-70 70];
+  h(4).YLim = [-1.7 0.9];
+  
+  %h_all(iref+7).XLabel = [];
   %h_all(end-2).YAxisLocation = 'right';
   %h_all(end-3).YAxisLocation = 'right';
   
@@ -1306,7 +1323,6 @@ if 1 % plot, timeseries, for paper
   if 0%doPrint
     cn.print(sprintf('schamel_2F_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g_phishift%g',vph,ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta,phi_shift))
   end
-
   if 0 % average over time, comaprison to FPI
   figure(34)
   hca = subplot(nrows,3,[3 6 9]);

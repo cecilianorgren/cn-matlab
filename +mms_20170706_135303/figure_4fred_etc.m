@@ -6,7 +6,7 @@ db_info = datastore('mms_db');
 
 % MMS id and time interval
 mms_id = 1;
-tint = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z')+3;
+tint = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
 c_eval('eDist = ePDist?;',mms_id)
 
 % Load EH properties
@@ -142,7 +142,7 @@ end
 
 if 0
   %%
-figure
+colors = mms_colors('matlab');
 v_fpi = mean(ef1D_bgremoved.depend{1},1);
 ind0 = find(v_fpi==0);
 doAverage = 1;
@@ -170,7 +170,30 @@ for ipanel = 1:npanels
 end
 isub = 1;
 
-if 1 % f   
+if 1 % f fpi
+  hca = h(isub); isub = isub + 1;
+  v_scale = 1e-3;
+  %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
+  hlines = plot(hca,v_fpi*v_scale,f_fpi,'-');
+  hca.YLabel.String = {'f (s^1/m^4)'};
+  hca.XLabel.String = {'v_{||} (10^3 km/s)'};  
+  
+  if doAverage
+    str_lines = fpi_utc;
+  else
+    str_lines = {...
+      sprintf('-- fpi: %s',fpi_utc(1,12:23));...
+      sprintf('-- fpi: %s',fpi_utc(2,12:23));...
+      sprintf('-- fpi: %s',fpi_utc(3,12:23));...
+      sprintf('-- fpi: %s',fpi_utc(4,12:23))};                  
+  end
+  irf_legend(hca,str_lines,[0.99 0.99])
+  set(hca,'ColorOrder',zeros(10,3))
+  %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
+  hca.XLim = 1.7*[-30 30];
+  hca.YLim = [0 3.5]*1e-3;
+end
+if 0 % f fpi, rem bg
   hca = h(isub); isub = isub + 1;
   v_scale = 1e-3;
   %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
@@ -193,22 +216,48 @@ if 1 % f
   hca.XLim = 1.7*[-30 30];
   hca.YLim = [0 3.5]*1e-3;
 end
+if 1 % <f> model
+  hold(hca,'on')
+  v_scale = 1e-3;
+  %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
+  hlines = plot(hca,v_vec*v_scale*1e-3,mean(Fabel_obs,1),'-','color',colors(2,:));
+  hca.YLabel.String = {'f (s^1/m^4)'};
+  hca.XLabel.String = {'v (10^3 km/s)'};  
+      %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
+  %hca.XLim = 1.7*[-30 30];
+  %hca.YLim = [0 3.5]*1e-3;
+  hold(hca,'off')
+end
+if 1 % v_edi
+  hold(hca,'on')
+  all_vph = [mean(obs_velocity)-std(obs_velocity);...
+             mean(obs_velocity);... 
+             mean(obs_velocity)+std(obs_velocity)]*[1 1]; 
+  if 0 % plot dashed lines
+    plot(hca,all_vph*1e-3,hca.YLim,'k-.')
+
+  end
+  %hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 0.95],[0 0 0]);
+  %hleg.BackgroundColor = [1 1 1];
+  %hleg.HorizontalAlignment = 'center';
+  hold(hca,'off')
+end
 if 1 % vph 
   hold(hca,'on')
   all_vph = [mean(obs_velocity)-std(obs_velocity);...
-             mean(obs_velocity);...
+             mean(obs_velocity);... 
              mean(obs_velocity)+std(obs_velocity)]*[1 1]; 
   if 0 % plot dashed lines
     plot(hca,all_vph*1e-3,hca.YLim,'k-.')
   else % plot patch                    
     hpatch = patch(hca,1e-3*[all_vph(1,1),all_vph(end,1) all_vph(end,1) all_vph(1,1)],...
-      [0 0 hca.YLim(2) hca.YLim(2)],[0.8 0.8 0.8]);
+      [0 0 hca.YLim(2) hca.YLim(2)],[0.8 0.7 0.9]);
     hpatch.FaceAlpha = 0.2;
     hpatch.EdgeAlpha = 0.3;
   end
-  hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 0.95],[0 0 0]);
+  %hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 0.95],[0 0 0]);
   %hleg.BackgroundColor = [1 1 1];
-  hleg.HorizontalAlignment = 'center';
+  %hleg.HorizontalAlignment = 'center';
   hold(hca,'off')
 end
 if 1 % vtrap
@@ -235,28 +284,28 @@ if 1 % vtrap
     hpatch.FaceAlpha = 0.2;
     hpatch.EdgeAlpha = 0.3;
   end
-  hleg = irf_legend(hca,'vph-vtrap',[0.5*12/hca.XLim(2) 0.95],[0 0 0]);
+  %hleg = irf_legend(hca,'vph-vtrap',[0.5*12/hca.XLim(2) 0.95],[0 0 0]);
   %hleg.BackgroundColor = [1 1 1];
-  hleg.HorizontalAlignment = 'center';
+  %hleg.HorizontalAlignment = 'center';
 
-  hleg = irf_legend(hca,'vph+vtrap',[0.5*30/hca.XLim(2) 0.95],[0 0 0]);
+  %hleg = irf_legend(hca,'vph+vtrap',[0.5*30/hca.XLim(2) 0.95],[0 0 0]);
   %hleg.BackgroundColor = [1 1 1];
-  hleg.HorizontalAlignment = 'center';
+  %hleg.HorizontalAlignment = 'center';
   hold(hca,'off')
 end
 if 1 % f0
     hold(hca,'on')
     v_plot = vg(1):500:vg(end);
     [f0,params_0] = mms_20170706_135303.get_f0(1);
-    plot(hca,v_plot*v_scale,f0(v_plot*1e3,params_0.n,params_0.vd,params_0.vt))
+    plot(hca,v_plot*v_scale,f0(v_plot*1e3,params_0.n,params_0.vd,params_0.vt),'color',colors(3,:))
     str_info = {['T_{0}= [' sprintf('%g  ',params_0.T) '] eV'];...
                 ['n_{0}= [' sprintf('%g  ',params_0.n*1e-6) '] cc'];...
                 ['v_{d,0}= [' sprintf('%g  ',params_0.vd*1e-3) '] km/s'];...
                 };
-    hleg = irf_legend(hca,str_info,[0.99,0.1]);
+    hleg = irf_legend(hca,str_info,[0.99,0.4]);
     hold(hca,'off')
 end
-if 1 % f instability
+if 0 % f instability
     hold(hca,'on')
     v_plot = vg(1):500:vg(end);
     [finst,params_inst] = mms_20170706_135303.get_f0(2);
@@ -268,4 +317,10 @@ if 1 % f instability
     hleg = irf_legend(hca,str_info,[0.99,0.8]);
     hold(hca,'off')
 end
+hca.XLim = [-35 35];
+h_lines = findobj(hca,'Type','line');
+c_eval('h_lines(?).LineWidth = 1.5;',1:numel(h_lines))
+hca.YLim = [0 2.6e-3];
+set(hca,'ColorOrder',colors)
+irf_legend(hca,{'f_{FPI}';'f^{mod}';'f_0'},[0.02 0.99])
 end

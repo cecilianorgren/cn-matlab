@@ -37,15 +37,24 @@ fun_fit_all = cell(numel(obs_velocity),1);
 
 
 % F0
-n = [0.02 0.02]*1e6; % m-3
-ntot = 0.04*1e6;
-R = 0.7;
-n = [R (1-R)]*ntot;
-T = [150 4000]; % eV
-vd = [-11000e3 4000e3]; % ms-1 
-vt = sqrt(2*units.e*T./units.me); % m/s
-n0 = sum(n);
-
+if 1
+  [f0,params] = mms_20170706_135303.get_f0(1);
+  n = params.n;
+  ntot = sum(n);
+  R = n(1)/ntot;
+  T = params.T;
+  vd = params.vd;
+  vt = params.vt;
+else
+  n = [0.02 0.02]*1e6; % m-3
+  ntot = sum(n);
+  R = 0.7;
+  n = [R (1-R)]*ntot;
+  T = [150 4000]; % eV
+  vd = [-11000e3 4000e3]; % ms-1 
+  vt = sqrt(2*units.e*T./units.me); % m/s
+  n0 = sum(n);
+end
 str_info = {'unperturbed f:';...
             ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
             ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
@@ -780,14 +789,20 @@ if 0 % only n mod and n poisson
 end
 if 1 % plot 3
   figure(93)
-  nrows = 2;
-  ncols = 3;
+  nrows = 3;
+  ncols = 2;
   npanels = nrows*ncols;
   isub = 0;
-  for icol = 1:ncols
-    for irow = 1:nrows  
-      isub = isub + 1;         
-      h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+  if 0
+    for icol = 1:ncols
+      for irow = 1:nrows  
+        isub = isub + 1;         
+        h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
+      end
+    end
+  else
+    for ipanel = 1:npanels
+      h(ipanel) = subplot(nrows,ncols,ipanel);
     end
   end
   isub = 1;
@@ -897,9 +912,13 @@ if 1 % plot 3
     %hlines(1).LineWidth = 1.5;
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = 'n (cm^{-3})';
-    hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
-    irf_legend(hca,{'n_{0}+(\epsilon_0/e)\nabla^2\phi';'n_{f}';'n_{t}';'n_{mod}'},...
-                    [0.02 0.3])    
+    %hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
+    irf_legend(hca,{...
+      'n_{e}^{obs}';...%'n_{0}+(\epsilon_0/e)\nabla^2\phi';...
+      'n_{ef}';...
+      'n_{et}';...
+      'n_{e}^{mod}'},...
+                    [0.02 0.25])    
 %                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
     %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
     hca.YLim = [0 0.042];
@@ -919,16 +938,27 @@ if 1 % plot 3
     colormap(hca,cn.cmap('blue_red'))  
     if 1 % EDI energies
       hold(hca,'on')
-      hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
-      for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
-      hlines = plot(hca,...
-        x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
-        x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
-        x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
-        x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
-        'LineWidth',1.5);
-      for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
-      irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
+      if 1 % solid lines                
+        hlines = plot(hca,...
+          x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
+          x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
+          x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+          x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+          'LineWidth',1.0);
+        for iline = 1:numel(hlines), hlines(iline).LineStyle = '-'; hlines(iline).Color = [0 0 0]; end
+        irf_legend(hca,{'- EDI'},[0.01 0.85],'color',hlines(1).Color);   
+      else % dashed lines
+        hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+        for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+        hlines = plot(hca,...
+          x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
+          x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
+          x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+          x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+          'LineWidth',1.5);
+        for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+        irf_legend(hca,{'-- EDI'},[0.01 0.85],'color',hlines(1).Color);   
+      end
       hold(hca,'off')
     end
     hca.XLim = xlim;
@@ -953,19 +983,20 @@ if 1 % plot 3
     colors = mms_colors('matlab');    
     nlines = 2;
     c_eval('ax(1).Children(?).Color = colors(1,:);',1:nlines)
-    c_eval('ax(2).Children(?).Color = colors(2,:);',1:nlines)
-    
+    c_eval('ax(2).Children(?).Color = colors(2,:);',1:nlines)    
     c_eval('ax(?).YColor = colors(?,:);',1:2)
+    c_eval('ax(2).Children(?).Marker = ''*'';',1:nlines)    
     
         
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
     ax(2).YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));
-    irf_legend(hca,{'Model';'EDI'},[0.02 0.6])
+    irf_legend(hca,{'Model';'* EDI'},[0.02 0.6])
     text(hca,0.5*hca.XLim(2),0.2*hca.YLim(2),'0^o','verticalalignment','bottom')
     text(hca,0.5*hca.XLim(2),1.0*hca.YLim(2),'180^o','verticalalignment','top')
     hca.YLim(1) = 0;    
     hca.XLim = xlim;
+    c_eval('ax(?).YLim = [0 2.5];',1:2)    
   end  
   %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
   width = h(1).Position(3)*0.8;
@@ -977,6 +1008,12 @@ if 1 % plot 3
   all_hcb{2}.Position(1) = h(3).Position(1) + h(3).Position(3) - all_hcb{2}.Position(3);
   all_hcb{3}.Position(1) = h(5).Position(1) + h(5).Position(3) - all_hcb{3}.Position(3);
   
+  legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)'};
+  legends_color = {'k','w','k','k','k','k','k','k','k','k','k','k'};
+  for ipanel = 1:npanels
+    irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
+  end
+
   %all_hcb{1}.FontSize = 10;
   if 0
   h(1).Position(1) = h(1).Position(1) - 0.06;
