@@ -56,3 +56,32 @@ scatter(hca,vperp0,vperp(B1))
 axis(hca,'equal')
 %hca.YLim = [0 vmax];
 %hca.XLim = [-vmax vmax];
+
+
+%% Egedal 2008, p. 9-10-
+% distribution function
+ninfty = 1;
+vtpar = 1;
+vtperp = 0.5;
+f = @(vpar,vperp1,vperp2) ninfty/sqrt(2*pi^3*vtpar*vtperp^2)*exp(-0.5*(vpar.^2/vtpar^2+vperp1.^2/vtperp^2+vperp2.^2/vtperp^2));
+
+nvperp = 110; 
+nvpar = 110;
+vmax = 3*vtpar;
+vperp = 3*linspace(-vmax,vmax,nvperp);
+vperp1 = vperp;
+vperp2 = vperp;
+vpar = 2*linspace(-vmax,vmax,nvpar);
+dvperp = vperp1(2)-vperp1(1);
+dvpar = vpar(2)-vpar(1);
+d3v = dvpar*dvperp^2;
+
+[VPAR,VPERP1,VPERP2] = meshgrid(vpar,vperp1,vperp2);
+F = f(VPAR,VPERP1,VPERP2);
+nint = sum(F(:))*d3v;
+
+hca = subplot(1,1,1);
+pcolor(hca,squeeze(VPAR(:,:,1)),squeeze(VPERP1(:,:,1)),sum(F,3));
+hca.Title.String = sprintf('ninfty = %g, nint = %g',ninfty,nint);
+colorbar
+
