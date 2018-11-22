@@ -5,8 +5,8 @@ localuser = datastore('local','user');
 db_info = datastore('mms_db');   
 
 % MMS id and time interval
-mms_id = 1;
-tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
+mms_id = 2;
+tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.630Z');
 c_eval('eDist = ePDist?;',mms_id)
 
 % Load EH properties
@@ -50,7 +50,7 @@ end
 strTint = [irf_time(tint(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tint(2),'epochtt>utc_HHMMSS')];
 eint = [000 40000];
 vint = [-Inf Inf];
-vg = (-100:2:100)*1e3;
+vg = (-70:2:70)*1e3;
 c_eval('eDist = ePDist?.tlim(tint);',mms_id)
            
 scpot = scPot1.resample(eDist);
@@ -74,7 +74,7 @@ tic; ef2D_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint
 ePitch = eDist.pitchangles(dmpaB1.resample(eDist),12);
 ePitch_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
 %%
-for it = 4%1:4
+for it = 1%1:4
   %%
   figure(21)
   %it = 3;
@@ -324,12 +324,12 @@ if 1 % vtrap
   obs_vtrap = obs_vtrap_all(:,mms_id);
   vtrap_plus = obs_velocity + obs_vtrap*1e-3;
   vtrap_minus = obs_velocity - obs_vtrap*1e-3;
-  plot_vtrap_plus = [nanmean(vtrap_plus)-std(vtrap_plus,'omitnan');...
-                     nanmean(vtrap_plus);...
-                     nanmean(vtrap_plus)+std(vtrap_plus,'omitnan')]*[1 1]; 
-  plot_vtrap_minus = [nanmean(vtrap_minus)-std(vtrap_minus,'omitnan');...
-                      nanmean(vtrap_minus);...
-                      nanmean(vtrap_minus)+std(vtrap_minus,'omitnan')]*[1 1]; 
+  plot_vtrap_plus = [mean(vtrap_plus)-std(vtrap_plus);...
+                     mean(vtrap_plus);...
+                     mean(vtrap_plus)+std(vtrap_plus)]*[1 1]; 
+  plot_vtrap_minus = [mean(vtrap_minus)-std(vtrap_minus);...
+                      mean(vtrap_minus);...
+                      mean(vtrap_minus)+std(vtrap_minus)]*[1 1]; 
   if 0 % plot dashed lines
     plot(hca,plot_vtrap_minus*1e-3,hca.YLim,'k-.',plot_vtrap_plus*1e-3,hca.YLim,'k-.')
   else % plot patch

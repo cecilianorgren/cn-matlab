@@ -2,14 +2,27 @@ function [f0,params] = get_f0(inp)
 
 switch inp 
   case 1
-    ntot = 0.04*1e6;
-    R = 0.60; 
-    n1 = ntot*R; 
-    n2 = ntot*(1-R);
-    T1 = 150;
-    T2 = 2000;
-    vd1 = -9000*1e3;
-    vd2 = 4000*1e3; 
+    f0 = 2;
+    switch f0
+      case 1
+        ntot = 0.04*1e6;
+        R = 0.60; 
+        n1 = ntot*R; 
+        n2 = ntot*(1-R);
+        T1 = 150;
+        T2 = 2000;
+        vd1 = -9000*1e3;
+        vd2 = 4000*1e3; 
+      case 2
+        ntot = 0.04*1e6;
+        R = 0.65; 
+        n1 = ntot*R; 
+        n2 = ntot*(1-R);
+        T1 = 150;
+        T2 = 1500;
+        vd1 = -8000*1e3;
+        vd2 = 6000*1e3; 
+    end
   case 2
     ntot = 0.04*1e6;
     R = 0.60; 

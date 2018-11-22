@@ -39,8 +39,9 @@ fun_fit_all = cell(numel(obs_velocity),1);
 % F0
 if 1
   [f0,params] = mms_20170706_135303.get_f0(1);
-  n = params.n;
+  n = params.n;  
   ntot = sum(n);
+  n0 = ntot;
   R = n(1)/ntot;
   T = params.T;
   vd = params.vd;
@@ -298,7 +299,9 @@ FVdv_scha_obs_edi_180 = nansum(FVscha_obs(:,vind_edi_180),2)*dv;
 FVdv_abel_mod_edi_0 = nansum(FVabel_mod(:,vind_edi_0),2)*dv;
 FVdv_abel_mod_edi_180 = nansum(FVabel_mod(:,vind_edi_180),2)*dv;
 
-
+vv_ind = find(abs(V_obs(1,:)-vph)==min(abs(V_obs(1,:)-vph)));
+F_center = Fabel_obs(:,vv_ind);
+ff_ehcenter = ff(:,vv_ind);
 %% Plot
 if 0 % plot 1
   figure(93)
@@ -788,7 +791,7 @@ if 0 % only n mod and n poisson
   hca.XLabel.String = {'x (km)'};  
 end
 if 1 % plot 3
-  figure(93)
+  fig = figure(93);
   nrows = 3;
   ncols = 2;
   npanels = nrows*ncols;
@@ -819,10 +822,15 @@ if 1 % plot 3
     hca.YLabel.String = '\phi (V)';
     %legend(hca,{'obs','mod, Gaussian','obs no detrend'},'Box','off')
     %irf_legend(hca,{'obs';{'mod:','Gaussian'};{'obs:','no detrend'}},[0.02,0.98])
-    %hca.Title.String = sprintf('tint_{obs} = %s - %s',tint_utc(1,:),tint_utc(2,:));
-    %irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',vph*1e-3)},[0.99,0.99],'Color',[0 0 0])
-    hca.Title.String = sprintf('v_{ph}= %.0f km/s',vph*1e-3);
+    
+    %hca.Title.String = sprintf('%s - %s',tint_utc(1,:),tint_utc(2,:));   
+    hca.Title.String = sprintf('%s - %s',tint_utc(1,:),tint_utc(2,7:end));   
+    hca.Title.Position
+    irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',round(vph*1e-5)*1e5*1e-3)},[0.13,0.98],'Color',[0 0 0],'fontsize',12)
+    %hca.Title.String = sprintf('v_{ph}= %.0f km/s',vph*1e-3);    
+    
     hca.XLim = xlim;
+   % hca.Title.Position(1)=24;
   end
   if 1 % E
     hca = h(isub); isub = isub + 1;
@@ -832,7 +840,7 @@ if 1 % plot 3
     hcb = colorbar('peer',hca);
     all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
     hca.XLabel.String = 'x (km)';
-    hca.YLabel.String = 'v (10^3 km/s)';
+    hca.YLabel.String = 'v_{||} (10^3 km/s)';
     hcb.YLabel.String = 'U/e (eV)';  
     hca.YLim = vlim*[-1 1]*1e-6;
     hca.CLim = max(abs(E_obs(:)/units.e))*[-1 1];
@@ -846,7 +854,7 @@ if 1 % plot 3
       levels_E = linspace(min(E_obs(:)),0,5); 
       levels_E = [levels_E 0:levels_E(2)-levels_E(1):max(E_obs(:))];                   
       [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,levels_E/units.e,'k');
-      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,0,'k','LineWidth',2);
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,[0 0],'k','LineWidth',1.0);
       hold(hca,'off')
     end
     hcb.YLim = [min(E_obs(:)) hca.CLim(2)*units.e]/units.e;
@@ -877,7 +885,7 @@ if 1 % plot 3
     hcb = colorbar('peer',hca);
     all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
     hca.XLabel.String = 'x (km)';
-    hca.YLabel.String = 'v (10^3 km/s)';
+    hca.YLabel.String = 'v_{||} (10^3 km/s)';
     hcb.YLabel.String = 'f_e (s^1m^{-4})';  
     hca.YLim = vlim*[-1 1]*1e-6;
     colormap(hca,cn.cmap('white_blue'));
@@ -885,6 +893,11 @@ if 1 % plot 3
     hcb.Position(1) = hcb.Position(1)-shiftcb;
     %hca.Title.String = 'Abel obs';    
     hca.XLim = xlim;
+    if 1 % E contours
+      hold(hca,'on')      
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,[0 0],'color',[0.8 .8 .8],'linewidth',1.5);
+      hold(hca,'off')
+    end
   end  
   if 0 % free,, and total densities
     hca = h(isub); isub = isub + 1;
@@ -905,20 +918,20 @@ if 1 % plot 3
   if 1 % free, trapped, and total densities
     hca = h(isub); isub = isub + 1;
     hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,...
                       x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6,...
-                      x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6,...
-                      x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6...
+                      x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6...
                       );
     %hlines(1).LineWidth = 1.5;
     hca.XLabel.String = 'x (km)';
-    hca.YLabel.String = 'n (cm^{-3})';
+    hca.YLabel.String = 'n_e (cm^{-3})';
     %hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
     irf_legend(hca,{...
       'n_{e}^{obs}';...%'n_{0}+(\epsilon_0/e)\nabla^2\phi';...
+      'n_{e}^{mod}';...
       'n_{ef}';...
-      'n_{et}';...
-      'n_{e}^{mod}'},...
-                    [0.02 0.25])    
+      'n_{et}'},...
+      [0.02 0.25])    
 %                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
     %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
     hca.YLim = [0 0.042];
@@ -931,7 +944,7 @@ if 1 % plot 3
     hcb = colorbar('peer',hca);
     all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
     hca.XLabel.String = 'x (km)';
-    hca.YLabel.String = 'v (10^3 km/s)';
+    hca.YLabel.String = 'v_{||} (10^3 km/s)';
     hcb.YLabel.String = 'flux/\Delta v (m^{-3})';  
     hca.YLim = vlim*[-1 1]*1e-6;
     hca.CLim = max(abs(FVabel_obs(:)))*[-1 1];    

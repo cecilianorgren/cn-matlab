@@ -16,7 +16,8 @@ function [fitresult, gof, fun_out, fun_deriv_out] = createFit(phi, dntrap)
 
 %% Fit: 'untitled fit 1'.
 [xData, yData] = prepareCurveData( phi, dntrap );
-
+xData = tocolumn(xData);
+yData = tocolumn(yData);
 % Set up fittype and options.
 fit_type = 'poly8';
 switch fit_type

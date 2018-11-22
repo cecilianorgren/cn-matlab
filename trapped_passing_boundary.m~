@@ -1,0 +1,12 @@
+function vout = trapped_passing_boundary(v,Binfty,Bloc,phi)
+% vout = trapped_passing_boundary(v,Binfty,Bloc,phi)
+
+units = irf_units;
+v_par_infty = 0;
+v_perp_infty = v;
+E =
+mu = units.me*v_perp_infty.^2/2/Binfty;
+
+E_perp_loc = mu*Bloc;
+
+v_perp_loc = sqrt(2*E_perp_loc/units.me);

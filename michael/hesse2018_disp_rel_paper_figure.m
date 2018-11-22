@@ -1,5 +1,6 @@
 %% Load data to make fit to
-path_dir = '/Users/cecilia/GoogleDrive/Research/Michael_Separatrix_EH/f_vs_vpar_72.50/';
+localuser = datastore('local','user');
+path_dir = ['/Users/' localuser '/GoogleDrive/Research/Michael_Separatrix_EH/f_vs_vpar_72.50/'];
 list_of_files = dir([path_dir '*.txt']);
 nfiles = numel(list_of_files);
 fileids = cell(nfiles,1);
@@ -24,7 +25,7 @@ if 0 % plot distributions
 end
 
 %% Load all quantities at x = 72.5 as a function of z
-path_dir = '/Users/cecilia/GoogleDrive/Research/Michael_Separatrix_EH/';
+path_dir = ['/Users/' localuser '/GoogleDrive/Research/Michael_Separatrix_EH/'];
 data_tmp = load([path_dir 'zcut(72.5)_data.txt']);
 names_tmp = textread([path_dir 'zcut(72.5)_names.txt'],'%s');
 z = data_tmp(:,1);
@@ -49,7 +50,7 @@ str_fit_info = '';
 
 dists = [1:2];
 ndists = numel(dists);
-for idist_ind = 1
+for idist_ind = 2
   idist = dists(idist_ind);
   [B,n,T,m,q,vd,str_fit_info,x] = get_input(idist);
   nsp = numel(n); % number of species
@@ -81,7 +82,7 @@ for idist_ind = 1
   disp('----------------------------------------------')
 
   % Plot distributions
-  f = @(v,n,vt,vd) n*(1/pi/vt^2)^(3/2)*exp(-(v-vd).^2/vt.^2);
+  f = @(v,n,vt,vd) n*(1/pi/vt^2)^(1/2)*exp(-(v-vd).^2/vt.^2);
   if 0 % also done below after solver
     figure(52)
     f_legends = cell(nsp,1);
@@ -455,7 +456,7 @@ end
 
 %% Plot, 1 solution only
 idist_solv = 1; idist_sim = 4; z_str = '2.43';
-%idist_solv = 2; idist_sim = 7; z_str = '3.13';
+idist_solv = 2; idist_sim = 7; z_str = '3.13';
 figure(84)
 fig = gcf;
 ud = get(fig);
@@ -514,6 +515,8 @@ if 1 % simulation + input distributions
   ftot = get_ftot(idist_solv,vvec);  
   ftot_scale = 0.80e20;
   ftot_scale = 4e21;
+  ftot_scale = 1/1e-7;
+  eval(sprintf('ftot_scale = 1/((max(ftot)/max(%s.f)));',fileids{idist_sim}))
   set(hca,'LineStyleOrder','-|--|:')    
   eval(sprintf('plot(hca,%s.v,%s.f,vvec/vnorm,ftot*ftot_scale,''LineWidth'',1.5)',fileids{idist_sim},fileids{idist_sim}))    
   hca.XLabel.String = 'v_{||}/v_A';
@@ -580,11 +583,12 @@ Vatot  = B./sqrt(units.mu0*sum(n)*mp);
 c = c0;
 wp = sqrt(n.*q.^2./(m*units.eps0)); % Hz
 wc = units.e*B./m;
-wptot = sqrt(sum(n).*q.^2./(m*units.eps0)); % Hz
+wptot = sqrt(sum(n).*q.^2./(m(1)*units.eps0)); % Hz
 vt = sqrt(2*units.e*T./m); % m/s
 Lin = c./wp;
+Lintot = c./wptot;
 
-
+%%
 disp('----------------------------------------------')
 fprintf('check quasi-neutrality: sum(qn) = %g\n',sum(q.*n))
 fprintf('B0 = %g, B = %g = %g B0\n',B0,B,B/B0)
@@ -597,13 +601,17 @@ fprintf('vd = ['); fprintf(' %.0f',vd*1e-3); fprintf('] km/s = ['); fprintf(' %g
 fprintf('wp = ['); fprintf(' %g',wp); fprintf('] Hz = ['); fprintf(' %g',wp/wp0); fprintf('] wp0\n');
 fprintf('wc = ['); fprintf(' %g',wc); fprintf('] Hz\n');
 fprintf('ro = ['); fprintf(' %g',ro*1e-3); fprintf('] km\n');
-fprintf('Lin = ['); fprintf(' %g',Lin*1e-3); fprintf('] km = ['); fprintf(' %g',Lin/Lin0); fprintf('] Lin0\n');
+fprintf('Lin = ['); fprintf(' %g',Lin*1e-3); fprintf('] km = ['); fprintf(' %g',Lin/Lin0); fprintf('] Lin0 (Lin = c/wpe)\n');
 fprintf('Ld = ['); fprintf(' %g',Ld*1e-3); fprintf('] km\n');
 fprintf('wp0/wc0 = %g, wp/wc = %g\n',wp0/wc0,wp/wc)
 fprintf('vA0 = %g m/s, vA = %g m/s\n',Va0,Vatot)
 fprintf('vA0 = %g c0, vA = %g c0\n',Va0/c0,Vatot/c0)
 disp('----------------------------------------------')
-
+fprintf('wi = ['); fprintf(' %g',wimax_all); fprintf('] Hz = ['); fprintf(' %g',wimax_all/wptot); fprintf('] wp = ['); fprintf(' %g',wimax_all/wp0); fprintf('] wp0\n');
+fprintf('wr = ['); fprintf(' %g',wrmax_all); fprintf('] Hz = ['); fprintf(' %g',wrmax_all/wptot); fprintf('] wp = ['); fprintf(' %g',wrmax_all/wp0); fprintf('] wp0\n');
+fprintf('k = ['); fprintf(' %g',kmax_all); fprintf('] m-1 = ['); fprintf(' %g',kmax_all*Lintot); fprintf('] Ln-1 = ['); fprintf(' %g',kmax_all*Lin0); fprintf('] Ln0-1 \n');
+fprintf('vph = ['); fprintf(' %.0f',vphmax_all*1e-3); fprintf('] km/s = ['); fprintf(' %g',vphmax_all/Va0); fprintf('] Va0\n');
+disp('----------------------------------------------')
 %% Aid functions
 function [B,n,T,m,q,vd,str_fit_info,x] = get_input(index)
   % normalize to simulations and to n0_cc  
@@ -636,17 +644,31 @@ function [B,n,T,m,q,vd,str_fit_info,x] = get_input(index)
       x = -20; % xguess
       n = nref*n/sum(n);       
     case 2 % f_3_13
-      nref = 0.0355;
-      Bref = 0.8051;
-      B = B0*Bref; % not used
-      n = [0.01 0.09]*1e6;
-      T = 1*8*[15 130]; % use parallel temperature
-      m = [1 1]*units.me;
-      q = [-1 -1]*units.e; 
-      vd = 1*3*[-12000e3 6000e3]; % m/s 
-      str_fit_info = ': fit to f at z=3.13';
-      x = -10; % xguess
-      n = nref*n/sum(n);   
+      if 0 % these numbers were originally done for fit to a slice of 3D distributiin, NOT 1D reduced, i.e. it was wrong
+        nref = 0.0355;
+        Bref = 0.8051;
+        B = B0*Bref; % not used
+        n = [0.01 0.09]*1e6;
+        T = 1*8*[15 130]; % use parallel temperature
+        m = [1 1]*units.me;
+        q = [-1 -1]*units.e; 
+        vd = 1*3*[-12000e3 6000e3]; % m/s 
+        str_fit_info = ': fit to f at z=3.13';
+        x = -10; % xguess
+        n = nref*n/sum(n);   
+      else
+        nref = 0.0355;
+        Bref = 0.8051;
+        B = B0*Bref; % not used
+        n = [0.01 0.01]*1e6;
+        T = 1*8*[15 130]; % use parallel temperature
+        m = [1 1]*units.me;
+        q = [-1 -1]*units.e; 
+        vd = 1*3*[-12000e3 6000e3]; % m/s 
+        str_fit_info = ': fit to f at z=3.13';
+        x = -10; % xguess
+        n = nref*n/sum(n);
+      end
     case 22 % f_3_13 % copy 2
       nref = 0.0355;
       Bref = 0.6833;
@@ -689,7 +711,7 @@ function out = get_colors()
 end
 function out = get_ftot(index,vvec) 
   units = irf_units;
-  f = @(v,n,vt,vd) n*(1/pi/vt^2)^(3/2)*exp(-(v-vd).^2/vt.^2);
+  f = @(v,n,vt,vd) n*(1/pi/vt^2)^(1/2)*exp(-(v-vd).^2/vt.^2);
   [B,n,T,m,q,vd,str_fit_info,x] = get_input(index);
   vt = sqrt(2*units.e*T./m); % m/s
   nsp = numel(n);
