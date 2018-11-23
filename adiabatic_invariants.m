@@ -62,26 +62,76 @@ axis(hca,'equal')
 % distribution function
 ninfty = 1;
 vtpar = 1;
-vtperp = 0.5;
-f = @(vpar,vperp1,vperp2) ninfty/sqrt(2*pi^3*vtpar*vtperp^2)*exp(-0.5*(vpar.^2/vtpar^2+vperp1.^2/vtperp^2+vperp2.^2/vtperp^2));
+vtperp = 1;
+B0 = 1;
+Bloc = 0.5;
+phi = 1;
+
+f = @(vpar,vperp1,vperp2) ninfty/((pi)^(3/2)*vtpar*vtperp^2)*exp(-(vpar.^2/vtpar^2+vperp1.^2/vtperp^2+vperp2.^2/vtperp^2));
+
+%f = @(vpar,vperp1,vperp2) ninfty/((pi)^(3/2)*vtpar*vtperp^2)* exp(-vperp.^2/vtpar^2*(1-B/Bloc)-phi/vtpar^2-(B0/Bloc)*(vperp1.^2/vtperp^2+vperp2.^2/vtperp^2));
 
 nvperp = 110; 
 nvpar = 110;
-vmax = 3*vtpar;
-vperp = 3*linspace(-vmax,vmax,nvperp);
+vmax = *vtpar;
+vperp = linspace(-vmax,vmax,nvperp);
 vperp1 = vperp;
 vperp2 = vperp;
-vpar = 2*linspace(-vmax,vmax,nvpar);
+vpar = linspace(-vmax,vmax,nvpar);
 dvperp = vperp1(2)-vperp1(1);
 dvpar = vpar(2)-vpar(1);
-d3v = dvpar*dvperp^2;
+d3v = dvpar*dvperp^2; 
 
 [VPAR,VPERP1,VPERP2] = meshgrid(vpar,vperp1,vperp2);
 F = f(VPAR,VPERP1,VPERP2);
 nint = sum(F(:))*d3v;
 
-hca = subplot(1,1,1);
-pcolor(hca,squeeze(VPAR(:,:,1)),squeeze(VPERP1(:,:,1)),sum(F,3));
-hca.Title.String = sprintf('ninfty = %g, nint = %g',ninfty,nint);
-colorbar
+hca = subplot(2,2,1);
+pcolor(hca,squeeze(VPAR(:,:,1))-0,squeeze(VPERP1(:,:,1)),sum(F,3));
+%hca.Title.String = sprintf('ninfty = %g, nint = %g',ninfty,nint);
+hca.Title.String = sprintf('original');
+hca.XLim = vmax*[-1 1];
+hca.YLim = vmax*[-1 1];
+shading(hca,'flat')
+hca.YLabel.String = 'v_\perp';
+hca.XLabel.String = 'v_{||}';
+colorbar;
 
+hca = subplot(2,2,2);
+pcolor(hca,squeeze(VPAR(:,:,1))-1,squeeze(VPERP1(:,:,1)),sum(F,3));
+%hca.Title.String = sprintf('ninfty = %g, nint = %g',ninfty,nint);
+hca.Title.String = sprintf('accelerated');
+hca.XLim = vmax*[-1 1];
+hca.YLim = vmax*[-1 1];
+shading(hca,'flat')
+hca.YLabel.String = 'v_\perp';
+hca.XLabel.String = 'v_{||}';
+colorbar;
+
+[VPAR,VPERP1,VPERP2] = meshgrid(vpar,vperp1,vperp2);
+F = f(VPAR*0.5,VPERP1*0.5,VPERP2*0.5);
+nint = sum(F(:))*d3v;
+
+hca = subplot(2,2,3);
+pcolor(hca,squeeze(VPAR(:,:,1))-0,squeeze(VPERP1(:,:,1)),sum(F,3));
+%hca.Title.String = sprintf('ninfty = %g, nint = %g',ninfty,nint);
+hca.Title.String = sprintf('heated');
+hca.XLim = vmax*[-1 1];
+hca.YLim = vmax*[-1 1];
+shading(hca,'flat')
+hca.YLabel.String = 'v_\perp';
+hca.XLabel.String = 'v_{||}';
+colorbar;
+
+hca = subplot(2,2,4);
+pcolor(hca,squeeze(VPAR(:,:,1))-1,squeeze(VPERP1(:,:,1)),sum(F,3));
+%hca.Title.String = sprintf('ninfty = %g, nint = %g',ninfty,nint);
+hca.Title.String = sprintf('accelerated + heated');
+hca.XLim = vmax*[-1 1];
+hca.YLim = vmax*[-1 1];
+shading(hca,'flat')
+hca.YLabel.String = 'v_\perp';
+hca.XLabel.String = 'v_{||}';
+colorbar;
+%axis square
+%axis equal
