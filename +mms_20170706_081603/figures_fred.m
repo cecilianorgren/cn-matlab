@@ -14,7 +14,7 @@ eDist = ePDist1.tlim(tintZoom).elim(eint);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
  % keep in mind that this also affects the velocity at lower energies
 scpot_lim = scPot1.resample(eDist);
-scpot_margin = 2.0;
+scpot_margin = 1.0;
 lowerelim = scpot_lim*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
 energies = sqrt(2*eDist.depend{1}(1,:)*units.eV/units.me)/1000; % km/s

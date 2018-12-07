@@ -1,5 +1,6 @@
 %% Prepare data
 tint = irf.tint('2017-07-06T13:53:40.00Z/2017-07-06T13:54:15.00Z');
+tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
 
 eDist = ePDist1.tlim(tint);
 
@@ -13,7 +14,7 @@ lowerelim = scpot*0 + 40;
 
 tic; ef1D = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
 
-tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
+
 vph = -9000e3;
 c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
 

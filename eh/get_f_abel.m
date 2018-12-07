@@ -59,7 +59,7 @@ if 0
   disp(sprintf('Used indices %g:%g.',t_indices(1),t_indices(end)))
   [fitresult, gof, fun_net, fun_net_prime] = createFit(phi(t_indices), nt(t_indices));
 else
-  [fitresult, gof, fun_net, fun_net_prime] = createFit(phi, nt);
+  [fitresult, gof, fun_net, fun_net_prime] = createFit(tocolumn(phi), tocolumn(nt));
 end
 %[fitresult, gof, fun_net, fun_net_prime] = createFit(phi(phi>10), nt(phi>10));
 %phi_fit = phi;

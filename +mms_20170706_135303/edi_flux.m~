@@ -1,0 +1,23 @@
+figure(51);
+mms_id = 1;
+npanels = 3;
+h = irf_plot(npanels);
+
+if 1
+  hca = irf_panel('flux nodes');
+  c_eval('irf_plot(hca,flux_135_180_mms?);',mms_id) 
+  irf_legend(hca,{'sect. 1','sect. 2','sect. 3','sect. 4'},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('flux scaled nodes');
+  c_eval('irf_plot(hca,flux_135_180_scaled_mms?);',mms_id) 
+  irf_legend(hca,{sprintf('sect. 1 x %g',pa_scaling(1)),sprintf('sect. 2 x %g',pa_scaling(1)),sprintf('sect. 1 x %g',pa_scaling(1)),sprintf('sect. 1 x %g',pa_scaling(1))},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('flux scaled summed');
+  c_eval('irf_plot(hca,flux_apar_int_mms?);',mms_id)   
+end
+
+
+irf_zoom(h,'x',tint_zoom); % from mms_20170706_135303.paper_fig1
+irf_zoom(h,'y');
