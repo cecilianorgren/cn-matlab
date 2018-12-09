@@ -7,7 +7,7 @@ mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 localuser = datastore('local','user');
 
-% tint
+%% Tint
 tint = irf.tint('2015-11-12T06:42:04.00Z/2015-11-12T06:43:00.00Z'); %20151112064204
 tint = irf.tint('2016-12-25T16:00:14.00Z',30); %20161225160014, or 20161225160144. Dec 25 2016 - at about 16.00
 % time is redefined to brst whole interval
@@ -84,7 +84,7 @@ tint = irf.tint('2017-07-06T16:38:12.00Z',60); % not done
 % selections from mms database
 tint = irf.tint('2016-03-07T02:02:24.00Z',60);
 
-event = 9;
+event = 20;
 switch event
   case 1
     tint = irf.tint('2017-07-06T08:16:03.00Z/2017-07-06T08:18:13.00Z');
@@ -149,6 +149,85 @@ switch event
     tint_sheet = irf.tint('2017-07-06T00:55:20.10Z/2017-07-06T00:55:21.10Z');
     tint_sep = irf.tint('2017-07-06T00:55:40.00Z/2017-07-06T00:55:41.00Z');
     tint_phi = irf.tint('2017-07-06T00:55:40.00Z/2017-07-06T00:55:42.00Z');
+  case 10
+    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
+    tint_fred = irf.tint('2017-07-03T21:54:25.00Z/2017-07-03T21:54:43.00Z');
+    tint_lobe = irf.tint('2017-07-03T21:54:35.00Z/2017-07-03T21:54:36.00Z');
+    tint_sheet = irf.tint('2017-07-03T21:54:31.20Z/2017-07-03T21:54:31.40Z');
+    tint_sep = irf.tint('2017-07-03T21:54:32.00Z/2017-07-03T21:54:32.50Z');
+    tint_phi = irf.tint('2017-07-03T21:54:31.80Z/2017-07-03T21:54:32.60Z');
+  case 11
+    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
+    tint_fred = irf.tint('2017-07-03T21:54:25.00Z/2017-07-03T21:54:43.00Z');
+    tint_lobe = irf.tint('2017-07-03T21:54:35.00Z/2017-07-03T21:54:36.00Z');
+    tint_sheet = irf.tint('2017-07-03T21:54:42.00Z/2017-07-03T21:54:43.00Z');
+    tint_sep = irf.tint('2017-07-03T21:54:37.30Z/2017-07-03T21:54:40.50Z');
+    tint_phi = irf.tint('2017-07-03T21:54:37.30Z/2017-07-03T21:54:40.50Z');
+  case 12
+    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
+    tint_fred = irf.tint('2017-07-03T21:54:57.00Z/2017-07-03T21:55:30.00Z');
+    tint_lobe = irf.tint('2017-07-03T21:55:18.00Z/2017-07-03T21:55:20.00Z');
+    tint_sheet = irf.tint('2017-07-03T21:54:57.80Z/2017-07-03T21:54:58.80Z');
+    tint_sep = irf.tint('2017-07-03T21:55:07.00Z/2017-07-03T21:55:08.70Z');
+    tint_phi = irf.tint('2017-07-03T21:55:07.00Z/2017-07-03T21:55:08.70Z');
+  case 13
+    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
+    tint_fred = irf.tint('2017-07-03T21:54:57.00Z/2017-07-03T21:55:20.00Z');
+    tint_lobe = irf.tint('2017-07-03T21:55:18.00Z/2017-07-03T21:55:20.00Z');
+    tint_sheet = irf.tint('2017-07-03T21:54:57.80Z/2017-07-03T21:54:58.80Z');
+    tint_sep = irf.tint('2017-07-03T21:55:05.00Z/2017-07-03T21:55:05.60Z');
+    tint_phi = irf.tint('2017-07-03T21:55:05.00Z/2017-07-03T21:55:05.60Z');
+  case 14
+    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
+    tint_fred = irf.tint('2017-07-03T21:54:57.00Z/2017-07-03T21:55:20.00Z');
+    tint_lobe = irf.tint('2017-07-03T21:55:18.00Z/2017-07-03T21:55:20.00Z');
+    tint_sheet = irf.tint('2017-07-03T21:54:57.80Z/2017-07-03T21:54:58.80Z');
+    tint_sep = irf.tint('2017-07-03T21:55:11.80Z/2017-07-03T21:55:12.70Z');
+    tint_phi = irf.tint('2017-07-03T21:55:11.50Z/2017-07-03T21:55:12.50Z');
+  case 15
+    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
+    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
+    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
+    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
+    tint_sep = irf.tint('2017-07-06T14:07:16.80Z/2017-07-06T14:07:18.00Z');
+    tint_phi = irf.tint('2017-07-06T14:07:16.80Z/2017-07-06T14:07:18.00Z');
+  case 16
+    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
+    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
+    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
+    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
+    tint_sep = irf.tint('2017-07-06T14:07:19.00Z/2017-07-06T14:07:19.20Z');
+    tint_phi = irf.tint('2017-07-06T14:07:19.00Z/2017-07-06T14:07:19.20Z');
+  case 17
+    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
+    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
+    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
+    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
+    tint_sep = irf.tint('2017-07-06T14:07:20.20Z/2017-07-06T14:07:21.70Z');
+    tint_phi = irf.tint('2017-07-06T14:07:20.20Z/2017-07-06T14:07:21.70Z');
+  case 18
+    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
+    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
+    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
+    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
+    tint_sep = irf.tint('2017-07-06T14:07:28.30Z/2017-07-06T14:07:28.70Z');
+    tint_phi = irf.tint('2017-07-06T14:07:28.30Z/2017-07-06T14:07:28.70Z');
+  case 19
+    tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
+    tint_fred = irf.tint('2017-07-06T13:54:20.00Z/2017-07-06T13:54:44.00Z');
+    tint_lobe = irf.tint('2017-07-06T13:54:21.00Z/2017-07-06T13:54:22.00Z');
+    tint_sheet = irf.tint('2017-07-06T13:54:40.00Z/2017-07-06T13:54:41.00Z');
+    tint_sep = irf.tint('2017-07-06T13:54:29.00Z/2017-07-06T13:54:29.50Z');
+    tint_phi = irf.tint('2017-07-06T13:54:29.00Z/2017-07-06T13:54:29.50Z');
+  case 20
+    tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
+    tint_fred = irf.tint('2017-07-06T13:54:20.00Z/2017-07-06T13:54:44.00Z');
+    tint_lobe = irf.tint('2017-07-06T13:54:21.00Z/2017-07-06T13:54:22.00Z');
+    tint_sheet = irf.tint('2017-07-06T13:54:40.00Z/2017-07-06T13:54:41.00Z');
+    tint_sep = irf.tint('2017-07-06T13:54:33.80Z/2017-07-06T13:54:34.20Z');
+    tint_phi = irf.tint('2017-07-06T13:54:33.70Z/2017-07-06T13:54:34.20Z');
+  case 21
+  case 22    
 end
 
 %% Load data
@@ -256,6 +335,8 @@ if all([~isempty(gseB1) ~isempty(gseB2) ~isempty(gseB3) ~isempty(gseB4)])
   gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
   gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
   gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
+else
+  gseJcurl = irf.ts_vec_xyz(gseB1.time,gseB1.data*NaN);
 end
 
 %% Fred
@@ -263,7 +344,7 @@ eDist = ePDist1.tlim(tint_fred);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
  % keep in mind that this also affects the velocity at lower energies
 scpot = scPot1.resample(eDist);
-lowerelim = 70;
+lowerelim = 100;
 energies = sqrt(2*eDist.depend{1}(1,:)*units.eV/units.me)/1000; % km/s
 vgmax = 70000;
 %vg = [-energies(end:-1:1) 0 energies];
@@ -323,12 +404,15 @@ tint_sheet_utc = tint_sheet.utc; tint_sheet_utc = tint_sheet_utc(:,12:23);
 tint_sep_utc = tint_sep.utc; tint_sep_utc = tint_sep_utc(:,12:23);
 tint_phi_utc = tint_phi.utc; tint_phi_utc = tint_phi_utc(:,12:23);
 
+str_print=sprintf('sep_ov_%s_%s_%s',tint_day_utc,tint_sep_utc(1,:),tint_sep_utc(2,:));
+str_print(strfind(str_print,':'))=[];
+
 %% Plot overview figure with focus on electrons
 npanels_large = 10;
 npanels_zoom = 1;
 npanels = 12;
 cmap = 'jet';
-[h,h2] = initialize_combined_plot(npanels,3,2,0.4,'vertical');
+[h,h2] = initialize_combined_plot(npanels,3,2,0.4,'vertical'); % horizontal
 ic = 1;
 iisub = 0;
 cmap = colormap('jet');
@@ -337,6 +421,7 @@ fig = gcf;
 fig.Position(3) = fig.Position(4)*1.5;
 
 fred_min = 1e-6;
+fontsize = 10;
 
 if 1 % e DEF omni 64
   iisub = iisub + 1;
@@ -553,7 +638,7 @@ irf_plot_axis_align
 [hline1,hline2] = irf_plot_zoomin_lines_between_panels(h(npanels_large),h(npanels_large+2)); 
 irf_timeaxis(h(npanels_large))
 
-h(1).Title.String = irf_ssub('MMS ?',ic);
+h(1).Title.String = sprintf('MMS %g, event %g',ic,event);
 
 clear hmark_lobe hmark_sheet hmark_sep
 c_eval('hmark_lobe(?) = irf_pl_mark(h(?),tint_lobe, mms_colors(''x''));',1:npanels_large)
@@ -571,22 +656,15 @@ hca = irf_panel('e DEF omni 64'); hca.XGrid = 'off'; hca.YGrid = 'off';
 delete(irf_panel('delete'))
 
 %% Plot electron particle distributions
-  
 c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
 c_eval('scpot = scPot?.resample(gseVe?);',ic)
 c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
 c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
-c_eval('ePitch = ePitch?;',ic)
-
-% Plot format input
-vlim = 50*1e3;
-elevlim = 15;
-strCMap = 'jet';
-projclim = [-3 1.5];  
+%c_eval('ePitch = ePitch?;',ic)
 
 times_phi_utc = ef1D.tlim(tint_phi).time.utc; times_phi_utc = times_phi_utc(:,12:23);
 
-fontsize = 10;
+fontsize = 8;
   
 colors = mms_colors('xzy');
 isub = 1;
@@ -618,140 +696,149 @@ if 1 % average fred during sep, lobe and sheet interval
               sprintf('%s - %s',tint_sheet_utc(1,:),tint_sheet_utc(2,:));...
               sprintf('%s - %s',tint_sep_utc(1,:),tint_sep_utc(2,:))};
   irf_legend(hca,tint_str,[0.01 0.98],'fontsize',fontsize)
+  hca.Title.String = sprintf('E > %g eV',lowerelim);
 end
+
 %ndist_to_combine = 3;
-n_intervals = 5;
+n_int = 3;
+lowerelim_peaks = 400;
+Elim_axis = 4000;
 colors = mms_colors('matlab');
-if 1 % all fred during sep interval, vs vpar
-  hca = h2(isub); isub = isub + 1;
+clear plot_f_phi f_sep_utc hmark_all str_Emax Emax Emax_within_interval 
+clear Emax_av Emax_av_ind plot_f_phi_Emax Emax_utc f_phi_utc
+
+if 1 % divide f into intervals, common for both v,E x-axis, mark TSeries
+  fred_phi = ef1D.tlim(tint_phi);
+  plot_v_phi = mean(fred_phi.depend{1},1);
+  plot_E_phi = sign(plot_v_phi)*0.5*units.me.*(plot_v_phi*1e3).^2/units.e;   
   
-  fered_sep = ef1D.tlim(tint_phi);
-  plot_v_sep = mean(fered_sep.depend{1},1);  
-  
-  n_f = fered_sep.length;  
-  ndist_to_combine = (n_f-mod(n_f,n_intervals))/n_intervals;
-  %n_intervals = floor(n_f/ndist_to_combine);
-  clear plot_f_sep f_sep_utc hmark_all
-  for i_int = 1:(n_intervals-1)
-    ind1 = (i_int-1)*ndist_to_combine+1;
-    ind2 = ind1 + ndist_to_combine-1;    
-    plot_f_sep(i_int,:) = mean(fered_sep.data(ind1:ind2,:),1);
-    f_sep_utc{i_int,1} = sprintf('%s - %s',times_phi_utc(ind1,:),times_phi_utc(ind2,:));
-    [hmark,cc] = irf_pl_mark(h(npanels_large + 2),fered_sep.time([ind1 ind2]).epochUnix');
-    hmark.YData = hmark.YData + 120;
-    hmark.ZData = [1 1 1 1];
-    hmark_all{i_int} = hmark;        
-  end
-  ind1 = (n_intervals-1)*ndist_to_combine+1;
-  ind2 = n_f;
-  plot_f_sep(n_intervals,:) = mean(fered_sep.data(ind2:ind2,:),1);
-  f_sep_utc{n_intervals,1} = sprintf('%s - %s',times_phi_utc((n_intervals-1)*ndist_to_combine+1,:),times_phi_utc(n_f,:));
-  
-  if 1
-    [hmark,cc] = irf_pl_mark(h(npanels_large + 2),fered_sep.time([ind1 ind2]).epochUnix');
+  fred_phi_peaks = fred_phi;   
+  fred_phi_peaks.data(abs(repmat(plot_E_phi,fred_phi_peaks.length,1))<lowerelim_peaks) = 0;
+  [val,ind] = max(fred_phi_peaks.data');
+  Emax = (plot_E_phi(ind));
+     
+  nf = fred_phi.length;
+  [ind1,ind2] = ind12(nf,n_int);
+  for i_int = 1:n_int
+    f_phi_utc{i_int,1} = sprintf('%s - %s',times_phi_utc(ind1(i_int),:),times_phi_utc(ind2(i_int),:));
+    Emax_tmp = Emax(ind1(i_int):ind2(i_int));
+    [val_tmp_Emax,ind_tmp_Emax] = max(abs(Emax_tmp));
+    Emax_within_interval(i_int) = Emax_tmp(ind_tmp_Emax);
+    %Emax_utc = 
+        
+    plot_f_phi(i_int,:) = mean(fred_phi.data(ind1(i_int):ind2(i_int),:),1);    
+    plot_f_phi_Emax(i_int,:) = fred_phi.data(ind1(i_int)+ind_tmp_Emax-1,:);
+    
+    Emax_tmp = plot_f_phi(i_int,:); Emax_tmp(abs(plot_E_phi)<lowerelim_peaks) = 0;
+    [val,ind] = max(Emax_tmp);
+    Emax_av(i_int) = (plot_E_phi(ind));
+    Emax_av_ind(i_int) = ind;
+    f_at_Emax_av(i_int) = plot_f_phi(i_int,ind);
+    
+    str_Emax{i_int,1} = sprintf('phimax =[%.0f, %.0f] eV',Emax_av(i_int),Emax_within_interval(i_int));
+    
+    [hmark,cc] = irf_pl_mark(h(npanels_large + 2),fred_phi.time([ind1(i_int) ind2(i_int)]).epochUnix');    
     if isa(hmark,'matlab.graphics.primitive.Line')
-      
+      hmark.Color = colors(i_int,:);
     elseif isa(hmark,'matlab.graphics.primitive.Patch')
       hmark.YData = hmark.YData + 120;
       hmark.ZData = [1 1 1 1];
-      hmark_all{n_intervals} = hmark;
-    end
-  end
-  
-  h_fered = plot(hca,plot_v_sep*1e-3,plot_f_sep);
-  c_eval('h_fered(?).Color = colors(?,:);',1:n_intervals)
-  
-  for ifered = 1:numel(hmark_all)
-    if isa(hmark_all{ifered},'matlab.graphics.primitive.Line')
-      hmark_all{ifered}.Color = h_fered(ifered).Color;
-    else      
-      hmark_all{ifered}.FaceColor = h_fered(ifered).Color;
-      hmark_all{ifered}.EdgeColor = [0 0 0];
-    end
-  end
+      hmark.EdgeColor = [0 0 0];
+      hmark.FaceColor = colors(i_int,:);
+    end    
+    hmark_all{i_int} = hmark;
+  end  
+end
+if 1 % all fred during sep interval, vs vpar
+  hca = h2(isub); isub = isub + 1;
+  h_fered = plot(hca,plot_v_sep*1e-3,plot_f_phi);
+  c_eval('h_fered(?).Color = colors(?,:);',1:n_int)  
   hca.XLabel.String = 'v_{||} (10^3 km/s)';
   hca.YLabel.String = sprintf('f_e (%s)',fered_sep.units);
   hca.XLim = [-40 40];
-  set(hca,'colororder',colors)
-  irf_legend(hca,f_sep_utc,[0.01 0.98],'fontsize',fontsize)
+  set(hca,'colororder',colors)  
+  hca.Title.String = 'Average over indicated tint';
+  if plot_E_phi(ind) > 0
+    irf_legend(hca,f_phi_utc,[0.01 0.98],'fontsize',fontsize)
+  else
+    irf_legend(hca,f_phi_utc,[0.98 0.98],'fontsize',fontsize)
+  end
 end
 if 1 % all fred during sep interval, vs +-Epar
   hca = h2(isub); isub = isub + 1;
   
-  fered_sep = ef1D.tlim(tint_phi);
-  plot_v_sep = mean(fered_sep.depend{1},1);
-  plot_E_sep = sign(plot_v_sep)*0.5*units.me.*(plot_v_sep*1e3).^2/units.e;
-    
-  
-  n_f = fered_sep.length;  
-  n_intervals = floor(n_f/ndist_to_combine);
-  clear plot_f_sep f_sep_utc Emax Emax_within_interval Emax_av
-  for i_int = 1:(n_intervals-1)
-    ind1 = (i_int-1)*ndist_to_combine+1;
-    ind2 = ind1 + ndist_to_combine-1;
-    tmp_fred = fered_sep.data(ind1:ind2,:);
-    plot_f_sep(i_int,:) = mean(tmp_fred,1);
-    f_sep_utc{i_int,1} = sprintf('%s - %s',times_phi_utc(ind1,:),times_phi_utc(ind2,:));
-    
+  h_fered = plot(hca,plot_E_phi*1e0,plot_f_phi);
+  c_eval('h_fered(?).Color = colors(?,:);',1:n_int)
+  hold(hca,'on')
+  for i_int = 1:n_int
+    h_fered_star = plot(hca,Emax_av(i_int),f_at_Emax_av(i_int),'*','color',colors(i_int,:));
   end
-  plot_f_sep(n_intervals,:) = mean(fered_sep.data((n_intervals-1)*ndist_to_combine+1:n_f,:),1);
-  f_sep_utc{n_intervals,1} = sprintf('%s - %s',times_phi_utc((n_intervals-1)*ndist_to_combine+1,:),times_phi_utc(n_f,:));
-      
-  h_fered = plot(hca,plot_E_sep*1e0,plot_f_sep);
-  c_eval('h_fered(?).Color = colors(?,:);',1:n_intervals)
+  hold(hca,'off')
   
   hca.XLabel.String = 'E_{||} (eV)';
-  hca.YLabel.String = sprintf('f_e (%s)',fered_sep.units);
-  hca.XLim = [-4 4]*1e3;
-  set(hca,'colororder',colors)
-  irf_legend(hca,f_sep_utc,[0.01 0.98],'fontsize',fontsize)
+  hca.YLabel.String = sprintf('f_e (%s)',fred_phi.units);
+  hca.XLim = Elim_axis*[-1 1]+ 0.5*mean(Emax_av);
+  hca.XTick = -30000:1000:30000;
+     
+  hca.Title.String = {'Average over indicated tint',sprintf('phimax with lower limit E > %g eV',lowerelim_peaks)};
+
+  if 1 % plot lowerelim_peaks
+    hold(hca,'on')
+    plot(hca,lowerelim_peaks*[-1 -1],hca.YLim,'--k',lowerelim_peaks*[1 1],hca.YLim,'--k')
+    hold(hca,'off')
+  end
   
-  % find peaks   
-  lowerelim_peaks = 300;
+  set(hca,'colororder',colors)
+  if plot_E_phi(ind) > 0
+    irf_legend(hca,str_Emax,[0.02 0.98],'fontsize',fontsize)
+  else
+    irf_legend(hca,str_Emax,[0.98 0.98],'fontsize',fontsize)
+  end
+end
+if 1 % all fred during sep interval, vs +-Epar, max within interal
+  hca = h2(isub); isub = isub + 1;
+  
+  h_fered = plot(hca,plot_E_phi,plot_f_phi_Emax);
+  c_eval('h_fered(?).Color = colors(?,:);',1:n_int)
+  hold(hca,'on')
+  for i_int = 1:n_int
+    f_tmp = plot_f_phi_Emax(i_int,:);
+    f_tmp(abs(plot_E_phi)<lowerelim_peaks) = 0;
+    [val,ind] = max(abs(f_tmp));
+    h_fered_star = plot(hca,plot_E_phi(ind),val,'*','color',colors(i_int,:));
+  end
+  hold(hca,'off')
+  
+  hca.XLabel.String = 'E_{||} (eV)';
+  hca.YLabel.String = sprintf('f_e (%s)',fred_phi.units);
+  hca.XLim = Elim_axis*[-1 1]+ 0.5*mean(Emax);
+  hca.XTick = -30000:1000:30000;
+  if hca.XLim(2)<max(Emax)
+    hca.XLim = max(Emax)*1*[-1 1] + 0.5*max(Emax);
+    hca.XTick = -30000:2000:30000;
+  end
+     
   hca.Title.String = sprintf('E > %g eV',lowerelim_peaks);
   if 1 % plot lowerelim_peaks
     hold(hca,'on')
     plot(hca,lowerelim_peaks*[-1 -1],hca.YLim,'--k',lowerelim_peaks*[1 1],hca.YLim,'--k')
     hold(hca,'off')
   end
-  % all
-  fered_sep_peaks = fered_sep; 
-  fered_sep_peaks.data(abs(repmat(plot_E_sep,fered_sep_peaks.length,1))<lowerelim_peaks) = 0;
-  [val,ind] = max(fered_sep_peaks.data');
-  Emax = abs(plot_E_sep(ind));
-  
-  
-  % divided into intervals, max
-  for i_int = 1:(n_intervals-1)
-    ind1 = (i_int-1)*ndist_to_combine+1;
-    ind2 = ind1 + ndist_to_combine-1;
-    Emax_within_interval(i_int) = max(Emax(ind1:ind2));    
-  end  
-  ind1 = (i_int-1)*ndist_to_combine+1;
-  ind2 = ind1 + ndist_to_combine-1;
-  Emax_within_interval(n_intervals) = max(Emax(ind1:ind2));    
-  
-  % divided into intervals, average
-  fered_sep_peaks = plot_f_sep; 
-  fered_sep_peaks(abs(repmat(plot_E_sep,size(fered_sep_peaks,1),1))<lowerelim_peaks) = 0;
-  [val,ind] = max(fered_sep_peaks');
-  Emax_av = abs(plot_E_sep(ind));
-    
-  
-  clear str_Emax
-  for i_int = 1:n_intervals
-    str_Emax{i_int,1} = sprintf('phimax =[%.0f, %.0f] eV',Emax_av(i_int),Emax_within_interval(i_int));
-  end
   
   set(hca,'colororder',colors)
-  irf_legend(hca,str_Emax,[0.98 0.98],'fontsize',fontsize)
+  if plot_E_phi(ind) > 0
+    irf_legend(hca,str_Emax,[0.02 0.98],'fontsize',fontsize)
+  else
+    irf_legend(hca,str_Emax,[0.98 0.98],'fontsize',fontsize)
+  end
+  hca.Title.String = {'Max phi in indicated tint',sprintf('phimax with lower limit E > %g eV',lowerelim_peaks)};
 end
 
-n_intervals_sep = 3;
+n_intervals_sep = 2;
 vgmax = 60000;
 vg = -vgmax:2000:vgmax;
-lowerelim = 40;
-if 1 % 1 reduced distribution, 1st third of tint_sep
+%lowerelim = 40;
+if 1 % 1 reduced distribution, 1st half of tint_sep
   hca = h2(isub); isub = isub + 1;
   tint_tmp = tint_phi(1) + (tint_phi(2)-tint_phi(1))/n_intervals_sep*[0 1];
   
@@ -779,7 +866,7 @@ if 1 % 1 reduced distribution, 1st third of tint_sep
   hca.Title.FontSize = fontsize;
   hca.FontSize = fontsize;
 end
-if 1 % 1 reduced distribution, 1st third of tint_sep
+if 1 % 1 reduced distribution, 2nd half of tint_sep
   hca = h2(isub); isub = isub + 1;
   tint_tmp = tint_phi(1) + (tint_phi(2)-tint_phi(1))/n_intervals_sep*[1 2];
   
@@ -807,7 +894,7 @@ if 1 % 1 reduced distribution, 1st third of tint_sep
   hca.Title.FontSize = fontsize;
   hca.FontSize = fontsize;
 end
-if 1 % 1 reduced distribution, 1st third of tint_sep
+if 0 % 1 reduced distribution, 3rd third of tint_sep
   hca = h2(isub); isub = isub + 1;
   tint_tmp = tint_phi(1) + (tint_phi(2)-tint_phi(1))/n_intervals_sep*[2 3];
   
@@ -839,4 +926,5 @@ end
 for ih = 1:numel(h2)
   h2(ih).FontSize = fontsize;
 end
-for ih = 4:6, h2(ih).CLim = [-15 -10.5]; end
+%for ih = 4:6, h2(ih).CLim = [-15 -10.2]; end
+  
