@@ -342,6 +342,8 @@ end
 
 %% Magnetic vector potential: Animation
 xline=@(x,y,a,b,t) (0+0.5*(a*x.^2-b*y.^2))-(t-1);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+xline=@(x,y,a,b,t) ((t-1)/20).*0.6*a*x.^2 -((t-1)/10)*2*b*y.^2 - 1*(t-10);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+xline=@(x,y,a,b,t) t*b*y.^2;%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
 
 nx=121; ny=121;
 xlim = 4;
@@ -354,8 +356,8 @@ y=linspace(-ylim,ylim,ny);
 %[dXx2,dYx2]=gradient(xline(X,Y,1,2));
 toplot=1:10:nx; 
 
-nt = 100;
-t = linspace(1,10,nt);
+nt = 40;
+t = linspace(1,20,nt);
 
 figure(10) %figure('name','x-line')
 isub=1; npx=1; npy=1;
@@ -365,7 +367,7 @@ a = 1;
 b = 7;
 limA = [min(min(xline(X(:,:),Y(:,:),a,b,t(nt)))) max(max(xline(X(:,:),Y(:,:),a,b,t(nt))))];
 limA(2) = limA(2)*2;
-linesA = linspace(limA(1),limA(2),20);
+linesA = 1*linspace(limA(1),limA(2),20);
 for it = 1:nt  
   [dXx,dYx]=gradient(xline(X,Y,a,b,t(it)));
   %contour(hca,X(toplot,toplot),Y(toplot,toplot),xline(X(toplot,toplot),Y(toplot,toplot),1,1,t(it))); 
@@ -379,6 +381,137 @@ for it = 1:nt
   hca.CLim = limA;
   pause(0.1)
   %colorbar('peer',hca)
+end
+
+%% Magnetic vector potential: Animation
+xline=@(x,y,a,b,t) (0+0.5*(a*x.^2-b*y.^2))-(t-1);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+xline=@(x,y,a,b,t) 0+abs(0.0*(a*y))+(0+0.5*(0*a*x.^2-b*y.^2))-(t-1);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+xline=@(x,y,a,b,t) 0-abs(abs(a*y).^(0.01*t))-(t-1);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+xline=@(x,y,a,b,t) abs(a*y).^(1-0.8*t);
+
+nx=121; ny=121;
+xlim = 2;
+ylim = 1;
+x=linspace(-xlim,xlim,nx);
+y=linspace(-ylim,ylim,ny);
+
+[X,Y]=meshgrid(x,y);
+%[dXo,dYo]=gradient(oline(X,Y,1,1));
+%[dXx2,dYx2]=gradient(xline(X,Y,1,2));
+toplot=1:10:nx; 
+
+nt = 10;
+t = linspace(0,1,nt);
+
+figure(10) %figure('name','x-line')
+isub=1; npx=1; npy=1;
+
+hca=subplot(npx,npy,isub); isub=isub+1;
+a = 1;
+b = 7;
+limA = [min(min(xline(X(:,:),Y(:,:),a,b,t(nt)))) max(max(xline(X(:,:),Y(:,:),a,b,t(nt))))];
+%limA(2) = limA(2)*2;
+linesA = linspace(limA(1),limA(2),20);
+linesA = 20;
+for it = 1:nt  
+  [dXx,dYx]=gradient(xline(X,Y,a,b,t(it)));
+  %contour(hca,X(toplot,toplot),Y(toplot,toplot),xline(X(toplot,toplot),Y(toplot,toplot),1,1,t(it))); 
+  contourf(hca,X(:,:),Y(:,:),xline(X(:,:),Y(:,:),a,b,t(it)),linesA); 
+  hold(hca,'on'); 
+  quiver(hca,X(toplot,toplot),Y(toplot,toplot),dYx(toplot,toplot),-dXx(toplot,toplot),'k');
+  title('B=(dA_z/dy,-dA_x/dx)')
+  axis(hca,'equal');  xlabel('X'); ylabel('Y');
+  hca.XLim = xlim*[-1 1]; hca.YLim = ylim*[-1 1];
+  hold(hca,'off')
+  %hca.CLim = limA;
+  pause(0.1)
+  %colorbar('peer',hca)
+end
+
+%% Magnetic vector potential: Animation
+tend = 20;
+
+xline=@(x,y,a,b,t) (0+0.5*(a*x.^2-b*y.^2))-(t-1);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+%xline=@(x,y,a,b,t) ((t-1)/20).*0.6*a*x.^2 -((t-1)/10)*2*b*y.^2 - 1*(t-10);%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+xline_pretend = @(x,y,a,b,t) -t*b*y.^2;%+t*0.05*(a*x.^2+b*y.^2);%-0.5*(a*x.^2+b*y.^2)*0.02*t ;%-t-(t-5)*1.1*b*y.^2;
+%xline=@(x,y,a,b,t) -1*tend*b*y.^2 + (t/tend)*0.2*((0+0.5*(a*x.^2-0*b*(y-0*tend*y).^2))-10*(t-0));
+xline_posttend = @(x,y,a,b,t) -1*tend*b*y.^2 + (t-tend)*0.5*a*x.^2-10*(t-tend);
+
+nx=121; ny=121;
+xlim = 4;
+ylim = 2;
+x=linspace(-xlim,xlim,nx);
+y=linspace(-ylim,ylim,ny);
+
+[X,Y]=meshgrid(x,y);
+%[dXo,dYo]=gradient(oline(X,Y,1,1));
+%[dXx2,dYx2]=gradient(xline(X,Y,1,2));
+toplot=1:10:nx; 
+
+doQuivers = 0;
+doGif = 1;
+nt = 40;
+
+t = linspace(0,70,nt);
+
+colors = mms_colors('matlab');
+figure(10) %figure('name','x-line')
+isub=1; npx=1; npy=1;
+
+hca=subplot(npx,npy,isub); isub=isub+1;
+hca.Position = [0 0 1 1];
+a = 1;
+b = 10;
+%limA = [min(min(xline(X(:,:),Y(:,:),a,b,t(nt)))) max(max(xline(X(:,:),Y(:,:),a,b,t(nt))))];
+%limA(2) = limA(2)*2;
+  limA = [-2000 -100];
+linesA = 1*linspace(limA(1),limA(2),20);
+for it = 1:nt  
+  if t(it)<tend
+    xline = xline_pretend;
+  else
+    xline = xline_posttend;
+  end
+  [dXx,dYx]=gradient(xline(X,Y,a,b,t(it)));
+  %contour(hca,X(toplot,toplot),Y(toplot,toplot),xline(X(toplot,toplot),Y(toplot,toplot),1,1,t(it))); 
+  [cc,hc] = contourf(hca,X(:,:),Y(:,:),xline(X(:,:),Y(:,:),a,b,t(it)),linesA); 
+  hc.LineWidth = 2;
+  hc.Color = colors(1,:);
+  if doQuivers
+    hold(hca,'on'); 
+    hq = quiver(hca,X(toplot,toplot),Y(toplot,toplot),dYx(toplot,toplot),-dXx(toplot,toplot),'k');
+    hq.Color = colors(1,:);
+    hq.LineWidth = 1.5;
+    hold(hca,'off')
+  end
+  %title('B=(dA_z/dy,-dA_x/dx)')
+  axis(hca,'equal');  xlabel('X'); ylabel('Y');
+  hca.XLim = xlim*[-1 1]; hca.YLim = ylim*[-1 1];
+  hca.CLim = limA;
+  %colorbar
+  %colormap(cn.cmap('blue_white'))
+  colormap([0 0 0; 0 0 0])
+  axis(hca,'off')
+  pause(0.1)
+  
+  %colorbar('peer',hca)
+  i_frame = it;
+  if doGif
+    drawnow;    
+    f = getframe(gcf);
+    %A(i_frame) = f;
+    if it == 1 % initialize animated gif matrix
+        [im,map] = rgb2ind(f.cdata,256,'nodither');
+        im(1,1,1,20) = 0;
+    else
+        im(:,:,1,i_frame) = rgb2ind(f.cdata,map,'nodither');
+    end
+  end  
+end
+
+if 0*doGif
+  %movie(fg,A,20);
+  imwrite(im,map,sprintf('%sgifs/downsampling_t_step%g_reverse_1.gif',eventPath,t_step),'DelayTime',0.1,'LoopCount',0)
 end
 %%
 

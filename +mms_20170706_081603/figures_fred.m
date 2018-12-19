@@ -15,12 +15,12 @@ ve = gseVe1.tlim(eDist.time).resample(eDist);
  % keep in mind that this also affects the velocity at lower energies
 scpot_lim = scPot1.resample(eDist);
 scpot_margin = 1.0;
-lowerelim = scpot_lim*scpot_margin;
+lowerelim = 50  + 0*scpot_lim;
 eLine = dmpaB1.resample(eDist).norm;
 energies = sqrt(2*eDist.depend{1}(1,:)*units.eV/units.me)/1000; % km/s
 vg = [-energies(end:-1:1) 0 energies];
 vg(abs(vg)>80000) = [];
-tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim',scpot_lim*2,'vg',vg); toc % reduced distribution along B
+tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B
 
 %% ions
@@ -1051,3 +1051,114 @@ legend(hca.Children(end:-2:2),utctimes(:,12:23),'location','southeast')
 %irf_legend()
 %cn.print(sprintf('fred_e_vtrap_1time_%s',time.utc),'path',eventPath)
 
+%% Plot, including f proj and v phi and vtrap, for AGU talk 2018
+ic = 1;
+npanels = 4;
+h = irf_plot(npanels); 
+isub = 0;
+zoomy = [];
+tint_zoom = tintZoom;
+%tint_zoom = irf.tint('2017-07-06T01:38:00.00Z/2017-07-18T01:39:03.00Z');
+tint_zoom = irf.tint('2017-07-06T08:16:38.00Z/2017-07-06T08:16:39.30Z');
+
+vmin = tsVphpar-tsVtrap;
+vmax = tsVphpar+tsVtrap;
+  
+
+
+if 0 % e psd vpar
+  isub = isub + 1;
+  hca = irf_panel('eLine');
+  %irf_plot(hca,ef1D.specrec('velocity_1D'));
+  irf_spectrogram(hca,ef1D.specrec('velocity_1D','10^3 km/s'));
+  %hold(hca,'on')
+  %irf_plot(hca,{lineVe},'comp')
+  %set(hca,'ColorOrder',mms_colors('122'))
+  %irf_plot(hca,{tsVphpar,vmin,vmax},'comp');
+  %irf_plot(hca,gseVi1)
+  %hold(hca,'off')
+  %hca.YLim = ef1D.depend{1}(1,[1 end]);
+  hca.YLabel.String = 'v_e (km/s)'; 
+  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(scpot_margin) 'V_{sc}'],[0.01 0.99],'color',1*[1 1 1])
+end
+if 0 % Ve par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Ve par');
+  set(hca,'ColorOrder',mms_colors('1'))
+  c_eval('irf_plot(hca,{gseVe?par},''comp'');',ic)  
+  hca.YLabel.String = {'v_{e,||}','(km/s)'};
+  irf_legend(hca,sprintf('mms%g',ic),[0.98 0.9],'fontsize',12)
+end
+if 1 % E par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'}; 
+  irf_legend(hca,sprintf('mms%g',ic),[0.98 0.9],'fontsize',12)
+end
+if 1 % Phi
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  hh = irf_plot(hca,{tsPhi});
+  c_eval('hh(?).Color = mms_colors(''?'')',1:4)
+  hca.YLabel.String = {'\Phi_{||}','(V)'};  
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[0.98 0.9],'fontsize',12);
+end
+hca = irf_panel('delete');
+if 1 % v phase + trap
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('phase velocity');
+  
+  ef_plot = ef1D;
+  ef_plot.data(ef_plot.data<10^(-5.5)) = NaN;
+  [~,hcb] = irf_spectrogram(hca,ef_plot.specrec('velocity_1D','10^3 km/s'));
+  hold(hca,'on')
+  c_eval('vmin? = tsVphpar-tsVtrap?;',1:4)
+  c_eval('vmax? = tsVphpar+tsVtrap?;',1:4)
+  
+  %set(hca,'ColorOrder',mms_colors('111223344'))
+  set(hca,'ColorOrder',mms_colors('111111111'))
+  vscale = 1e-3;
+  %irf_plot(hca,{tsVphpar*vscale,vmin1*vscale,vmax1*vscale,vmin2*vscale,vmax2*vscale,vmin3*vscale,vmax3*vscale,vmin4*vscale,vmax4*vscale},'comp');
+  hp = irf_plot(hca,{tsVphpar*vscale,vmin*vscale,vmax*vscale},'comp');
+  
+  %irf_patch(hca,{vmin,vmax})
+  %hca.YLim = sort(real([max([vmax1.data; vmax2.data; vmax3.data; vmax4.data]) min([vmin1.data; vmin2.data; vmin3.data; vmin4.data])]));
+  hold(hca,'off')
+  hca.YLabel.String = {'v_{||}','(10^3 km/s)'};  
+  set(hca,'ColorOrder',mms_colors('122'))
+  %irf_legend(hca,{'v_{ph}'},[0.55 0.7],'fontsize',12);
+  %irf_legend(hca,{'v_{trap}'},[0.55 0.99],'fontsize',12);
+  %irf_legend(hca,{'v_{trap}'},[0.55 0.3],'fontsize',12);
+  
+  hsurf = findobj(hca.Children,'Type','Surface');
+  hsurf.FaceAlpha = 1;
+  hline = findobj(hca.Children,'Type','Line');
+  c_eval('hline(?).LineWidth = 1.5;',1:numel(hline))
+end
+h(4).Position(4) = 2*h(4).Position(4);
+hcb.Position(4) = h(4).Position(4)*0.95;
+h(4).YLim = [-50 45];
+
+%h(5).CLim = [-7 -3];
+hca = irf_panel('phase velocity');
+hca.CLim = [-5 -2.5];
+h(1).CLim = [-5 -2.5];
+
+%colormap(hca,'jet')
+irf_zoom(h,'x',tint_zoom)
+irf_zoom(h(1:2),'y')
+irf_plot_axis_align
+%h(4).CLim = [-35 -28]+12
+%colormap(cn.cmap('blue_white'));
+colormap('jet')
+delete(irf_panel('delete'))
