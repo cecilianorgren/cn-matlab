@@ -1,6 +1,7 @@
 ic = 1;
+event = 1;
 
-% Set datastore
+%% Set datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/data/mms');
@@ -8,227 +9,7 @@ db_info = datastore('mms_db');
 localuser = datastore('local','user');
 
 %% Tint
-tint = irf.tint('2015-11-12T06:42:04.00Z/2015-11-12T06:43:00.00Z'); %20151112064204
-tint = irf.tint('2016-12-25T16:00:14.00Z',30); %20161225160014, or 20161225160144. Dec 25 2016 - at about 16.00
-% time is redefined to brst whole interval
-tint = irf.tint('2016-11-28T08:25:40.00Z/2016-11-28T08:27:30.00Z');
-tint = irf.tint('2016-11-25T08:03:10.00Z/2016-11-25T08:03:50.00Z');
-tint = irf.tint('2016-12-29T11:12:14.00Z/2016-12-29T11:13:53.00Z'); % mms1_sp_20161229_111214_111353
-tint = irf.tint('2017-01-01T13:59:30.00Z/2017-01-01T14:00:00.00Z');
-tint = irf.tint('2015-12-02T01:14:30.00Z/2015-12-02T01:15:15.00Z');
-tint = irf.tint('2015-10-18T15:11:30.00Z/2015-10-18T15:12:45.00Z'); 
-
-tint = irf.tint('2017-07-06T15:36:43.00Z/2017-07-06T15:41:13.00Z'); % 20170706153643
-tint = irf.tint('2017-07-06T15:39:12.00Z/2017-07-06T15:40:13.00Z'); % 20170706153913
-%tint = irf.tint('2017-07-06T15:41:33.00Z/2017-07-06T15:42:33.00Z'); % 20170706154133
-%tint = irf.tint('2017-07-06T15:44:03.00Z/2017-07-06T15:45:33.00Z'); % 20170706154403
-%tint = irf.tint('2017-07-06T15:46:23.00Z/2017-07-06T15:47:43.00Z'); % 20170706154623
-%tint = irf.tint('2017-07-06T15:48:53.00Z/2017-07-06T15:50:43.00Z'); % 20170706154853
-%tint = irf.tint('2017-07-06T15:51:13.00Z/2017-07-06T15:52:43.00Z'); % 20170706155113
-%tint = irf.tint('2017-07-06T15:53:43.00Z/2017-07-06T15:54:43.00Z'); % 20170706155343
-%tint = irf.tint('2017-07-06T15:56:03.00Z/2017-07-06T15:57:43.00Z'); % 20170706155603
-%
-%
-%tint = irf.tint('2017-07 -11T22:29:23.00Z/2017-07-11T22:31:43.00Z'); % 20170711222923
-%tint = irf.tint('2017-07-11T22:33:23.00Z/2017-07-11T22:34:43.00Z'); % 20170711223323, major X-line moving tailward
-%tint = irf.tint('2017-07-11T22:37:23.00Z/2017-07-11T22:38:43.00Z'); % 20170711223723
-
-%tint = irf.tint('2017-07-09T10:45:13.00Z/2017-07-09T10:46:43.00Z'); % 20170709104513
-%tint = irf.tint('2017-07-09T10:47:03.00Z/2017-07-09T10:48:43.00Z'); % 20170709104703
-%tint = irf.tint('2017-07-09T10:49:03.00Z/2017-07-09T10:51:03.00Z'); % 20170709104903
-
-% 
-tint = irf.tint('2017-06-11T17:24:53.00Z',1); % 20170611172453
-tint = irf.tint('2017-06-11T17:32:53.00Z',1); % 20170611173253
-tint = irf.tint('2017-06-11T17:35:03.00Z',1); % 20170611173503
-tint = irf.tint('2017-06-11T17:37:03.00Z',1); % 20170611173703
-tint = irf.tint('2017-06-11T17:39:13.00Z',1); % 20170611173913
-tint = irf.tint('2017-06-11T17:41:23.00Z',1); % 20170611174123
-%tint = irf.tint('2017-06-11T17:43:23.00Z',1); % 20170611174323
-% tint = irf.tint('2017-06-11T17:52:23.00Z',1); % 20170611175223
-% 
-% tint = irf.tint('2017-06-19T10:41:23.00Z',1); % 20170619104123
-% tint = irf.tint('2017-06-19T10:43:43.00Z',1); % 20170619104343
-% tint = irf.tint('2017-06-19T10:46:13.00Z',1); % 20170619104613
-% tint = irf.tint('2017-06-19T10:48:43.00Z',1); % 20170619104843
-% tint = irf.tint('2017-06-19T10:51:13.00Z',1); % 20170619105113
-% tint = irf.tint('2017-06-19T10:38:53.00Z',1); % 20170619103853 - not done
-% tint = irf.tint('2017-06-19T10:36:23.00Z',1); % 20170619103623 - not done
-
-% tint = irf.tint('2017-07-03T21:52:13.00Z',1); % 20170703215213
-% tint = irf.tint('2017-07-03T21:54:03.00Z',1); % 20170703215403
-% tint = irf.tint('2017-07-03T21:55:13.00Z',1); % 20170703215553
-% tint = irf.tint('2017-07-03T21:57:43.00Z',1); % 20170703215743
-% tint = irf.tint('2017-07-03T21:59:33.00Z',1); % 20170703215933
-% tint = irf.tint('2017-07-03T22:01:23.00Z',1); % 20170703220123
-% tint = irf.tint('2017-07-03T22:03:23.00Z',1); % 20170703220323
-% tint = irf.tint('2017-07-03T22:05:33.00Z',1); % 20170703220533
-
-tint = irf.tint('2015-10-16T13:06:00.00Z',60); % 20170703220533
-% Tail separatrix
-%tint = irf.tint('2017-07-04T06:26:03.00Z',60); % not downloaded yet
-%tint = irf.tint('2017-07-06T06:24:03.00Z',60);
-%tint = irf.tint('2017-07-06T08:16:03.00Z',60);
-%tint = irf.tint('2017-07-06T08:18:13.00Z',60); % not done
-%tint = irf.tint('2017-07-06T13:53:03.00Z',60);
-%tint = irf.tint('2017-07-06T14:04:53.00Z',60);
-%tint = irf.tint('2017-07-06T14:06:53.00Z',60);
-%tint = irf.tint('2017-07-06T14:08:53.00Z',60);
-%tint = irf.tint('2017-07-06T15:28:03.00Z',60);
-%tint = irf.tint('2017-07-06T15:41:33.00Z',60);
-%tint = irf.tint('2017-07-06T15:46:23.00Z',60);
-%tint = irf.tint('2017-07-06T15:51:13.00Z',60);
-%tint = irf.tint('2017-07-06T16:02:13.00Z',60);
-tint = irf.tint('2017-07-06T16:38:12.00Z',60); % not done
-
-% selections from mms database
-tint = irf.tint('2016-03-07T02:02:24.00Z',60);
-
-event = 2;
-switch event
-  case 1
-    tint = irf.tint('2017-07-06T08:16:03.00Z/2017-07-06T08:18:13.00Z');
-    tint_fred = irf.tint('2017-07-06T08:16:30.00Z/2017-07-06T08:17:05.00Z');
-    tint_lobe = irf.tint('2017-07-06T08:17:00.887537841Z/2017-07-06T08:17:02.731509765Z');
-    tint_sheet = irf.tint('2017-07-06T08:16:48.243161132Z/2017-07-06T08:16:49.823708251Z');
-    tint_sep = irf.tint('2017-07-06T08:16:38.200Z/2017-07-06T08:16:39.200Z');
-    tint_phi = irf.tint('2017-07-06T08:16:38.5Z/2017-07-06T08:16:39.0');
-  case 2
-    tint = irf.tint('2017-07-06T08:16:03.00Z/2017-07-06T08:18:13.00Z');
-    tint_fred = irf.tint('2017-07-06T08:18:00.000Z/2017-07-06T08:18:10.000Z');
-    tint_lobe = irf.tint('2017-07-06T08:17:00.887537841Z/2017-07-06T08:17:02.731509765Z');
-    tint_sheet = irf.tint('2017-07-06T08:17:55.000Z/2017-07-06T08:18:00.000Z');
-    tint_sep = irf.tint('2017-07-06T08:18:06.000Z/2017-07-06T08:18:09.000Z');
-    tint_phi = irf.tint('2017-07-06T08:18:06.5Z/2017-07-06T08:18:09.0');
-  case 3
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:54:20.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:54:05.00Z/2017-07-06T00:54:10.00Z');
-    tint_sheet = irf.tint('2017-07-06T00:54:18.70Z/2017-07-06T00:54:19.50Z');
-    tint_sep = irf.tint('2017-07-06T00:54:13.50Z/2017-07-06T00:54:16.50Z');
-    tint_phi = irf.tint('2017-07-06T00:54:14.00Z/2017-07-06T00:54:15.50Z');
-  case 4
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:54:18.00Z/2017-07-06T00:54:26.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:54:25.30Z/2017-07-06T00:54:25.90Z');
-    tint_sheet = irf.tint('2017-07-06T00:54:18.70Z/2017-07-06T00:54:19.50Z');
-    tint_sep = irf.tint('2017-07-06T00:54:21.00Z/2017-07-06T00:54:24.00Z');
-    tint_phi = irf.tint('2017-07-06T00:54:21.80Z/2017-07-06T00:54:23.50Z');
-  case 5
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:54:22.00Z/2017-07-06T00:54:32.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:54:25.30Z/2017-07-06T00:54:25.90Z');
-    tint_sheet = irf.tint('2017-07-06T00:54:29.50Z/2017-07-06T00:54:31.00Z');
-    tint_sep = irf.tint('2017-07-06T00:54:27.00Z/2017-07-06T00:54:27.80Z');
-    tint_phi = irf.tint('2017-07-06T00:54:27.00Z/2017-07-06T00:54:27.60Z');
-  case 6
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:55:20.00Z/2017-07-06T00:55:45.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:55:34.80Z/2017-07-06T00:55:35.30Z');
-    tint_sheet = irf.tint('2017-07-06T00:55:20.10Z/2017-07-06T00:55:21.10Z');
-    tint_sep = irf.tint('2017-07-06T00:55:30.10Z/2017-07-06T00:55:30.80Z');
-    tint_phi = irf.tint('2017-07-06T00:55:30.10Z/2017-07-06T00:55:30.70Z');
-  case 7
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:55:20.00Z/2017-07-06T00:55:45.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:55:34.80Z/2017-07-06T00:55:35.30Z');
-    tint_sheet = irf.tint('2017-07-06T00:55:20.10Z/2017-07-06T00:55:21.10Z');
-    tint_sep = irf.tint('2017-07-06T00:55:32.80Z/2017-07-06T00:55:33.00Z');
-    tint_phi = irf.tint('2017-07-06T00:55:32.80Z/2017-07-06T00:55:33.00Z');
-  case 8
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:55:20.00Z/2017-07-06T00:55:45.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:55:34.80Z/2017-07-06T00:55:35.30Z');
-    tint_sheet = irf.tint('2017-07-06T00:55:20.10Z/2017-07-06T00:55:21.10Z');
-    tint_sep = irf.tint('2017-07-06T00:55:33.60Z/2017-07-06T00:55:34.00Z');
-    tint_phi = irf.tint('2017-07-06T00:55:33.60Z/2017-07-06T00:55:34.00Z');
-  case 9
-    tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
-    tint_fred = irf.tint('2017-07-06T00:55:20.00Z/2017-07-06T00:55:45.00Z');
-    tint_lobe = irf.tint('2017-07-06T00:55:34.80Z/2017-07-06T00:55:35.30Z');
-    tint_sheet = irf.tint('2017-07-06T00:55:20.10Z/2017-07-06T00:55:21.10Z');
-    tint_sep = irf.tint('2017-07-06T00:55:40.00Z/2017-07-06T00:55:41.00Z');
-    tint_phi = irf.tint('2017-07-06T00:55:40.00Z/2017-07-06T00:55:42.00Z');
-  case 10
-    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
-    tint_fred = irf.tint('2017-07-03T21:54:25.00Z/2017-07-03T21:54:43.00Z');
-    tint_lobe = irf.tint('2017-07-03T21:54:35.00Z/2017-07-03T21:54:36.00Z');
-    tint_sheet = irf.tint('2017-07-03T21:54:31.20Z/2017-07-03T21:54:31.40Z');
-    tint_sep = irf.tint('2017-07-03T21:54:32.00Z/2017-07-03T21:54:32.50Z');
-    tint_phi = irf.tint('2017-07-03T21:54:31.80Z/2017-07-03T21:54:32.60Z');
-  case 11
-    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
-    tint_fred = irf.tint('2017-07-03T21:54:25.00Z/2017-07-03T21:54:43.00Z');
-    tint_lobe = irf.tint('2017-07-03T21:54:35.00Z/2017-07-03T21:54:36.00Z');
-    tint_sheet = irf.tint('2017-07-03T21:54:42.00Z/2017-07-03T21:54:43.00Z');
-    tint_sep = irf.tint('2017-07-03T21:54:37.30Z/2017-07-03T21:54:40.50Z');
-    tint_phi = irf.tint('2017-07-03T21:54:37.30Z/2017-07-03T21:54:40.50Z');
-  case 12
-    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
-    tint_fred = irf.tint('2017-07-03T21:54:57.00Z/2017-07-03T21:55:30.00Z');
-    tint_lobe = irf.tint('2017-07-03T21:55:18.00Z/2017-07-03T21:55:20.00Z');
-    tint_sheet = irf.tint('2017-07-03T21:54:57.80Z/2017-07-03T21:54:58.80Z');
-    tint_sep = irf.tint('2017-07-03T21:55:07.00Z/2017-07-03T21:55:08.70Z');
-    tint_phi = irf.tint('2017-07-03T21:55:07.00Z/2017-07-03T21:55:08.70Z');
-  case 13
-    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
-    tint_fred = irf.tint('2017-07-03T21:54:57.00Z/2017-07-03T21:55:20.00Z');
-    tint_lobe = irf.tint('2017-07-03T21:55:18.00Z/2017-07-03T21:55:20.00Z');
-    tint_sheet = irf.tint('2017-07-03T21:54:57.80Z/2017-07-03T21:54:58.80Z');
-    tint_sep = irf.tint('2017-07-03T21:55:05.00Z/2017-07-03T21:55:05.60Z');
-    tint_phi = irf.tint('2017-07-03T21:55:05.00Z/2017-07-03T21:55:05.60Z');
-  case 14
-    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z');
-    tint_fred = irf.tint('2017-07-03T21:54:57.00Z/2017-07-03T21:55:20.00Z');
-    tint_lobe = irf.tint('2017-07-03T21:55:18.00Z/2017-07-03T21:55:20.00Z');
-    tint_sheet = irf.tint('2017-07-03T21:54:57.80Z/2017-07-03T21:54:58.80Z');
-    tint_sep = irf.tint('2017-07-03T21:55:11.80Z/2017-07-03T21:55:12.70Z');
-    tint_phi = irf.tint('2017-07-03T21:55:11.50Z/2017-07-03T21:55:12.50Z');
-  case 15
-    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
-    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
-    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
-    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
-    tint_sep = irf.tint('2017-07-06T14:07:16.80Z/2017-07-06T14:07:18.00Z');
-    tint_phi = irf.tint('2017-07-06T14:07:16.80Z/2017-07-06T14:07:18.00Z');
-  case 16
-    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
-    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
-    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
-    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
-    tint_sep = irf.tint('2017-07-06T14:07:19.00Z/2017-07-06T14:07:19.20Z');
-    tint_phi = irf.tint('2017-07-06T14:07:19.00Z/2017-07-06T14:07:19.20Z');
-  case 17
-    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
-    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
-    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
-    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
-    tint_sep = irf.tint('2017-07-06T14:07:20.20Z/2017-07-06T14:07:21.70Z');
-    tint_phi = irf.tint('2017-07-06T14:07:20.20Z/2017-07-06T14:07:21.70Z');
-  case 18
-    tint = irf.tint('2017-07-06T14:06:53.00Z/2017-07-06T14:08:53.00Z');
-    tint_fred = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:31.00Z');
-    tint_lobe = irf.tint('2017-07-06T14:07:15.00Z/2017-07-06T14:07:15.20Z');
-    tint_sheet = irf.tint('2017-07-06T14:07:25.50Z/2017-07-06T14:07:26.00Z');
-    tint_sep = irf.tint('2017-07-06T14:07:28.30Z/2017-07-06T14:07:28.70Z');
-    tint_phi = irf.tint('2017-07-06T14:07:28.30Z/2017-07-06T14:07:28.70Z');
-  case 19
-    tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-    tint_fred = irf.tint('2017-07-06T13:54:20.00Z/2017-07-06T13:54:44.00Z');
-    tint_lobe = irf.tint('2017-07-06T13:54:21.00Z/2017-07-06T13:54:22.00Z');
-    tint_sheet = irf.tint('2017-07-06T13:54:40.00Z/2017-07-06T13:54:41.00Z');
-    tint_sep = irf.tint('2017-07-06T13:54:29.00Z/2017-07-06T13:54:29.50Z');
-    tint_phi = irf.tint('2017-07-06T13:54:29.00Z/2017-07-06T13:54:29.50Z');
-  case 20
-    tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-    tint_fred = irf.tint('2017-07-06T13:54:20.00Z/2017-07-06T13:54:44.00Z');
-    tint_lobe = irf.tint('2017-07-06T13:54:21.00Z/2017-07-06T13:54:22.00Z');
-    tint_sheet = irf.tint('2017-07-06T13:54:40.00Z/2017-07-06T13:54:41.00Z');
-    tint_sep = irf.tint('2017-07-06T13:54:33.80Z/2017-07-06T13:54:34.20Z');
-    tint_phi = irf.tint('2017-07-06T13:54:33.70Z/2017-07-06T13:54:34.20Z');
-  case 21
-  case 22    
-end
+sep.get_tints;
 
 %% Load data
 % Particle distributions: electrons and ions
@@ -254,7 +35,7 @@ c_eval('gseB?scm=mms.db_get_ts(''mms?_scm_brst_l2_scb'',''mms?_scm_acb_gse_scb_b
 
 % Electric field
 disp('Loading electric field...')
-c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',1:4);
 c_eval('dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
 
 % Load spacecraft position
@@ -407,7 +188,10 @@ tint_phi_utc = tint_phi.utc; tint_phi_utc = tint_phi_utc(:,12:23);
 str_print=sprintf('sep_ov_%s_%s_%s',tint_day_utc,tint_sep_utc(1,:),tint_sep_utc(2,:));
 str_print(strfind(str_print,':'))=[];
 
+%% Get wave parameters for tint_phi interval
+
 %% Plot overview figure with focus on electrons
+figure(201)
 npanels_large = 10;
 npanels_zoom = 1;
 npanels = 12;
@@ -654,6 +438,543 @@ end
 
 hca = irf_panel('e DEF omni 64'); hca.XGrid = 'off'; hca.YGrid = 'off';
 delete(irf_panel('delete'))
+
+%% Plot acceleration potential and electron particle distributions
+c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
+c_eval('scpot = scPot?.resample(gseVe?);',ic)
+c_eval('dmpaB?slow = dmpaB?.resample(gseVe?);',ic)
+c_eval('dslE?slow = dslE?.resample(gseVe?);',ic)
+%c_eval('ePitch = ePitch?;',ic)
+
+times_phi_utc = ef1D.tlim(tint_phi).time.utc; times_phi_utc = times_phi_utc(:,12:23);
+
+fontsize = 8;
+  
+colors = mms_colors('xzy');
+isub = 1;
+if 1 % average fred during sep, lobe and sheet interval
+  hca = h2(isub); isub = isub + 1;
+  
+  fered_sep = ef1D.tlim(tint_sep);
+  plot_v_sep = nanmean(fered_sep.depend{1},1);
+  plot_f_sep = nanmean(fered_sep.data,1);
+  
+  fered_lobe = ef1D.tlim(tint_lobe);
+  plot_v_lobe = nanmean(fered_lobe.depend{1},1);
+  plot_f_lobe = nanmean(fered_lobe.data,1);
+  
+  fered_sheet = ef1D.tlim(tint_sheet);
+  plot_v_sheet = nanmean(fered_sheet.depend{1},1);
+  plot_f_sheet = nanmean(fered_sheet.data,1);
+  
+  h_fered = plot(hca,plot_v_lobe*1e-3,plot_f_lobe,...
+                     plot_v_sheet*1e-3,plot_f_sheet,...
+                     plot_v_sep*1e-3,plot_f_sep);
+  c_eval('h_fered(?).Color = colors(?,:);',1:3)
+  hca.XLabel.String = 'v (10^3 km/s)';
+  hca.YLabel.String = sprintf('f_e (%s)',fered_sep.units);
+  hca.XLim = [-40 40];
+  
+  set(hca,'colororder',colors);
+  tint_str = {sprintf('%s - %s',tint_lobe_utc(1,:),tint_lobe_utc(2,:));...
+              sprintf('%s - %s',tint_sheet_utc(1,:),tint_sheet_utc(2,:));...
+              sprintf('%s - %s',tint_sep_utc(1,:),tint_sep_utc(2,:))};
+  irf_legend(hca,tint_str,[0.01 0.98],'fontsize',fontsize)
+  hca.Title.String = sprintf('E > %g eV',lowerelim);
+end
+
+%ndist_to_combine = 3;
+n_int = 3;
+lowerelim_peaks = 400;
+Elim_axis = 4000;
+colors = mms_colors('matlab');
+clear plot_f_phi f_sep_utc hmark_all str_Emax Emax Emax_within_interval 
+clear Emax_av Emax_av_ind plot_f_phi_Emax Emax_utc f_phi_utc
+
+if 1 % divide f into intervals, common for both v,E x-axis, mark TSeries
+  fred_phi = ef1D.tlim(tint_phi);
+  plot_v_phi = mean(fred_phi.depend{1},1);
+  plot_E_phi = sign(plot_v_phi)*0.5*units.me.*(plot_v_phi*1e3).^2/units.e;   
+  
+  fred_phi_peaks = fred_phi;   
+  fred_phi_peaks.data(abs(repmat(plot_E_phi,fred_phi_peaks.length,1))<lowerelim_peaks) = 0;
+  [val,ind] = max(fred_phi_peaks.data');
+  Emax = (plot_E_phi(ind));
+     
+  nf = fred_phi.length;
+  [ind1,ind2] = ind12(nf,n_int);
+  for i_int = 1:n_int
+    f_phi_utc{i_int,1} = sprintf('%s - %s',times_phi_utc(ind1(i_int),:),times_phi_utc(ind2(i_int),:));
+    Emax_tmp = Emax(ind1(i_int):ind2(i_int));
+    [val_tmp_Emax,ind_tmp_Emax] = max(abs(Emax_tmp));
+    Emax_within_interval(i_int) = Emax_tmp(ind_tmp_Emax);
+    %Emax_utc = 
+        
+    plot_f_phi(i_int,:) = mean(fred_phi.data(ind1(i_int):ind2(i_int),:),1);    
+    plot_f_phi_Emax(i_int,:) = fred_phi.data(ind1(i_int)+ind_tmp_Emax-1,:);
+    
+    Emax_tmp = plot_f_phi(i_int,:); Emax_tmp(abs(plot_E_phi)<lowerelim_peaks) = 0;
+    [val,ind] = max(Emax_tmp);
+    Emax_av(i_int) = (plot_E_phi(ind));
+    Emax_av_ind(i_int) = ind;
+    f_at_Emax_av(i_int) = plot_f_phi(i_int,ind);
+    
+    str_Emax{i_int,1} = sprintf('phimax =[%.0f, %.0f] eV',Emax_av(i_int),Emax_within_interval(i_int));
+    
+    [hmark,cc] = irf_pl_mark(h(npanels_large + 2),fred_phi.time([ind1(i_int) ind2(i_int)]).epochUnix');    
+    if isa(hmark,'matlab.graphics.primitive.Line')
+      hmark.Color = colors(i_int,:);
+    elseif isa(hmark,'matlab.graphics.primitive.Patch')
+      hmark.YData = hmark.YData + 120;
+      hmark.ZData = [1 1 1 1];
+      hmark.EdgeColor = [0 0 0];
+      hmark.FaceColor = colors(i_int,:);
+    end    
+    hmark_all{i_int} = hmark;
+  end  
+end
+if 1 % all fred during sep interval, vs vpar
+  hca = h2(isub); isub = isub + 1;
+  h_fered = plot(hca,plot_v_sep*1e-3,plot_f_phi);
+  c_eval('h_fered(?).Color = colors(?,:);',1:n_int)  
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = sprintf('f_e (%s)',fered_sep.units);
+  hca.XLim = [-40 40];
+  set(hca,'colororder',colors)  
+  hca.Title.String = 'Average over indicated tint';
+  if plot_E_phi(ind) > 0
+    irf_legend(hca,f_phi_utc,[0.01 0.98],'fontsize',fontsize)
+  else
+    irf_legend(hca,f_phi_utc,[0.98 0.98],'fontsize',fontsize)
+  end
+end
+if 1 % all fred during sep interval, vs +-Epar
+  hca = h2(isub); isub = isub + 1;
+  
+  h_fered = plot(hca,plot_E_phi*1e0,plot_f_phi);
+  c_eval('h_fered(?).Color = colors(?,:);',1:n_int)
+  hold(hca,'on')
+  for i_int = 1:n_int
+    h_fered_star = plot(hca,Emax_av(i_int),f_at_Emax_av(i_int),'*','color',colors(i_int,:));
+  end
+  hold(hca,'off')
+  
+  hca.XLabel.String = 'E_{||} (eV)';
+  hca.YLabel.String = sprintf('f_e (%s)',fred_phi.units);
+  hca.XLim = Elim_axis*[-1 1]+ 0.5*mean(Emax_av);
+  hca.XTick = -30000:1000:30000;
+     
+  hca.Title.String = {'Average over indicated tint',sprintf('phimax with lower limit E > %g eV',lowerelim_peaks)};
+
+  if 1 % plot lowerelim_peaks
+    hold(hca,'on')
+    plot(hca,lowerelim_peaks*[-1 -1],hca.YLim,'--k',lowerelim_peaks*[1 1],hca.YLim,'--k')
+    hold(hca,'off')
+  end
+  
+  set(hca,'colororder',colors)
+  if plot_E_phi(ind) > 0
+    irf_legend(hca,str_Emax,[0.02 0.98],'fontsize',fontsize)
+  else
+    irf_legend(hca,str_Emax,[0.98 0.98],'fontsize',fontsize)
+  end
+end
+if 1 % all fred during sep interval, vs +-Epar, max within interal
+  hca = h2(isub); isub = isub + 1;
+  
+  h_fered = plot(hca,plot_E_phi,plot_f_phi_Emax);
+  c_eval('h_fered(?).Color = colors(?,:);',1:n_int)
+  hold(hca,'on')
+  for i_int = 1:n_int
+    f_tmp = plot_f_phi_Emax(i_int,:);
+    f_tmp(abs(plot_E_phi)<lowerelim_peaks) = 0;
+    [val,ind] = max(abs(f_tmp));
+    h_fered_star = plot(hca,plot_E_phi(ind),val,'*','color',colors(i_int,:));
+  end
+  hold(hca,'off')
+  
+  hca.XLabel.String = 'E_{||} (eV)';
+  hca.YLabel.String = sprintf('f_e (%s)',fred_phi.units);
+  hca.XLim = Elim_axis*[-1 1]+ 0.5*mean(Emax);
+  hca.XTick = -30000:1000:30000;
+  if hca.XLim(2)<max(Emax)
+    hca.XLim = max(Emax)*1*[-1 1] + 0.5*max(Emax);
+    hca.XTick = -30000:2000:30000;
+  end
+     
+  hca.Title.String = sprintf('E > %g eV',lowerelim_peaks);
+  if 1 % plot lowerelim_peaks
+    hold(hca,'on')
+    plot(hca,lowerelim_peaks*[-1 -1],hca.YLim,'--k',lowerelim_peaks*[1 1],hca.YLim,'--k')
+    hold(hca,'off')
+  end
+  
+  set(hca,'colororder',colors)
+  if plot_E_phi(ind) > 0
+    irf_legend(hca,str_Emax,[0.02 0.98],'fontsize',fontsize)
+  else
+    irf_legend(hca,str_Emax,[0.98 0.98],'fontsize',fontsize)
+  end
+  hca.Title.String = {'Max phi in indicated tint',sprintf('phimax with lower limit E > %g eV',lowerelim_peaks)};
+end
+
+n_intervals_sep = 5;
+vgmax = 60000;
+vg = -vgmax:2000:vgmax;
+%lowerelim = 40;
+if 1 % 1 reduced distribution, 1st half of tint_sep
+  hca = h2(isub); isub = isub + 1;
+  tint_tmp = tint_phi(1) + (tint_phi(2)-tint_phi(1))/n_intervals_sep*[0 1];
+  
+  c_eval('eDist = ePDist?.tlim(tint_tmp);',ic)
+  
+  c_eval('ePara = dmpaB?slow.resample(eDist).norm;',ic)
+  c_eval('ePerp1 = ePara.cross(dslE?slow.resample(eDist)).norm;',ic)
+  ePerp2 = ePara.cross(ePerp1).norm;
+  
+  nMC = 500;  
+  tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+  %tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+  %tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+  [h_surf,h_axis,h_all] = ef2D_parperp1.plot_plane(hca,'tint',tint_tmp);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp1} (10^3 km/s)';    
+  hca.XLim = vg([1 end])*1e-3;
+  hca.YLim = vg([1 end])*1e-3;
+  tint_tmp_utc = eDist.time.utc; tint_tmp_utc = tint_tmp_utc(:,12:23);
+  hca.Title.String = {sprintf('%s - %s',tint_tmp_utc(1,:),tint_tmp_utc(end,:)),...
+                      sprintf('<v_{perp,1}> = [%.2f,%.2f,%.2f]',mean(ePerp1.data,1))};
+  %axis(hca,'equal')
+  axis(hca,'square')
+  hca.Title.FontSize = fontsize;
+  hca.FontSize = fontsize;
+end
+if 1 % 1 reduced distribution, 2nd half of tint_sep
+  hca = h2(isub); isub = isub + 1;
+  tint_tmp = tint_phi(1) + (tint_phi(2)-tint_phi(1))/n_intervals_sep*[1 2];
+  
+  c_eval('eDist = ePDist?.tlim(tint_tmp);',ic)
+  
+  c_eval('ePara = dmpaB?slow.resample(eDist).norm;',ic)
+  c_eval('ePerp1 = ePara.cross(dslE?slow.resample(eDist)).norm;',ic)
+  ePerp2 = ePara.cross(ePerp1).norm;
+  
+  nMC = 500;  
+  tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+  %tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+  %tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+  [h_surf,h_axis,h_all] = ef2D_parperp1.plot_plane(hca,'tint',tint_tmp);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp1} (10^3 km/s)';    
+  hca.XLim = vg([1 end])*1e-3;
+  hca.YLim = vg([1 end])*1e-3;
+  tint_tmp_utc = eDist.time.utc; tint_tmp_utc = tint_tmp_utc(:,12:23);
+  hca.Title.String = {sprintf('%s - %s',tint_tmp_utc(1,:),tint_tmp_utc(end,:)),...
+                      sprintf('<v_{perp,1}> = [%.2f,%.2f,%.2f]',mean(ePerp1.data,1))};
+  %axis(hca,'equal')
+  axis(hca,'square')
+  hca.Title.FontSize = fontsize;
+  hca.FontSize = fontsize;
+end
+if 0 % 1 reduced distribution, 3rd third of tint_sep
+  hca = h2(isub); isub = isub + 1;
+  tint_tmp = tint_phi(1) + (tint_phi(2)-tint_phi(1))/n_intervals_sep*[2 3];
+  
+  c_eval('eDist = ePDist?.tlim(tint_tmp);',ic)
+  
+  c_eval('ePara = dmpaB?slow.resample(eDist).norm;',ic)
+  c_eval('ePerp1 = ePara.cross(dslE?slow.resample(eDist)).norm;',ic)
+  ePerp2 = ePara.cross(ePerp1).norm;
+  
+  nMC = 500;  
+  tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+  %tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+  %tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+  [h_surf,h_axis,h_all] = ef2D_parperp1.plot_plane(hca,'tint',tint_tmp);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp1} (10^3 km/s)';    
+  hca.XLim = vg([1 end])*1e-3;
+  hca.YLim = vg([1 end])*1e-3;
+  tint_tmp_utc = eDist.time.utc; tint_tmp_utc = tint_tmp_utc(:,12:23);
+  hca.Title.String = {sprintf('%s - %s',tint_tmp_utc(1,:),tint_tmp_utc(end,:)),...
+                      sprintf('<v_{perp,1}> = [%.2f,%.2f,%.2f]',mean(ePerp1.data,1))};
+  hca.Title.FontSize = fontsize;
+  hca.FontSize = fontsize;
+  %axis(hca,'equal')
+  axis(hca,'square')
+end
+
+for ih = 1:numel(h2)
+  h2(ih).FontSize = fontsize;
+end
+%for ih = 4:6, h2(ih).CLim = [-15 -10.2]; end
+  
+%% Plot overview figure with focus on waves
+figure(202)
+npanels_large = 5;
+npanels_zoom = 2;
+npanels_delete = 1;
+npanels = npanels_large + npanels_zoom + npanels_delete;
+cmap = 'jet';
+[h,h2] = initialize_combined_plot(npanels,3,2,0.4,'vertical'); % horizontal
+ic = 1;
+iisub = 0;
+cmap = colormap('jet');
+zoomy = [];
+fig = gcf;
+fig.Position(3) = fig.Position(4)*1.5;
+
+fred_min = 1e-6;
+fontsize = 10;
+
+if 1 % e DEF omni 64
+  iisub = iisub + 1;
+  hca = irf_panel('e DEF omni 64');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hold(hca,'on')
+  c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+  lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+  hold(hca,'off')
+  hca.YLabel.String = {'E_e','(eV)'};   
+  colormap(hca,cmap) 
+end
+if 0 % B
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint),gseB?.abs.tlim(tint)},''comp'');',ic)
+  c_eval('irf_plot(hca,{gseB?.x.tlim(tint),gseB?.y.tlim(tint),gseB?.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+if 0 % neiisub = iisub + 1;
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)
+  hca.YLabel.String = {'n_e','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('12'))    
+end
+if 0 % Jx, moments and curl  iisub = iisub + 1;
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Jx fpi fgm');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseJ?.x.tlim(tint),gseJcurl.x.tlim(tint+[1 0])},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J_x','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'FPI','FGM'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [-1100 1100];  
+end
+if 0 % J  iisub = iisub + 1;
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('J fpi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseJ?.x.tlim(tint),gseJ?.y.tlim(tint),gseJ?.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [-1100 1100];  
+end
+if 0 % Vi  iisub = iisub + 1;
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Vi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVi?.x.tlim(tint),gseVi?.y.tlim(tint),gseVi?.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_i','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
+end
+if 1 % Ve  
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Ve');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
+end
+if 0 % Ve perp par
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Ve perp par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVe?perp.x.tlim(tint),gseVe?perp.y.tlim(tint),gseVe?perp.z.tlim(tint),gseVe?par.tlim(tint)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'v_e','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x_{\perp}','y_{\perp}','z_{\perp}','v_{e,||}'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [-1100 1100];  
+end
+if 0 % gradPe
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('gradPe');
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  irf_plot(hca,{gseGradPe.x*1e3,gseGradPe.y*1e3,gseGradPe.z*1e3},'comp');
+  hca.YLabel.String = {'\nabla \cdot P_e','(pPa/km)'};
+  set(hca,'ColorOrder',mms_colors('xyz'))  
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);    
+  irf_legend(hca,{'4 spacecraft'},[0.05 0.9],'fontsize',12,'color','k');
+end
+if 0 % e DEF omni 64
+  iisub = iisub + 1;
+  hca = irf_panel('e DEF omni 64');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hold(hca,'on')
+  c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+  lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+  hold(hca,'off')
+  hca.YLabel.String = {'E_e','(eV)'};   
+  colormap(hca,cmap) 
+end
+if 1 % Te par perp
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2,facTi?.trace/3/refTi},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_i/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);
+  %hca.YScale = 'log'; %hca.YTick = [10:10:100 200:100:1000];
+  hca.YLim = [10 400];
+  %hca.YTick
+  irf_zoom(hca,'y')
+end
+if 0 % ePDist pa 64
+  iisub = iisub + 1;
+  hca = irf_panel('e pitch');  
+  eint = [100 32000];  
+  try
+    c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec,''log'');',ic)
+  catch
+    c_eval('irf_spectrogram(hca,ePDist?.tlim(tint).pitchangles(dmpaB?,20).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  end
+  %c_eval('irf_spectrogram(hca,ePDist?.e64.pitchangles(dmpaB?,20).elim([180 203]).deflux.specrec(''pa''),''log'');',ic)
+  %hca.YLabel.String = {'Pitchangle','(\circ)'};   
+  %irf_legend(hca,['E = [' num2str(eint(1),'%.0f') ' ' num2str(eint(2),'%.0f') ']'],[0.95 0.90],'color',0*[1 1 1])
+  irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1],'fontsize',fontsize)
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
+  hca.YLim = [0 180];
+end
+if 0 % e psd vpar
+  iisub = iisub + 1;
+  hca = irf_panel('fe reduced');
+  fred_to_plot = ef1D; fred_to_plot.data(fred_to_plot.data < fred_min) = NaN;
+  irf_spectrogram(hca,fred_to_plot.specrec('velocity_1D','10^3 km/s'));  
+  hca.YLim = fred_to_plot.depend{1}(1,[1 end])*1e-3;
+  hca.YLabel.String = {'v_e','(10^3 km/s)'}; 
+  %irf_legend(hca,[num2str(fred_to_plot.ancillary.vint(1),'%.0f') '<v_\perp<' num2str(fred_to_plot.ancillary.vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  irf_legend(hca,['E_{e} >' num2str(lowerelim) ' eV'],[0.98 0.99],'color',0*[1 1 1],'fontsize',fontsize)
+  irf_legend(hca,['f_{e} >' num2str(fred_min) ' s/m^4'],[0.98 0.70],'color',0*[1 1 1],'fontsize',fontsize)
+end
+if 0 % E
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('E');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?.x.tlim(tint),gseE?.y.tlim(tint),gseE?.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 1 % E perp
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('E perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?perp.x.tlim(tint),gseE?perp.y.tlim(tint),gseE?perp.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+end
+if 1 % E par
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+end
+for ii = 1:npanels_delete
+  hca = irf_panel(sprintf('delete %g',ii));
+  iisub = iisub + 1;
+end
+if 1 % e psd vpar
+  iisub = iisub + 1;
+  hca = irf_panel('fe reduced zoomin');
+  fred_to_plot = ef1D; fred_to_plot.data(fred_to_plot.data < fred_min) = NaN;
+  irf_spectrogram(hca,fred_to_plot.specrec('velocity_1D','10^3 km/s'));  
+  hca.YLim = fred_to_plot.depend{1}(1,[1 end])*1e-3;
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};   
+  irf_legend(hca,['E_{e} >' num2str(lowerelim) ' eV'],[0.98 1.1],'color',0*[1 1 1],'fontsize',fontsize)
+end
+if 1 % E par
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('E par zoomin');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+end
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
+nInd = 1;
+for ii = [1:npanels_large npanels-npanels_delete-1+[1:npanels_zoom]]  
+  irf_legend(h(ii),legends{nInd},[0.01 0.9],'color',[0 0 0])
+  nInd = nInd + 1;
+end
+
+
+irf_zoom(h(1:npanels_large),'x',tint)
+irf_zoom(h(npanels_large + npanels_delete + [1:npanels_zoom]),'x',tint_fred)
+irf_zoom(h(zoomy),'y') 
+irf_plot_axis_align
+[hline1,hline2] = irf_plot_zoomin_lines_between_panels(h(npanels_large),h(npanels_large + npanels_delete + 1)); 
+irf_timeaxis(h(npanels_large))
+
+h(1).Title.String = sprintf('MMS %g, event %g',ic,event);
+
+clear hmark_lobe hmark_sheet hmark_sep
+c_eval('hmark_lobe(?) = irf_pl_mark(h(?),tint_lobe, mms_colors(''x''));',1:npanels_large)
+c_eval('hmark_sheet(?) = irf_pl_mark(h(?),tint_sheet, mms_colors(''z''));',1:npanels_large)
+c_eval('hmark_sep(?) = irf_pl_mark(h(?),tint_sep, mms_colors(''y''));',1:npanels_large)
+
+hca = h(2);
+set(hca,'ColorOrder',info_color)
+irf_legend(hca,info_str,[1.01 0.99],'fontsize',fontsize)
+for ii = 1:npanels
+  h(ii).FontSize = 12;
+end
+
+hca = irf_panel('e DEF omni 64'); hca.XGrid = 'off'; hca.YGrid = 'off';
+
+for ii = 1:npanels_delete
+  delete(irf_panel(sprintf('delete %g',ii)));  
+end
 
 %% Plot electron particle distributions
 c_eval('dist = ePDist?.convertto(''s^3/km^6'');',ic)
