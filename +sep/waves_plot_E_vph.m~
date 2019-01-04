@@ -1,0 +1,38 @@
+%% Read existing data
+file_list = dir([pathData '/*.txt']);
+table = [];
+n_events = numel(file_list);
+
+times = EpochTT([]);
+vph = nan(n_events,1);
+phi = nan(n_events,1);
+length = nan(n_events,1);
+correlation  = nan(n_events,1);
+
+for i_event = 1:n_events
+  fid = fopen([pathData file_list(i_event).name],'r');
+  %tmp_data = textscan(fid,'%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f');
+  tmp_data = textscan(fid,data_format_read);
+  for i_data = 1:numel(tmp_data)
+    table(i_event,i_data) = tmp_data{i_data};
+  end  
+  fclose(fid);
+end
+%% Make TSeries of extisting data
+tsVph = irf.ts_scalar([],[]);
+
+%%
+figure(75);
+npanels = 3;
+h = irf_plot(npanels);
+
+hca = irf_panel('epar');
+irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp');
+hca.YLabel.String = 'E_{||}';
+
+hca = irf_panel('eperp');
+irf_plot(hca,{gseE1perp.abs,gseE2perp.abs,gseE3perp.abs,gseE4perp.abs},'comp');
+hca.YLabel.String = '|E_{\perp}|';
+hca = irf_panel('vph');
+irf_plot(hca,{tsVph});
+hca.YLabel.String = 'v_{ph}';

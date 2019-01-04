@@ -48,7 +48,7 @@ end
   
 c_eval('v_trapping? = sqrt(2*units.e*gsePhi?.abs/units.me)*1e-3;')
 
-l = fit_gaussian(E1,v_amplitude);
+c_eval('l? = fit_gaussian(E?,v_amplitude);')
 
 esw = struct;
 esw.tint_vicinity = tint_vicinity;
@@ -56,8 +56,8 @@ esw.tint_esw = tint_esw;
 esw.t_center = t_center;
 esw.phi_max = [max(findpeaks(gsePhi1.tlim(tint_esw).data)) max(findpeaks(gsePhi2.tlim(tint_esw).data)) max(findpeaks(gsePhi3.tlim(tint_esw).data)) max(findpeaks(gsePhi4.tlim(tint_esw).data))];
 esw.v_trapping_max = sqrt(2*units.e*esw.phi_max/units.me)*1e-3;
-esw.peaktopeak = l*2;
-esw.debye_length = [Ld1.resample(t_center).data Ld2.resample(t_center).data Ld3.resample(t_center).data Ld4.resample(t_center).data];
+esw.peaktopeak = [l1 l2 l3 l4]*2;
+%esw.debye_length = [Ld1.resample(t_center).data Ld2.resample(t_center).data Ld3.resample(t_center).data Ld4.resample(t_center).data];
 esw.C = C;
 
 
@@ -140,17 +140,17 @@ irf_zoom(h(:),'x',tint_vicinity)
 irf_zoom(h(:),'y')
 irf_plot_axis_align
 
-cn.print(sprintf('esw_%s',tint_str),'path',eventPath)
+cn.print(sprintf('esw_%s',tint_str),'path',pathFigures)
 
 c_eval('hmark(?,!) = irf_pl_mark(h(?),tint_esw(!),''k'');',1:npanels,1:2)
 
 
 %% Write (append) data to file
 
-fid = fopen([matlabPath 'esw_properties.txt'],'a+');
-data_format = '%s %s %s %s %s %.1f %.1f %.1f %.1f %4.0f %4.0f %4.0f %4.0f %2.1f %.3f %.3f %.3f %.3f'; 
+fid = fopen([pathData sprintf('/esw_prop_%s.txt',tint_str)],'w');
+%data_format = '%s %s %s %s %s %.1f %.1f %.1f %.1f %4.0f %4.0f %4.0f %4.0f %2.1f %.3f %.3f %.3f %.3f'; 
 
-fprintf(fid,[data_format '\n'],...
+fprintf(fid,[data_format_write '\n'],...
   tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
   tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
   t_center.utc,...                              % 5
@@ -161,14 +161,15 @@ fprintf(fid,[data_format '\n'],...
   esw.C...                                      % 15 16 17 18
 );
 fid = fclose(fid);
-print_str = ...
-  sprintf([data_format],...
-  tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
-  tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
-  t_center.utc,...                              % 5
-  v_xcorr,...                                   % 6 7 8
-  v_amplitude,...                               % 9
-  esw.phi_max,...                               % 10 11 12 13
-  esw.peaktopeak...                             % 14
-);
-fprintf('printed to file %sesw_properties.txt: %s /n',matlabPath,print_str)
+
+% print_str = ...
+%   sprintf([data_format],...
+%   tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
+%   tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
+%   t_center.utc,...                              % 5
+%   v_xcorr,...                                   % 6 7 8
+%   v_amplitude,...                               % 9
+%   esw.phi_max,...                               % 10 11 12 13
+%   esw.peaktopeak...                             % 14
+% );
+%fprintf('printed to file %sesw_properties.txt: %s /n',pathData,print_str)
