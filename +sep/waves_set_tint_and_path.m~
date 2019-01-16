@@ -26,6 +26,6 @@ mkdir(pathData)
 mkdir(pathFigures)
 
 %% Set data format
-data_format_write = '%s %s %s %s %s \n %s %s %s %s \n %f %f %f \n %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f \n %f %f %f \n %f \n %f %f %f %f \n %f %f %f %f'; 
-data_format_read =  '%s %s %s %s %s \n %s %s %s %s \n %f %f %f \n %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f \n %f %f %f \n %f \n %f %f %f %f \n %f %f %f %f'; 
+data_format_write = '%s %s %s %s %s \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f \n %4.0f %4.0f %4.0f %4.0f \n %f %f %f %f'; 
+data_format_read =  '%s %s %s %s %s \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f %f %f %f %f %f \n %f   \n %f %f %f \n %f %f %f %f             \n %f %f %f %f'; 
 %cn.print(sprintf('sep_ov_%s_%s_%s',tint_day_utc,tint_sep_utc(1,:),tint_sep_utc(2,:)),'path',eventPath)

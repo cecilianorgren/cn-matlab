@@ -12,6 +12,7 @@ S=  0.4;
 vph = 1; % in terms of vtebg or S
 
 
+
 fbg = cn.maxwellian(v,T,n*(1-R),0,'e','1D'); % background electrons
 fb = cn.maxwellian(v,Tb,n*R,vtebg*S,'e','1D'); % fast beam
 fi = cn.maxwellian(v,T,n,0,'p','1D'); % ions

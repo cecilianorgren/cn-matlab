@@ -15,17 +15,31 @@ c_eval('totE? = totE?.resample(timeline);')
 c_eval('E? = gseE?par.tlim(tint_vicinity).resample(timeline);')
 c_eval('E? = E?.resample(timeline);')
 c_eval('R? = gseR?.resample(timeline).tlim(tint);')
+c_eval('R?! = R?-R!;',1:4,1:4)
+c_eval('B?! = 0.5*(gseB?.resample(timeline)+gseB!.resample(timeline));',1:4,1:4)
+c_eval('R?!par = mean(R!?.dot(B!?.norm).data); R_par_all(!,?) = R?!par;',1:4,1:4)
 
 dt_sampling = E1.time(2)-E1.time(1);
-dt = zeros(4,1);
-C = ones(4,1);
-for ic = 2:4
-  c_eval('[tmpC,lags] = xcorr(E1.data,E?.data,''coeff'');',ic)  
-  i_shift = find(abs(tmpC) == max(abs(tmpC)));
-  C(ic) = tmpC(i_shift);
-  di = -lags(i_shift);
-  dt(ic) = di*dt_sampling;
+dt_all = zeros(4,4);
+C_all = ones(4,4);
+iC = 1;
+for ic1 = 1:4
+  for ic2 = (ic1+1):4
+    iC = iC + 1;
+    c_eval('[tmpC,lags] = xcorr(E?.data,E!.data,''coeff'');',ic1,ic2)  
+    i_shift = find(abs(tmpC) == max(abs(tmpC)));
+    C_all(ic1,ic2) = tmpC(i_shift);
+    C_all(ic2,ic1) = C_all(ic1,ic2);
+    di = -lags(i_shift);
+    dt_all(ic1,ic2) = di*dt_sampling; 
+    dt_all(ic2,ic1) = dt_all(ic1,ic2);
+    fprintf('ic1 = %g, ic2 = %g, C = %.2f, n_shift = %g, dt = %g \n',ic1,ic2,tmpC(i_shift),i_shift,di*dt_sampling)
+  end
 end
+dt = dt_all(1:4); % 11,12,13,14
+v_all = R_par_all./dt_all;
+Clim = 0.7;
+v_all_high_C = v_all; v_all_high_C(C_all<Clim) = NaN;
 
 c_eval('matR? = [R?.time.epochUnix R?.data];',1:4)
 v_xcorr = irf_4_v(matR1,matR2,matR3,matR4,dt + E1(1).time.epochUnix); %v_xcorr = v_xcorr(2:4);
@@ -48,7 +62,7 @@ end
   
 c_eval('v_trapping? = sqrt(2*units.e*gsePhi?.abs/units.me)*1e-3;')
 
-l = fit_gaussian(E1,v_amplitude);
+c_eval('l? = fit_gaussian(E?,v_amplitude);')
 
 esw = struct;
 esw.tint_vicinity = tint_vicinity;
@@ -56,9 +70,11 @@ esw.tint_esw = tint_esw;
 esw.t_center = t_center;
 esw.phi_max = [max(findpeaks(gsePhi1.tlim(tint_esw).data)) max(findpeaks(gsePhi2.tlim(tint_esw).data)) max(findpeaks(gsePhi3.tlim(tint_esw).data)) max(findpeaks(gsePhi4.tlim(tint_esw).data))];
 esw.v_trapping_max = sqrt(2*units.e*esw.phi_max/units.me)*1e-3;
-esw.peaktopeak = l*2;
+esw.peaktopeak = [l1 l2 l3 l4]*2;
 %esw.debye_length = [Ld1.resample(t_center).data Ld2.resample(t_center).data Ld3.resample(t_center).data Ld4.resample(t_center).data];
-esw.C = C;
+esw.C = [C_all(1,2:4) C_all(2,3:4) C_all(3,4)];
+esw.dt = [dt_all(1,2:4) dt_all(2,3:4) dt_all(3,4)];
+esw.
 
 
 %% Plot 
@@ -82,7 +98,7 @@ irf_legend(hca,{['\Delta t = [ ' num2str(dt(1)*1e3)],num2str(dt(2)*1e3),num2str(
 set(hca,'ColorOrder',mms_colors('1'))
 irf_legend(hca,{sprintf('v = %.1f x [%.2f %.2f %.2f] km/s',v_amplitude,v_direction)},[0.95 0.05],'fontsize',12);
 set(hca,'ColorOrder',mms_colors('1'))
-irf_legend(hca,{sprintf('C_{1>1234} = [%.2f %.2f %.2f %.2f]',C)},[0.01 0.99],'fontsize',12);
+irf_legend(hca,{sprintf('C_{123>1234} = [%.2f %.2f %.2f %.2f %.2f %.2f %.2f]',C)},[0.01 0.99],'fontsize',12);
 
 
 if 1 % Ex
@@ -150,25 +166,29 @@ c_eval('hmark(?,!) = irf_pl_mark(h(?),tint_esw(!),''k'');',1:npanels,1:2)
 fid = fopen([pathData sprintf('/esw_prop_%s.txt',tint_str)],'w');
 %data_format = '%s %s %s %s %s %.1f %.1f %.1f %.1f %4.0f %4.0f %4.0f %4.0f %2.1f %.3f %.3f %.3f %.3f'; 
 
-fprintf(fid,[data_format '\n'],...
+fprintf(fid,[data_format_write '\n'],...
   tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
   tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
   t_center.utc,...                              % 5
+  [C_all(1,2:4) C_all(2,3:4) C_all(3,4)],... 
+  [dt_all(1,2:4) dt_all(2,3:4) dt_all(3,4)],...
+  [R_par_all(1,2:4) R_par_all(2,3:4) R_par_all(3,4)],...
+  [v_all(1,2:4) v_all(2,3:4) v_all(3,4)],...        %
   v_xcorr,...                                   % 6 7 8
-  v_amplitude,...                               % 9
+  v_amplitude,...                                % 9  
   esw.phi_max,...                               % 10 11 12 13
-  esw.peaktopeak,...                            % 14
-  esw.C...                                      % 15 16 17 18
+  esw.peaktopeak...                            % 14
 );
 fid = fclose(fid);
-print_str = ...
-  sprintf([data_format],...
-  tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
-  tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
-  t_center.utc,...                              % 5
-  v_xcorr,...                                   % 6 7 8
-  v_amplitude,...                               % 9
-  esw.phi_max,...                               % 10 11 12 13
-  esw.peaktopeak...                             % 14
-);
-fprintf('printed to file %sesw_properties.txt: %s /n',pathData,print_str)
+
+% print_str = ...
+%   sprintf([data_format],...
+%   tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
+%   tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
+%   t_center.utc,...                              % 5
+%   v_xcorr,...                                   % 6 7 8
+%   v_amplitude,...                               % 9
+%   esw.phi_max,...                               % 10 11 12 13
+%   esw.peaktopeak...                             % 14
+% );
+%fprintf('printed to file %sesw_properties.txt: %s /n',pathData,print_str)

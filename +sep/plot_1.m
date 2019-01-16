@@ -656,9 +656,7 @@ if 1 % 1 reduced distribution, 2nd half of tint_sep
   
   c_eval('eDist = ePDist?.tlim(tint_tmp);',ic)
   
-  c_eval('ePara = dmpaB?slow.resample(eDist).norm;',ic)
-  c_eval('ePerp1 = ePara.cross(dslE?slow.resample(eDist)).norm;',ic)
-  ePerp2 = ePara.cross(ePerp1).norm;
+
   
   nMC = 500;  
   tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'scpot',scpot.resample(eDist),'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 

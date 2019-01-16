@@ -4,6 +4,8 @@ tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Nexus/data');
 db_info = datastore('mms_db');   
+localuser = datastore('local','user');
+pathLocalUser = ['/Users/' localuser '/'];
 
 %% Load defatt, for coordinate tranformation
 if 0 % not nessecary unless E needs to be recalibrated

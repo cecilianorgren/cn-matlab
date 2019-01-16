@@ -101,8 +101,8 @@ if 1 % phi/Telobe vs beta e lobe
 end
 %% Figure for presentation
 figure(42)
-nrows = 3;
-ncols = 1;
+nrows = 1;
+ncols = 3;
 npanels = nrows*ncols;
 for ipanel = 1:npanels
   h(ipanel) = subplot(nrows,ncols,ipanel);  
@@ -115,23 +115,25 @@ colors = mms_colors('matlab');
 doEgedal = 1;
 if 1 % phi vs beta e lobe
   hca = h(isub); isub = isub + 1;  
-  hs1 = scatter(hca,event.beta_e_lobe,event.phi,[]);
+  hs1 = scatter(hca,event.beta_e_lobe,event.phi*1e-3,[]);
   hs1.CData = colors(1,:);
   if doEgedal
     hold(hca,'on')
-    hs2 = scatter(hca,egedal.beta_lobe,egedal.phi,[]);
+    hs2 = scatter(hca,egedal.beta_lobe,egedal.phi*1e-3,[]);
     hold(hca,'off')  
     hs2.CData = colors(2,:);
     set(hca,'colororder',colors) 
-    irf_legend(hca,{'MMS';{'Cluster','(Egedal et al. 2015)'}},[0.98 0.98])
+    %irf_legend(hca,{'MMS';{'Cluster','(Egedal et al. 2015)'}},[0.98 0.98])
+    irf_legend(hca,{'MMS';{'Cluster'}},[0.98 0.98])
   end
   %hl = legend(hca,{'MMS','Egedal 2015'});
   %hl.Box = 'off';   
-  hca.XLabel.String =  '\beta_{e,lobe}';
+  hca.XLabel.String =  '\beta_{e}^{lb}';
   hca.YLabel.String =  '\phi (keV)';
   hca.FontSize = fontsize;
   %hca.XLim(1) = min([event.beta_e_lobe, 0.004]);
   hca.Box = 'on';
+  hca.YLim(2) = ceil(max([event.phi egedal.phi]*1e-3)*1.01);
 end
 if 1 % phi/Telobe vs beta e lobe
   hca = h(isub); isub = isub + 1;
@@ -144,18 +146,22 @@ if 1 % phi/Telobe vs beta e lobe
     hold(hca,'off')  
     hs2.CData = colors(2,:);
     set(hca,'colororder',colors) 
-    irf_legend(hca,{'MMS';{'Cluster','(Egedal et al. 2015)'}},[0.98 0.98])
+    %irf_legend(hca,{'MMS';{'Cluster','(Egedal et al. 2015)'}},[0.98 0.98])
+    irf_legend(hca,{'MMS';{'Cluster'}},[0.98 0.98])
   end
-  hca.XLabel.String =  '\beta_{e,lobe}';
+  %hca.XLabel.String =  '\beta_{e,lobe}';
+  hca.XLabel.String =  '\beta_{e}^{lb}';
   hca.YLabel.String =  '\phi/T_{e,lobe}';
   hca.FontSize = fontsize;
   %hca.XLim(1) = min([event.beta_e_lobe, 0.004]);
   hca.Box = 'on';
+  hca.YLim(2) = 120;
 end
 if 1 % phi/Tesheet vs beta e lobe
   hca = h(isub); isub = isub + 1;
   scatter(hca,event.beta_e_lobe,event.phi./((event.Tpar_sheet + 2*event.Tperp_sheet)/3),[])
-  hca.XLabel.String =  '\beta_{e,lobe}';
+  %hca.XLabel.String =  '\beta_{e,lobe}';
+  hca.XLabel.String =  '\beta_{e}^{lb}';
   hca.YLabel.String =  '\phi/T_{e,sheet}';
   set(hca,'colororder',colors) 
   irf_legend(hca,{'MMS'},[0.98 0.98])
