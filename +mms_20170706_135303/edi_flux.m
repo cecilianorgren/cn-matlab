@@ -1,5 +1,7 @@
+tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z');
+
 figure(51);
-mms_id = 4;
+mms_id = 1;
 npanels = 3;
 h = irf_plot(npanels);
 
@@ -29,4 +31,4 @@ h(1).YLim = [0 8e6];
 h(2).YLim = [0 4e6];
 h(3).YLim = [0 9e6];
 
-cn.print(sprintf('integrated_edi_flux_mms%g_sameylims',mms_id))
+%cn.print(sprintf('integrated_edi_flux_mms%g_sameylims',mms_id))

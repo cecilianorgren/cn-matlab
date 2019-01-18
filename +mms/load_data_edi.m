@@ -15,6 +15,26 @@
 
 %%
 %ic = 1:4;
+units = irf_units;
+E_edi = 500; % eV
+v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
+dE_edi = 25; % eV
+E_edi_plus = E_edi + dE_edi;
+E_edi_minus = E_edi - dE_edi;
+v_edi_plus = sqrt(2*units.e*E_edi_plus./units.me); % m/s
+v_edi_minus = sqrt(2*units.e*E_edi_minus./units.me); % m/s
+v_edi_plusminus = v_edi_plus-v_edi_minus;
+dv_edi_minus = v_edi_minus - v_edi;
+dv_edi_plus = v_edi_plus - v_edi;
+dv_edi = dv_edi_plus - dv_edi_minus; % m/s
+pa_edi_edges = 0:11.25:45;
+pa_edi_centers = pa_edi_edges(1:4) + 11.25/2;
+v_edi_edges = [v_edi_minus v_edi_plus];
+v_edi_par_edges = tocolumn(v_edi_edges)*torow(cosd(pa_edi_edges));
+v_edi_par = v_edi*cosd(pa_edi_centers);
+v_edi_par_edges_center = v_edi*cosd(pa_edi_edges);
+
+
 Tint = tint;
 
 tmp = ['tmpDataObj? = dataobj(mms.get_filepath(''mms?_edi_brst_l2_amb-pm2'',Tint(1)+20));'];
