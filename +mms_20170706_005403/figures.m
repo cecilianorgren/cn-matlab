@@ -1,5 +1,5 @@
 %% Compact overview
-npanels = 6;
+npanels = 4;
 cmap = 'jet';
 h = irf_plot(npanels);
 ic = 1;
@@ -7,7 +7,7 @@ iisub = 0;
 cmap = colormap('jet');
 zoomy = [];
 
-if 1 % e DEF omni
+if 0 % e DEF omni
   iisub = iisub + 1;
   hca = irf_panel('e DEF omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
@@ -20,7 +20,7 @@ if 1 % e DEF omni
   hca.YLabel.String = {'E_e','(eV)'};   
   colormap(hca,cmap) 
 end
-if 1 % Te par perp
+if 0 % Te par perp
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Te');
@@ -67,7 +67,7 @@ if 0 % J
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
   %hca.YLim = [-1100 1100];  
 end
-if 1 % Vi
+if 0 % Vi
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Vi');
@@ -78,25 +78,25 @@ if 1 % Vi
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 1 % Ve
+if 0 % Ve
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Ve');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)
+  set(hca,'ColorOrder',mms_colors('xyz'))
+  c_eval('irf_plot(hca,{gseVe?.x.tlim(tint)*1e-3,gseVe?.y.tlim(tint)*1e-3,gseVe?.z.tlim(tint)*1e-3},''comp'');',ic)
   %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
-  hca.YLabel.String = {'v_e','(km/s)'};
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 0 % Ve par
+if 1 % Ve par
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Ve par');
-  set(hca,'ColorOrder',mms_colors('1'))
-  c_eval('irf_plot(hca,{gseVe?par.tlim(tint)},''comp'');',ic)
+  set(hca,'ColorOrder',mms_colors('matlab'))
+  c_eval('irf_plot(hca,{gseVe?par.tlim(tint)*1e-3},''comp'');',ic)
   %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
-  hca.YLabel.String = {'v_{e,||}','(km/s)'};
+  hca.YLabel.String = {'v_{e,||}','(10^3 km/s)'};
   %hca.YLim = [-1100 1100];  
 end
 if 0 % ePDist pa 64
@@ -141,10 +141,37 @@ if 1 % E par
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('E par');
-  set(hca,'ColorOrder',mms_colors('xyza'))
+  set(hca,'ColorOrder',mms_colors('matlab'))
   c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
   hca.YLabel.String = {'E_{||}','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))  
+end
+if 0 % Te par perp
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[0.98 0.9],'fontsize',12);
+  %hca.YScale = 'log'; %hca.YTick = [10:10:100 200:100:1000];
+  hca.YLim = [10 400];
+  %hca.YTick
+  irf_zoom(hca,'y')
+end
+if 1 % Te
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('matlab'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{(1/3)*facTe?.trace.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('matlab'))    
+  hca.YLim = [10 400];  
+  irf_zoom(hca,'y')
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};

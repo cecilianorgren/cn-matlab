@@ -52,7 +52,7 @@ c_eval('flux?_180_! = mms.variable2ts(get_variable(tmpDataObj?,''mms?_edi_flux!_
 %c_eval('flux180b = mms.variable2ts(get_variable(tmpDataObj,''mms?_edi_flux3_180_brst_l2''));',ic);
 
 pa_edi = 0:11.24:45; % scaling the same as for 0-45 as for 180-135
-pa_scaling = pi*(cosd(pa_edi(1:4)).^2-cosd(pa_edi(2:5)).^2);
+pa_scaling = pi*(cosd(pa_edi(1:4)).^2-cosd(pa_edi(2:5)).^2);  
 
 c_eval('flux_0_45_mms? = irf.ts_scalar(flux?_0_1.time,[flux?_0_1.data flux?_0_2.data flux?_0_3.data flux?_0_4.data]); flux_0_45_mms?.units =''cm^-2 s^-1 sr^-1'';',ic)
 c_eval('flux_0_45_scaled_mms? = irf.ts_scalar(flux_0_45_mms?.time,flux_0_45_mms?.data.*repmat(pa_scaling,flux_0_45_mms?.length,1)); flux_0_45_scaled_mms?.units = ''cm^-2 s^-1'';',ic)
