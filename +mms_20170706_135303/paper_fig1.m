@@ -378,7 +378,9 @@ if 1 % edi flux 180 4sc
   zoomy = [zoomy isub];
   hca = irf_panel('edi flux');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  palim = [168 180];  
+  %irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6,ePitch3_flux_edi.palim(palim)*1e-6,ePitch4_flux_edi.palim(palim)*1e-6},'comp','dt',dt);
   hca.YLabel.String = {'flux','(10^6 s^{-1}cm^{-2})'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'EDI 180^o'},[0.05 0.99],'fontsize',12);
@@ -589,7 +591,8 @@ if 1 % E par, 4 sc, time shifted for visibility
   irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
   %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
   format_ms = '%.1f';
-  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],num2str(dt(2)*1e3,format_ms),num2str(dt(3)*1e3,format_ms),num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],[' ',num2str(dt(2)*1e3,format_ms)],['',num2str(dt(3)*1e3,format_ms)],num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
   hca.YLabel.String = {'E_{||}','(mV/m)'};  
 end
 if 0 % E par
@@ -706,10 +709,13 @@ if 1 % edi flux 180 4sc
   zoomy = [zoomy isub];
   hca = irf_panel('edi flux');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
-  hca.YLabel.String = {'flux','(10^6 s^{-1}cm^{-2})'};
+  %irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  palim = [168 180];  
+  %irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6,ePitch3_flux_edi.palim(palim)*1e-6,ePitch4_flux_edi.palim(palim)*1e-6},'comp','dt',dt);  
+  hca.YLabel.String = {'j','(10^6 s^{-1}cm^{-2}sr^{-1})'};
   set(hca,'ColorOrder',mms_colors('12'))
-  irf_legend(hca,{'EDI 180^o'},[0.05 0.99],'fontsize',12);
+  irf_legend(hca,{'EDI: \theta = [168.75 180]^o'},[0.05 0.99],'fontsize',12);
 end
 
 c_eval('h(?).Position(2) = h(?).Position(2)-0.03;',isub_short)

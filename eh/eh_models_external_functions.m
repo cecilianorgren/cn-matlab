@@ -91,11 +91,13 @@ switch phi_input
     phi_obs = irf_integrate(Epar_obs);
     t_obs = phi_obs.time-t0;
     
-    % edi
-    c_eval('flux180 = flux180_mms?.tlim(tint+[-0.001 0.001]);',mms_id)
+    % edi    
+    %c_eval('flux180 = flux180_mms?.tlim(tint+[-0.001 0.001]);',mms_id)
+    c_eval('flux180 = ePitch?_flux_edi.palim([168.75 180]).tlim(tint+[-0.001 0.001]);',mms_id)
     t_edi_180 = flux180.time-t0;        
     t_edi_180 = t_edi_180 - tcenter;
-    c_eval('flux0 = flux0_mms?.tlim(tint+[-0.001 0.001]);',mms_id)
+    %c_eval('flux0 = flux0_mms?.tlim(tint+[-0.001 0.001]);',mms_id)
+    c_eval('flux0 = ePitch?_flux_edi.palim([0 11.25]).tlim(tint+[-0.001 0.001]);',mms_id)
     t_edi_0 = flux0.time-t0;        
     t_edi_0 = t_edi_0 - tcenter;
     
@@ -886,7 +888,7 @@ if 1 % plot 3
     all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = 'v_{||} (10^3 km/s)';
-    hcb.YLabel.String = 'f_e (s^1m^{-4})';  
+    hcb.YLabel.String = 'f_e^{mod} (sm^{-4})';  
     hca.YLim = vlim*[-1 1]*1e-6;
     colormap(hca,cn.cmap('white_blue'));
     hcb.Position(1) = hcb.Position(1)+shiftcb;
@@ -894,9 +896,11 @@ if 1 % plot 3
     %hca.Title.String = 'Abel obs';    
     hca.XLim = xlim;
     if 1 % E contours
-      hold(hca,'on')      
-      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,[0 0],'color',[0.8 .8 .8],'linewidth',1.5);
+      hold(hca,'on')   
+      %[hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,levels_E/units.e,'k');
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,[0 0],'color',0*[0.8 .8 .8],'linewidth',1.0,'linestyle','-');
       hold(hca,'off')
+      hca.CLim = [0 0.0023];
     end
   end  
   if 0 % free,, and total densities
@@ -945,7 +949,7 @@ if 1 % plot 3
     all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = 'v_{||} (10^3 km/s)';
-    hcb.YLabel.String = 'flux/\Delta v (m^{-3})';  
+    hcb.YLabel.String = 'vf^{mod} (m^{-3})';  
     hca.YLim = vlim*[-1 1]*1e-6;
     hca.CLim = max(abs(FVabel_obs(:)))*[-1 1];    
     colormap(hca,cn.cmap('blue_red'))  
@@ -957,7 +961,7 @@ if 1 % plot 3
           x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
           x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
           x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
-          'LineWidth',1.0);
+          'LineWidth',0.5);
         for iline = 1:numel(hlines), hlines(iline).LineStyle = '-'; hlines(iline).Color = [0 0 0]; end
         irf_legend(hca,{'- EDI'},[0.01 0.85],'color',hlines(1).Color);   
       else % dashed lines
@@ -977,6 +981,13 @@ if 1 % plot 3
     hca.XLim = xlim;
     hcb.Position(1) = hcb.Position(1)+shiftcb;
     hcb.Position(1) = hcb.Position(1)-shiftcb;
+    if 1 % E contours
+      hold(hca,'on')   
+      %[hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,levels_E/units.e,'k');
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,[0 0],'color',0*[0.8 .8 .8],'linewidth',1.0,'linestyle','-');
+      hold(hca,'off')
+      %hca.CLim = [0 0.0023];
+    end
   end
   if 1 % plotyy 10^6 cm^{-2}s^{-1}, 10^6 cm^{-2}s^{-1}sr{-1}, comparing model flux with flux measured by EDI, at 0 and 180
     hca = h(isub); isub = isub + 1;    
@@ -993,7 +1004,8 @@ if 1 % plot 3
     plot_scha_180 = abs(FVdv_scha_obs_edi_180)*units_scale/units_scale_2;    
     
     ax = plotyy(hca,x_obs*1e-3,[plot_abel_0 plot_abel_180]',x_edi_0*1e-3,[plot_EDI_0 plot_EDI_180]');
-    colors = mms_colors('matlab');    
+    colors = mms_colors('matlab');   
+    colors = [colors(2,:); colors(1,:)];
     nlines = 2;
     c_eval('ax(1).Children(?).Color = colors(1,:);',1:nlines)
     c_eval('ax(2).Children(?).Color = colors(2,:);',1:nlines)    
@@ -1002,14 +1014,19 @@ if 1 % plot 3
     
         
     hca.XLabel.String = 'x (km)';
-    hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-    ax(2).YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));
-    irf_legend(hca,{'Model';'* EDI'},[0.02 0.6])
+    hca.YLabel.String = sprintf('j^{mod} (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
+    ax(2).YLabel.String = sprintf('j^{EDI} (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));
+    %irf_legend(hca,{'Model';'* EDI'},[0.02 0.3])
     text(hca,0.5*hca.XLim(2),0.2*hca.YLim(2),'0^o','verticalalignment','bottom')
     text(hca,0.5*hca.XLim(2),1.0*hca.YLim(2),'180^o','verticalalignment','top')
     hca.YLim(1) = 0;    
     hca.XLim = xlim;
     c_eval('ax(?).YLim = [0 2.5];',1:2)    
+    
+    ax(1).YAxisLocation = 'right',
+    ax(2).YAxisLocation = 'left';
+    ax(1).YTick = 0:1:100;
+    ax(2).YTick = 0:1:100;
   end  
   %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
   width = h(1).Position(3)*0.8;

@@ -91,7 +91,8 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 %c_eval('tic; gseVi?fast = mms.get_data(''Vi_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 
 %% EDI
-mms.load_data_edi;
+%mms.load_data_edi;
+c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
 disp('Done loading data.');
 
 %% Event path

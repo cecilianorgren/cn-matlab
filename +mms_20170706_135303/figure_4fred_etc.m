@@ -229,7 +229,7 @@ if 1 % f fpi, rem bg
   v_scale = 1e-3;
   %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
   hlines = plot(hca,v_fpi*v_scale,f_fpi_bgrem,'-');
-  hca.YLabel.String = {'f (s^1/m^4)'};
+  hca.YLabel.String = {'f (s/m^4)'};
   hca.XLabel.String = {'v (10^3 km/s)'};  
   
   if doAverage
@@ -244,7 +244,7 @@ if 1 % f fpi, rem bg
   h_fpi_str = irf_legend(hca,str_lines,[0.99 0.99]);
   set(hca,'ColorOrder',zeros(10,3))
   h_fpi_str.HorizontalAlignment = 'left';
-  h_fpi_str.Position(1) = 0.67;
+  h_fpi_str.Position(1) = 0.62;
   h_fpi_str.Position(2) = 0.95;
   h_fpi_str.BackgroundColor = [1 1 1];
   %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
@@ -256,7 +256,7 @@ if 1 % <f> model
   v_scale = 1e-3;
   %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
   hlines = plot(hca,v_vec*v_scale*1e-3,mean(Fabel_obs,1),'-','color',colors(2,:));
-  hca.YLabel.String = {'f_e (s^1/m^4)'};
+  hca.YLabel.String = {'f_e (s/m^4)'};
   hca.XLabel.String = {'v_{||} (10^3 km/s)'};  
       %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
   %hca.XLim = 1.7*[-30 30];
@@ -271,7 +271,7 @@ if 1 % f0
     if 1
       str_info = {'f_0 input parameters:'
                 ['T_{0}= [' sprintf('%g  ',params_0.T) '] eV'];...
-                ['n_{0}= [' sprintf('%g  ',params_0.n*1e-6) '] cc'];...
+                ['n_{0}= [' sprintf('%g  ',params_0.n*1e-6) '] cm^{-3}'];...
                 ['v_{d,0}= [' sprintf('%g  ',params_0.vd*1e-3) '] km/s'];...
                 };
     elseif 0
@@ -282,18 +282,19 @@ if 1 % f0
     else
       str_info = sprintf('fpi time interval:\n%s',fpi_utc);
     end
-    h_f0 = irf_legend(hca,str_info,[0.99,0.4]);
+    h_f0 = irf_legend(hca,str_info,[0.90,0.35]);
     c_eval('h_f0(?).HorizontalAlignment = ''left'';',1:4)
-    c_eval('h_f0(?).Position(1) = 0.67;',1:4)
+    c_eval('h_f0(?).Position(1) = 0.62;',1:4)
     %c_eval('h_f0(?).Position(2) = 0.7;',1:4)
   
     c_eval('h_f0(?).BackgroundColor = [1 1 1];',1:4)
+    c_eval('h_f0(?).BackgroundColor = ''none'';',1:4)
     hold(hca,'off')
 end
 if 1 % v_edi
   hold(hca,'on')
   if 1 % plot dashed lines
-    h_edi = plot(hca,[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--',-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--');
+    h_edi = plot(hca,[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim*0.20,'k--',-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--');
     %plot(hca,-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--')
   end
   %hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 0.95],[0 0 0]);
@@ -301,7 +302,7 @@ if 1 % v_edi
   %hleg.HorizontalAlignment = 'center';
   hold(hca,'off')
 end
-if 1 % vph 
+if 1 % vph patch
   hold(hca,'on')
   all_vph = [mean(obs_velocity)-std(obs_velocity);...
              mean(obs_velocity);... 
@@ -319,7 +320,7 @@ if 1 % vph
   %hleg.HorizontalAlignment = 'center';
   hold(hca,'off')
 end
-if 1 % vtrap
+if 1 % vtrap patch
   hold(hca,'on')
   obs_vtrap = obs_vtrap_all(:,mms_id);
   vtrap_plus = obs_velocity + obs_vtrap*1e-3;
@@ -354,6 +355,42 @@ if 1 % vtrap
   %hleg.HorizontalAlignment = 'center';
   hold(hca,'off')
 end
+yloc_errobar = 2.3*1e-3;
+if 0 % vph errorbar for std
+  hold(hca,'on')  
+  %plot(hca,mean(obs_velocity)*1e-3*[1 1],hca.YLim)
+  errorbar(hca,mean(obs_velocity)*1e-3,yloc_errobar,std(obs_velocity)*1e-3,'horizontal')
+  hold(hca,'off')
+end
+if 0 % vtrap errorbar for std
+  hold(hca,'on')
+  obs_vtrap = obs_vtrap_all(:,mms_id);
+  vtrap_plus = obs_velocity + obs_vtrap*1e-3;
+  vtrap_minus = obs_velocity - obs_vtrap*1e-3;
+  
+  %plot(hca,nanmean(vtrap_plus)*1e-3*[1 1],hca.YLim,'-')
+  errorbar(hca,nanmean(vtrap_plus)*1e-3,yloc_errobar,std(vtrap_plus,'omitnan')*1e-3,'horizontal')
+  
+  %plot(hca,nanmean(vtrap_minus)*1e-3*[1 1],hca.YLim)
+  errorbar(hca,nanmean(vtrap_minus)*1e-3,yloc_errobar,std(vtrap_minus,'omitnan')*1e-3,'horizontal')
+  
+  
+  plot_vtrap_plus = [nanmean(vtrap_plus)-std(vtrap_plus,'omitnan');...
+                     nanmean(vtrap_plus);...
+                     nanmean(vtrap_plus)+std(vtrap_plus,'omitnan')]*[1 1]; 
+  plot_vtrap_minus = [nanmean(vtrap_minus)-std(vtrap_minus,'omitnan');...
+                      nanmean(vtrap_minus);...
+                      nanmean(vtrap_minus)+std(vtrap_minus,'omitnan')]*[1 1]; 
+
+  %hleg = irf_legend(hca,'vph-vtrap',[0.5*12/hca.XLim(2) 0.95],[0 0 0]);
+  %hleg.BackgroundColor = [1 1 1];
+  %hleg.HorizontalAlignment = 'center';
+
+  %hleg = irf_legend(hca,'vph+vtrap',[0.5*30/hca.XLim(2) 0.95],[0 0 0]);
+  %hleg.BackgroundColor = [1 1 1];
+  %hleg.HorizontalAlignment = 'center';
+  hold(hca,'off')
+end
 if 0 % f instability
     hold(hca,'on')
     v_plot = vg(1):500:vg(end);
@@ -374,7 +411,8 @@ set(hca,'ColorOrder',colors)
 %irf_legend(hca,{'f_{FPI}';'f^{mod}';'f_0'},[0.02 0.99])
 h_lines = findobj(hca,'type','line');
 h_patches = findobj(hca,'type','patch');
-legend([h_lines(end:-1:5); h_patches(end:-1:2); h_edi(1)],{'f^{FPI}';'f^{mod}';'f_0';'v_{ph}';'v_{trap}';'v_{EDI}'},...
+legend([h_lines(end:-1:5); h_patches(end:-1:2); h_edi(1)],{'f_e^{FPI}';'f_e^{mod}';'f_0';'v_{ph}';'v_{trap}';'v_{EDI}'},...
     'location','northwest','box','off')
 c_eval('h_edi(?).LineWidth = 1.0;',1:4)
+hca.FontSize = 12;
 end

@@ -29,11 +29,17 @@ dv_edi = dv_edi_plus - dv_edi_minus; % m/s
 
 % EDI flux
 edi_nodes = 1;
-c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint).time,mean(flux180_mms?.tlim(tint).data(:,edi_nodes),2));')
-c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint).time,mean(flux0_mms?.tlim(tint).data(:,edi_nodes),2));')
-c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
-c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
-
+if 0
+  c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint).time,mean(flux180_mms?.tlim(tint).data(:,edi_nodes),2));')
+  c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint).time,mean(flux0_mms?.tlim(tint).data(:,edi_nodes),2));')
+  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
+  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
+else  
+  c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
+  c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
+  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
+  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
+end
 
 % Indices corresponding to edi energy/velocity interval
 vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
@@ -161,7 +167,7 @@ FVabel_obs = Fabel_obs.*V_obs;
 % Set up specrec for plotting
 Fspecrec.t = phi.time.epochUnix;  
 Fspecrec.p = Fabel_obs;  
-Fspecrec.p_label = 'f_e (m^{-1}s^{-1})';
+Fspecrec.p_label = 'f_e (m^{-4}s^{-1})';
 Fspecrec.f = v_vec*1e-6;
 Fspecrec.f_label = 'v (10^{3} km/s)';
 
@@ -1078,11 +1084,12 @@ if 1 % plot, timeseries, for paper
     h_all_markings = [];
     if 1 % EDI energies
       hold(hca,'on')
-      lines_EDI_plus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
+      %lines_EDI_plus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
       lines_EDI_minus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
-      hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_plus(1).Color);  
+      hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_minus(1).Color);  
       hold(hca,'off')
       h_all_markings = [h_all_markings; lines_EDI_plus; lines_EDI_minus; hleg_EDI];
+      h_all_markings = [h_all_markings; lines_EDI_minus; hleg_EDI]; 
     end
     if 1 % model phase velocity
       hold(hca,'on')
@@ -1126,7 +1133,7 @@ if 1 % plot, timeseries, for paper
     if doDoubleAxis  
       ax1 = hca;
       ax2 = axes('Position',get(ax1,'Position'));
-      ax2.YLim = ax1.YLim*1e-3/n0;    
+      ax2.YLim = ax1.YLim/nscale/n0;    
       set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
       set(ax2,'YAxisLocation','right');
       set(ax2,'Color','none','box','off'); % color of axis      
@@ -1162,11 +1169,12 @@ if 1 % plot, timeseries, for paper
     set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
     irf_timeaxis(ax2,'nolabels')
     
-    ax2.YLabel.String = {'flux 180^o, Model',sprintf('(10^%g cm^{-2}s^{-1})',log10(f_scale))};
+    ax2.YLabel.String = {'j^{mod}',sprintf('(10^%g cm^{-2}s^{-1})',log10(f_scale))};
     ax2.YLabel.Interpreter = 'tex';
-    ax1.YLabel.String = {'flux 180^o, EDI',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
+    ax1.YLabel.String = {'j^{EDI}',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
     ax1.YLabel.Interpreter = 'tex';
     irf_legend(hca,{'EDI','model'},[0.08 0.98])
+    %irf_legend(hca,{'EDI: \theta = [168.75 180]^o','model: v = [-13600 -12900] km/s'},[0.08 0.98])
     %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
     ax1.YLim = [0 3.7];
     ax2.YLim = [0 3.7];
@@ -1217,14 +1225,15 @@ if 1 % plot, timeseries, for paper
   h(3).YLabel.String = {'v_{||}','(10^3 km/s)'};
   h(3).YLabel.Interpreter = 'tex';
   
-  %iref = 1;
-  %ijmp = 1;
+  iref = 1;
+  ijmp = 1;
   %h_all(iref+4+ijmp).Position = h_all(iref+4).Position;  
   
   
   %h_all(iref+7).Position = h_all(iref+5).Position;
   
-  irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
+  %irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
+  irf_zoom(h_all,'x',[tint_phi(1) tint_phi(end)])  % tint_phi
   
   h_all(iref+4+ijmp).XLabel = [];
   
@@ -1233,8 +1242,8 @@ if 1 % plot, timeseries, for paper
   
   ax2_flux.Position = ax1_flux.Position;
   ax2_dn.Position = ax1_dn.Position;
-  ax2_dn.YTick = ax1_dn.YTick*1e-3/n0;
-  ax2_dn.YLim = ax1_dn.YLim*1e-3/n0;
+  ax2_dn.YTick = ax1_dn.YTick/1e-3/n0;
+  ax2_dn.YLim = ax1_dn.YLim/1e-3/n0;
 
   
   h(3).YLabel.Position(1) = h(1).YLabel.Position(1);
