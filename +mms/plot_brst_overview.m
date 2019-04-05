@@ -1,5 +1,5 @@
 %% Load data
-ic = 1;
+ic = 1:4;
 
 tint = irf.tint('2015-11-12T06:42:04.00Z/2015-11-12T06:43:00.00Z'); %20151112064204
 tint = irf.tint('2016-12-25T16:00:14.00Z',30); %20161225160014, or 20161225160144. Dec 25 2016 - at about 16.00
@@ -76,6 +76,7 @@ tint = irf.tint('2017-07-06T16:38:12.00Z',60); % not done
 
 % selections from mms database
 tint = irf.tint('2016-03-07T02:02:24.00Z',60);
+tint = irf.tint('2017-06-19T09:41:33.00Z',60); % not done
 % Set datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
@@ -96,7 +97,7 @@ fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
 %eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
 eventPath = ['/Users/cno062/Research/Events/' dirName '/']; 
-eventPath = ['/Users/cecilia/Research/Events/' dirName '/']; 
+%eventPath = ['/Users/cecilia/Research/Events/' dirName '/']; 
 mkdir(eventPath)
     
 % Magnetic field
@@ -109,6 +110,8 @@ c_eval('tic; gseB?scm=mms.db_get_ts(''mms?_scm_brst_l2_scb'',''mms?_scm_acb_gse_
 disp('Loading electric field...')
 c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
 c_eval('tic; dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint); toc',ic);
+c_eval('tic; dslE?2dpre = mms.get_data(''E2d_dsl_edp_brst_l2pre'',tint,?); toc',ic);
+
 
 % Load spacecraft position
 disp('Loading spacecraft position...')
@@ -119,8 +122,8 @@ try
 R = mms.get_data('R_gse',tint);
 if ~all([isfield(R,'gseR1') isfield(R,'gseR1') isfield(R,'gseR2') isfield(R,'gseR3') isfield(R,'gseR4')])  
   % not the right data fiels, try to load from irfu database instead
-  db_info = datastore('mms_db');   
-  mms.db_init('local_file_db','/data/mms');
+  %db_info = datastore('mms_db');   
+  %mms.db_init('local_file_db','/data/mms');
   R = mms.get_data('R_gse',tint);
   mms.db_init('local_file_db',db_info.local_file_db_root);
 end
@@ -130,6 +133,7 @@ else
   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
 end
 end
+
 % Spacecraft potential
 disp('Loading spacecraft potential...')
 c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint); toc;',ic);
@@ -170,7 +174,7 @@ c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 
 % Pitchangle distribution
-c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,13); ePitch? = ePitch?.convertto(''s^3/km^6'');',ic)
+%c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,13); ePitch? = ePitch?.convertto(''s^3/km^6'');',ic)
 
 % Feeps data
 %c_eval('dobj = dataobj(''/Volumes/Nexus/data/mms?/feeps/brst/l2/electron/2017/07/11/mms?_feeps_brst_l2_electron_20170711222923_v5.5.1.cdf'')',ic)
@@ -189,10 +193,10 @@ disp('Done.')
 %% Prepare data
 c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
 %% Plot overview figure with focus on electrons
-npanels = 8;
+npanels = 10;
 cmap = 'jet';
 h = irf_plot(npanels);
-ic = 2;
+ic = 1;
 iisub = 0;
 cmap = colormap('jet');
 zoomy = [];
@@ -240,6 +244,15 @@ if 0 % ne niiisub = iisub + 1;
   set(hca,'ColorOrder',mms_colors('12'))  
   irf_legend(hca,{'n_e','n_i'},[0.98 0.9],'fontsize',12);
 end
+if 1 % scpot
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('scpot');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{-1*scPot?},''comp'');',ic)
+  hca.YLabel.String = {'-V_{sc}','(V)'};
+  set(hca,'ColorOrder',mms_colors('12'))    
+end
 if 0 % J  iisub = iisub + 1;
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
@@ -274,7 +287,7 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
 end
-if 0 % Ve perp par
+if 1 % Ve perp par
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('Ve perp par');
@@ -350,9 +363,9 @@ if 1 % Te par perp
   %hca.YTick
   irf_zoom(hca,'y')
 end
-if 1 % ePDist pa 64
+if 0 % ePDist pa 64
   hca = irf_panel('e pitch');  
-  eint = [20 1000];  
+  eint = [2000 30000];  
   try
     c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec,''log'');',ic)
   catch
@@ -378,7 +391,7 @@ if 0 % E
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
   irf_zoom(hca,'y')
 end
-if 0 % E perp
+if 1 % E perp
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('E perp');
