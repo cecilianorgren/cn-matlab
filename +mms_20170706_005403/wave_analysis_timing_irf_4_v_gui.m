@@ -7,6 +7,7 @@ irf_pl_mark(gca,tint_esw);
 tint_str = [irf_time(tint_esw(1),'epochtt>utc_yyyymmdd_HHMMSSmmm') '-' irf_time(tint_esw(2),'epochtt>utc_HHMMSSmmm')];
 
 
+
 %% Get ESW v, and potential
 dt_sampling_original = gseE1.time(2)-gseE1.time(1);
 timeline = gseE1.tlim(tint_vicinity); timeline = tint_vicinity(1):0.5*dt_sampling_original:tint_vicinity(2);
@@ -20,18 +21,14 @@ avB = mean(avB,1);
 c_eval('R? = gseR?.resample(timeline).tlim(tint);')
 
 dt_sampling = E1.time(2)-E1.time(1);
-dt = zeros(4,1);
-C = ones(4,1);
-for ic = 2:4
-  c_eval('[tmpC,lags] = xcorr(E1.data,E?.data,''coeff'');',ic)  
-  i_shift = find(abs(tmpC) == max(abs(tmpC)));
-  C(ic) = tmpC(i_shift);
-  di = -lags(i_shift);
-  dt(ic) = di*dt_sampling;
-end
+C = nan(4,1);
 
-c_eval('matR? = [R?.time.epochUnix R?.data];',1:4)
-v_xcorr = irf_4_v(matR1,matR2,matR3,matR4,dt + E1(1).time.epochUnix); %v_xcorr = v_xcorr(2:4);
+irf_4_v_gui(E1,E2,E3,E4,R1,R2,R3,R4);
+
+%%
+ud = get(gcf,'userdata');
+dt = ud.dt;
+v_xcorr = ud.vVector;
 v_direction = irf_norm(v_xcorr); % GSE
 v_amplitude = sqrt(sum(v_xcorr.^2));
 
@@ -150,7 +147,7 @@ c_eval('hmark(?,!) = irf_pl_mark(h(?),tint_esw(!),''k'');',1:npanels,1:2)
 
 %% Write data to file
 
-fid = fopen([matlabPath 'esw_properties.txt'],'a+');
+fid = fopen([matlabPath 'esw_properties_irf_4_v_gui.txt'],'a+');
 data_format = '%s %s %s %s %s %.1f %.1f %.1f %.1f %4.0f %4.0f %4.0f %4.0f %2.1f %.3f %.3f %.3f %.3f'; 
 
 fprintf(fid,[data_format '\n'],...
