@@ -1,8 +1,10 @@
 ic = 1:4;
 tint = irf.tint('2017-07-18T01:36:43.00Z/2017-07-18T01:38:23.00Z');
+localuser = datastore('local','user');
 
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Nexus/data');
+%mms.db_init('local_file_db','/Volumes/Nexus/data');
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
 db_info = datastore('mms_db');   
 
 %% Load defatt, for coordinate tranformation
@@ -92,7 +94,7 @@ fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
 dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
-matlabPath = ['/Users/cno062/MATLAB/cn-matlab/' dirNameMatlab '/'];
+eventPath = ['/Users/' localuser '/Research/Events/' dirName '/'];
+matlabPath = ['/Users/' localuser '/MATLAB/cn-matlab/' dirNameMatlab '/'];
   
-mkdir(eventPath)
+if not(exist(eventPath,'dir')), mkdir(eventPath); end

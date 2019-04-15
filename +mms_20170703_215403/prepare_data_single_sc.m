@@ -1,4 +1,4 @@
-ic = 1;
+ic = 1:3;
 units = irf_units;
 
 %% Current
@@ -47,7 +47,7 @@ c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?));',ic)
 if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
   %load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
-elseif 1
+elseif 0
   %%
   ictmp = ic;
   ic = 1;

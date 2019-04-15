@@ -2,7 +2,7 @@
 times = get_time(8,'epochtt'); %times = times.sort;
 tint_vicinity = times([1 2]);
 tint_esw = times([3 4]);
-t_ref = times(5:8);
+t_ref = times(5:8); % where to start put tref for integration ?
 t_center = tint_esw(1) + 0.5*(tint_esw(2)-tint_esw(1));
 hmark_tmp = irf_pl_mark(gca,tint_esw,'r'); hmark_tmp.FaceAlpha = 0.5;
 hmark_tmp = irf_pl_mark(gca,t_ref.epochUnix,'k');
@@ -210,7 +210,7 @@ c_eval('hmark(?,!) = irf_pl_mark(h(?),tint_esw(!),''k'');',1:npanels,1:2)
 fid = fopen([pathData sprintf('/esw_prop_%s.txt',tint_str)],'w');
 %data_format = '%s %s %s %s %s %.1f %.1f %.1f %.1f %4.0f %4.0f %4.0f %4.0f %2.1f %.3f %.3f %.3f %.3f'; 
 
-fprintf(fid,[data_format_write '\n'],...
+fprintf(fid,[data_format_write  '\n'],...
   tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
   tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
   t_center.utc,...  

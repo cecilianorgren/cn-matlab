@@ -6,12 +6,13 @@ db_info = datastore('mms_db');
 
 %% Tint
 sep.get_tints;
+tint_brst = tint.utc; 
 tint_day_utc = tint.utc; tint_day_utc = tint_day_utc(1,1:10);
 tint_lobe_utc = tint_lobe.utc; tint_lobe_utc = tint_lobe_utc(:,12:23);
 tint_sheet_utc = tint_sheet.utc; tint_sheet_utc = tint_sheet_utc(:,12:23);
 tint_sep_utc = tint_sep.utc; tint_sep_utc = tint_sep_utc(:,12:23);
 tint_phi_utc = tint_phi.utc; tint_phi_utc = tint_phi_utc(:,12:23);
-tint_waves_utc = tint_waves.utc; tint_waves_utc = tint_waves_utc(:,12:23);
+%tint_waves_utc = tint_waves.utc; tint_waves_utc = tint_waves_utc(:,12:23);
 
 %% Set paths
 localuser = datastore('local','user');

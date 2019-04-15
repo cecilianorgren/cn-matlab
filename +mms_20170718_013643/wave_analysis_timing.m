@@ -5,6 +5,7 @@ t_center = tint_esw(1) + 0.5*(tint_esw(2)-tint_esw(1));
 irf_pl_mark(gca,tint_esw);
 
 tint_str = [irf_time(tint_esw(1),'epochtt>utc_yyyymmdd_HHMMSSmmm') '-' irf_time(tint_esw(2),'epochtt>utc_HHMMSSmmm')];
+
 %% Get ESW v, and potential
 dt_sampling_original = gseE1.time(2)-gseE1.time(1);
 timeline = gseE1.tlim(tint_vicinity); timeline = tint_vicinity(1):0.5*dt_sampling_original:tint_vicinity(2);
@@ -164,7 +165,8 @@ print_str = ...
 );
 fprintf('printed to file %sesw_properties.txt: %s /n',matlabPath,print_str)
 
-
+%% Reload data
+if 0
 %% Load data from txt-file
 fid = fopen([matlabPath 'esw_properties.txt'],'r');
 esw_data = textscan(fid,[data_format_read]);
@@ -251,7 +253,7 @@ if 1 % v phase + trap
 end
 
 irf_zoom(h,'y')
-irf_zoom(h,'x',irf.tint('2017-07-18T01:40:31.00Z/2017-07-18T01:40:32.50Z'));
+%irf_zoom(h,'x',irf.tint('2017-07-18T01:40:31.00Z/2017-07-18T01:40:32.50Z'));
 
 %% Plot, including f proj and v phi and vtrap
 ic = 1;
@@ -444,3 +446,4 @@ irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 h(4).CLim = [-35 -28]+12
 colormap('jet');
+end
