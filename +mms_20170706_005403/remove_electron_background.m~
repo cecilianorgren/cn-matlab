@@ -24,9 +24,8 @@ eDist_orig = eDist;
 
 %% Remove background
 nSecondary = [0.5 1 1.5 2 2.5 3 3.5 4 4.5 5 5.5 6 6.5 7];
-nPhoto = 1;
 [eDist_nobg] = mms.remove_edist_background(eDist_orig);
-c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist_orig,''nSecondary'',nSecondary(?),''Nphotoe_art'',nPhoto,''ZeroNaN'',0);',1:numel(nSecondary))
+c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist_orig,''nSecondary'',nSecondary(?),''ZeroNaN'',0);',1:numel(nSecondary))
 
 
 %% Make reduced distribution
@@ -34,7 +33,6 @@ lowerelim = 000;
 vint = [-Inf Inf];
 c_eval('scpot = scPot?.resample(eDist);',ic)
 c_eval('dir_red = dmpaB?.resample(eDist).norm;',ic)
-dir_red = [1 0 0];
 vgmax = 70000;
 vg = -vgmax:1000:vgmax;
 vg(abs(vg)>70000) = [];
@@ -48,8 +46,7 @@ fsheet_orig = ef1D_orig.tlim(tint_sheet);
 fsheet_nobg = ef1D_nobg.tlim(tint_sheet);
 c_eval('fsheet_nobg? = ef1D_nobg?.tlim(tint_sheet);',1:numel(nSecondary))
 
-%% Plot 1D 
-figure(89)
+%% Plot
 hca = subplot(1,1,1);
 if 0
   plot(hca,fsheet_orig.depend{1}(1,:)*1e-3,mean(fsheet_orig.data,1),...
@@ -74,17 +71,12 @@ else
     hold(hca,'off')
     legends{end+1} = sprintf('nSecondary = %5.2f',nSecondary(inSec));
   end
-  legend(hca,legends,'location','eastoutside')
+  legend(hca,legends,'location')
 end
 hca.XLabel.String = 'v_x (10^3 km/s)';
 hca.YLabel.String = 'f_e (s/m^4)';
-if 1
-  hca.YScale = 'log';
-  hca.YLim = [1e-4 2e-2];
-end
-hca.XGrid = 'on';
-hca.YGrid = 'on';
-%hca.XLim = [-1 1]*40e0;
+hca.YScale = 'log';
+%hca.XLim = [-1 1]*1e1;
 
 %% Use plasma sheet as reference, because the peak at v = 0 stands out really clearly there
 c_eval('scpot = scPot?.resample(eDist);',ic)
@@ -101,7 +93,6 @@ ef2Dxy_nobg = eDist_nobg.reduce('2D',x,y,'scpot',scpot,'nMC',nMC,'vg',vg,'base',
 c_eval('ef2Dxy_nobg? = eDist_nobg?.reduce(''2D'',x,y,''scpot'',scpot,''nMC'',nMC,''vg'',vg,''base'',''cart'');',1:numel(nSecondary))
 
 %%
-figure(88)
 it = 1:7;
 
 %h = setup_subplots(1+numel(nSecondary)/2,2);

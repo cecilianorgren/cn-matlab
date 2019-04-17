@@ -453,6 +453,7 @@ h(npanels_large).XLabel.String = '';
 hca = irf_panel('Ve'); hca.YLim =[-17000 8000]*vscale;
 hca = irf_panel('Vi'); hca.YLim =[-300 950];
 hca = irf_panel('B'); hca.YLim =[-29 16];
+
 %% Plot overview figure with focus on electrons
 figure(201)
 npanels_large = 10;
