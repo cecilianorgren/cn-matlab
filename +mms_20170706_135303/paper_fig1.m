@@ -4,15 +4,23 @@ tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if sh
 
 eDist = ePDist1.tlim(tint);
 
+% remove background
+nSecondary = [5];
+nPhoto = 0;
+%[eDist_nobg] = mms.remove_edist_background(eDist_orig);
+c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''Nphotoe_art'',nPhoto,''ZeroNaN'',0);',1:numel(nSecondary))
+
+
 ne1_mean = mean(ne1.tlim(tint_zoom).data);
 n0 = 0.04;
 
 eint = [000 40000];
 vint = [-Inf Inf];
 scpot = scPot1.resample(eDist);
-lowerelim = scpot*0 + 40;
+lowerelim = scpot*0 + 00;
 
-tic; ef1D = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
+%tic; ef1D = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
+tic; ef1D = eDist_nobg1.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
 
 
 vph = -9000e3;
@@ -428,6 +436,7 @@ npanels = 7;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
+fontsize = 12;
 
 v_for_density_scaling = 9000e3; % m/s
 
@@ -591,7 +600,7 @@ if 1 % E par, 4 sc, time shifted for visibility
   irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
   %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
   format_ms = '%.1f';
-  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],[' ',num2str(dt(2)*1e3,format_ms)],['',num2str(dt(3)*1e3,format_ms)],num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],['  ',num2str(dt(2)*1e3,format_ms)],['  ',num2str(dt(3)*1e3,format_ms)],['  ',num2str(dt(4)*1e3,format_ms)],'] ms'},[0.01 0.1],'fontsize',12);
   %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
   hca.YLabel.String = {'E_{||}','(mV/m)'};  
 end
@@ -641,6 +650,7 @@ if 1 % charge perturbation
                      },'comp','dt',[dt 0]); 
   hh(1).Children(1).LineWidth = 2;
   hca.YLabel.String = {'\delta n',sprintf('(10^{%g} cm^{-3})',log10(units_scaling))};
+  hca.YLabel.FontSize = fontsize;
   ylabel(hca,hca.YLabel.String,'interpreter','tex')
 
   if 1 % 4sc
@@ -713,7 +723,7 @@ if 1 % edi flux 180 4sc
   palim = [168 180];  
   %irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
   irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6,ePitch3_flux_edi.palim(palim)*1e-6,ePitch4_flux_edi.palim(palim)*1e-6},'comp','dt',dt);  
-  hca.YLabel.String = {'j','(10^6 s^{-1}cm^{-2}sr^{-1})'};
+  hca.YLabel.String = {'j_e^{EDI}','(10^6 s^{-1}cm^{-2}sr^{-1})'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'EDI: \theta = [168.75 180]^o'},[0.05 0.99],'fontsize',12);
 end
@@ -744,6 +754,8 @@ legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)'};
 legends_color = {'k','k','w','k','k','k','k','k','k','k','k','k'};
 for ipanel = 1:npanels
   irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
+  h(ipanel).YLabel.FontSize = fontsize;
+  h(ipanel).FontSize = fontsize;
 end
 
 colormap(cn.cmap('blue_white'))
@@ -754,6 +766,7 @@ hca = irf_panel('fred'); hca.CLim = [-6.5 -2]; hca.YLim = [-70 70];
 hca = irf_panel('Vi'); hca.YLim = [-799 399];
 hca = irf_panel('edi flux'); hca.YLim = [0 8];
 %hca = irf_panel('n'); hca.YLim = [0 0.199]; hca.YTick = [0 0.05 0.1 0.15];
+hca = irf_panel('E par dt'); hca.YLim = [-70 60];
 
 doDoubleAxis = 1; % dn
 if doDoubleAxis  
@@ -771,5 +784,7 @@ if doDoubleAxis
   ax2.YLabel.String = {'\delta n/n'};
   ax2.YLabel.Interpreter = 'tex';    
   ax2.YTick = hca.YTick*1e-3/n0;  
+  ax2.FontSize = fontsize;
 end  
   
+irf_plot_axis_align

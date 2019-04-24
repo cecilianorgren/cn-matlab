@@ -58,7 +58,7 @@ end
 if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
   %load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
-elseif 1
+elseif 0
   %%
   tmp_ic = ic;
   ic = 1;
