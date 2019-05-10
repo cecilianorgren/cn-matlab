@@ -5,6 +5,7 @@ function TS = find_acc_pot(fred_orig,varargin)
      
 
 % Default values
+doPlot = 1;
 doVint = 0;
 doEint = 0;
 doResample = 0;
@@ -13,11 +14,14 @@ doRelativeMinPeakProminence = 0;
 %doMinPeakProminence = 0;
 MinPeakProminence = 0;
 MinPeakWidth = 0;
-MaxPeakWidth = 0;
+MaxPeakWidth = Inf;
 
 have_options = nargs > 1;
 while have_options
   switch(lower(args{1}))
+    case 'plot' % velocity interval to consider
+      l = 2;
+      doPlot = args{2};      
     case 'vint' % velocity interval to consider
       l = 2;
       vint = args{2};
@@ -140,7 +144,7 @@ vel(isnan(phi)) = NaN;
 TS = irf.ts_scalar(fred.time,phi);
 tsVel = irf.ts_scalar(fred.time,vel);
 
-doPlot = 1;
+
 if doPlot  
   %%  
   str_info = {};

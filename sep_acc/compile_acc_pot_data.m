@@ -6,15 +6,17 @@ nevents = numel(events);
 
 %acc_pot = nan(nevents,1);
 
-ic = 3;
+
+ic = 1;
 for ievent = 1:nevents
   event = events(ievent);
   sep.get_tints;
   load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')
-  tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_rel;
+  tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_abs;
+  tsAccPot = tsAccPot_nobg_abs;
   
   for ic = 1:3
-    acc_pot(ievent,ic) = max(tsAccPot_nobg_abs{ic}.tlim(tint_phi+1*[-1 1]).abs.data);
+    acc_pot(ievent,ic) = max(tsAccPot{ic}.tlim(tint_phi+0.1*[-1 1]).abs.data);
     beta_lobe(ievent,ic) = acc_pot_data.be_lobe;
     tepar_lobe(ievent,ic) = acc_pot_data.Tepar_lobe;
     tepar_sheet(ievent,ic) = acc_pot_data.Tepar_sheet;
@@ -24,12 +26,15 @@ for ievent = 1:nevents
     ne_lobe(ievent,ic) = acc_pot_data.n_lobe;
     ne_sep(ievent,ic) = acc_pot_data.n_sep;
     ne_sheet(ievent,ic) = acc_pot_data.n_sheet;
+    
+    B_lobe_(ievent,ic) = acc_pot_data.B_lobe;
   end
 end
 
-ic = 3;
+ic = 1;
 acc_pot = acc_pot(:,ic);
 beta_lobe = beta_lobe(:,ic);
+B_lobe_ = B_lobe_(:,ic);
 tepar_lobe = tepar_lobe(:,ic);
 tepar_sheet = tepar_sheet(:,ic);
 te_lobe = te_lobe(:,ic);
@@ -55,6 +60,7 @@ color_data = events;
 
 hca = h(isub); isub = isub + 1;
 hscat = scatter(hca,beta_lobe,acc_pot*1e-3,markersize,color_data,'marker',markertype);
+%hscat = scatter(hca,B_lobe_,acc_pot*1e-3,markersize,color_data,'marker',markertype);
 hca.XLabel.String = '\beta_e^{lb}';
 hca.YLabel.String = '\phi (keV)';
 
