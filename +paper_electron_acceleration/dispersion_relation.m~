@@ -210,6 +210,11 @@ c = 299792458;
 % 1D reduced Maxwellian distributions
 f = @(v,n,vt,vd) n*(1/pi/vt^2)^(1/2).*exp(-(v-vd).^2/vt.^2);
 
+% Plasma properties for the different species
+[n,T,m,q,vd,vt,wp,ro,Lin,Ld] = f_inp('slow_e');
+nsp = numel(n); % number of species
+ntot = sum(n); wptot = sqrt(ntot.*q(1).^2./(m(1)*eps0)); % Hz
+
 % Measured
 shift_slow = 0;
 shift_fast = 0.05 + 0.00*[1 -1] ;
@@ -220,48 +225,12 @@ vve = ef1D.tlim(tint_disprel_slow).depend{1}(1,:)*1e-3;
 h = setup_subplots(3,1);
 isub = 1;
 
-if 1 % slow
+if 1
   hca = h(isub); isub = isub + 1;
-  plot(hca,vve,mean(ffe_slow,1),'-')
+  plot(hca,vve,mean(ffe_slow,1))
   hca.XTick = -40:20:40;
   hca.XGrid = 'on';
   %hca.XLim = 
-  % fit
-  % Plasma properties for the different species
-  [n,T,m,q,vd,vt,wp,Lin,Ld] = f_inp('slow_e');
-  nsp = numel(n); % number of species
-  ntot = sum(n); wptot = sqrt(ntot.*q(1).^2./(m(1)*eps0)); % Hz
-  hold(hca,'on')
-  plot(hca,vve,f(vve*1e6,n(1),vt(1),vd(1))+f(vve*1e6,n(2),vt(2),vd(2)))  
-  for ipop = 1:2
-    plot(hca,vve,f(vve*1e6,n(ipop),vt(ipop),vd(ipop)))
-  end
-  hold(hca,'off')
-  hca.XTick = -40:20:40;
-  hca.XLabel.String = [];
-  hca.XGrid = 'on';
-end
-
-if 1 % fast
-  hca = h(isub); isub = isub + 1;
-  plot(hca,vve,mean(ffe_fast,1),'-')
-  hca.XTick = -40:20:40;
-  hca.XGrid = 'on';
-  %hca.XLim = 
-  % fit
-  % Plasma properties for the different species
-  [n,T,m,q,vd,vt,wp,Lin,Ld] = f_inp('fast_e');
-  nsp = numel(n); % number of species
-  ntot = sum(n); wptot = sqrt(ntot.*q(1).^2./(m(1)*eps0)); % Hz
-  hold(hca,'on')
-  plot(hca,vve,f(vve*1e6,n(1),vt(1),vd(1))+f(vve*1e6,n(2),vt(2),vd(2)))  
-  for ipop = 1:2
-    plot(hca,vve,f(vve*1e6,n(ipop),vt(ipop),vd(ipop)))
-  end
-  hold(hca,'off')
-  hca.XTick = -40:20:40;
-  hca.XLabel.String = [];
-  hca.XGrid = 'on';
 end
 
 %% Previous

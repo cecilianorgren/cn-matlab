@@ -73,6 +73,8 @@ switch input
     T = [params_inst.T 7000];
     vd = [params_inst.vd 1000];
 end
+[n,T,m,q,vd,vt,wp,Lin,Ld] = f_inp('slow');
+B = 10e-9; % nT (not used)
 nsp = numel(n); % number of species
 
 % Physical parameters
@@ -137,7 +139,7 @@ end
 %% Dispersion solver, one surface
 % Wavenumber vector
 nk = 100;
-k_min= 0.1; k_max = 0.5;
+k_min= 0.2; k_max = 0.6;
 knorm = min(Ld(1));  % length
 knorm_str = sprintf('L_{d%g}',1);
 kvec = linspace(k_min,k_max,nk)/knorm;
@@ -145,7 +147,11 @@ kvec = linspace(k_min,k_max,nk)/knorm;
 wr_store = nan(1,nk);
 wi_store = nan(1,nk);
 fval_store = nan(1,nk);
-x = -1000;
+x = 1000+1i*300;
+x = 522.233 + 195.157i; % k_min= 0.05;
+x = 104.971 + 0*39.4977i ; % k_min= 0.015;
+x = 100;
+
 for ik = 1:nk  
   xguess = x;
   %xguess = vd(2)*kvec(ik);
@@ -193,7 +199,7 @@ end
 isub = 1;
 
 if 1 % input info
-  hca = h(isub); isub = isub + 1;  
+  hca = h(isub); isub = isub + 1; 
   info_str = [ ...
   sprintf('check quasi-neutrality: sum(qn) = %g\n',sum(q.*n)), ...
   sprintf('n = ['), sprintf(' %g',n*1e-6), sprintf('] cc\n'), ...
