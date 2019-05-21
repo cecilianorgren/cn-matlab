@@ -139,7 +139,7 @@ end
 %% Dispersion solver, one surface
 % Wavenumber vector
 nk = 100;
-k_min= 0.2; k_max = 0.6;
+k_min= 0.1; k_max = 0.5;
 knorm = min(Ld(1));  % length
 knorm_str = sprintf('L_{d%g}',1);
 kvec = linspace(k_min,k_max,nk)/knorm;
@@ -150,7 +150,7 @@ fval_store = nan(1,nk);
 x = 1000+1i*300;
 x = 522.233 + 195.157i; % k_min= 0.05;
 x = 104.971 + 0*39.4977i ; % k_min= 0.015;
-x = 100;
+x = 10;
 
 for ik = 1:nk  
   xguess = x;

@@ -19,17 +19,17 @@ switch input
   case 'slow_i'
     1;
   case 'slow'
-    n = [0.04 0.06 0.01]*1e6;
-    T = [700 220 3000]; T_K = T*units.eV/kB; % use parallel temperature
+    n = [0.02 0.08 0.01]*1e6;
+    T = [500 200 2000]; T_K = T*units.eV/kB; % use parallel temperature
     m = [1 1 1836]*me;
     q = [-1 -1 1]*qe; 
-    vd = [2000 17000 0]*1e3; % m/s
+    vd = [0000 21000 -500]*1e3; % m/s
     %    
-    n = [0.01 0.01]*1e6;
-    T = [100 4000]; T_K = T*units.eV/kB; % use parallel temperature
-    m = [1 1836]*me;
-    q = [-1 1]*qe; 
-    vd = [20000 0]*1e3; % m/s
+%     n = [0.01 0.01]*1e6;
+%     T = [100 4000]; T_K = T*units.eV/kB; % use parallel temperature
+%     m = [1 1836]*me;
+%     q = [-1 1]*qe; 
+%     vd = [20000 0]*1e3; % m/s
   case 'fast_e'
     n = [0.006 0.003]*1e6;
     T = [400 400]; T_K = T*units.eV/kB; % use parallel temperature

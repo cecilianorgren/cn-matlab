@@ -14,9 +14,10 @@ times_fred = irf_time('2017-07-06T00:54:14.20Z','utc>epochtt') + [0 0.1 0.2 0.3]
   
 %% Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS/');
-db_info = datastore('mms_db');   
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 localuser = datastore('local','user');
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS/']);
+db_info = datastore('mms_db');   
 pathLocalUser = ['/Users/' localuser '/'];
 
 %% Load data
@@ -38,10 +39,10 @@ c_eval('ePDist?_no1c.data(ePDist?_no1c.data<ePDistErr?.data*1.1) = 0;',ic)
 %% Choose spacecraft
 ic = 1;
 c_eval('eDist = ePDist?.tlim(tint_fred);',ic)
-c_eval('iDist = iPDist?.tlim(tint_fred);',ic)
+c_eval('iDist = iPDist?.tlim(tint);',ic)
 
 c_eval('eDist_no1c = ePDist?_no1c.tlim(tint_fred);',ic)
-c_eval('iDist_no1c = iPDist?_no1c.tlim(tint_fred);',ic)
+c_eval('iDist_no1c = iPDist?_no1c.tlim(tint);',ic)
 
 
 % Smooth electron distribution, sliding average
@@ -76,13 +77,19 @@ par_dir = dmpaB1.resample(eDist).norm;
 % vg = [-energies(end:-1:1) 0 energies];
 % vg(abs(vg)>80000) = [];
 vg_e = -50000:1000:50000;
-vg_i = -1000:20:1000;
+vg_i = -2500:20:2500;
 tic; ef1D = eDist.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scpot); toc % reduced distribution along B
 tic; ef1D_no1c = eDist_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scpot); toc % reduced distribution along B
 tic; ef1D_no1c_sm3 = eDist_no1c_sm3.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scpot); toc % reduced distribution along B
 tic; ef1D_sm3 = eDist_sm3.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scpot); toc % reduced distribution along B
+tic; if1D_long = iPDist1.reduce('1D',dmpaB1.resample(iPDist1).norm,'lowerelim',lowerelim,'vg',vg_i); toc % reduced distribution along B
+tic; if1D_no1c_long = iPDist1_no1c.reduce('1D',dmpaB1.resample(iPDist1).norm,'lowerelim',lowerelim,'vg',vg_i); toc % reduced distribution along B
 tic; if1D = iDist.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_i); toc % reduced distribution along B
 tic; if1D_no1c = iDist_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_i); toc % reduced distribution along B
+
+
+if1D_no1c_long_nan = if1D_no1c_long;
+if1D_no1c_long_nan.data(if1D_no1c_long_nan.data<1e-4) = NaN; 
 
 tic; ef1D_no1c_long = ePDist1_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scPot1.resample(ePDist1_no1c)); toc % reduced distribution along B
 ef1D_no1c_long_nan = ef1D_no1c_long;
@@ -109,6 +116,37 @@ ef1D_no1c_long_sm3_nan.data(ef1D_no1c_long_sm3.data<1e-6) = NaN;
 
 ef1D_no1c_long_sm5_nan = ef1D_no1c_long_sm5;
 ef1D_no1c_long_sm5_nan.data(ef1D_no1c_long_sm5.data<1e-6) = NaN; 
+
+%% Simple plot, compare long ions to electrons, for dispersion analysis purpose
+h = irf_plot(6);
+isub = 1;
+
+hca = irf_panel('iPDist1');
+irf_spectrogram(hca,iPDist1.deflux.omni.specrec)
+hca.YScale = 'log';
+
+hca = irf_panel('if1D_long');
+irf_spectrogram(hca,if1D_long.specrec)
+
+
+hca = irf_panel('iPDist1_no1c');
+irf_spectrogram(hca,iPDist1_no1c.deflux.omni.specrec)
+hca.YScale = 'log';
+
+hca = irf_panel('if1D_no1c_long');
+irf_spectrogram(hca,if1D_no1c_long.specrec)
+
+%hca = irf_panel('if1D_no1c_long_nan');
+%irf_spectrogram(hca,if1D_no1c_long_nan.specrec)
+
+hca = irf_panel('ePDist1');
+irf_spectrogram(hca,ePDist1.deflux.omni.specrec)
+hca.YScale = 'log';
+
+hca = irf_panel('ef1D_long');
+irf_spectrogram(hca,ef1D_long.specrec)
+%hca.CLim = [-6 -3];
+hlink = linkprop(h,{'XLim'});
 
 %% Simple plot to compare, long
 h = irf_plot(8);
