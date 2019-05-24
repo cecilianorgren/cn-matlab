@@ -88,6 +88,9 @@ tic; if1D = iDist.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_i); toc % re
 tic; if1D_no1c = iDist_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_i); toc % reduced distribution along B
 
 
+if1D_long_nan = if1D_long;
+if1D_long_nan.data(if1D_long_nan.data<1e-4) = NaN; 
+
 if1D_no1c_long_nan = if1D_no1c_long;
 if1D_no1c_long_nan.data(if1D_no1c_long_nan.data<1e-4) = NaN; 
 

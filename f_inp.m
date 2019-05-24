@@ -46,6 +46,30 @@ switch input
      1;
   case 'fast'
     1;
+  case 'ill_lobe'
+    n = [0.05]*1e6;
+    T = [200];
+    m = [1]*me;
+    q = [-1]*qe; 
+    vd = [0]*1e3; % m/s
+  case 'ill_lobe_acc'
+    n = 0.3*[0.05]*1e6;
+    T = [18];
+    m = [1]*me;
+    q = [-1]*qe; 
+    vd = [20000]*1e3; % m/s
+  case 'ill_lobe_acc_therm1'
+    n = 0.3*[0.03 0.01 0.01]*1e6;
+    T = [20 500 500];
+    m = [1 1 1]*me;
+    q = [-1 -1 -1]*qe; 
+    vd = [20000+2000 -5000 15000]*1e3; % m/s
+  case 'ill_lobe_acc_therm2'
+    n = 0.3*[0.02 0.015 0.015 0.0001]*1e6;
+    T = [30 500 500 500];
+    m = [1 1 1 1]*me;
+    q = [-1 -1 -1 -1]*qe; 
+    vd = [22000+2000 -5000 15000 0]*1e3; % m/s
 end
 
 vt = sqrt(2*qe*T./m); % m/s
