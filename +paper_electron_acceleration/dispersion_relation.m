@@ -36,8 +36,9 @@ c_eval('iPDist?_no1c.data(iPDist?_no1c.data<iPDistErr?.data*1.1) = 0;',ic)
 c_eval('ePDist?_no1c = ePDist?;',ic)
 c_eval('ePDist?_no1c.data(ePDist?_no1c.data<ePDistErr?.data*1.1) = 0;',ic)
 
+%% Polarization analysis
+
 %% Choose spacecraft
-ic = 1;
 c_eval('eDist = ePDist?.tlim(tint_fred);',ic)
 c_eval('iDist = iPDist?.tlim(tint);',ic)
 
@@ -76,7 +77,7 @@ par_dir = dmpaB1.resample(eDist).norm;
 % energies = sqrt(2*eDist.depend{1}(1,:)*units.eV/units.me)/1000; % km/s
 % vg = [-energies(end:-1:1) 0 energies];
 % vg(abs(vg)>80000) = [];
-vg_e = -50000:1000:50000;
+vg_e = -60000:1000:60000;
 vg_i = -2500:20:2500;
 tic; ef1D = eDist.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scpot); toc % reduced distribution along B
 tic; ef1D_no1c = eDist_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scpot); toc % reduced distribution along B
@@ -94,13 +95,23 @@ if1D_long_nan.data(if1D_long_nan.data<1e-4) = NaN;
 if1D_no1c_long_nan = if1D_no1c_long;
 if1D_no1c_long_nan.data(if1D_no1c_long_nan.data<1e-4) = NaN; 
 
-tic; ef1D_no1c_long = ePDist1_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scPot1.resample(ePDist1_no1c)); toc % reduced distribution along B
-ef1D_no1c_long_nan = ef1D_no1c_long;
-ef1D_no1c_long_nan.data(ef1D_no1c_long_nan.data<1e-6) = NaN; 
-
-tic; ef1D_long = ePDist1.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scPot1.resample(ePDist1_no1c)); toc % reduced distribution along B
-ef1D_long_nan = ef1D_long;
-ef1D_long_nan.data(ef1D_long_nan.data<1e-6) = NaN; 
+if 0
+  tic; ef1D_no1c_long = ePDist1_no1c.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scPot1.resample(ePDist1_no1c)); toc % reduced distribution along B
+  ef1D_no1c_long_nan = ef1D_no1c_long;
+  ef1D_no1c_long_nan.data(ef1D_no1c_long_nan.data<1e-6) = NaN; 
+  % smooth
+  ef1D_no1c_long_sm3 = ef1D_no1c_long.smooth(3);
+  ef1D_no1c_long_sm5 = ef1D_no1c_long.smooth(5);
+  ef1D_no1c_long_sm3_nan = ef1D_no1c_long_sm3;
+  ef1D_no1c_long_sm3_nan.data(ef1D_no1c_long_sm3.data<1e-6) = NaN; 
+  ef1D_no1c_long_sm5_nan = ef1D_no1c_long_sm5;
+  ef1D_no1c_long_sm5_nan.data(ef1D_no1c_long_sm5.data<1e-6) = NaN; 
+end
+if 0
+  tic; ef1D_long = ePDist1.reduce('1D',par_dir,'lowerelim',lowerelim,'vg',vg_e,'scpot',scPot1.resample(ePDist1_no1c)); toc % reduced distribution along B
+  ef1D_long_nan = ef1D_long;
+  ef1D_long_nan.data(ef1D_long_nan.data<1e-6) = NaN; 
+end
 
 % smooth
 eDist_no1c_sm3 = eDist_no1c;
@@ -111,14 +122,7 @@ eDist_no1c_sm3.data(1:3:end,:) = ed1.data(:,:);
 eDist_no1c_sm3.data(2:3:end,:) = ed2.data(:,:);
 eDist_no1c_sm3.data(3:3:end,:) = ed3.data(:,:);
 
-ef1D_no1c_long_sm3 = ef1D_no1c_long.smooth(3);
-ef1D_no1c_long_sm5 = ef1D_no1c_long.smooth(5);
 
-ef1D_no1c_long_sm3_nan = ef1D_no1c_long_sm3;
-ef1D_no1c_long_sm3_nan.data(ef1D_no1c_long_sm3.data<1e-6) = NaN; 
-
-ef1D_no1c_long_sm5_nan = ef1D_no1c_long_sm5;
-ef1D_no1c_long_sm5_nan.data(ef1D_no1c_long_sm5.data<1e-6) = NaN; 
 
 %% Simple plot, compare long ions to electrons, for dispersion analysis purpose
 h = irf_plot(6);
@@ -269,7 +273,7 @@ if 1 % slow
   %hca.XLim = 
   % fit
   % Plasma properties for the different species
-  [n,T,m,q,vd,vt,wp,Lin,Ld] = f_inp('slow_e');
+  [n,T,m,q,vd,vt,wp,Lin,Ld] = f_inp('slow');
   nsp = numel(n); % number of species
   ntot = sum(n); wptot = sqrt(ntot.*q(1).^2./(m(1)*eps0)); % Hz
   hold(hca,'on')

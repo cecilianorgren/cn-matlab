@@ -1,12 +1,19 @@
+ic = 1:4;
+
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
+db_info = datastore('mms_db');   
+localuser = datastore('local','user');
+pathLocalUser = ['/Users/' localuser '/'];
+
 %% Wave speeds, trapping, range 
 % burst interval
 tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
 % shorter time interval for dispersion analysis
 Tints = irf.tint('2017-07-06T00:55:39.50Z/2017-07-06T00:55:41.50Z'); % second "good" batch
 Tints = irf.tint('2017-07-06T00:54:13.50Z/2017-07-06T00:54:17.00Z'); % first "good" batch
+Tints = irf.tint('2017-07-06T00:54:13.80Z/2017-07-06T00:54:16.20Z'); % first "good" batch
 
 %% Load data
-
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
@@ -20,7 +27,7 @@ if size(R.gseR1,2) == 4
 else
   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
 end
-
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 
 %% % Load wave phase velocities (the ones obtained semi-manually)
 fid = fopen([matlabPath 'esw_properties_redo.txt'],'r');
