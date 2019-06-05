@@ -1,3 +1,9 @@
+%% Set up
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
+db_info = datastore('mms_db');   
+localuser = datastore('local','user');
+units = irf_units;
+
 %% Wave speeds, trapping, range 
 % burst interval
 tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
@@ -6,7 +12,7 @@ Tints = irf.tint('2017-07-06T00:55:39.50Z/2017-07-06T00:55:41.50Z'); % second "g
 Tints = irf.tint('2017-07-06T00:54:13.50Z/2017-07-06T00:54:17.00Z'); % first "good" batch
 
 %% Load data
-
+ic = 1:4;
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
@@ -21,6 +27,19 @@ else
   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
 end
 
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+c_eval('facR? = irf_convert_fac(gseR?,gseB?,[0 0 1]);',ic)
+c_eval('facB? = irf_convert_fac(gseB?,gseB?,[0 0 1]);',ic)
+c_eval('facE? = irf_convert_fac(gseE?,gseB?,[0 0 1]);',ic)
+c_eval('facE?par = irf_convert_fac(gseE?par,gseB?,[0 0 1]);',ic)
+ 
+%% Set up again
+pathLocalUser = ['/Users/' localuser '/'];
+fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
+fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
+dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+matlabPath = [pathLocalUser '/MATLAB/cn-matlab/' dirNameMatlab '/'];
 
 %% % Load wave phase velocities (the ones obtained semi-manually)
 fid = fopen([matlabPath 'esw_properties_redo.txt'],'r');
@@ -54,9 +73,54 @@ c_eval('vmax? = tsVphpar+tsVtrap?;',1:4)
 vmax = 0.25*(vmax1 + vmax2 + vmax3 + vmax4); vmax.name = 'av(vph+vtrap)';
 vmin = 0.25*(vmin1 + vmin2 + vmin3 + vmin4); vmin.name = 'av(vph-vtrap)';
   
+
+%% Find peak to peak scale and transverse instability condition (wb,wce)
+t1 = esw_data{3};
+t2 = esw_data{4};
+lpp = zeros(numel(esw_data{1}),4);
+kmax_instability = zeros(numel(esw_data{1}),4);
+wb = zeros(numel(esw_data{1}),4);
+wg = zeros(numel(esw_data{1}),4);
+phi_ = [esw_data{10} esw_data{11} esw_data{12} esw_data{13}];
+
+for icell = 1:numel(esw_data{1})
+  TT_ = EpochTT([t1{icell}; t2{icell}]);
+  vv_ = esw_data{6}(icell);  
+    
+  for ic_ = 1:4
+    c_eval('E_tmp = gseE?par.tlim(TT_);',ic_);
+    dt = E_tmp.time(2)-E_tmp.time(1);
+    [val_max,ind_max] = max(E_tmp.data);
+    [val_min,ind_min] = min(E_tmp.data);
+    ii_ = 1:numel(E_tmp.data);
+    tt_ = ii_*dt;  
+    xx_ = vv_*tt_;   
+    lpp(icell,ic_) = abs(abs(ind_max-ind_min)*dt*vv_);
+    
+    %plot(ii_,E_tmp.data,ind_max,val_max,'*',ind_min,val_min,'o')
+    
+    %title(sprintf('ic = %g, icell = %g, lpp = %.0f km',ic_,icell,lpp(icell,ic_)))
+    %pause(0.1)    
+  end  
+  
+  units = irf_units;
+  B = mean(gseB1.tlim(TT_).abs.data*1e-9);
+  kmax_instability(icell,:) = 0.5*pi*units.e*B/units.me.*sqrt(units.me/units.e./abs(phi_(icell,:)));
+  wg(icell,:) = units.e*B/units.me;
+  wb(icell,:)   = sqrt(4*units.e*abs(phi_(icell,:))/units.me./(0.5*lpp(icell,:)*1e3).^2);
+  wb_k(icell,:) = sqrt(4*units.e*abs(phi_(icell,:))/units.me./(lpp(icell,:)*1e3).^2);
+end
+k = pi./lpp;
+kmax_instability = kmax_instability*1e3; % m^-1 -> km^-1
+tsK = irf.ts_scalar(char(esw_data{5}),k);
+tsK_max_inst = irf.ts_scalar(char(esw_data{5}),kmax_instability);
+
+scatter(wg(:),wb(:)); axis equal
+
 %% Dispersion analysis
 tic
-[xvecs,yvecs,Power] = mms.fk_powerspec4SC('gseE?par','gseR?','gseB?',Tints,'linear',10,'numk',500,'cav',4,'wwidth',2);
+%[xvecs,yvecs,Power] = mms.fk_powerspec4SC('gseE?par','gseR?','gseB?',Tints,'linear',10,'numk',500,'cav',4,'wwidth',2);
+[xvecs,yvecs,Power] = mms.fk_powerspec4SC('facE?par','facR?','facB?',Tints,'linear',10,'numk',500,'cav',4,'wwidth',2);
 toc
 
 %% Polarization analysis
@@ -430,7 +494,8 @@ if 1 % e psd vpar
   specrec.p(specrec.p<1e-7) = NaN;  
   [~,hcb] = irf_spectrogram(hca,specrec);
   hold(hca,'on')
-  set(hca,'ColorOrder',mms_colors('111'))
+  set(hca,'ColorOrder',mms_colors('111'))  
+  %pause
   if 0
     irf_plot(hca,{tsVphpar.tlim(Tints)*vscale,vmin.tlim(Tints)*vscale,vmax.tlim(Tints)*vscale},'comp');
   else
@@ -471,6 +536,7 @@ if 1 % e psd vpar
 %  irf_legend(hca,[num2str(vint(1),'%.0f') '<v_\perp<' num2str(vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
   irf_legend(hca,['E_{e} >' num2str(lowerelim,'%g') ' eV'],[0.98 0.05],'color',0*[1 1 1],'fontsize',fontsize)
   hca.YLim = vscale*sort([max(real(vmax.tlim(Tints).data)) min(real(vmin.tlim(Tints).data))]);
+  hca.YLim = [-40 60];
   
   hca.CLim = [-6 -2.3];
   %hcb.Position(1) = hcb.Position(1) + (position(3) - hca.Position(3));
@@ -518,14 +584,20 @@ if 1 % f vx |k|, with all the semi-manual velocities added.
   colormap('jet');  
   
   vph_tint = tsVph.tlim(Tints);
+  k_tint = tsK.tlim(Tints);
+  kmax_tint = tsK_max_inst.tlim(Tints);
   nvph = vph_tint.length;
   kvec = xvecs.kmag([1 end]);  
   hold(hca,'on')
   for ivph = 1:nvph
     plot(hca,kvec*kscale,kvec/(2*pi)*abs(vph_tint.data(ivph)*1e3)*1e-3,'-k','linewidth',0.5)
+    kk_ = min(k_tint.data(ivph,:));
+    plot(hca,kk_,kk_/(2*pi)*abs(vph_tint.data(ivph)*1e3)*1e-3*1e-3,'ko')
+    kk_inst = min(kmax_tint.data(ivph,:));
+    plot(hca,kk_inst,kk_inst/(2*pi)*abs(vph_tint.data(ivph)*1e3)*1e-3*1e-3,'k*')
   end
   hold(hca,'off')
-  axis(hca,[0 2e-4*kscale 0 1])  
+  axis(hca,[0 4e-4*kscale 0 1])  
   set(gcf,'color','w')
   %axis(hca,'square')
 end

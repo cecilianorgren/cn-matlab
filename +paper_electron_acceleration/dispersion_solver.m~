@@ -9,30 +9,14 @@ function varargout = dispersion_solver(inp_strs,xguess,ks,powerspectra,fe1D_tint
 % Example plot for paper
 % [wr_1,wi_1,k_1,f_1] = paper_electron_acceleration.dispersion_solver({'slow_fit_2'},10,[0.005 2 100],{xvecs,yvecs,Power},{ef1D,tint_disprel_slow});
 % [wr_2,wi_2,k_2,f_2] = paper_electron_acceleration.dispersion_solver({'fast_mod'},1000,[0.08 2 100],{xvecs,yvecs,Power},{ef1D,tint_disprel_fast+[0.1 0]+0.05});
-%
 % h = setup_subplots(1,2);
-% 
 % hca = h(1);
-% hp = pcolor(hca,xvecs.kmag*1e3,yvecs.fkmag*1e-3,log10(Power.Powerkmagf),'HandleVisibility','off'); shading(hca,'flat');
-% hp.HandleVisibility = 'off';
-% hb = colorbar('peer',hca);
-% hca.XLabel.String = 'k (km^{-1})';
-% hca.YLabel.String = 'f (kHz)';
+% pcolor(hca,xvecs.kmag*1e3,yvecs.fkmag*1e-3,log10(Power.Powerkmagf)); shading(hca,'flat');
+% hca.XLabel.String = 'k ()';
 % hold(hca,'on')
-% plot(hca,k_1*1e3,wr_1/(2*pi)*1e-3,'k','displayname','f_r')
-% plot(hca,k_1*1e3,5*wi_1/(2*pi)*1e-3,'k--','displayname','5f_i')
-% plot(hca,k_2*1e3,wr_2/(2*pi)*1e-3,'k','displayname','f_r')
-% plot(hca,k_2*1e3,5*wi_2/(2*pi)*1e-3,'k--','displayname','5f_i')
+% plot(hca,k_1,wr_1/(2*pi)*1e-3,k_1,wi_1/(2*pi)*1e-3,'--',k_2,wr_2/(2*pi)*1e-3,k_2,wi_2/(2*pi)*1e-3,'--')
 % hold(hca,'off')
-% legend(hca)
-% hca.YLim = [0 1];
-% hca.XLim = [0 0.25];
-%
-% hca = h(1);
-%
-%
-%
-%
+
 units = irf_units;
 if not(isempty(powerspectra))
   xvecs = powerspectra{1};
