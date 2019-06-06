@@ -34,7 +34,7 @@ function varargout = dispersion_solver(inp_strs,xguess,ks,powerspectra,fe1D_tint
 %
 %
 units = irf_units;
-if not(isempty(powerspectra))
+if exist('powerspectra','var') && not(isempty(powerspectra))
   xvecs = powerspectra{1};
   yvecs = powerspectra{2};
   Power = powerspectra{3};
@@ -214,7 +214,11 @@ end
 if 1 % solution, wr wi  
   hca = h(isub); isub = isub + 1;     
   %%
-  pcolor(hca,xvecs.kmag*1e3,yvecs.fkmag,log10(Power.Powerkmagf));
+  if doPowerspectra
+    pcolor(hca,xvecs.kmag*1e3,yvecs.fkmag,log10(Power.Powerkmagf));
+  else
+    plot(hca,0,0)
+  end
   shading(hca,'flat')
   knorm_tmp = knorm;
   knorm = 1e3;
