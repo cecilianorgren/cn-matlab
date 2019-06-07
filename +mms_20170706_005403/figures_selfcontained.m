@@ -9,7 +9,7 @@ units = irf_units;
 tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
 % shorter time interval for dispersion analysis
 Tints = irf.tint('2017-07-06T00:55:39.50Z/2017-07-06T00:55:41.50Z'); % second "good" batch
-Tints = irf.tint('2017-07-06T00:54:13.50Z/2017-07-06T00:54:17.00Z'); % first "good" batch
+Tints = irf.tint('2017-07-06T00:54:13.70Z/2017-07-06T00:54:17.00Z'); % first "good" batch
 
 %% Load data
 ic = 1:4;
@@ -19,6 +19,7 @@ c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
 c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
 %c_eval('tic; gseE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_gse_brst_l2'',tint); toc',ic);
 %c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_par_epar_brst_l2'',tint); toc',ic);
+c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 c_eval('[ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
 R = mms.get_data('R_gse',tint);
 if size(R.gseR1,2) == 4
@@ -28,10 +29,11 @@ else
 end
 
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
-c_eval('facR? = irf_convert_fac(gseR?,gseB?,[0 0 1]);',ic)
+gseRav = 0.25*(gseR1 + gseR2 + gseR3 + gseR4);
+c_eval('facR? = irf_convert_fac(gseR?-gseRav,gseB?,[0 0 1]);',ic)
 c_eval('facB? = irf_convert_fac(gseB?,gseB?,[0 0 1]);',ic)
 c_eval('facE? = irf_convert_fac(gseE?,gseB?,[0 0 1]);',ic)
-c_eval('facE?par = irf_convert_fac(gseE?par,gseB?,[0 0 1]);',ic)
+%c_eval('facE?par = irf_convert_fac(gseE?par,gseB?,[0 0 1]);',ic)
  
 %% Set up again
 pathLocalUser = ['/Users/' localuser '/'];
@@ -70,9 +72,16 @@ tsPhi = irf.ts_scalar(char(esw_data{5}),[esw_data{10} esw_data{11} esw_data{12} 
 c_eval('tsVtrap? = irf.ts_scalar(char(esw_data{5}),sqrt(2*units.e*esw_data{9+?}/units.me)*1e-3);',1:4)
 c_eval('vmin? = tsVphpar-tsVtrap?;',1:4)
 c_eval('vmax? = tsVphpar+tsVtrap?;',1:4)
+
+% average
 vmax = 0.25*(vmax1 + vmax2 + vmax3 + vmax4); vmax.name = 'av(vph+vtrap)';
 vmin = 0.25*(vmin1 + vmin2 + vmin3 + vmin4); vmin.name = 'av(vph-vtrap)';
-  
+
+% max
+vmax_data = max([vmax1.data vmax2.data vmax3.data vmax4.data],[],2); 
+vmax = irf.ts_scalar(char(esw_data{5}),vmax_data); vmax.name = 'max(vph+vtrap)';
+vmin_data = min([vmin1.data vmin2.data vmin3.data vmin4.data],[],2);  
+vmin = irf.ts_scalar(char(esw_data{5}),vmin_data); vmin.name = 'min(vph-vtrap)';
 
 %% Find peak to peak scale and transverse instability condition (wb,wce)
 t1 = esw_data{3};
@@ -115,13 +124,105 @@ kmax_instability = kmax_instability*1e3; % m^-1 -> km^-1
 tsK = irf.ts_scalar(char(esw_data{5}),k);
 tsK_max_inst = irf.ts_scalar(char(esw_data{5}),kmax_instability);
 
-scatter(wg(:),wb(:)); axis equal
+%scatter(wg(:),wb(:)); axis equal
 
 %% Dispersion analysis
+%fhigh = 3000;
+%c_eval('facE?_lowpass = facE?.filt(0,fhigh,[],5);')
+%c_eval('facE?perp_lowpass = facE?.filt(0,fhigh,[],5);')
 tic
-%[xvecs,yvecs,Power] = mms.fk_powerspec4SC('gseE?par','gseR?','gseB?',Tints,'linear',10,'numk',500,'cav',4,'wwidth',2);
-[xvecs,yvecs,Power] = mms.fk_powerspec4SC('facE?par','facR?','facB?',Tints,'linear',10,'numk',500,'cav',4,'wwidth',2);
+[xvecs_gse,yvecs_gse,Power_gse] = mms.fk_powerspec4SC('gseE?par','gseR?','gseB?',Tints,'linear',10,'numk',400,'numf',200,'cav',4,'wwidth',2);
+[xvecs_perp1,yvecs_perp1,Power_perp1] = mms.fk_powerspec4SC('facE?.x','facR?','facB?',Tints,'linear',10,'numk',400,'numf',200,'cav',4,'wwidth',2);
+[xvecs_perp2,yvecs_perp2,Power_perp2] = mms.fk_powerspec4SC('facE?.y','facR?','facB?',Tints,'linear',10,'numk',400,'numf',200,'cav',4,'wwidth',2);
+[xvecs_par,yvecs_par,Power_par] = mms.fk_powerspec4SC('facE?.z','facR?','facB?',Tints,'linear',10,'numk',400,'numf',200,'cav',4,'wwidth',2);
 toc
+
+
+%% Compare gse and fac
+h(1) = subplot(1,2,1);
+h(2) = subplot(1,2,2);
+
+hca = h(1);
+pcolor(hca,xvecs_par.kzf,yvecs_par.fkzf,log10(Power_par.Powerkzf)); shading(hca,'flat');
+
+hca = h(2);
+pcolor(hca,xvecs_gse.kxf,yvecs_gse.fkxf,log10(Power_gse.Powerkxf)); shading(hca,'flat');
+
+%% Basic plot of 
+h = setup_subplots(3,3,'vertical');
+isub = 1;
+
+knorm = 1e3;
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_perp1.kxf*knorm,yvecs_perp1.fkxf,log10(Power_perp1.Powerkxf)); shading(hca,'flat');
+hca.XLabel.String = 'k_x (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hca.Title.String = 'x = \perp1 ~ z_{GSE}';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{\perp1}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_perp2.kxf*knorm,yvecs_perp2.fkxf,log10(Power_perp2.Powerkxf)); shading(hca,'flat');
+hca.XLabel.String = 'k_x (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{\perp2}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_par.kxf*knorm,yvecs_par.fkxf,log10(Power_par.Powerkxf)); shading(hca,'flat');
+hca.XLabel.String = 'k_x (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{||}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_perp1.kyf*knorm,yvecs_perp1.fkyf,log10(Power_perp1.Powerkyf)); shading(hca,'flat');
+hca.XLabel.String = 'k_y (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hca.Title.String = 'y = \perp2 ~ y_{GSE}';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{\perp1}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_perp2.kyf*knorm,yvecs_perp2.fkyf,log10(Power_perp2.Powerkyf)); shading(hca,'flat');
+hca.XLabel.String = 'k_y (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{\perp2}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_par.kyf*knorm,yvecs_par.fkyf,log10(Power_par.Powerkyf)); shading(hca,'flat');
+hca.XLabel.String = 'k_y (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{||}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_perp1.kzf*knorm,yvecs_perp1.fkzf,log10(Power_perp1.Powerkzf)); shading(hca,'flat');
+hca.XLabel.String = 'k_z (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hca.Title.String = 'z = || ~ x_{GSE}';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{\perp1}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_perp2.kzf*knorm,yvecs_perp2.fkzf,log10(Power_perp2.Powerkzf)); shading(hca,'flat');
+hca.XLabel.String = 'k_z (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{\perp2}';
+
+hca = h(isub); isub = isub + 1;
+pcolor(hca,xvecs_par.kzf*knorm,yvecs_par.fkzf,log10(Power_par.Powerkzf)); shading(hca,'flat');
+hca.XLabel.String = 'k_z (km^{-1})';
+hca.YLabel.String = 'f (Hz)';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P_{||}';
+
+hlink = linkprop(h,{'CLim','YLim','XLim'});
+hlink.Targets(1).YLim(2) = 1000;
+hlink.Targets(1).XLim = [-0.25 0.25];
 
 %% Polarization analysis
 tint_polan = Tints + [-1.1 1.1];
@@ -544,9 +645,9 @@ if 1 % e psd vpar
 end
 
 %irf_zoom(h,'x',irf.tint('2017-07-18T01:40:31.00Z/2017-07-18T01:40:32.50Z'));
-irf_zoom(h,'x',Tints + 1*[-1 1]);
+irf_zoom(h(1),'x',Tints + 1*[-1 1]);
 irf_zoom(h(zoomy),'y')
-%
+%%
 % dispersion relation
 isub = 1;
 if 0
@@ -571,7 +672,9 @@ end
 if 1 % f vx |k|, with all the semi-manual velocities added.
   hca = h2(isub); isub = isub + 1;
   kscale = 1e3;
-  pcolor(hca,xvecs.kmag*kscale,yvecs.fkmag*1e-3,log10(Power.Powerkmagf)); 
+  %pcolor(hca,xvecs_par.kmag*kscale,yvecs_par.fkmag*1e-3,log10(Power_par.Powerkmagf)); 
+  %pcolor(hca,xvecs_par.kzf*kscale,yvecs_par.fkzf*1e-3,log10(Power_par.Powerkzf));
+  pcolor(hca,xvecs_par.kmag*kscale,yvecs_par.fkmag*1e-3,log10(Power_par.Powerkmagf));
   shading(hca,'flat');
   if kscale == 1e3
     xlabel(hca,'|k| (km^{-1})');
@@ -597,7 +700,7 @@ if 1 % f vx |k|, with all the semi-manual velocities added.
     plot(hca,kk_inst,kk_inst/(2*pi)*abs(vph_tint.data(ivph)*1e3)*1e-3*1e-3,'k*')
   end
   hold(hca,'off')
-  axis(hca,[0 4e-4*kscale 0 1])  
+  %axis(hca,[0 4e-4*kscale 0 1])  
   set(gcf,'color','w')
   %axis(hca,'square')
 end

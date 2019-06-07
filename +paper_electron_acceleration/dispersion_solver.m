@@ -1,5 +1,6 @@
 function varargout = dispersion_solver(inp_strs,xguess,ks,powerspectra,fe1D_tint)
 % load('/Users/cno062/GoogleDrive/Data/polarization_paper_electron_acceleration.mat')
+% load('/Users/cno062/GoogleDrive/Data/polarization_paper_electron_acceleration_perppar.mat')
 % load('/Users/cno062/GoogleDrive/Data/polarization_paper_electron_acceleration_distributions_fit.mat')
 % [wr,wi,k] = paper_electron_acceleration.dispersion_solver({'fast'},100,[0.1 2 100],{xvecs,yvecs,Power});
 % [wr,wi,k] = paper_electron_acceleration.dispersion_solver({'slow'},100,[0.1 2 100],{xvecs,yvecs,Power});
