@@ -43,7 +43,10 @@ ne_lobe = ne_lobe(:,ic);
 ne_sep = ne_sep(:,ic);
 ne_sheet = ne_sheet(:,ic);
 
+%% Plot for paper, including Cluster
 
+
+%% Plot
 nrows = 2;
 ncols = 3;
 npanels = ncols*nrows;
