@@ -147,7 +147,7 @@ if 1 % phi/Telobe vs beta e lobe
   end
   %hca.XLabel.String =  '\beta_{e,lobe}';
   hca.XLabel.String =  '\beta_{e}^{lb}';
-  hca.YLabel.String =  '\psi/T_{e,lobe}';
+  hca.YLabel.String =  'e\psi/T_{e}^{lb}';
   hca.FontSize = fontsize;
   %hca.XLim(1) = min([event.beta_e_lobe, 0.004]);
   hca.Box = 'on';
@@ -158,7 +158,7 @@ if 1 % phi/Tesheet vs beta e lobe
   scatter(hca,event.beta_e_lobe,event.phi./(event.T_sheet),[])
   %hca.XLabel.String =  '\beta_{e,lobe}';
   hca.XLabel.String =  '\beta_{e}^{lb}';
-  hca.YLabel.String =  '\psi/T_{e,sheet}';
+  hca.YLabel.String =  'e\psi/T_{e}^{sh}';
   set(hca,'colororder',colors) 
   irf_legend(hca,{'MMS'},[0.98 0.98])
   hca.FontSize = fontsize;
@@ -169,8 +169,14 @@ end
 
 for ipanel = 1:npanels
   h(ipanel).XScale = 'lin';
+  h(ipanel).XLim = [0 0.0301];
+  h(ipanel).XTick = 0:0.01:0.05;
+  h(ipanel).XGrid = 'on';
+  h(ipanel).YGrid = 'on';
   %h(ipanel).XTick = 10.^[-3 -2 -1 0];
 end
+h(1).YTick = 0:2:12;
+h(2).YTick = 0:20:120;
 
 % event.phi = ;
 % event.B = ;
