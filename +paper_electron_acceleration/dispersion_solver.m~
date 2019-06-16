@@ -240,8 +240,8 @@ if 1 % solution, wr wi
   hold(hca,'off')
   hca.XLim = kvec([1 end])*knorm;  
   hca.XLim = [0 0.25]; %km^-1
-  %hca.YLim(1) = 0;
-  %hca.YLim(2) = 1000;
+  hca.YLim(1) = 0;
+  hca.YLim(2) = 1000;
   knorm = knorm_tmp;
   legend(hlines,'f_r','5f_i', 'location','northeast')
   hca.XLabel.String = 'k_{||} (km^{-1})';  
@@ -384,8 +384,8 @@ if 1 % xis
   hca = h(isub); isub = isub + 1;
   %plot(hca,kvec*1e3,real(xis_imag),'-',kvec*1e3,imag(xis_imag),'--')
   %plot(hca,kvec*1e3,real(xis_real),'-',kvec*1e3,imag(xis_real),'--')
-  plot(hca,kvec*1e3,imag(xis_real),'-',kvec*1e3,imag(xis_imag),'--')
-  %plot(hca,kvec*1e3,real(xis_real),'-',kvec*1e3,real(xis_imag),'--')
+  plot(hca,kvec*1e3,real(xis_real),'-',kvec*1e3,imag(xis_real),'--')
+  plot(hca,kvec*1e3,real(xis_real),'-',kvec*1e3,imag(xis_real),'--')
   hleg = legend(hca,{'real1','real2','real3','imag1','imag2','imag3'});
   hleg.Title.String = 'species';
   hca.XLabel.String = 'k (mk^{-1})';
