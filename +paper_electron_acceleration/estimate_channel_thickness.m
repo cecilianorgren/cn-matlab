@@ -1,3 +1,26 @@
+%% Load data needed for figure paper
+ic = 1;
+tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
+db_info = datastore('mms_db');   
+localuser = datastore('local','user');
+pathLocalUser = ['/Users/' localuser '/'];
+
+c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+
+saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential/'];
+printAccPotPath = ['/Users/' localuser '/GoogleDrive/Research/Separatrix_acceleration_events/acceleration_potential/'];
+event = 3;
+sep.get_tints;
+load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')
+tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_abs;
+tsAccPot = tsAccPot_nobg_abs;  
+
+
+%%
 fun_phi = @(phimax,x,l) phimax.*exp(-x.^2./(2*l.^2));
 fun_E  = @(phimax,x,l) (x./l.^2).*phimax.*exp(-x.^2./(2*l.^2));
 phimax = 1800;
