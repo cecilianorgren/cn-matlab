@@ -65,6 +65,7 @@ for ievent = 1:nevents
   c_eval('n_lobe = mean(ne?.tlim(tint_lobe).data,1);',ic)
   c_eval('n_sheet = mean(ne?.tlim(tint_sheet).data,1);',ic)
   c_eval('n_sep = mean(ne?.tlim(tint_sep).data,1);',ic)
+  c_eval('n_sep_min = min(ne?.tlim(tint_sep).data,1);',ic)
 
   c_eval('be_lobe = mean(beta?e.tlim(tint_lobe).data,1);',ic)
   c_eval('be_sheet = mean(beta?e.tlim(tint_sheet).data,1);',ic)
@@ -264,6 +265,7 @@ for ievent = 1:nevents
   acc_pot_data.n_lobe = n_lobe;
   acc_pot_data.n_sheet = n_sheet;
   acc_pot_data.n_sep = n_sep;
+  acc_pot_data.n_sep_min = n_sep_min;
   acc_pot_data.be_lobe = be_lobe;
   acc_pot_data.be_sheet = be_sheet;
   acc_pot_data.be_sep = be_sep;

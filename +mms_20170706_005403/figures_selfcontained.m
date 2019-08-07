@@ -265,7 +265,7 @@ if 1 % scatter plot with errorbar of std for each ESW
   
   % main plot
   hca.XLabel.String = 'l_{pp} (km)';
-  hca.YLabel.String = '\phi (eV)';
+  hca.YLabel.String = '\phi_{max} (V)';
   hca.XLim(1) = 0;
   hca.YLim(1) = 0; 
   hca.Box = 'on';
@@ -276,7 +276,7 @@ if 1 % scatter plot with errorbar of std for each ESW
   
   drawnow;
   hca.Position(1) = 0.2;
-  hca.Position(2) = 0.2;
+  hca.Position(2) = 0.25;
   hca.Position(3) = 0.7;
   hca.Position(4) = 0.7;
 end

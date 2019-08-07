@@ -22,6 +22,7 @@ for ievent = 1:nevents
   event = events(ievent);
   sep.get_tints;
   load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')
+  load(sprintf('%s/acc_n_data_event_%g',saveAccPotPath,event),'acc_n_data') % includes minimum density within acceleration channel
   tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_abs;
   tsAccPot = tsAccPot_nobg_abs;
   
@@ -42,6 +43,8 @@ for ievent = 1:nevents
     ne_sep(ievent,ic) = acc_pot_data.n_sep;
     ne_sheet(ievent,ic) = acc_pot_data.n_sheet;
     
+    ne_sep_min(ievent,ic) = acc_n_data.n_sep_min;
+    
     B_lobe_(ievent,ic) = acc_pot_data.B_lobe;
   end
 end
@@ -56,6 +59,7 @@ te_lobe = te_lobe(:,ic);
 te_sheet = te_sheet(:,ic);
 ne_lobe = ne_lobe(:,ic);
 ne_sep = ne_sep(:,ic);
+ne_sep_min = ne_sep_min(:,ic);
 ne_sheet = ne_sheet(:,ic);
 
 clear event
@@ -67,6 +71,7 @@ event.B =            B_lobe_';
 event.n_lobe =       ne_lobe';
 event.n_sheet =      ne_sheet';
 event.n_sep =        ne_sep';
+event.n_sep_min =    ne_sep_min';
 event.Tpar_lobe =    tepar_lobe';
 event.Tpar_sheet =   tepar_sheet';
 event.Tpar_sep =     [];
@@ -122,7 +127,7 @@ if 1 % phi vs beta e lobe
     %irf_legend(hca,{'MMS';{'Cluster','(Egedal et al. 2015)'}},[0.98 0.98])
     %irf_legend(hca,{'MMS';{'Cluster'}},[0.98 0.98])
     
-    legend(hca,{'MMS';'Cluster'},'Box','off')
+    legend(hca,{'MMS';'Cluster'},'Box','on')
   end
   %hl = legend(hca,{'MMS','Egedal 2015'});
   %hl.Box = 'off';   
@@ -147,7 +152,7 @@ if 1 % phi/Telobe vs beta e lobe
     set(hca,'colororder',colors) 
     %irf_legend(hca,{'MMS';{'Cluster','(Egedal et al. 2015)'}},[0.98 0.98])
     %irf_legend(hca,{'MMS';{'Cluster'}},[0.98 0.98])
-    legend(hca,{'MMS';'Cluster'},'Box','off')
+    legend(hca,{'MMS';'Cluster'},'Box','on')
   end
   %hca.XLabel.String =  '\beta_{e,lobe}';
   hca.XLabel.String =  '\beta_{e}^{lb}';
@@ -181,7 +186,7 @@ if 1 % phi/Tesheet vs beta e lobe
   hca.YLabel.String =  'e\psi/k_BT_{e}^{sh}';
   set(hca,'colororder',colors) 
   %irf_legend(hca,{'MMS'},[0.98 0.98])  
-  legend(hca,{'MMS'},'Box','off')
+  legend(hca,{'MMS'},'Box','on')
   hca.FontSize = fontsize;
   hca.XLim(1) = min([event.beta_e_lobe, 0.004]);
   hca.Box = 'on';
@@ -198,6 +203,11 @@ for ipanel = 1:npanels
 end
 h(1).YTick = 0:2:12;
 h(2).YTick = 0:20:120;
+
+
+irf_legend(h(1),'(a)',[-0.25 1.01],'fontsize',14);
+irf_legend(h(2),'(b)',[-0.25 1.01],'fontsize',14);
+irf_legend(h(3),'(c)',[-0.25 1.01],'fontsize',14);
 
 % event.phi = ;
 % event.B = ;
@@ -329,3 +339,60 @@ end
 % event.beta_e_lobe = ;
 % event.beta_e_sheet = ;
 % event.beta_e_sep = ;
+
+%% Figure with density ratios between lobe and accelertion channel
+figure(44)
+nrows = 1;
+ncols = 2;
+npanels = nrows*ncols;
+for ipanel = 1:npanels
+  h(ipanel) = subplot(nrows,ncols,ipanel);  
+  h(ipanel).Position(2) = 0.22;
+  h(ipanel).Position(4) = 0.7;
+end
+
+fontsize = 12;
+isub = 1;
+colors = mms_colors('matlab');
+
+if 1 % phi vs beta e lobe
+  hca = h(isub); isub = isub + 1;  
+  hs1 = scatter(hca,event.n_lobe,event.n_sep_min,[]);
+  
+  
+  %hs2 = scatter(hca,event.n_lobe,event.n_sep_min,event.phi./event.T_lobe*10);  
+  %hs2.CData = colors(2,:); 
+  
+  hs1.CData = colors(1,:); 
+  hca.YLabel.String =  'n_{e}^{sep} (cm^{-3})'; hca.YLabel.Interpreter = 'tex';
+  hca.XLabel.String =  'n_{e}^{lb} (cm^{-3})'; hca.XLabel.Interpreter = 'tex';
+  hca.FontSize = fontsize;  
+  hca.Box = 'on'; 
+  hca.XLim(1) = 0;
+  hca.XLim(2) = 0.09;
+  hca.YLim(1) = 0;
+  hold(hca,'on')
+  hline = plot(hca,diff(hca.XLim)*hca.YLim/hca.XLim(2),hca.YLim,'color',[0.8 0.8 0.8]);
+  hold(hca,'off')  
+  legend(hca,'off')
+end
+if 1 % n_sep/n_lobe vs phi/te
+  hca = h(isub); isub = isub + 1;  
+  hs1 = scatter(hca,event.phi/1000,event.n_sep_min./event.n_lobe,[]);
+  hold(hca,'on')
+  %hs2 = scatter(hca,event.n_sep./event.n_lobe,event.phi./event.T_lobe,[]);  
+  %hs2.CData = colors(2,:); 
+  hold(hca,'off')  
+  hs1.CData = colors(1,:); 
+  hca.YLabel.String =  'n_{e}^{sep}/n_{e}^{lb}'; hca.YLabel.Interpreter = 'tex';
+  hca.XLabel.String =  '\psi (keV)'; hca.XLabel.Interpreter = 'tex';
+  hca.FontSize = fontsize;  
+  hca.Box = 'on';  
+  hca.XLim = [0 8];
+  hca.YLim = [0 0.7];
+end
+grid(h(1),'on')
+grid(h(2),'on')
+irf_legend(h(1),'(a)',[0.01 0.98],'fontsize',14);
+irf_legend(h(2),'(b)',[0.01 0.98],'fontsize',14);
+
