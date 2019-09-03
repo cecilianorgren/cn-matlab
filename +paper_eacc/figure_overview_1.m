@@ -94,7 +94,7 @@ c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = '
 
 c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
 
-c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',1:4)
 
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
 c_eval('beta?e = gsePe?.trace/3/PB?.resample(gsePe?);',ic)
@@ -186,8 +186,8 @@ str_print(strfind(str_print,':'))=[];
 %% Figure: Overview for paper
 figure(201)
 npanels_large = 7;
-npanels_zoom = 1;
-npanels = 9;
+npanels_zoom = 2;
+npanels = npanels_large + npanels_zoom + 1;
 cmap = 'jet';
 %[h,h2] = initialize_combined_plot(npanels,3,2,0.4,'vertical'); % horizontal
 h = irf_plot(npanels);
@@ -410,6 +410,16 @@ if 1 % E par
   hca.YLabel.String = {'E_{||}','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))  
   hca.YLim = [-70 70];
+end
+if 1 % E perp
+  iisub = iisub + 1;
+  zoomy = [zoomy iisub];
+  hca = irf_panel('E perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseE?perp.x.tlim(tint),gseE?perp.y.tlim(tint),gseE?perp.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'E_{\perp}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};

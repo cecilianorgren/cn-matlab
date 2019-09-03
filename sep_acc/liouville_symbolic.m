@@ -16,7 +16,7 @@ str_info = {'unperturbed f:';...
 lx = 3100; 
 nx = 207;
 phimax = 2000; % 340
-vph = -1000e3;
+vph = -5000e3;
 
 x_vec = linspace(-7*lx,7*lx,nx);
 v_max = 40e6;
@@ -25,7 +25,7 @@ v_vec = linspace(-v_max,v_max,nv);
 dv = v_vec(2)-v_vec(1);
 [X,V] = meshgrid(x_vec,v_vec); X = permute(X,[2 1]); V = permute(V,[2 1]);
 
-%% symbolic expression
+%% symbolic expression, 120 s
 tic
 syms x v %phi(x) f0(v) ff(x,v) v0(x,v)
 %phi(x) = phimax*exp(-x.^2/2/lx.^2); 

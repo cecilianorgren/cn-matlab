@@ -26,7 +26,7 @@ for ievent = 1:nevents
   tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_abs;
   tsAccPot = tsAccPot_nobg_abs;
   
-  for ic = 1:3
+  for ic = 1
     time_tmp = tint_phi+0.1*[-1 1];
     acc_pot(ievent,ic) = max(tsAccPot{ic}.tlim(time_tmp).abs.data);
     time1{ievent,1} = time_tmp(1);
@@ -46,6 +46,22 @@ for ievent = 1:nevents
     ne_sep_min(ievent,ic) = acc_n_data.n_sep_min;
     
     B_lobe_(ievent,ic) = acc_pot_data.B_lobe;
+    
+    % Liouville-map of lobe density to acceleration channel    
+    vpsi = 000;
+    [n_lb_tmp,n_sep_tmp] = paper_electron_acceleration.liouville_mapped_nf(ne_lobe(ievent,ic),te_lobe(ievent,ic),0,acc_pot(ievent,ic),vpsi);
+    ne_lobe_map_v00000(ievent,ic) = n_lb_tmp*1e-6;
+    ne_sep_map_v00000(ievent,ic) = n_sep_tmp*1e-6;
+    
+    vpsi = 5000;
+    [n_lb_tmp,n_sep_tmp] = paper_electron_acceleration.liouville_mapped_nf(ne_lobe(ievent,ic),te_lobe(ievent,ic),0,acc_pot(ievent,ic),vpsi);
+    ne_lobe_map_v05000(ievent,ic) = n_lb_tmp*1e-6;
+    ne_sep_map_v05000(ievent,ic) = n_sep_tmp*1e-6;
+    
+    vpsi = 10000;
+    [n_lb_tmp,n_sep_tmp] = paper_electron_acceleration.liouville_mapped_nf(ne_lobe(ievent,ic),te_lobe(ievent,ic),0,acc_pot(ievent,ic),vpsi);
+    ne_lobe_map_v10000(ievent,ic) = n_lb_tmp*1e-6;
+    ne_sep_map_v10000(ievent,ic) = n_sep_tmp*1e-6;
   end
 end
 
@@ -62,6 +78,15 @@ ne_sep = ne_sep(:,ic);
 ne_sep_min = ne_sep_min(:,ic);
 ne_sheet = ne_sheet(:,ic);
 
+ne_lobe_map_v00000 = ne_lobe_map_v00000(:,ic);
+ne_sep_map_v00000 = ne_sep_map_v00000(:,ic);
+
+ne_lobe_map_v05000 = ne_lobe_map_v05000(:,ic);
+ne_sep_map_v05000 = ne_sep_map_v05000(:,ic);
+
+ne_lobe_map_v10000 = ne_lobe_map_v10000(:,ic);
+ne_sep_map_v10000 = ne_sep_map_v10000(:,ic);
+    
 clear event
 event.event_id =     events;
 event.time1 =        time1;
@@ -86,6 +111,12 @@ event.beta_e_lobe =  beta_lobe';
 event.beta_e_sheet = [];
 event.beta_e_sep =   [];
 
+event.n_lobe_map_v00000 = ne_lobe_map_v00000';
+event.n_sep_map_v00000 =   ne_sep_map_v00000';
+event.n_lobe_map_v05000 = ne_lobe_map_v05000';
+event.n_sep_map_v05000 =   ne_sep_map_v05000';
+event.n_lobe_map_v10000 = ne_lobe_map_v10000';
+event.n_sep_map_v10000 =   ne_sep_map_v10000';
 % manual override some values:
 event.T_sheet(nevents) = 1500;
 
@@ -373,6 +404,9 @@ if 1 % phi vs beta e lobe
   hca.YLim(1) = 0;
   hold(hca,'on')
   hline = plot(hca,diff(hca.XLim)*hca.YLim/hca.XLim(2),hca.YLim,'color',[0.8 0.8 0.8]);
+  hline = plot(hca,hca.XLim,0.5*hca.XLim,'color',[0.8 0.8 0.8]);
+  hline = plot(hca,hca.XLim,0.25*hca.XLim,'color',[0.8 0.8 0.8]);
+  hline = plot(hca,hca.XLim,0.1*hca.XLim,'color',[0.8 0.8 0.8]);
   hold(hca,'off')  
   legend(hca,'off')
 end
@@ -395,4 +429,131 @@ grid(h(1),'on')
 grid(h(2),'on')
 irf_legend(h(1),'(a)',[0.01 0.98],'fontsize',14);
 irf_legend(h(2),'(b)',[0.01 0.98],'fontsize',14);
+
+%% Figure with density ratios between lobe and accelertion channel, including liouville mapped densities
+figure(44)
+nrows = 1;
+ncols = 3;
+npanels = nrows*ncols;
+for ipanel = 1:npanels
+  h(ipanel) = subplot(nrows,ncols,ipanel);  
+  h(ipanel).Position(1) = h(ipanel).Position(1)-0.05;
+  h(ipanel).Position(2) = 0.2;
+  h(ipanel).Position(4) = 0.7;
+end
+
+fontsize = 12;
+isub = 1;
+colors = mms_colors('matlab');
+
+if 1 % phi vs beta e lobe
+  hca = h(isub); isub = isub + 1;  
+  hs1 = scatter(hca,event.n_lobe,event.n_sep_min,[]);
+  
+  
+  %hs2 = scatter(hca,event.n_lobe,event.n_sep_min,event.phi./event.T_lobe*10);  
+  %hs2.CData = colors(2,:); 
+  
+  hs1.CData = colors(1,:); 
+  hca.YLabel.String =  'n_{e}^{sep} (cm^{-3})'; hca.YLabel.Interpreter = 'tex';
+  hca.XLabel.String =  'n_{e}^{lb} (cm^{-3})'; hca.XLabel.Interpreter = 'tex';
+  hca.FontSize = fontsize;  
+  hca.Box = 'on'; 
+  hca.XLim(1) = 0;
+  hca.XLim(2) = 0.09;
+  hca.YLim(1) = 0;
+  hold(hca,'on')
+  hline = plot(hca,diff(hca.XLim)*hca.YLim/hca.XLim(2),hca.YLim,'color',[0.8 0.8 0.8]);
+  hold(hca,'off')  
+  legend(hca,'off')
+end
+if 1 % n_sep/n_lobe vs phi/te
+  hca = h(isub); isub = isub + 1;  
+  hs1 = scatter(hca,event.phi/1000,event.n_sep_min./event.n_lobe,[]);
+  hold(hca,'on')
+  %hs2 = scatter(hca,event.n_sep./event.n_lobe,event.phi./event.T_lobe,[]);  
+  %hs2.CData = colors(2,:); 
+  hold(hca,'off')  
+  hs1.CData = colors(1,:); 
+  hca.YLabel.String =  'n_{e}^{sep}/n_{e}^{lb}'; hca.YLabel.Interpreter = 'tex';
+  hca.XLabel.String =  '\psi (keV)'; hca.XLabel.Interpreter = 'tex';
+  hca.FontSize = fontsize;  
+  hca.Box = 'on';  
+  hca.XLim = [0 8];
+  hca.YLim = [0 0.7];
+end
+if 0 % phi vs beta e lobe
+  hca = h(isub); isub = isub + 1;  
+  hs1 = scatter(hca,event.n_lobe_map,event.n_sep_map,[]);
+  
+  
+  %hs2 = scatter(hca,event.n_lobe,event.n_sep_min,event.phi./event.T_lobe*10);  
+  %hs2.CData = colors(2,:); 
+  
+  hs1.CData = colors(1,:); 
+  hca.YLabel.String =  'n_{e}^{sep,map} (cm^{-3})'; hca.YLabel.Interpreter = 'tex';
+  hca.XLabel.String =  'n_{e}^{lb} (cm^{-3})'; hca.XLabel.Interpreter = 'tex';
+  hca.FontSize = fontsize;  
+  hca.Box = 'on'; 
+  hca.XLim(1) = 0;
+  hca.XLim(2) = 0.09;
+  hca.YLim(1) = 0;
+  hold(hca,'on')
+  hline = plot(hca,diff(hca.XLim)*hca.YLim/hca.XLim(2),hca.YLim,'color',[0.8 0.8 0.8]);
+  hold(hca,'off')  
+  legend(hca,'off')
+end
+if 1 % phi vs beta e lobe
+  hca = h(isub); isub = isub + 1;  
+  hs1 = scatter(hca,event.n_sep,event.n_sep_map_v00000,[]);
+  hs1.CData = colors(1,:);   
+  hold(hca,'on')
+  
+  [P,S] = polyfit(event.n_sep,event.n_sep_map_v00000,1);
+  hfit1 = plot(hca,event.n_sep,polyval(P,event.n_sep));
+  hfit1.Color = colors(1,:);
+  
+  hs2 = scatter(hca,event.n_sep,event.n_sep_map_v05000,[]);
+  hs2.CData = colors(2,:); 
+  hs2.Marker = 's';
+  [P,S] = polyfit(event.n_sep,event.n_sep_map_v05000,1);
+  hfit2 = plot(hca,event.n_sep,polyval(P,event.n_sep));
+  hfit2.Color = colors(2,:);
+  
+  hs3 = scatter(hca,event.n_sep,event.n_sep_map_v10000,[]);
+  hs3.CData = colors(3,:); 
+  hs3.Marker = '^';
+  [P,S] = polyfit(event.n_sep,event.n_sep_map_v10000,1);
+  hfit3 = plot(hca,event.n_sep,polyval(P,event.n_sep));
+  hfit3.Color = colors(3,:);
+  
+  hold(hca,'off')
+  
+  
+  
+  hca.YLabel.String =  'n_{e}^{sep,map} (cm^{-3})'; hca.YLabel.Interpreter = 'tex';
+  hca.XLabel.String =  'n_{e}^{sep} (cm^{-3})'; hca.XLabel.Interpreter = 'tex';
+  hca.FontSize = fontsize;  
+  hca.Box = 'on'; 
+  hca.XLim(1) = 0;
+  hca.XLim(2) = 0.07;
+  hca.YLim(1) = 0;
+  hca.YLim(2) = 0.07;
+  hold(hca,'on')
+  hline = plot(hca,diff(hca.XLim)*hca.YLim/hca.XLim(2),hca.YLim,'color',[0.8 0.8 0.8]);
+  hold(hca,'off')  
+  %legend(hca,'off')
+  %position = hca.Position;
+  hleg = legend([hs1,hs2,hs3],{'v_{\psi}^{lb} = 0 km/s','v_{\psi}^{lb} = 5000 km/s','v_{\psi}^{lb} = 10000 km/s'});
+  hleg.Box = 'off';
+  %hleg
+  %hca.Position = position;
+end
+
+grid(h(1),'on')
+grid(h(2),'on')
+grid(h(3),'on')
+irf_legend(h(1),'(a)',[-0.25 1.01],'fontsize',14);
+irf_legend(h(2),'(b)',[-0.25 1.01],'fontsize',14);
+irf_legend(h(3),'(c)',[-0.25 1.01],'fontsize',14);
 

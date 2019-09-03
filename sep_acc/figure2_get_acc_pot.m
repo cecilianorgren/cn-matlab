@@ -1,5 +1,5 @@
 units = irf_units;
-ic = 1:4;
+ic = 1;
 %% Time intervals
 % burst interval
 tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z');
@@ -44,8 +44,8 @@ c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('facPe? = mms.rotate_tensor(gsePe?,''fac'',gseB?); facPe?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
 c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
 
-c_eval('tic; ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?); toc;',ic);
-c_eval('tic; ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?); toc;',ic);
+c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
+c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
 
 c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 
@@ -141,12 +141,17 @@ tic; ef1D_nobg = eDist_nobg.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowere
 ef1D1_orig = ef1D_orig;
 ef1D1_nobg = ef1D_nobg;
 
-ef1D1_nobg1 = ef1D1_nobg.resample(ef1D1_nobg.time(1:3:end));
-ef1D1_nobg2 = ef1D1_nobg.resample(ef1D1_nobg.time(2:3:end));
-ef1D1_nobg3 = ef1D1_nobg.resample(ef1D1_nobg.time(3:3:end));
-ef1D1_nobg.data(1:3:end,:) = ef1D1_nobg1.data;
-ef1D1_nobg.data(2:3:end,:) = ef1D1_nobg2.data;
-ef1D1_nobg.data(3:3:end,:) = ef1D1_nobg3.data;
+if 1
+  ef1D1_nobg_smooth3 = ef1D1_nobg.smooth(3);
+  ef1D1_nobg_smooth6 = ef1D1_nobg.smooth(6);
+else
+  ef1D1_nobg1 = ef1D1_nobg.resample(ef1D1_nobg.time(1:3:end));
+  ef1D1_nobg2 = ef1D1_nobg.resample(ef1D1_nobg.time(2:3:end));
+  ef1D1_nobg3 = ef1D1_nobg.resample(ef1D1_nobg.time(3:3:end));
+  ef1D1_nobg.data(1:3:end,:) = ef1D1_nobg1.data;
+  ef1D1_nobg.data(2:3:end,:) = ef1D1_nobg2.data;
+  ef1D1_nobg.data(3:3:end,:) = ef1D1_nobg3.data;
+end
 %ef1D_orig = ef1D;
 %ef1D = ef1D_new;
 if 0
@@ -177,7 +182,7 @@ doPlot = 1;
 % Need to make for-loop for printing, since figure is done within script
 for iic = ic          
   figure(11)
-  c_eval('tsAccPot?_nobg_rel = find_acc_pot(ef1D?_nobg,''eint'',eint,''vint'',vint,''relativeminpeakprominence'',relativeminpeakprominence,''resample'',resample_timestep,''plot'',doPlot);',iic)
+  c_eval('tsAccPot?_nobg_rel = find_acc_pot(ef1D?_nobg.smooth(3),''eint'',eint,''vint'',vint,''relativeminpeakprominence'',relativeminpeakprominence,''resample'',resample_timestep,''plot'',doPlot);',iic)
   c_eval('tsAccVel?_nobg_rel = irf.ts_scalar(tsAccPot?_nobg_rel.time,sqrt(tsAccPot?_nobg_rel.data*units.e*2/units.me));',iic)
   hcf = gcf;   
   hcf.Position = [0 100 700 800];
@@ -193,9 +198,11 @@ for iic = ic
 end
  
 %% Plot
-hcg = figure(13);
-hcf.Position = [1400 100 700 800];
+hcf = figure(13);
+%hcf.Position = [1400 100 700 800];
 h = irf_plot(1);
+h(1).Position(1) = [0.14];
+h(1).Position(3) = [0.7];
 
 ylim = [-50 50];
 isub = 1;
@@ -264,16 +271,16 @@ if 1 % original fred
     hlegs = legend(h_,legends,'location','best');
     hlegs.Title.String = 'downsampled to:';
   end
-  legend(hleg,{'v_{acc}','v_{e||} (bulk)','v_{e,||}\pm v_{te,||}'},'box','on','location','southwest')
+  legend(hleg,{'v_{acc}','v_{e||} (bulk)','v_{e,||}\pm v_{te,||}'},'box','on','location','southeast')
   colormap(hca,'jet')
   hca.YLim = [-50 50];
   hca.FontSize = 14;
-  hca.Position(1) = 0.1;
-  hca.Position(3) = 0.8;
+  hca.Position(1) = 0.12;
+  hca.Position(3) = 0.75;
   hca.Position(2) = 0.2;
   hca.Position(4) = 0.7;
   
-  hcb.Position(1) = 0.91;
+  hcb.Position(1) = 0.89;
   hcb.Position(2) = 0.2;
   hcb.Position(4) = 0.7;
   hca.YTick = [-60:20:60];

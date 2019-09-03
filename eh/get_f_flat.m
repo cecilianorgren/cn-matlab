@@ -1,4 +1,5 @@
-function [F,Ffree,Ftrap] = get_f_flat(V,n,vt,vd,PHI,VPH,species)
+function varargout = get_f_flat(V,n,vt,vd,PHI,VPH,species)
+%function [F,Ffree,Ftrap] = get_f_flat(V,n,vt,vd,PHI,VPH,species)
 % [F,Ffree,Ftrap] = GET_F_FLAT(V,n,vt,vd,PHI,VPH)
 units = irf_units;
 if nargin > 6 && species == 1
@@ -41,7 +42,7 @@ itrap = setdiff(all_ind,ifree);
 iabove = find(V-VPH>0);
 ibelow = find(V-VPH<0);
 
-V0(iabove) = VPH(iabove) + ((V(iabove)-VPH(iabove)).^2 + 2*q*(PHI(iabove))/m).^0.5; % same as Schamel free streaming
+V0(iabove) = VPH(iabove) + ((V(iabove)-VPH(iabove)).^2 + 2*q*(PHI(iabove))/m).^0.5; % with proper substititions, same as Schamel free streaming
 V0(ibelow) = VPH(ibelow) - ((V(ibelow)-VPH(ibelow)).^2 + 2*q*(PHI(ibelow))/m).^0.5;
 V0(itrap) = NaN;
 
@@ -50,4 +51,15 @@ Ffree(ifree) = f0(V0(ifree));
 Ftrap(itrap) = fsep;
 F(ifree) = Ffree(ifree);
 F(itrap) = Ftrap(itrap);
+
+if nargout == 3
+  varargout{1} = F;
+  varargout{2} = Ffree;
+  varargout{3} = Ftrap;
+elseif nargout == 4
+  varargout{1} = F;
+  varargout{2} = Ffree;
+  varargout{3} = Ftrap;
+  varargout{4} = V0; 
+end
 end
