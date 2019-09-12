@@ -246,8 +246,9 @@ hlink.Targets(1).XLim = [-0.4 0.4];
 %% Remove electron background
 nSecondary = [0.5 1 1.5];
 nPhoto = 1;
+
 [eDist_nobg] = mms.remove_edist_background(ePDist1,'tint',tint_fred);
-c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''ZeroNaN'',0,''tint'',tint_fred);',1:numel(nSecondary))
+c_eval('[eDist_nobg?] = mms.remove_edist_background(ePDist1,''nSecondary'',nSecondary(?),''ZeroNaN'',0,''tint'',tint_fred);',1:numel(nSecondary))
 
 %% Reduced electron distribution
 eint = [00 40000];
@@ -268,7 +269,7 @@ tic; ef1D = eDist.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',
 tic; ef1D_nobg1 = eDist_nobg1.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
 tic; ef1D_nobg2 = eDist_nobg2.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
 tic; ef1D_nobg3 = eDist_nobg3.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
-tic; ef1D_nobg4 = eDist_nobg4.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
+%tic; ef1D_nobg4 = eDist_nobg4.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
 
 %% Plot timeseries and 4SC disprel
 npanels = 1;
@@ -290,7 +291,7 @@ if 1 % e psd vpar
   hca = h(isub); isub = isub + 1;
   position = hca.Position;
   vscale = 1e-3;
-  specrec = ef1D_nobg4.specrec('velocity_1D','10^3 km/s');
+  specrec = ef1D_nobg3.specrec('velocity_1D','10^3 km/s');
   specrec.p(specrec.p<1e-7) = NaN;  
   [~,hcb] = irf_spectrogram(hca,specrec);
   hold(hca,'on')

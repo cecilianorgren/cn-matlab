@@ -25,7 +25,20 @@ for icell = 1:numel(esw_data)
   esw_data{icell} = esw_data{icell}(ind_sorted);
 end
 
+doPlot = 0;
+doWrite = 1;
+doOverwrite = 1;
+%doAppend = 0;
+fileWrite = 'esw_properties_redo_dt.txt';
+dtmult = 1;
+% dt: c_eval('gseEdt? = irf_integrate(E?,tint_esw(1)+1*dt(?));');  % dtmult = 1 or 0
+if doOverwrite % wipe file
+  fid = fopen([matlabPath fileWrite],'w');  
+end
 %%
+% Data is appended to [matlabPath 'esw_properties_redo.txt'], so remember 
+% to remove data from that file if this is redone, or if the script stops
+% in the middle for some reason. If not data will be duplicated.
 redoesw = 1:numel(esw_data{end});
 for iesw = 1:numel(redoesw)  
   ii = redoesw(iesw);
@@ -37,7 +50,8 @@ for iesw = 1:numel(redoesw)
   
   %% Get ESW v, and potential
   dt_sampling_original = gseE1.time(2)-gseE1.time(1);
-  timeline = gseE1.tlim(tint_vicinity); timeline = tint_vicinity(1):0.5*dt_sampling_original:tint_vicinity(2);
+  timeline = gseE1.tlim(tint_vicinity); 
+  timeline = tint_vicinity(1):0.5*dt_sampling_original:tint_vicinity(2);
   c_eval('totE? = gseE?.tlim(tint_vicinity).resample(timeline);')
   c_eval('totE? = totE?.resample(timeline);')
   c_eval('E? = gseE?par.tlim(tint_vicinity).resample(timeline);')
@@ -64,7 +78,7 @@ for iesw = 1:numel(redoesw)
 
   % integrate only Epar and multiply with v_amplitude
   direction_sign = gseB1.resample(t_center).norm.dot(v_direction).data;
-  c_eval('gseEdt? = irf_integrate(E?,tint_esw(1));');  
+  c_eval('gseEdt? = irf_integrate(E?,tint_esw(1)+dtmult*dt(?));');  
   c_eval('gsePhi? = gseEdt?*v_amplitude*direction_sign;')
   c_eval('gsePhi?_detrend = gsePhi?; gsePhi?_detrend.data = detrend(gsePhi?_detrend.data,''linear'');')
 
@@ -81,18 +95,38 @@ for iesw = 1:numel(redoesw)
   esw.peaktopeak = l*2;
   esw.debye_length = [Ld1.resample(t_center).data Ld2.resample(t_center).data Ld3.resample(t_center).data Ld4.resample(t_center).data];
   esw.C = C;
+  %[mean(esw.phi_max) std(esw.phi_max)]
   %esw.phi_max
   
+  if 0 % plot
+    h = irf_plot(2);
+    colors = pic_colors('matlab');
+    
+    hca = irf_panel('E par');
+    irf_plot(hca,'E?','comp','dt',0*dt)
+    hca.YLabel.String = 'E par (mV/m)';
+    
+    hca = irf_panel('phi');
+    set(hca,'ColorOrder',colors)
+    irf_plot(hca,'gsePhi?','comp','dt',0*dt)
+    for ii=1:4; hpl = irf_pl_mark(hca,tint_esw(1)+1*dt(ii)); hpl.Color = colors(ii,:); end
+    hca.YLabel.String = '\phi (V)';
+    pause
+  end
+    
+  
   %% Write data to file
-  fid = fopen([matlabPath 'esw_properties_redo.txt'],'a+');
-  fprintf(fid,[data_format '\n'],...
-    tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
-    tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
-    t_center.utc,...                              % 5
-    v_xcorr,...                                   % 6 7 8
-    v_amplitude,...                               % 9
-    esw.phi_max,...                               % 10 11 12 13
-    esw.peaktopeak,...                            % 14
-    esw.C...                                      % 15 16 17 18
-  );
+  if doWrite
+    fid = fopen([matlabPath fileWrite],'a+');
+    fprintf(fid,[data_format '\n'],...
+      tint_vicinity(1).utc,tint_vicinity(2).utc,... % 1 2
+      tint_esw(1).utc,tint_esw(2).utc,...           % 3 4
+      t_center.utc,...                              % 5
+      v_xcorr,...                                   % 6 7 8
+      v_amplitude,...                               % 9
+      esw.phi_max,...                               % 10 11 12 13
+      esw.peaktopeak,...                            % 14
+      esw.C...                                      % 15 16 17 18
+    );
+  end
 end

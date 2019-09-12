@@ -16,6 +16,7 @@ c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
 c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 %c_eval('tic; gseE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_gse_brst_l2'',tint); toc',ic);
 %c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_par_epar_brst_l2'',tint); toc',ic);
 c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
@@ -34,10 +35,12 @@ c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
 c_eval('vte? = irf.ts_scalar(ne?.time,sqrt(2*units.eV*(facTe?.xx.data)./units.me)*1e-3); vte?.units = ''km/s'';',ic);
 c_eval('vte?par = vte?;',ic);
 c_eval('wpe? = irf.ts_scalar(ne?.time,sqrt(units.e^2*(ne?.data*1e6)/units.eps0/units.me)); wpe?.units = ''1/s'';',ic);
-c_eval('Lde? = vte?/wpe?/sqrt(2); lDe?.units = ''km'';');
+c_eval('Lde? = vte?/wpe?/sqrt(2); Lde?.units = ''km'';',ic);
 %c_eval('lDe? = irf.ts_scalar(ne?.time,sqrt(units.eps0*units.eV*(facTe?.xx.data)./(ne?.data*1e6)./(ne?.data*1e6)/units.e))*1e3; lDe?.units = ''km'';',ic);
+c_eval('Ld? = Lde?;',ic);
 
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 gseRav = 0.25*(gseR1 + gseR2 + gseR3 + gseR4);
 c_eval('facR? = irf_convert_fac(gseR?-gseRav,gseB?,[0 0 1]);',ic)
 c_eval('facB? = irf_convert_fac(gseB?,gseB?,[0 0 1]);',ic)
@@ -53,12 +56,12 @@ dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),
 matlabPath = [pathLocalUser '/MATLAB/cn-matlab/' dirNameMatlab '/'];
 
 %% % Load wave phase velocities (the ones obtained semi-manually)
-fid = fopen([matlabPath 'esw_properties_redo.txt'],'r');
+fid = fopen([matlabPath 'esw_properties_redo_dt.txt'],'r');
 data_format_read = '%s %s %s %s %s %f %f %f %f %f %f %f %f %f %f %f %f %f'; 
 esw_data = textscan(fid,[data_format_read]);
 fclose(fid)
 
-if 1 % load esw_properties_irf_4_v_gui.txt
+if 1 % Load esw_properties_irf_4_v_gui.txt
   fid = fopen([matlabPath 'esw_properties_irf_4_v_gui.txt'],'r');
   data_format_read = '%s %s %s %s %s %f %f %f %f %f %f %f %f %f %f %f %f %f'; 
   esw_data_ = textscan(fid,[data_format_read]);
@@ -67,14 +70,16 @@ if 1 % load esw_properties_irf_4_v_gui.txt
     esw_data{icell} = cat(1,esw_data{icell},esw_data_{icell});
   end
 end
-
+  
+% Sort by time
 all_t_center = EpochTT(char(esw_data{5}));
 [all_t_center_sorted,ind_sorted] = all_t_center.sort;
 
-for icell = 1:numel(esw_data)
+for icell = 1:numel(esw_data) 
   esw_data{icell} = esw_data{icell}(ind_sorted);  
 end
 
+% Put into TSeries
 tsVph = irf.ts_vec_xyz(char(esw_data{5}),[esw_data{6} esw_data{7} esw_data{8}]);
 tsVphpar = tsVph.dot(gseB1.norm.resample(tsVph));
 tsPhi = irf.ts_scalar(char(esw_data{5}),[esw_data{10} esw_data{11} esw_data{12} esw_data{13}]);
@@ -82,15 +87,23 @@ c_eval('tsVtrap? = irf.ts_scalar(char(esw_data{5}),sqrt(2*units.e*esw_data{9+?}/
 c_eval('vmin? = tsVphpar-tsVtrap?;',1:4)
 c_eval('vmax? = tsVphpar+tsVtrap?;',1:4)
 
+vtrap_max = max([tsVtrap1.data tsVtrap2.data tsVtrap3.data tsVtrap4.data],[],2);
+
 % average
 vmax = 0.25*(vmax1 + vmax2 + vmax3 + vmax4); vmax.name = 'av(vph+vtrap)';
 vmin = 0.25*(vmin1 + vmin2 + vmin3 + vmin4); vmin.name = 'av(vph-vtrap)';
 
-% max
-vmax_data = max([vmax1.data vmax2.data vmax3.data vmax4.data],[],2); 
-vmax = irf.ts_scalar(char(esw_data{5}),vmax_data); vmax.name = 'max(vph+vtrap)';
-vmin_data = min([vmin1.data vmin2.data vmin3.data vmin4.data],[],2);  
-vmin = irf.ts_scalar(char(esw_data{5}),vmin_data); vmin.name = 'min(vph-vtrap)';
+if 1 % choose maximum ranges
+  vmax_data = tsVphpar.data + vtrap_max;
+  vmin_data = tsVphpar.data - vtrap_max;
+  vmax = irf.ts_scalar(char(esw_data{5}),vmax_data); vmax.name = 'vph+max(vtrap)';
+  vmin = irf.ts_scalar(char(esw_data{5}),vmin_data); vmin.name = 'vph+min(vtrap)';
+else % max, this becomes wrong for cases when vmin is < 0
+  vmax_data = max([vmax1.data vmax2.data vmax3.data vmax4.data],[],2); 
+  vmax = irf.ts_scalar(char(esw_data{5}),vmax_data); vmax.name = 'max(vph+vtrap)';
+  vmin_data = min([vmin1.data vmin2.data vmin3.data vmin4.data],[],2);  
+  vmin = irf.ts_scalar(char(esw_data{5}),vmin_data); vmin.name = 'min(vph-vtrap)';
+end
 
 %% Find peak to peak scale and transverse instability condition (wb,wce)
 t1 = esw_data{3};
@@ -144,7 +157,8 @@ for icell = 1:numel(esw_data{1})
 end
 
 % remove outlier manually
-lpp(17,4) = mean(lpp(17,1:3));
+lpp(18,4) = mean(lpp(18,1:3))+2*std(lpp(18,1:3));
+
 tsLpp = irf.ts_scalar(char(esw_data{5}),lpp);
 tsLde = irf.ts_scalar(char(esw_data{5}),Lde_);
 tsTe = irf.ts_scalar(char(esw_data{5}),Te_);
@@ -155,7 +169,7 @@ tsK = irf.ts_scalar(char(esw_data{5}),k);
 tsK_max_inst = irf.ts_scalar(char(esw_data{5}),kmax_instability);
 
 
-%%
+%% Scatter plots of wave properties
 %scatter(wg(:),wb(:)); axis equal
 % Chen 2005, eq. 5 (1D)
 % phi and fun_delta are the normalized quantities here
@@ -234,7 +248,7 @@ if 0 % scatterhist, only ESWs within Tints, 1 point for each ESW, not normalized
   hleg.Location = 'NorthEast';
   hleg.Position(2) = 0.68;
 end
-if 1 % scatter plot with errorbar of std for each ESW
+if 0 % scatter plot with errorbar of std for each ESW
   % first acceleration channel: Tints  
   hca = subplot(1,1,1);
   datax = tsLpp.tlim(Tints).data;
@@ -279,6 +293,297 @@ if 1 % scatter plot with errorbar of std for each ESW
   hca.Position(2) = 0.25;
   hca.Position(3) = 0.7;
   hca.Position(4) = 0.7;
+end
+if 0 % 2 panels: scatter plot with errorbar of std for each ESW, also one panel with normalized values
+  % first acceleration channel: Tints  
+  h = setup_subplots(1,2);
+  hca = h(1);
+  datax = tsLpp.tlim(Tints).data;
+  datay = tsPhi.tlim(Tints).data;
+  
+  ndata = size(datax,1);
+  for idata = 1:ndata
+    X = mean(datax(idata,:));
+    Y = mean(datay(idata,:));
+    stdX = std(datax(idata,:));
+    stdY = std(datay(idata,:));
+    if 0
+      YNEG = min(datay(idata,:));
+      YPOS = max(datay(idata,:));
+      XNEG = min(datax(idata,:));
+      XPOS = max(datax(idata,:));
+    else
+      YNEG = stdY;
+      YPOS = stdY;
+      XNEG = stdX;
+      XPOS = stdX;
+    end
+    hplot = plot(hca,X,Y,'k.');
+    if idata == 1, hold(hca,'on'); end
+    errorbar(hca,X,Y,YNEG,YPOS,XNEG,XPOS,'linewidth',1.0,'color',hplot.Color)
+  end
+  hold(hca,'off')
+  
+  % main plot
+  hca.XLabel.String = 'l_{pp} (km)';
+  hca.YLabel.String = '\phi_{max} (V)';
+  hca.XLim(1) = 0;
+  hca.YLim(1) = 0; 
+  hca.Box = 'on';
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.XTick = 0:20:200;
+  hca.FontSize = 14;
+  
+  drawnow;
+  %hca.Position(1) = 0.2;
+  %hca.Position(2) = 0.25;
+  %hca.Position(3) = 0.7;
+  %hca.Position(4) = 0.7;
+  
+  hca = h(2);
+  datax_ = tsLpp.tlim(Tints).data;
+  datay_ = tsPhi.tlim(Tints).data;
+  datax_norm = tsLde.tlim(Tints).data;
+  datay_norm = tsTe.tlim(Tints).data;
+  
+  datax = datax./datax_norm;
+  datay = datay./datay_norm;
+  
+  ndata = size(datax,1);
+  for idata = 1:ndata
+    X = mean(datax(idata,:));
+    Y = mean(datay(idata,:));
+    stdX = std(datax(idata,:));
+    stdY = std(datay(idata,:));
+    if 0
+      YNEG = min(datay(idata,:));
+      YPOS = max(datay(idata,:));
+      XNEG = min(datax(idata,:));
+      XPOS = max(datax(idata,:));
+    else
+      YNEG = stdY;
+      YPOS = stdY;
+      XNEG = stdX;
+      XPOS = stdX;
+    end
+    hplot = plot(hca,X,Y,'k.');
+    if idata == 1, hold(hca,'on'); end
+    errorbar(hca,X,Y,YNEG,YPOS,XNEG,XPOS,'linewidth',1.0,'color',hplot.Color)
+  end
+  hold(hca,'off')
+  
+  % main plot
+  hca.XLabel.String = 'l_{pp}/\lambda_{De} ';
+  hca.YLabel.String = 'e\phi_{max}/T_e';
+  hca.XLim(1) = 0;
+  hca.YLim(1) = 0; 
+  hca.Box = 'on';
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.XTick = 0:10:200;
+  hca.FontSize = 14;
+  
+  drawnow;
+  
+  irf_legend(h(1),{'(a)'},[-0.2 1.01],'color',[0 0 0],'fontsize',16)
+  irf_legend(h(2),{'(b)'},[-0.2 1.01],'color',[0 0 0],'fontsize',16)
+end
+if 1 % 3 panels: scatter plot with errorbar of std for each ESW, also one panel with normalized values
+  % first acceleration channel: Tints  
+  h = setup_subplots(1,3);
+  isub = 1;
+  if 1 % vph vs lpp
+    hca = h(isub); isub = isub + 1;
+    datax = tsLpp.tlim(Tints).data;
+    datay = tsVphpar.tlim(Tints).data;
+    
+    disp(sprintf('Lpp [min mean max std] = [%g %g %g]',min(mean(datax,2)),mean(mean(datax,2)),max(mean(datax,2))))
+    disp(sprintf('Vphpar [min mean max] = [%g %g %g]',min(mean(datay,2)),mean(mean(datay,2)),max(mean(datay,2))))
+        
+    ndata = size(datax,1);
+    for idata = 1:ndata
+      X = mean(datax(idata,:));
+      Y = mean(datay(idata,:));      
+      stdX = std(datax(idata,:));
+      stdY = std(datay(idata,:));
+      if 0
+        YNEG = min(datay(idata,:));
+        YPOS = max(datay(idata,:));
+        XNEG = min(datax(idata,:));
+        XPOS = max(datax(idata,:));
+      else
+        YNEG = stdY;
+        YPOS = stdY;
+        XNEG = stdX;
+        XPOS = stdX;
+      end
+      hplot = plot(hca,X,Y*1e-3,'k.');
+      if idata == 1, hold(hca,'on'); end
+      errorbar(hca,X,Y*1e-3,0*YNEG*1e-3,0*YPOS*1e-3,1*XNEG,1*XPOS,'linewidth',1.0,'color',hplot.Color)
+    end
+    hold(hca,'off')
+
+    
+    % panel formatting
+    hca.XLabel.String = 'l_{pp} (km)';
+    hca.YLabel.String = 'v_{ph} (10^3 km/s)';
+    hca.XLim(1) = 0;
+    hca.XLim(2) = 150; 
+    hca.YLim(1) = 0; 
+    hca.YLim(2) = 40; 
+    
+    
+    hca.Box = 'on';
+    hca.XGrid = 'on';
+    hca.YGrid = 'on';
+    hca.XTick = 0:20:200;
+    hca.FontSize = 16;
+    drawnow;
+  end
+  if 0 % vtr vs vph
+    hca = h(isub); isub = isub + 1;
+    datax = tsVphpar.tlim(Tints).data;
+    c_eval('datay(:,?) = tsVtrap?.tlim(Tints).data;',1:4)
+    datay(2,3) = mean(datay(2,[1 2 4])); % manually override
+
+    ndata = size(datax,1);
+    for idata = 1:ndata
+      X = mean(datax(idata,:));
+      Y = mean(datay(idata,:));
+      stdX = std(datax(idata,:));
+      stdY = std(datay(idata,:));
+      if 0
+        YNEG = min(datay(idata,:));
+        YPOS = max(datay(idata,:));
+        XNEG = min(datax(idata,:));
+        XPOS = max(datax(idata,:));
+      else
+        YNEG = stdY;
+        YPOS = stdY;
+        XNEG = stdX;
+        XPOS = stdX;
+      end
+      hplot = plot(hca,X*1e-3,Y*1e-3,'k.');
+      if idata == 1, hold(hca,'on'); end
+      errorbar(hca,X*1e-3,Y*1e-3,YNEG*1e-3,YPOS*1e-3,0*XNEG*1e-3,0*XPOS*1e-3,'linewidth',1.0,'color',hplot.Color)
+    end
+    hold(hca,'off')
+
+    hold(hca,'on')
+    plot(hca,[0 40],[0 40],'color',[0.7 0.7 0.7])
+    hold(hca,'off')
+
+    % panel formatting
+    hca.XLabel.String = 'v_{ph} (10^3 km/s)';
+    hca.YLabel.String = 'v_{tr} (10^3 km/s)';
+    hca.XLim(1) = 0;
+    hca.YLim(1) = 0; 
+    hca.XLim(2) = 40;
+    hca.YLim(2) = 40; 
+    hca.Box = 'on';
+    hca.XGrid = 'on';
+    hca.YGrid = 'on';
+    hca.XTick = 0:10:200;
+    hca.FontSize = 16;
+    drawnow;
+  end
+  if 1 % phi vs lpp
+    hca = h(isub); isub = isub + 1;
+    datax = tsLpp.tlim(Tints).data;
+    datay = tsPhi.tlim(Tints).data;
+    
+    disp(sprintf('Lpp [min mean max] = [%g %g %g]',min(mean(datax,2)),mean(mean(datax,2)),max(mean(datax,2))))
+    disp(sprintf('phi [min mean max] = [%g %g %g]',min(mean(datay,2)),mean(mean(datay,2)),max(mean(datay,2))))
+    
+
+    ndata = size(datax,1);
+    for idata = 1:ndata
+      X = mean(datax(idata,:));
+      Y = mean(datay(idata,:));
+      stdX = std(datax(idata,:));
+      stdY = std(datay(idata,:));
+      if 0
+        YNEG = min(datay(idata,:));
+        YPOS = max(datay(idata,:));
+        XNEG = min(datax(idata,:));
+        XPOS = max(datax(idata,:));
+      else
+        YNEG = stdY;
+        YPOS = stdY;
+        XNEG = stdX;
+        XPOS = stdX;
+      end
+      hplot = plot(hca,X,Y,'k.');
+      if idata == 1, hold(hca,'on'); end
+      errorbar(hca,X,Y,YNEG,YPOS,XNEG,XPOS,'linewidth',1.0,'color',hplot.Color)
+    end
+    hold(hca,'off')
+
+    % main plot
+    hca.XLabel.String = 'l_{pp} (km)';
+    hca.YLabel.String = '\phi_{max} (V)';
+    hca.XLim(1) = 0;
+    hca.YLim(1) = 0; 
+    hca.Box = 'on';
+    hca.XGrid = 'on';
+    hca.YGrid = 'on';
+    hca.XTick = 0:20:200;
+    hca.FontSize = 16;
+
+    drawnow;
+  end
+  if 1 % ephi/Te vs lpp/lde
+    hca = h(isub); isub = isub + 1;
+    datax_ = tsLpp.tlim(Tints).data;
+    datay_ = tsPhi.tlim(Tints).data;
+    datax_norm = tsLde.tlim(Tints).data;
+    datay_norm = tsTe.tlim(Tints).data;
+
+    datax = datax./datax_norm;
+    datay = datay./datay_norm;
+    
+    disp(sprintf('Lpp/Lde [min mean max] = [%g %g %g]',min(mean(datax,2)),mean(mean(datax,2)),max(mean(datax,2))))
+    disp(sprintf('ephi/Te [min mean max] = [%g %g %g]',min(mean(datay,2)),mean(mean(datay,2)),max(mean(datay,2))))
+    
+
+    ndata = size(datax,1);
+    for idata = 1:ndata
+      X = mean(datax(idata,:));
+      Y = mean(datay(idata,:));
+      stdX = std(datax(idata,:));
+      stdY = std(datay(idata,:));
+      if 0
+        YNEG = min(datay(idata,:));
+        YPOS = max(datay(idata,:));
+        XNEG = min(datax(idata,:));
+        XPOS = max(datax(idata,:));
+      else
+        YNEG = stdY;
+        YPOS = stdY;
+        XNEG = stdX;
+        XPOS = stdX;
+      end
+      hplot = plot(hca,X,Y,'k.');
+      if idata == 1, hold(hca,'on'); end
+      errorbar(hca,X,Y,YNEG,YPOS,XNEG,XPOS,'linewidth',1.0,'color',hplot.Color)
+    end
+    hold(hca,'off')
+
+    % main plot
+    hca.XLabel.String = 'l_{pp}/\lambda_{De} ';
+    hca.YLabel.String = 'e\phi_{max}/T_e';
+    hca.XLim(1) = 0;
+    hca.YLim(1) = 0; 
+    hca.Box = 'on';
+    hca.XGrid = 'on';
+    hca.YGrid = 'on';
+    hca.XTick = 0:10:200;
+    hca.FontSize = 16;
+  end
+  irf_legend(h(1),{'(a)'},[-0.2 1.01],'color',[0 0 0],'fontsize',18)
+  irf_legend(h(2),{'(b)'},[-0.2 1.01],'color',[0 0 0],'fontsize',18)
+  irf_legend(h(3),{'(c)'},[-0.2 1.01],'color',[0 0 0],'fontsize',18)
 end
 
 if 0 % width-amplitude relationship
@@ -486,9 +791,12 @@ vph(removepts) = NaN;
 vphperp(removepts) = NaN;
 
 %% Remove electron background
+ic = 1;
 nSecondary = [0.5 1 1.5];
 nPhoto = 1;
 %[eDist_nobg] = mms.remove_edist_background(ePDist1.);
+% Done below also
+c_eval('eDist = ePDist?.tlim(Tints+[-5 5]);',ic) 
 c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''ZeroNaN'',0);',1:numel(nSecondary))
 
 
@@ -983,7 +1291,7 @@ end
 %% Plot timeseries and 4SC disprel
 npanels = 1;
 nrows = 1;
-ncols = 3;
+ncols = 3;  
 %h = subplot(nrows,ncols,[1 2]);
 %h2(1) = subplot(nrows,ncols,3);
 
@@ -1166,6 +1474,12 @@ end
 
 h.FontSize = fontsize;
 h2.FontSize = fontsize;
+
+h2.CLim = [-6 0];
+
+hleg_a = irf_legend(h(1),'(a)',[-0.06 0.99],'fontsize',18);
+%hleg_a = irf_legend(h2,'(a)',[-1.15 1.01],'fontsize',18);
+hleg_b = irf_legend(h2,'(b)',[-0.15 0.99],'fontsize',18);
 
 %% Plot timeseries and 4SC disprel, expanded for instability analysis
 npanels = 1;

@@ -252,7 +252,7 @@ c_eval('eDist = ePDist?.tlim(tint_fred);',ic)
 nSecondary = [1 2 3];
 nPhoto = 1;
 [eDist_nobg] = mms.remove_edist_background(ePDist1,'tint',tint_fred);
-c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''ZeroNaN'',0,''tint'',tint_fred);',1:numel(nSecondary))
+c_eval('[eDist_nobg?] = mms.remove_edist_background(ePDist1,''nSecondary'',nSecondary(?),''ZeroNaN'',0,''tint'',tint_fred);',1:numel(nSecondary))
 
 %% Reduced electron distribution
 eint = [00 40000];

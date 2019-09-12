@@ -16,12 +16,15 @@ if doLoadData
   c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
   c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 
+  c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
   c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
   c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
   c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
   c_eval('[ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
 
+  c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
   c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
+
   tint_fred = irf.tint('2017-07-06T08:16:37.00Z/2017-07-06T08:16:41.00Z');
   c_eval('eDist = ePDist?.tlim(tint_fred);',ic)
 
@@ -54,7 +57,7 @@ end
 %% f0
 units = irf_units;
 %n = [0.02 0.02]*1e6; % m-3
-n = 0.04*1e6;
+n = 0.035*1e6;
 T = 350; % eV
 vd = 0000e3; % ms-1 oa
 vt = sqrt(2*units.e*T./units.me); % m/s
@@ -72,13 +75,13 @@ t0 = 1.2; % s
 %nx = 100;
 %nt = 100;
 phimax = 2400; % 340
-vph = -15000e3;
+vph = -1*17000.0001e3;
 
 %x_vec = linspace(-3*lx,4*lx,nx);
 %t_vec = linspace(-3*lt,4*lt,nt);
 t_vec = eDist.time-eDist.time(1);
 nt = numel(t_vec);
-v_max = 60e6;
+v_max = 100e6;
 nv = 2000;
 v_vec = linspace(-v_max,v_max,nv);
 dv = v_vec(2)-v_vec(1);
@@ -87,7 +90,7 @@ dv = v_vec(2)-v_vec(1);
 
 %% Set up potential
 %phi = @(x,lx) phimax*(1+tanh(x/lx));
-phi = @(t,lt) phimax*(1+tanh((t-t0)/lt));
+phi = @(t,lt) phimax*0.5*(1+tanh((t-t0)/lt));
 U = units.me*(V-vph).^2/2 - units.e*double(phi(T,lt));
 %U = units.me*(V-vph).^2/2 - units.e*double(phi(X,lx));
 %PHI = repmat(tocolumn(double(phi(x_vec,lx))),1,nv);
@@ -109,9 +112,11 @@ v0 = @(t,v) vph + sign(v-vph).*((v-vph).^2-2*units.e*phi(t)./units.me).^0.5;
 %% Peform liouville mapping
 [Fflat,Fflat_free,Fflat_trap,V0] = get_f_flat(V,n,vt,vd,1*PHI,PHI*0+vph);
 F_ = Fflat_free;
-F_(V<vph) = NaN;
+F_(V<vph) = 0; % make it dark blue instead of white (NaN)
 n_ = nansum(F_,2)*dv;
 nfree_mod = nansum(Fflat_free,2)*dv;
+[n_lb,n_sep] = paper_electron_acceleration.liouville_mapped_nf(n0*1e-6,T0,0,phimax,-vph*1e-3)
+n_(end)*1e-6
 
 %% plot results
 tint_model = irf.tint('2017-07-06T08:16:37.00Z/2017-07-06T08:16:39.50Z');
@@ -119,13 +124,17 @@ ts_phi_mod = irf.ts_scalar(eDist.time,phi(t_vec,lt));
 ts_v_phi_mod = irf.ts_scalar(eDist.time,sqrt(2*units.e*phi(t_vec,lt)./units.me));
 ts_n_mod = irf.ts_scalar(eDist.time,n_*1e-6);
 ts_f_mod = PDist(eDist.time,flipdim(F_,2),'line (reduced)',v_vec*1e-3);
-ts_V0 = irf.ts_scalar(eDist.time,V0(:,1:20:end)'*1e-6);
+%ts_V0 = irf.ts_scalar(eDist.time,V0(:,1:20:end)'*1e-6);
+v_start = (-15:5:20)*1e3; v_start(v_start>-vph*1e-3) = [];
+ts_v0 = ts_get_v0(ts_phi_mod,-vph*1e-3,v_start);
+ts_v00 = ts_get_v0(ts_phi_mod,-vph*1e-3,0);
 
-nlim = [0.01 0.04];
-vlim = 40*[-1 1];
+
+nlim = [0.001 0.039];
+vlim = 39.9*[-1 1];
 flim = [-6 -2.5];
 
-nrows = 3;
+nrows = 5;
 ncols = 1;
 %h = setup_subplots(nrows,ncols);
 h = irf_plot(nrows);
@@ -134,8 +143,8 @@ isub = 1;
 
 if 0
   hca = h(isub); isub = isub + 1;
-  irf_plot(hca,ts_V0,'k')
-  hca.YLim = [-40 40];
+  irf_plot(hca,ts_v0*1e-3,'k')
+  %hca.YLim = [-40 40];
 end
 if 0
   hca = h(isub); isub = isub + 1;
@@ -155,21 +164,109 @@ if 1 % observed distribution
   hca.YLim = vlim;
   hca.CLim = flim;
   hold(hca,'on')
-  irf_plot(hca,-1*ts_v_phi_mod*1e-6,'k')
+  hve = irf_plot(hca,gseVe1par*0,'k:');
+  hve = irf_plot(hca,gseVe1par*1e-3,'k');
+  hve.LineWidth = 2;
+  irf_plot(hca,ts_v0*1e-3,'k')
   hold(hca,'off')
+  hca.YLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.Interpreter = 'tex';
 end
 if 1 % mapped distribution, ts
   hca = h(isub); isub = isub + 1;
   %fred_to_plot = ef1D_orig.tlim(tint_model);
   fred_to_plot = ts_f_mod;
-  irf_spectrogram(hca,fred_to_plot.specrec('velocity_1D','10^3 km/s'));
+  [~, hcb] = irf_spectrogram(hca,fred_to_plot.specrec('velocity_1D','10^3 km/s'));
+  hcb.YLabel.String = {'PSD','s/m^4'};
   irf_zoom(hca,'x',tint_model)
   colormap(hca,'jet')
   hca.YLim = vlim;
   hca.CLim = flim;
   hold(hca,'on')
-  irf_plot(hca,-1*ts_v_phi_mod*1e-6,'k')
+  irf_plot(hca,ts_v0*1e-3,'k')
   hold(hca,'off')
+  hleg = irf_legend(hca,{['\psi = ' sprintf('%.0f V',phimax)];['v_{\psi}^{lb} = ' sprintf('%.0f km/s',round(vph/1000))]},[0.50 0.92],'w');
+  hleg(1).Color = [1 1 1];
+  hleg(2).Color = [1 1 1];
+  hleg(1).HorizontalAlignment = 'left';
+  hleg(2).HorizontalAlignment = 'left';
+  hca.YLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.Interpreter = 'tex';
+end
+if 1 % f_obs-f_map (beam, same clim)
+  hca = h(isub); isub = isub + 1;
+  
+  fred_obs = ef1D_nobg.tlim(tint_model);
+  fred_mod = ts_f_mod.tlim(tint_model);
+  
+  % need to interpolate data to same velocities
+  % could also reduce it using different vg
+  [V_obs,T_obs] = meshgrid(fred_obs.depend{1}(1,:),1:fred_obs.length);
+  [V_mod,T_mod] = meshgrid(fred_mod.depend{1}(1,:),1:fred_mod.length);
+  data_fred_mod = fred_mod.data;  
+  data_fred_mod_interp = interp2(V_mod,T_mod,data_fred_mod,V_obs,T_obs);
+  
+  fred_to_plot = fred_obs;
+  fred_to_plot.data = -1*fred_to_plot.data + data_fred_mod_interp;
+  fred_to_plot_log = fred_to_plot; fred_to_plot_log.data = log10(abs(fred_to_plot.data)).*sign(fred_to_plot.data);
+  
+  %%
+  [~, hcb] = irf_spectrogram(hca,fred_to_plot_log.specrec('velocity_1D','10^3 km/s'),'lin');
+  hcb.YLabel.String = {'PSD','s/m^4'};
+  irf_zoom(hca,'x',tint_model)
+  colormap(hca,'jet')
+  hca.YLim = vlim;
+  %hca.CLim = max(abs(flim))*[-1 1];
+  %hca.CLim = 3e-3*[-1 1];
+  %hca.CLim = 6*[-1 1];
+  hca.CLim = flim;
+  hold(hca,'on')
+  irf_plot(hca,ts_v0*1e-3,'k')
+  hold(hca,'off')
+  hleg = irf_legend(hca,{['\psi = ' sprintf('%.0f V',phimax)];['v_{\psi}^{lb} = ' sprintf('%.0f km/s',round(vph/1000))]},[0.50 0.92],'w');
+  hleg(1).Color = [1 1 1];
+  hleg(2).Color = [1 1 1];
+  hleg(1).HorizontalAlignment = 'left';
+  hleg(2).HorizontalAlignment = 'left';
+  hca.YLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.Interpreter = 'tex';
+  %colormap(hca,pic_colors('blue_red'))
+end
+if 1 % f_obs-f_map ()
+  hca = h(isub); isub = isub + 1;
+  
+  fred_obs = ef1D_nobg.tlim(tint_model);
+  fred_mod = ts_f_mod.tlim(tint_model);
+  
+  % need to interpolate data to same velocities
+  % could also reduce it using different vg
+  [V_obs,T_obs] = meshgrid(fred_obs.depend{1}(1,:),1:fred_obs.length);
+  [V_mod,T_mod] = meshgrid(fred_mod.depend{1}(1,:),1:fred_mod.length);
+  data_fred_mod = fred_mod.data;  
+  data_fred_mod_interp = interp2(V_mod,T_mod,data_fred_mod,V_obs,T_obs);
+  
+  fred_to_plot = fred_obs;
+  fred_to_plot.data = fred_to_plot.data - data_fred_mod_interp;  
+  
+  %%
+  [~, hcb] = irf_spectrogram(hca,fred_to_plot.specrec('velocity_1D','10^3 km/s'));
+  hcb.YLabel.String = {'PSD','s/m^4'};
+  irf_zoom(hca,'x',tint_model)
+  colormap(hca,'jet')
+  hca.YLim = vlim;  
+  hca.CLim = 3e-3*[-1 1];
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hold(hca,'on')
+  irf_plot(hca,ts_v0*1e-3,'k')
+  hold(hca,'off')
+  hleg = irf_legend(hca,{['\psi = ' sprintf('%.0f V',phimax)];['v_{\psi}^{lb} = ' sprintf('%.0f km/s',round(vph/1000))]},[0.50 0.92],'w');
+  hleg(1).Color = [1 1 1];
+  hleg(2).Color = [1 1 1];
+  hleg(1).HorizontalAlignment = 'left';
+  hleg(2).HorizontalAlignment = 'left';
+  hca.YLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.Interpreter = 'tex';
+  colormap(hca,pic_colors('blue_red'))
 end
 if 0 % liouville mapped distribution
   hca = h(isub); isub = isub + 1;
@@ -193,11 +290,46 @@ if 0
   plot(hca,t_vec,n_*1e-6)
   hca.YLim = nlim;
 end
-if 1
+if 1 % densities, including partial densities
   hca = h(isub); isub = isub + 1;
+  
+  fred_obs = ef1D_nobg.tlim(tint_model);
+  fred_mod = ts_f_mod.tlim(tint_model);
+  
+  % need to interpolate data to same velocities
+  % could also reduce it using different vg
+  [V_obs,T_obs] = meshgrid(fred_obs.depend{1}(1,:),1:fred_obs.length);
+  [V_mod,T_mod] = meshgrid(fred_mod.depend{1}(1,:),1:fred_mod.length);
+  data_fred_mod = fred_mod.data;  
+  data_fred_mod_interp = interp2(V_mod,T_mod,data_fred_mod,V_obs,T_obs);
+  
+  fred_to_plot = fred_obs;
+  fred_to_plot.data = fred_to_plot.data - data_fred_mod_interp;  
+  
+  [V_dep,V_sep] = meshgrid(fred_obs.depend{1}(1,:),ts_v00.tlim(tint_model).data);
+  fred_passing = fred_obs;  
+  fred_trapped = fred_obs;
+  
+  fred_passing.data(V_depV_sep)
+  
+  
+  colors = pic_colors('matlab');
+  set(hca,'ColorOrder',colors(1:2,:));
   irf_plot(hca,{ne1.tlim(tint_model),ts_n_mod},'comp')
   irf_zoom(hca,'x',tint_model)
   hca.YLim = nlim;
+  hca.YLabel.String = 'n_e (cm^{-3})';
+  irf_legend(hca,{'FPI';'mapped'},[0.49 0.98])
+end
+if 1 % densities
+  hca = h(isub); isub = isub + 1;
+  colors = pic_colors('matlab');
+  set(hca,'ColorOrder',colors(1:2,:));
+  irf_plot(hca,{ne1.tlim(tint_model),ts_n_mod},'comp')
+  irf_zoom(hca,'x',tint_model)
+  hca.YLim = nlim;
+  hca.YLabel.String = 'n_e (cm^{-3})';
+  irf_legend(hca,{'FPI';'mapped'},[0.49 0.98])
 end
 if 0
   hca = h(isub); isub = isub + 1;
@@ -208,146 +340,6 @@ end
 irf_plot_axis_align(h)
 irf_zoom(h,'x',tint_model)
 
-%%
-if 0
-%%
-ntrap_flat_mod = nansum(Fflat_trap,2)*dv;
-ntrap_mod = ntot - torow(nfree_mod) + torow(dn(x_vec));
-dntrap_mod = ntrap_mod - torow(ntrap_flat_mod);
-[Fabel,Fabel_free,Fabel_trap] = get_f_abel(V,n,vt,vd,PHI,PHI*0+vph,dnt);
-Fabel = Fabel + Fflat_trap;              
-[Fabel_2,Fabel_free_2,Fabel_trap_2] = get_f_abel(V,n,vt,vd,PHI,PHI*0+vph,dntrap_mod);
-Fabel_2 = Fabel_2 + Fflat_trap;
-
-[fitresult, gof, fun_net, fun_net_prime] = createFit(double(phi(x_vec)), dnt);
-[fitresult_2, gof_2, fun_net_2, fun_net_prime_2] = createFit(double(phi(x_vec)), dntrap_mod);
-fun_net_str_cell = tokenize(char(fun_net_2),'+');
-fun_net_prime_str_cell = tokenize(char(fun_net_prime_2),'+');
-%fun_net_str = 
-%for ipol = 1:numel(fun_net_str_cell)
-  
-%[Fscha_mod,Fscha_free_mod,Fscha_trap_mod,beta_mod] = get_f_schamel(V_mod,n,vt,vd,PHI_mod,VPH_mod,ntrap_mod,beta_range);
-toc
-%% Plot results
-figure(95)
-nrows = 3;
-ncols = 4;
-npanels = nrows*ncols;
-isub = 0;
-for icol = 1:ncols
-  for irow = 1:nrows  
-    isub = isub + 1;         
-    h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
-  end
-end
-isub = 1;
-
-vlim = 30000e3;
-if 1 % phi(x)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec*1e-3,phi(x_vec))
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = '\phi (V)';
-end
-if 1 % E(x)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec*1e-3,E(x_vec)*1e-3)
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = 'E (mV/m)';
-end
-if 1 % dn(x)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec*1e-3,dn(x_vec)*1e-6)
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = '(\epsilon_0/e)\nabla^2\phi (cm^{-3})';
-end
-if 0 % f0(v)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,v_vec*1e-6,f0(v_vec))
-  hca.XLabel.String = 'v (10^{3} km/s)';
-  hca.YLabel.String = 'f_0 (s^1m^{-4})';
-  hca.XLim = [-20 20];
-end
-if 1 % v0(x,v)
-  hca = h(isub); isub = isub + 1;
-  contourf(hca,X*1e-3,V*1e-6,real(V0),31);
-  shading(hca,'flat');
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = 'v (10^3 km/s)';
-  hca.Title.String = 'v_{0}';
-  hca.YLim = [-20 20];
-  hca.CLim = max(abs(hca.CLim))*[-1 1];
-  colormap(hca,cn.cmap('blue_red'));
-end
-if 1 % ff(x,v)
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X*1e-3,V*1e-6,FF);
-  shading(hca,'flat');
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = 'v (10^3 km/s)';
-  hca.Title.String = 'f_{f}';
-  hca.YLim = [-20 20];
-end
-if 1 % n(x)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,x_vec*1e-3,ni+x_vec*0,x_vec*1e-3,ni+double(dn(x_vec)),x_vec*1e-3,nf,x_vec*1e-3,nt,x_vec*1e-3,(nansum(Fabel,2)*dv))
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = 'n (m^{-3})';
-  irf_legend(hca,{'n_i';'n_i+(\epsilon_0/e)\nabla^2\phi';'n_f';'n_t';'n_{mod}'},[0.98 0.8])  
-end
-if 1 % dn(x), phi(x)
-  hca = h(isub); isub = isub + 1;
-  ax = plotyy(hca,x_vec*1e-3,phi(x_vec),x_vec*1e-3,[nt;dnt]);  
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = '\phi (V)';
-  ax(2).YLabel.String = 'n (m^{-3})';
-  irf_legend(hca,{'\phi';'n_t';'n_t-n_{t,flat}'},[0.98 0.98])
-end
-if 1 % nt, dnt vs phi
-  hca = h(isub); isub = isub + 1;
-  plot(hca,phi(x_vec),nt,phi(x_vec),dnt,phi(x_vec),fun_net(phi(x_vec))) % dnt_flat = nt-nt_flat;
-  hca.XLabel.String = '\phi (V)';
-  hca.YLabel.String = 'n_t (m^{-3})';
-  irf_legend(hca,{'n_t-n_{t,flat}:';fun_net_str_cell},[0.98 0.95],'color',hca.Children(end-1).Color,'fontsize',8)
-  irf_legend(hca,{'n_t'},[0.01 0.98])
-end
-if 1 % dnt-dntfit
-  hca = h(isub); isub = isub + 1;
-  plot(hca,phi(x_vec),dnt-fun_net(phi(x_vec))) % dnt_flat = nt-nt_flat;
-  hca.XLabel.String = '\phi (V)';
-  hca.YLabel.String = 'n_t-n_t^{fit} (m^{-3})';
-  %irf_legend(hca,{'n_t-n_{t,flat}:';fun_net_str_cell},[0.98 0.95],'color',hca.Children(end-1).Color,'fontsize',8)  
-end
-if 1 % nt, dnt vs phi
-  hca = h(isub); isub = isub + 1;
-  plot(hca,phi(x_vec),fun_net_prime(phi(x_vec))) % dnt_flat = nt-nt_flat;
-  hca.XLabel.String = '\phi (V)';
-  hca.YLabel.String = 'd(n_t-n_{t,flat})/d\phi (m^{-3}/V)';
-  hleg = irf_legend(hca,{'n_t-n_{t,flat}:';fun_net_prime_str_cell},[0.98 0.85],'color',hca.Children(1).Color,'fontsize',8);
-  hleg(2).Interpreter = 'none';
-end
-if 1 % F obs, Abel
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X*1e-3,V*1e-6,Fabel)
-  shading(hca,'flat') 
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = 'v (10^3 km/s)';
-  hcb.YLabel.String = 'f_{Abel} (s^1m^{-4})';  
-  hca.YLim = vlim*[-1 1]*1e-6;
-  colormap(hca,cn.cmap('white_blue'))
-  hca.Title.String = 'Abel';    
-end
-if 1 % F obs, Abel
-  hca = h(isub); isub = isub + 1;
-  pcolor(hca,X*1e-3,V*1e-6,Fabel_2)
-  shading(hca,'flat') 
-  hcb = colorbar('peer',hca);
-  hca.XLabel.String = 'x (km)';
-  hca.YLabel.String = 'v (10^3 km/s)';
-  hcb.YLabel.String = 'f_{Abel} (s^1m^{-4})';  
-  hca.YLim = vlim*[-1 1]*1e-6;
-  colormap(hca,cn.cmap('white_blue'))
-  hca.Title.String = 'Abel 2';    
-end
-end
+irf_legend(h(1),'(d)',[0.02 0.85],'color',[0 0 0],'fontsize',16)
+irf_legend(h(2),'(e)',[0.02 0.97],'color',[1 1 1],'fontsize',16)
+irf_legend(h(3),'(f)',[0.02 0.6],'color',[0 0 0],'fontsize',16)

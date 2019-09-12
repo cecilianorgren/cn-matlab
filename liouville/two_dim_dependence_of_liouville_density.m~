@@ -3,8 +3,8 @@ n0 = 0.1;
 T0 = 100; 
 vt0 = sqrt(2*units.e*T0./units.me); % m/s
 v0 = 0;
-n_psi = 189; min_psi = 0.01; max_psi = 100*T0;
-n_vpsi = 129; min_vpsi = 0.01; max_vpsi = 10*vt0*1e-3; % km/s
+n_psi = 159; min_psi = 0.01; max_psi = 80*T0;
+n_vpsi = 100; min_vpsi = 0.01; max_vpsi = 10*vt0*1e-3; % km/s
 doLogspace = 1;
 if doLogspace
   psi = logspace(log10(min_psi),log10(max_psi),n_psi);
@@ -21,7 +21,6 @@ n_sep_map = zeros(n_psi,n_vpsi);
 v_lb_map = zeros(n_psi,n_vpsi);
 v_sep_map = zeros(n_psi,n_vpsi);
 
-tic;
 for i_psi = 1:n_psi
   fprintf('%g,',i_psi)
   for i_vpsi = 1:n_vpsi
@@ -35,7 +34,6 @@ for i_psi = 1:n_psi
   end
 end
 fprintf('\n')
-toc
 
 %% Calculate intersection between n and v lines
 % first load phi statistics: obtained from running paper_electron_acceleration.phi_acc_statistics
@@ -117,7 +115,7 @@ if 1 % contour plot n and v, overlaid, with normalization
   
   hold(hca,'on')
   colors = pic_colors('matlab');
-  sub_events = 10:13;
+  sub_events = 10:13
   plot(hca,xy_intersect(:,1),xy_intersect(:,2),'k+',...
            xy_intersect_min(:,1),xy_intersect_min(:,2),'ko',...
            [xy_intersect(:,1) xy_intersect_min(:,1)]',[xy_intersect(:,2) xy_intersect_min(:,2)]','color',colors(1,:),'linewidth',1.5)
@@ -146,7 +144,7 @@ parpperpratio = sqrt(units.mp/units.me);
 vparvt0 = xy_intersect(:,2);
 vparvt0_min = xy_intersect_min(:,2);
 vpar = vparvt0.*vt;
-vpar_min = vparvt0_min.*vt;
+vpar = vparvt0.*vt;
 vperpvt0 = vparvt0/parpperpratio;
 vperpvt0_min = vparvt0_min/parpperpratio;
 vperp = vperpvt0.*vt; % vt is m/s
