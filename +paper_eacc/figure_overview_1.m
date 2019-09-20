@@ -112,7 +112,7 @@ else
   gseJcurl = irf.ts_vec_xyz(gseB1.time,gseB1.data*NaN);
 end
 
-%% Fred
+%% Fred electrons
 eDist = ePDist1.tlim(tint_overview);
 ve = gseVe1.tlim(eDist.time).resample(eDist);
  % keep in mind that this also affects the velocity at lower energies
@@ -125,6 +125,21 @@ vg = -vgmax:1000:vgmax;
 vg(abs(vg)>70000) = [];
 nMC = 500;
 tic; ef1D = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
+%tic; ef1D_sep = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
+%tic; ef1D_sheet = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
+%tic; ef1D_lobe = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
+disp('Done.')
+
+%% Fred ions, for velocity dispersion
+iDist = iPDist1.tlim(tint_overview);
+vi = gseVi1.tlim(eDist.time).resample(eDist);
+ % keep in mind that this also affects the velocity at lower energies
+vgmax_ions = 2500;
+%vg = [-energies(end:-1:1) 0 energies];
+vg_ions = -vgmax_ions:100:vgmax_ions;
+lowerelim_ions = 200;
+nMC = 500;
+tic; if1D = iDist.reduce('1D',[1 0 0],'vg',vg_ions,'lowerelim',lowerelim_ions); toc % reduced distribution along B
 %tic; ef1D_sep = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
 %tic; ef1D_sheet = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
 %tic; ef1D_lobe = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'scpot',scpot,'lowerelim',lowerelim,'vg',vg); toc % reduced distribution along B
@@ -184,9 +199,9 @@ str_print(strfind(str_print,':'))=[];
 %% Get wave parameters for tint_phi interval
 
 %% Figure: Overview for paper
-figure(201)
-npanels_large = 7;
-npanels_zoom = 2;
+figure(202)
+npanels_large = 8;
+npanels_zoom = 1;
 npanels = npanels_large + npanels_zoom + 1;
 cmap = 'jet';
 %[h,h2] = initialize_combined_plot(npanels,3,2,0.4,'vertical'); % horizontal
@@ -235,6 +250,77 @@ if 1 % Vi  iisub = iisub + 1;
   hca.YLabel.String = {'v_i','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);     
+end
+if 0 % i DEF omni 64
+  iisub = iisub + 1;
+  hca = irf_panel('i DEF omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  hold(hca,'on')
+  %c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+  %lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+  hold(hca,'off')
+  hca.YLabel.String = {'E_i','(eV)'};   
+  colormap(hca,cmap) 
+end
+if 1 % i psd x
+  iisub = iisub + 1;
+  hca = irf_panel('fi reduced');
+  fred_min_ions = 1e-5;
+  fred_to_plot = if1D; fred_to_plot.data(fred_to_plot.data < fred_min_ions) = NaN;
+  irf_spectrogram(hca,fred_to_plot.specrec('velocity_1D'));  
+  hca.YLim = fred_to_plot.depend{1}(1,[1 end]);
+  
+  if 0 % ion bulk flow
+    hold(hca,'on')
+    h_vibulk = irf_plot(hca,gseVi1.x,'k');
+    hold(hca,'off')
+    hleg_vibulk = irf_legend(hca,{'v_{i,x,bulk}'},[0.98 0.85],'color',[0 0 0]); %hleg_vibulk.BackgroundColor = [1 1 1];   
+    hleg_vibulk.FontSize = 13;
+  end
+  hca.CLim = [-5 -0];
+  hca.YLim = 2400*[-1 1];
+  hca.YLim = [-1000 2400];
+    
+  if 1 % plot ion velocity dispersion line 1
+    % times and speeds obtained from
+    % [tt,vv] = get_time(2,'EpochTT');
+    tint_dispersion = irf.tint('2017-07-06T00:54:18.740920898Z/2017-07-06T00:54:19.212922607Z');
+    ion_speeds = [1360 900]+100;
+    ds_1 = velocity_dispersion('tv',tint_dispersion,ion_speeds);
+    hold(hca,'on')
+    hline = irf_plot(hca,ds_1.ts_dispersion);
+    hline.Color = [0 0 0];
+    hline.Marker = '.';
+    hline.LineWidth = 1.0;
+    hold(hca,'off')    
+  end
+  if 1 % plot ion velocity dispersion line 2
+    % times and speeds obtained from
+    % [tt,vv] = get_time(2,'EpochTT');
+    tint_dispersion = EpochTT(['2017-07-06T00:54:23.493710693Z';'2017-07-06T00:54:26.135219970Z';'2017-07-06T00:54:27.191823974Z']);
+    ion_speeds = [1780 1140 550];
+    ds_2 = velocity_dispersion('tv',tint_dispersion,ion_speeds);
+    hold(hca,'on')
+    hline = irf_plot(hca,ds_2.ts_dispersion);
+    hline.Color = [0 0 0];
+    hline.Marker = '.';
+    hline.LineWidth = 1.0;
+    hold(hca,'off')    
+  end
+  %irf_legend(hca,[num2str(fred_to_plot.ancillary.vint(1),'%.0f') '<v_\perp<' num2str(fred_to_plot.ancillary.vint(2),'%.0f')],[0.99 0.99],'color',1*[1 1 1])
+  %irf_legend(hca,['E_{e} >' num2str(lowerelim) ' eV'],[0.98 0.99],'color',0*[1 1 1],'fontsize',fontsize)
+  %irf_legend(hca,['f_{e} >' num2str(fred_min) ' s/m^4'],[0.98 0.70],'color',0*[1 1 1],'fontsize',fontsize)
+  hca.YLabel.String = {'v_{i,x}','(km/s)'}; 
+  hca.YLabel.Interpreter = 'tex';
+  hca.XGrid = 'off';
+  hca.YGrid = 'off';
+  hleg_disp = irf_legend(hca,{'dispersion';'signature'},[0.24 0.85],'color',[0 0 0]); 
+  c_eval('hleg_disp(?).FontWeight = ''bold'';',1:2); %hleg_disp.BackgroundColor = [1 1 1];    
+  c_eval('hleg_disp(?).FontSize = 11;',1:2);  
+  %hleg_disp.BackgroundColor = [1 1 1];  
+  %legend([h_vibulk hline],{'v_{i,x,bulk}','dispersion signature'},'location','southwest')
 end
 if 1 % Ve  
   iisub = iisub + 1;
@@ -411,7 +497,7 @@ if 1 % E par
   set(hca,'ColorOrder',mms_colors('xyza'))  
   hca.YLim = [-70 70];
 end
-if 1 % E perp
+if 0 % E perp
   iisub = iisub + 1;
   zoomy = [zoomy iisub];
   hca = irf_panel('E perp');
