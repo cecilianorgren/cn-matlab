@@ -126,6 +126,11 @@ switch phi_input
     ic = 1;
     %load /Users/cecilia/Data/20170706_135303_basic_eh
     tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
+    tint_load_data = tint_phi + [-3 3];
+    %c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint_load_data);',ic);
+    %c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint_load_data);',ic);
+    %c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+    
     t0 = tint_phi(1);
     ffilt = 30; % Hz
     c_eval('Etoint? = gseE?par;',ic)
@@ -303,7 +308,7 @@ FVdv_abel_mod_edi_180 = nansum(FVabel_mod(:,vind_edi_180),2)*dv;
 
 vv_ind = find(abs(V_obs(1,:)-vph)==min(abs(V_obs(1,:)-vph)));
 F_center = Fabel_obs(:,vv_ind);
-ff_ehcenter = ff(:,vv_ind);
+%ff_ehcenter = ff(:,vv_ind);
 %% Plot
 if 0 % plot 1
   figure(93)

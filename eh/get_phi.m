@@ -26,6 +26,26 @@ phi_detrend_shift_only_pos_vals.data(phi_detrend_shift_only_pos_vals.data<0) = 0
 
 phi = phi_detrend_shift_only_pos_vals.tlim(tint2);
 
+% Find time intervals for individual EHs
+% phi_detrend_shift_only_pos_vals.data<0
+ind_phi_0 = find(phi.data == 0);
+diff_tmp = diff(ind_phi_0);
+ind_phi_0(diff_tmp==1) = [];
+nPhi = numel(ind_phi_0)-1;
+
+stdPhi = std(phi.data);
+for iPhi = 1:nPhi
+  ind_tmp = (ind_phi_0(iPhi)+1):(ind_phi_0(iPhi+1)-1);
+  phi_tmp = phi.data(ind_tmp);
+  if max(phi_tmp) < 0.2*stdPhi
+    phi.data(ind_tmp) = 0;
+  end
+end
+
+
+% put very short intervals with low phi to zero.
+
+
 phi_progressive.Etoint = Etoint;
 phi_progressive.intEdt = intEdt;
 phi_progressive.ts_detrend_locs = ts_detrend_locs;
@@ -53,3 +73,4 @@ ancillary.t0 = t0;
 ancillary.tcenter = tcenter;
 ancillary.t_vec = t_vec;
 ancillary.x_vec = x_vec;
+%ancillary.ind_phi_0 = ind_phi_0;

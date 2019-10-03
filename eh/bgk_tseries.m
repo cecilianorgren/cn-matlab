@@ -80,7 +80,7 @@ fun_fit_all = cell(numel(obs_lpp),1);
 
 % F0
 if 1
-  [f0,params] = mms_20170706_135303.get_f0(1);
+  [f0,params] = mms_20170706_135303.get_f0(3);
   n = params.n;
   ntot = sum(n);
   R = n(1)/ntot;
@@ -97,6 +97,8 @@ else
   vt = sqrt(2*units.e*T./units.me); % m/s
   n0 = sum(n);
 end
+
+
 
 str_info = {'unperturbed f:';...
             ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
@@ -157,7 +159,8 @@ nfree_obs = nansum(Fflat_free_obs,2)*dv;
 ntrap_flat_obs = nansum(Fflat_trap_obs,2)*dv;
 ntrap_obs = ntot - torow(nfree_obs) + torow(dn_obs);
 dntrap_obs = ntrap_obs - torow(ntrap_flat_obs);
-[Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
+%[Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
+[Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel_split_by_phi_at_zero(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
 Fabel_obs = Fabel_obs + Fflat_trap_obs;              
 [Fscha_obs,Fscha_free_obs,Fscha_trap_obs,beta_obs] = get_f_schamel(V_obs,n,vt,vd,PHI_obs,VPH_obs,ntrap_obs,beta_range);
 
@@ -1008,7 +1011,49 @@ if 0%doPrint
   cn.print(sprintf('schamel_2F_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g_phishift%g',vph,ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta,phi_shift))
 end
 
+if 1 % average over time, comaprison to FPI
+  %%
+  figure(40)
+  hca = subplot(1,1,1);
+  clear h; 
+  isub = 1;
+  mod_f_average = mean(Fabel_obs,1);
+  mod_f0 = f0(v_vec,n,vd,vt);
+  
+  if 1 % F, 
+    hca = h(isub); isub = isub + 1;
+    v_scale = 1e-3;
+    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f_average,v_vec*v_scale*1e-3,mod_fmax_average,v_fpi*v_scale,f_fpi,'--');
+    hca.YLabel.String = {'f','(s^1/m^4)'};
+    hca.XLabel.String = {'v','(10^3 km/s)'};
+    hca.XLim = [-40 40];
+    str_lines = {'f_{mod}';'f_{mod,\phi=0}';'-- fpi';'-- fpi';'-- fpi';'-- fpi'};
+    %legend(hlines,str_lines)
+    irf_legend(hca,str_lines,[0.99 0.99])
+    str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+      ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+      ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+      sprintf('beta_{Schamel}=%g',beta);...
+      };
+    set(hca,'ColorOrder',zeros(10,3))
+    irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+    if 1 % EDI velocities                
+      hold(hca,'on')
+      all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                 -v_edi_minus; -v_edi_plus]*[1 1];
+       if 1
+         plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+         irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
+       end
+      hold(hca,'off')
+    end
+  end
+  if doPrint 
+  cn.print(sprintf('schamel_2F_average_vph%g_ntot%g_R%g_T1%g_T2%g_vd1%g_vd2%g_beta%g',ntot*1e-6,R,T(1),T(2),vd(1)*1e-3,vd(2)*1e-3,beta))
+end
+end
 if 0 % average over time, comaprison to FPI
+  %%
   figure(34)
   hca = subplot(nrows,3,[3 6 9]);
   clear h;
@@ -1088,7 +1133,7 @@ if 1 % plot, timeseries, for paper
       lines_EDI_minus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
       hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_minus(1).Color);  
       hold(hca,'off')
-      h_all_markings = [h_all_markings; lines_EDI_plus; lines_EDI_minus; hleg_EDI];
+      %h_all_markings = [h_all_markings; lines_EDI_plus; lines_EDI_minus; hleg_EDI];
       h_all_markings = [h_all_markings; lines_EDI_minus; hleg_EDI]; 
     end
     if 1 % model phase velocity
@@ -1161,7 +1206,7 @@ if 1 % plot, timeseries, for paper
     irf_plot(hca,ts_edi_flux180/f_scale,'color',colors(1,:));
     ax1 = hca;
     ax2 = axes('Position',get(ax1,'Position'));
-    irf_plot(ax2,fluxModel180/f_scale,'color',colors(2,:))      
+    irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale,'color',colors(2,:))      
     set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
     set(ax2,'YAxisLocation','right');
     set(ax2,'Color','none','box','off'); % color of axis      
@@ -1257,6 +1302,50 @@ if 1 % plot, timeseries, for paper
     irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
   end
   c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
+end
+if 1 % plot, time-averaged distributions, for paper  
+  %%
+  clear h;
+  figure(40)
+  h = subplot(1,1,1);   
+  isub = 1;
+  
+  mod_f_average = mean(Fabel_obs,1);
+  mod_f0 = f0(v_vec,n,vd,vt);
+  edist = ePDist1.tlim(tint_phi);
+  vg = -40e3:1000:40e3; % km/s
+  lowerelim = 100;
+  %ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
+  v_fpi = ef1D.depend{1}(1,:);
+  f_fpi = mean(ef1D.data,1);
+  if 1 % F, 
+    hca = h(isub); isub = isub + 1;
+    v_scale = 1e-3;
+    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f0,v_vec*v_scale*1e-3,mod_f_average,v_fpi*v_scale,1*f_fpi*1e0,'--');
+    hca.YLabel.String = {'f','(s^1/m^4)'};
+    hca.XLabel.String = {'v','(10^3 km/s)'};
+    hca.XLim = [-40 40];
+    str_lines = {'f_{mod}';'f_{mod,\phi=0}';'-- fpi';'-- fpi';'-- fpi';'-- fpi'};
+    %legend(hlines,str_lines)
+    irf_legend(hca,str_lines,[0.99 0.99])
+    str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+      ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+      ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+      sprintf('beta_{Schamel}=%g',beta);...
+      };
+    set(hca,'ColorOrder',zeros(10,3))
+    irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+    if 1 % EDI velocities                
+      hold(hca,'on')
+      all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                 -v_edi_minus; -v_edi_plus]*[1 1];
+       if 1
+         plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+         irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
+       end
+      hold(hca,'off')
+    end
+  end  
 end
 
 %% Find f at center of EH.
