@@ -3,8 +3,8 @@ n0 = 0.1;
 T0 = 100; 
 vt0 = sqrt(2*units.e*T0./units.me); % m/s
 v0 = 0;
-n_psi = 189; min_psi = 0.01; max_psi = 100*T0;
-n_vpsi = 129; min_vpsi = 0.01; max_vpsi = 10*vt0*1e-3; % km/s
+n_psi = 89; min_psi = 0.01; max_psi = 100*T0;
+n_vpsi = 69; min_vpsi = 0.01; max_vpsi = 10*vt0*1e-3; % km/s
 doLogspace = 1;
 if doLogspace
   psi = logspace(log10(min_psi),log10(max_psi),n_psi);
@@ -208,7 +208,7 @@ if 1 % scatter plot of vperp vs vA
 end
 
 %% Plot, first
-h = setup_subplots(2,1);
+h = setup_subplots(2,2);
 isub = 1;
 
 if 0 % colormap
@@ -252,8 +252,8 @@ if 1 % contour plot, with normalization
   %hold(hca,'off')  
 end
 
-%% Plot, contours of constant nmap/n0 and v
-h = setup_subplots(3,1);
+%% Plot, contours of constant nmap/n0 and v, and n*v
+h = setup_subplots(2,3);
 isub = 1;
 
 
@@ -289,7 +289,7 @@ if 1 % contour plot v, with normalization
   hca.YLabel.String = 'v_{\psi}/v_{t0}';
   %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);   
 end
-if 1 % contour plot n and v, overlaid, with normalization
+if 0 % contour plot n and v, overlaid, with normalization
   hca = h(isub); isub = isub + 1;
   [C,hc] = contour(hca,PSI/T0,VPSI*1e-3/(vt0*1e-6),n_sep_map*1e-6/n0,0:0.1:1,'r');
   %clabel(C,hc,'LabelSpacing',200);
@@ -306,17 +306,78 @@ if 1 % contour plot n and v, overlaid, with normalization
   %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);   
   hca.Position(3) = h(1).Position(3);
   
+  try
   hold(hca,'on')
   plot(hca,xy_intersect(:,1),xy_intersect(:,2),'k*',...
            xy_intersect_min(:,1),xy_intersect_min(:,2),'ko',...
            [xy_intersect(:,1) xy_intersect_min(:,1)],[xy_intersect(:,2) xy_intersect_min(:,2)])
   %plot(hca,xy_intersect_min(:,1),xy_intersect_min(:,2),'ko')
   hold(hca,'off')
-  
+  catch
+  end
   
   legend(hca,{'n/n_0 - const.',' v/v_{t0} - const.'},'location','northwest')
 end
 
+if 1 % contour plot n*v, with normalization
+  hca = h(isub); isub = isub + 1;
+  [C,hc] = contour(hca,PSI/T0,VPSI*1e-3/(vt0*1e-6),n_sep_map.*abs(v_sep_map)*1e-6/n0/vt0,0:0.2:3);  
+  clabel(C,hc,'LabelSpacing',100);
+  hb = colorbar('peer',hca);
+  hb.YLabel.String = 'n_e^{map}v_e^{map}/n_0v_{t0}';
+  hca.XLabel.String = '\psi/T_0';
+  hca.YLabel.String = 'v_{\psi}/v_{t0}';
+  %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);   
+end
+if 1 % contour plot, nsep/n0 and flux
+  hca = h(isub); isub = isub + 1;
+  [C,hc] = contour(hca,sqrt(PSI/T0),VPSI*1e-3/(vt0*1e-6),n_sep_map*1e-6/n0,0:0.1:1);
+  clabel(C,hc,'LabelSpacing',100);
+  hb = colorbar('peer',hca);
+  %hb.YLabel.String = 'n_e^{sep,map}/n^{lb}';
+  hb.YLabel.String = 'n^{map}/n_{0}';
+  hca.XLabel.String = 'v_{beam}/v_{t0} = (\psi/T_0)^{1/2}';
+  hca.YLabel.String = 'v_{\psi}/v_{t0}';
+  %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);
+  hold(hca,'on')
+end
+if 0 % contour plot n*v, with normalization
+  hca = h(isub); isub = isub + 1;
+  [C,hc] = contour(hca,sqrt(PSI/T0),VPSI*1e-3/(vt0*1e-6),n_sep_map.*abs(v_sep_map)*1e-6/n0/vt0,0:0.2:3);  
+  clabel(C,hc,'LabelSpacing',100);
+  hb = colorbar('peer',hca);
+  hb.YLabel.String = 'n_e^{map}v_e^{map}/n_0v_{t0}';
+  hca.XLabel.String = 'v_{beam}/v_{t0} = (\psi/T_0)^{1/2}';
+  hca.YLabel.String = 'v_{\psi}/v_{t0}';
+  %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);   
+end
+if 1 % contour plot v, with normalization
+  hca = h(isub); isub = isub + 1;
+  [C,hc] = contour(hca,sqrt(PSI/T0),VPSI*1e-3/(vt0*1e-6),abs(v_sep_map)/vt0,0:0.5:10);  
+  clabel(C,hc,'LabelSpacing',100);
+  hb = colorbar('peer',hca);
+  hb.YLabel.String = 'v_e^{map}/v_{t0}';
+  hca.XLabel.String = 'v_{beam}/v_{t0} = (\psi/T_0)^{1/2}';
+  hca.YLabel.String = 'v_{\psi}/v_{t0}';
+  %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);   
+end
+if 1 % contour plot, nsep/n0 and flux
+  hca = h(isub); isub = isub + 1;
+  [C,hc] = contour(hca,sqrt(PSI/T0),VPSI*1e-3/(vt0*1e-6),n_sep_map*1e-6/n0,0:0.1:1,'k');
+  clabel(C,hc,'LabelSpacing',100);
+  hb = colorbar('peer',hca);
+  hold(hca,'on')
+  [C,hc] = contour(hca,sqrt(PSI/T0),VPSI*1e-3/(vt0*1e-6),n_sep_map.*abs(v_sep_map)*1e-6/n0/vt0,0:0.2:3);  
+  %clabel(C,hc,'LabelSpacing',300);
+  hold(hca,'off')
+   
+  %hb.YLabel.String = 'n_e^{sep,map}/n^{lb}';
+  hb.YLabel.String = 'n_e^{map}v_e^{map}/n_0v_{t0}';
+   hca.XLabel.String = 'v_{beam}/v_{t0} = (\psi/T_0)^{1/2}';
+  hca.YLabel.String = 'v_{\psi}/v_{t0}';
+  %hca.Title.String = sprintf('n_0 = %.3f cm^{-3}, T0 = %.0f eV',n0,T0);
+  hold(hca,'on')
+end
 %% Plot, including phi/Tlb statistics
 % phi statistics obtained from running paper_electron_acceleration.phi_acc_statistics
 % available possibly relevant data
