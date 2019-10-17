@@ -39,6 +39,10 @@ for ievent = 1:nevents
   c_eval('beta?e = gsePe?.trace/3/PB?.resample(gsePe?);',ic)
   c_eval('beta?i = gsePi?.trace/3/PB?.resample(gsePi?);',ic)
   c_eval('beta? = beta?i + beta?e.resample(beta?i);',ic)
+  c_eval('vte?par = (2*units.eV*facTe?.xx/units.me).^.5*1e-3; vte?par.name = ''vtepar''; vte?par.units = ''km/s'';',ic)
+  c_eval('vte?perp = (2*units.eV*0.5*(facTe?.yy+facTe?.zz)/units.me).^.5*1e-3; vte?perp.name = ''vteperp''; vte?perp.units = ''km/s'';',ic)
+  
+
 
   %% Pick out reconnection quadrant: tail, Earth to the left
   quadrant = ones(2,2);  
@@ -133,7 +137,7 @@ for ievent = 1:nevents
   vg = -vgmax:1000:vgmax;
   vg(abs(vg)>70000) = [];
 
-  nMC = 500;
+  nMC = 200;
   
   c_eval('tic; ef1D?_orig = eDist?_orig.reduce(''1D'',dmpaB?.resample(eDist?_orig).norm,''scpot'',scPot?.resample(eDist?_orig),''lowerelim'',lowerelim,''nMC'',nMC,''vg'',vg); toc',ic) % reduced distribution along B
   c_eval('tic; ef1D?_nobg = eDist?_nobg.reduce(''1D'',dmpaB?.resample(eDist?_nobg).norm,''scpot'',scPot?.resample(eDist?_nobg),''lowerelim'',lowerelim,''nMC'',nMC,''vg'',vg); toc',ic) % reduced distribution along B
@@ -193,40 +197,82 @@ for ievent = 1:nevents
   c_eval('acc_pot?_orig_rel = max(tsAccPot?_orig_rel.data);',ic)
   c_eval('acc_pot?_nobg_rel = max(tsAccPot?_nobg_rel.data);',ic)
   
-  %% Plot acceleration potentials for all spacecraft
+  %% Plot figure of density fred, flux velocity etc
   c_eval('legends_mms{?,1} = sprintf(''mms %g'',?);',ic)
   
-  h = irf_plot(4);
+  ic = 1;
+  nPanels = 7;
+  h = irf_plot(nPanels);
   
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. nobg. rel.');
-    set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_nobg_rel,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
-    irf_legend(hca,legends_mms,[0.02 0.98])
+  if 1 % B
+    hca = irf_panel('B');
+    set(hca,'ColorOrder',mms_colors('xyz'))
+    irf_plot(hca,{gseB1.x,gseB1.y,gseB1.z},'comp')
+    hca.YLabel.String = {'B','(nT)'};
+    irf_legend(hca,{'x','y','z'},[0.02 0.98])
   end
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. nobg. abs.');
+  if 1 % ne
+    hca = irf_panel('ne');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_nobg_abs,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. abs.','(eV)'};
-    irf_legend(hca,legends_mms,[0.02 0.98])
+    irf_plot(hca,ne1,'comp')
+    hca.YLabel.String = {'n_e','(cm^{-3})'};    
+    hca.YLabel.Interpreter = 'tex';
+    irf_legend(hca,{sprintf('n_e^{lb} = %.3f cc',n_lobe)},[0.02 0.98])
+    
+    %ax2 = axes('Position',get(hca,'Position'));
+    %set(ax2,'XAxisLocation','top','xtick',[]); % remove 'xtick' if xticks required
+    %set(ax2,'YAxisLocation','right');
+    %set(ax2,'Color','none'); % color of axis
+
+    %yscale = n_lobe;
+    %ax2 = gca;
+    %ax2.YLim = hca.YLim/yscale;
+    %ax2.YLabel.String = 'n_e/n^{lb}';
   end
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. orig. rel.');
+  if 1 % Ve
+    hca = irf_panel('Ve');
+    set(hca,'ColorOrder',mms_colors('xyz'))
+    irf_plot(hca,{gseVe1.x,gseVe1.y,gseVe1.z},'comp')
+    hca.YLabel.String = {'v_e','(km/s)'};
+    irf_legend(hca,{'x','y','z'},[0.02 0.98])
+    irf_legend(hca,{sprintf('v_e^{lb} = %.0f km/s',cn_eV2v(Tepar_lobe,'eV'))},[0.02 0.1],'k')
+  end
+  if 1 % Te
+    hca = irf_panel('Te');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_orig_rel,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
-    irf_legend(hca,legends_mms,[0.02 0.98])
+    irf_plot(hca,{facTe1.xx,0.5*(facTe1.yy+facTe1.zz)},'comp')
+    hca.YLabel.String = {'Te','(eV)'};
+    irf_legend(hca,{'||','\perp'},[0.02 0.98])
   end
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. orig. abs.');
+  if 1 % ne
+    hca = irf_panel('ne/n_lb');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_orig_abs,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
-    irf_legend(hca,legends_mms,[0.02 0.98])
+    irf_plot(hca,ne1/n_lobe,'comp')
+    hca.YLabel.String = {'n_e/n_e^{lb}',''};    
+    hca.YLabel.Interpreter = 'tex';
+    irf_legend(hca,{sprintf('n_e^{lb} = %.3f cc',n_lobe)},[0.02 0.98])
   end
-  irf_zoom(h,'x',tint_phi_)
+  if 1 % Ve
+    hca = irf_panel('Ve/vtelbs');
+    set(hca,'ColorOrder',mms_colors('xyz'))
+    irf_plot(hca,{gseVe1.x/cn_eV2v(Tepar_lobe,'eV'),gseVe1.y/cn_eV2v(Tepar_lobe,'eV'),gseVe1.z/cn_eV2v(Tepar_lobe,'eV')},'comp')
+    hca.YLabel.String = {'v_e/v_{te}^{lb}',''};
+    irf_legend(hca,{'x','y','z'},[0.02 0.98])
+  end
+  if 1 % Ve
+    hca = irf_panel('ne/n_lb*Ve/vtelbs');
+    set(hca,'ColorOrder',mms_colors('xyz'))
+    toplot = gseVe1*ne1/cn_eV2v(Tepar_lobe,'eV')/n_lobe;
+    irf_plot(hca,{toplot.x,toplot.y,toplot.z},'comp')
+    hca.YLabel.String = {'n_ev_e/n_e^{lb}v_{te}^{lb}',''};
+    irf_legend(hca,{'x','y','z'},[0.02 0.98])
+  end
+  c_eval('irf_pl_mark(h(?),tint_lobe,''b'')',1:nPanels)
+  c_eval('irf_pl_mark(h(?),tint_sep,''y'')',1:nPanels)
+  
+  %irf_zoom(h,'x',tint_fred)
+  irf_zoom(h,'y')
+  h(1).Title.String = sprintf('MMS %g',ic);
   
   %% Plot Liouville mapping of lobe population, based on potential
   iicc = 1;

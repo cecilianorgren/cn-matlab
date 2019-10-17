@@ -133,7 +133,7 @@ for ievent = 1:nevents
   vg = -vgmax:1000:vgmax;
   vg(abs(vg)>70000) = [];
 
-  nMC = 500;
+  nMC = 200;
   
   c_eval('tic; ef1D?_orig = eDist?_orig.reduce(''1D'',dmpaB?.resample(eDist?_orig).norm,''scpot'',scPot?.resample(eDist?_orig),''lowerelim'',lowerelim,''nMC'',nMC,''vg'',vg); toc',ic) % reduced distribution along B
   c_eval('tic; ef1D?_nobg = eDist?_nobg.reduce(''1D'',dmpaB?.resample(eDist?_nobg).norm,''scpot'',scPot?.resample(eDist?_nobg),''lowerelim'',lowerelim,''nMC'',nMC,''vg'',vg); toc',ic) % reduced distribution along B
@@ -193,23 +193,24 @@ for ievent = 1:nevents
   c_eval('acc_pot?_orig_rel = max(tsAccPot?_orig_rel.data);',ic)
   c_eval('acc_pot?_nobg_rel = max(tsAccPot?_nobg_rel.data);',ic)
   
-  %% Plot acceleration potentials for all spacecraft
+  %% Plot figure of density fred, flux velocity etc
   c_eval('legends_mms{?,1} = sprintf(''mms %g'',?);',ic)
   
-  h = irf_plot(4);
+  nPanels = 6;
+  h = irf_plot(nPanels);
   
   if 1 % nobg_rel
-    hca = irf_panel('acc. pot. nobg. rel.');
+    hca = irf_panel('B');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_nobg_rel,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
-    irf_legend(hca,legends_mms,[0.02 0.98])
+    irf_plot(hca,gseB1,'comp')
+    hca.YLabel.String = {'B','(nT)'};
+    irf_legend(hca,{'x','y','z'},[0.02 0.98])
   end
   if 1 % nobg_rel
-    hca = irf_panel('acc. pot. nobg. abs.');
+    hca = irf_panel('n');
     set(hca,'ColorOrder',mms_colors('1234'))
     irf_plot(hca,tsAccPot_nobg_abs,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. abs.','(eV)'};
+    hca.YLabel.String = {'n','(cm^-3}})'};
     irf_legend(hca,legends_mms,[0.02 0.98])
   end
   if 1 % nobg_rel
