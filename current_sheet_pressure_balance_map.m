@@ -15,13 +15,17 @@ maxTi = 10000;
 vecTi = linspace(minTi,maxTi,nTi);
 
 nN = 100;
-minN= 0.1*1e-6;
-maxN = 1*1e-6;
+minN= 0.1*1e6;
+maxN = 1*1e6;
 vecN = linspace(minN,maxN,nN);
 
 [N,T] = meshgrid(vecN,vecTi);
 
 hca = subplot(1,1,1);
 P = fun_P(N,T);
-contour(hca,N,T,P');
-colorbar('peer',hca)
+[c,hclab] = contour(hca,N*1e-6,T,P'*1e9);
+clabel(c,hclab)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'P (nPa)';
+hca.XLabel.String = 'n (cm^{-3})';
+hca.YLabel.String = 'T_i (eV)';

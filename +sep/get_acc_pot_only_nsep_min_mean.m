@@ -16,9 +16,13 @@ for ievent = 1:nevents
   ic = 1:4;
   units = irf_units;
   % Core data   
+  c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
   c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
   %c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
-
+  c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
+  c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
+  
+  c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)  
   %% Pick out parameters in the lobe, sheet, and separatrix intervals
   ic_orig = ic;
   ic = 1; 

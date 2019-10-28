@@ -3,8 +3,8 @@ n0 = 0.1;
 T0 = 100; 
 vt0 = sqrt(2*units.e*T0./units.me); % m/s
 v0 = 0;
-n_psi = 89; min_psi = 0.01; max_psi = 100*T0;
-n_vpsi = 69; min_vpsi = 0.01; max_vpsi = 10*vt0*1e-3; % km/s
+n_psi = 69; min_psi = 0.001; max_psi = 25*T0;
+n_vpsi = 109; min_vpsi = 0.001; max_vpsi = 10*vt0*1e-3; % km/s
 doLogspace = 1;
 if doLogspace
   psi = logspace(log10(min_psi),log10(max_psi),n_psi);
@@ -36,6 +36,14 @@ for i_psi = 1:n_psi
 end
 fprintf('\n')
 toc
+
+
+% Calculate intersection between n and nv lines
+Nmap = n_sep_map*1e-6/n0;
+Vmap = abs(v_sep_map)/(vt0);
+NVmap = Nmap.*Vmap;%(n_sep_map*1e-6/n0).*(abs(v_sep_map)*1e-3/(vt0*1e-6));
+
+%vv = intersection_2d(sqrt(PSI/T0),VPSI*1e-3/(vt0*1e-6),Nmap,NVmap,1,0.5,'plot');
 
 %% Calculate intersection between n and v lines
 % first load phi statistics: obtained from running paper_electron_acceleration.phi_acc_statistics

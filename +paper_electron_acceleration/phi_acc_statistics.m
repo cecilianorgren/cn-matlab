@@ -9,6 +9,7 @@ egedal.beta_lobe = [0.003 0.003 0.001 0.008 0.004 0.03 0.003 0.0003 0.001 0.0009
 egedal.beta_inflow = [0.008 0.21 0.026 0.018 0.22 0.15 0.011 0.038 0.034 0.054 0.030 0.0048 0.12 0.51 0.0094 0.064 0.011 0.017];
 
 %% Get data from MMS events
+units = irf_units;
 localuser = datastore('local','user');
 saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential/'];
 printAccPotPath = ['/Users/' localuser '/GoogleDrive/Research/Separatrix_acceleration_events/acceleration_potential/'];
@@ -23,6 +24,7 @@ for ievent = 1:nevents
   sep.get_tints;
   load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')
   load(sprintf('%s/acc_n_data_event_%g',saveAccPotPath,event),'acc_n_data') % includes minimum density within acceleration channel
+  load(sprintf('%s/acc_nv_data_event_%g',saveAccPotPath,event),'acc_nv_data') % includes minimum density within acceleration channel
   tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_abs;
   tsAccPot = tsAccPot_nobg_abs;
   
@@ -38,12 +40,19 @@ for ievent = 1:nevents
     teperp_sheet(ievent,ic) = acc_pot_data.Teperp_sheet;
     te_lobe(ievent,ic) = (acc_pot_data.Tepar_lobe + 2*acc_pot_data.Teperp_lobe)/3;
     te_sheet(ievent,ic) = (acc_pot_data.Tepar_sheet + 2*acc_pot_data.Teperp_sheet)/3;
+    vte_lobe = 1e-3*sqrt(2*units.eV*te_lobe/units.me);
+    vtepar_lobe = 1e-3*sqrt(2*units.eV*tepar_lobe/units.me);
 
     ne_lobe(ievent,ic) = acc_pot_data.n_lobe;
     ne_sep(ievent,ic) = acc_pot_data.n_sep;
     ne_sheet(ievent,ic) = acc_pot_data.n_sheet;
     
     ne_sep_min(ievent,ic) = acc_n_data.n_sep_min;
+    
+    ne_sep_min_resamp(ievent,ic) = acc_nv_data.n_sep_min(ic);
+    ve_sep_max_resamp(ievent,ic) = acc_nv_data.ve_sep_max_resamp(ic);
+    flux_sep_max_resamp(ievent,ic) = acc_nv_data.flux_sep_max_resamp(ic);
+    ve_sep_max_resamp(ievent,ic) = acc_nv_data.ve_sep_max_resamp(ic);
     
     B_lobe_(ievent,ic) = acc_pot_data.B_lobe;
     
@@ -130,6 +139,25 @@ if 0 % print out data as should be inserted in table in paper
     disp(str)
   end 
 end
+
+%% Figure for presentation
+hca = subplot(1,1,1);
+nn = ne_sep_min_resamp./ne_lobe;
+vv = abs(ve_sep_max_resamp)./vte_lobe; 
+[NN,VV] = meshgrid(0:0.02:1,0:0.1:6);
+ff = abs(flux_sep_max_resamp)./vte_lobe./ne_lobe;
+scatter(hca,vv,nn,ff*1000)
+hold(hca,'on')
+[cc,hh] = contour(hca,0:0.1:6,0:0.02:1,NN'.*VV',0.1:0.1:0.5,'k');
+clabel(cc,hh,'LabelSpacing',300)
+hold(hca,'off')
+hca.XLabel.String = 'v_{||}/v_{te0}';
+hca.YLabel.String = 'n/n_{0}';
+box(hca,'on')
+hca.XLim(1) = 0;
+hca.YLim(1) = 0;
+hca.XLim(2) = 4;
+hca.YLim(2) = 0.7;
 
 %% Figure for paper
 figure(42)
