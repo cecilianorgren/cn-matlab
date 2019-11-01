@@ -20,15 +20,18 @@ end
 doPlot = 1;
 if doPlot
   fig = figure(42);
-  fig.Position = [1000,929,1307,600];
+  fig.Position = [200,200,1307,600];
   npanels = 4;
   [h,h2] = initialize_combined_plot(npanels,2,1,0.6,'vertical'); % horizontal
 end
       
+c_eval('n?_mom_fpi = ne?.resample(ef1D.time).data;',1:4)
+n_mom_fpi = mean([n1_mom_fpi,n2_mom_fpi,n3_mom_fpi,n4_mom_fpi],2);
+
 % run through all and get correlation
 for i_vph = 1:n_vph_all
   for i_phi_mult = 1:n_phi_mult_all
-    for i_iff = 2%1:n_iff_all %3%[3 8] % 
+    for i_iff = 1:n_iff_all %3%[3 8] % 
       % Pick out data from cell matrix, just for ease of reading code.
       ts_n_mod = n_all{i_vph,i_phi_mult,i_iff}{2};
       ts_n_obs = n_all{i_vph,i_phi_mult,i_iff}{1};
@@ -38,7 +41,8 @@ for i_vph = 1:n_vph_all
       common_v_vec = psd_all{i_vph,i_phi_mult,i_iff}{3}{1}; %  from observations, fewer points
       f0_mod_resamp =  interp1(psd_all{i_vph,i_phi_mult,i_iff}{1}{1},psd_all{i_vph,i_phi_mult,i_iff}{1}{2},common_v_vec);
       fav_mod_resamp = interp1(psd_all{i_vph,i_phi_mult,i_iff}{2}{1},psd_all{i_vph,i_phi_mult,i_iff}{2}{2},common_v_vec);
-      f_diff_ampl = abs(fav_mod_resamp-mean(psd_all{i_vph,i_phi_mult,i_iff}{3}{2},1)).^1;      
+      f_fpi_mean = mean(psd_all{i_vph,i_phi_mult,i_iff}{3}{2},1);
+      f_diff_ampl = abs(fav_mod_resamp-f_fpi_mean).^1;      
       v_incl = [-40 -6]; % range of velocities to include in comparison
       v_ind = intersect(find(common_v_vec>=v_incl(1)),find(common_v_vec<=v_incl(2))); % including boundaries
       
@@ -106,8 +110,16 @@ for i_vph = 1:n_vph_all
         hca.YLabel.String = 'f (s/m^4)';      
         hca.XLim = 40*[-1 1];
         hca.YLim = [0 3.5*1e-3];
-        legend(hca,{'f_0','<f^{mod}>','f^{fpi}','f^{fpi}','f^{fpi}','f^{fpi}','<f^{fpi}>'})
-
+        %legend(hca,{'f_0','<f^{mod}>','f^{fpi}','f^{fpi}','f^{fpi}','f^{fpi}',sprintf('<f^{fpi}>: n = %.4f cc',sum(f_fpi_mean))})
+        legend(hca,{sprintf('f_0: n = %.3f cc',sum(f0_mod_resamp)),...
+          sprintf('<f^{mod}>: n = %.3f cc',sum(fav_mod_resamp)),...
+          sprintf('f^{fpi}: n = %.3f cc, n_{fpi} = %.3f cc',sum(psd_all{i_vph,i_phi_mult,i_iff}{3}{2}(1,:)),n1_mom_fpi(1)),...
+          sprintf('f^{fpi}: n = %.3f cc, n_{fpi} = %.3f cc',sum(psd_all{i_vph,i_phi_mult,i_iff}{3}{2}(2,:)),n1_mom_fpi(2)),...
+          sprintf('f^{fpi}: n = %.3f cc, n_{fpi} = %.3f cc',sum(psd_all{i_vph,i_phi_mult,i_iff}{3}{2}(3,:)),n1_mom_fpi(3)),...
+          sprintf('f^{fpi}: n = %.3f cc, n_{fpi} = %.3f cc',sum(psd_all{i_vph,i_phi_mult,i_iff}{3}{2}(4,:)),n1_mom_fpi(4)),...          
+          sprintf('<f^{fpi}>: n = %.3f cc',sum(f_fpi_mean))})
+        irf_legend(hca,{sprintf('lowerelim = %g eV',lowerelim)},[0.02 0.98])
+        
         % Difference
         hca = h2(isub); isub = isub + 1; hold(hca,'off')      
         plot(hca,common_v_vec,f_diff_ampl,'linewidth',1.5)
@@ -125,8 +137,8 @@ for i_vph = 1:n_vph_all
         hca.YGrid = 'on';
         legend(hca,{'entire diff','included for correlation'})
         irf_legend(hca,{['\Sigma_v' sprintf('|<f^{mod}>-<f^{fpi}>|^2 = %g',corr_f_tmp)]},[0.02 0.98])
-        %cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))
-        pause
+        cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))
+        %pause
         
       end
     end

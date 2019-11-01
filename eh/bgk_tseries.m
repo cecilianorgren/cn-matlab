@@ -1601,7 +1601,7 @@ if 1 % 1 % plot, timeseries and averaged, for diagnostics
   mod_f0 = f0(v_vec,n,vd,vt);
   edist = ePDist1.tlim(tint_phi);
   vg = -40e3:1000:40e3; % km/s
-  lowerelim = 30;
+  lowerelim = 50;
   ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
   v_fpi = ef1D.depend{1}(1,:);
   f_fpi = mean(ef1D.data,1);
