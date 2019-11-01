@@ -1,4 +1,4 @@
-function [Fsave,Ffreesave,Ftrapsave] = get_f_abel(V,n,vt,vd,PHI,VPH,nt)  
+function [Fsave,Ffreesave,Ftrapsave] = get_f_abel_split_by_phi_at_zero(V,n,vt,vd,PHI,VPH,nt)  
 % [F,Ffree,Ftrap] = GET_F_ABEL(V,n,vt,vd,PHI,VPH,nt);  
 
 units = irf_units;
@@ -8,7 +8,7 @@ nx = size(PHI,1);
 v = V(1,:);
 dv = v(2) - v(1);
 
-% find where phi = 0
+% find where phi = 0 (bug, does not work if phi is not 0 anywhere...)
 ind_phi_0 = find(phi == 0);
 if ind_phi_0(1) > 1; ind_phi_0 = [1 ind_phi_0]; end
 if ind_phi_0(end) < nx 1; ind_phi_0 = [ind_phi_0 nx]; end

@@ -1,8 +1,31 @@
 %% Set up grid and phi
+% diff in flux
+
+vph_all = [-9000*1e3 -10000*1e3];
+phi_mult_all = [1.0 1.5];
+iff_all = 1:17;
+
+n_vph_all = numel(vph_all);
+n_phi_mult_all = numel(phi_mult_all);
+n_iff_all = numel(iff_all);
+
+flux_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
+psd_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
+n_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
+
+for i_vph = 1:n_vph_all
+for i_phi_mult = 1:n_phi_mult_all
+for i_iff = 1:n_iff_all
+vph = vph_all(i_vph);
+phi_mult = phi_mult_all(i_phi_mult);
+iff = iff_all(i_iff);
+  
 units = irf_units;
 mms_id = 1;
 tint_all = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
 tint = tint_all;
+
+scPot = double(mean(scPot1.tlim(tint_phi).data));
 
 % Set velocity grid
 vmax = 90000e3;
@@ -13,8 +36,8 @@ dv = v_vec(2) - v_vec(1);
 % Get EDI data
 %mms.load_data_edi;
 
-% EDI energy and corresponding velocity
-E_edi = 500; % eV
+%% EDI energy and corresponding velocity
+E_edi = 500 - 0*scPot; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
 dE_edi = 25; % eV
 
@@ -26,20 +49,20 @@ v_edi_plusminus = v_edi_plus-v_edi_minus;
 dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
-
+%%
 % EDI flux
 edi_nodes = 1;
-if 0
-  c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint).time,mean(flux180_mms?.tlim(tint).data(:,edi_nodes),2));')
-  c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint).time,mean(flux0_mms?.tlim(tint).data(:,edi_nodes),2));')
-  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
-  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
-else  
+% if 0
+%   c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint).time,mean(flux180_mms?.tlim(tint).data(:,edi_nodes),2));')
+%   c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint).time,mean(flux0_mms?.tlim(tint).data(:,edi_nodes),2));')
+%   c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
+%   c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
+% else  
   c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
   c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
-  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
-  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
-end
+  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
+  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
+% end
 
 % Indices corresponding to edi energy/velocity interval
 vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
@@ -63,13 +86,15 @@ c_eval('obs_vph = obs_vph?;',mms_id)
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
 % Get potential from Efield
-vph = -9000*1e3;    
+%vph = -9000*1e3;    
 tsVph = irf.ts_scalar(tint_all,vph*ones(tint_all.length,1));
 tint_single = tint_all;
 tint_utc = tint_single.utc;
 c_eval('Epar = gseE?par;',mms_id)
 [phi,phi_progressive,phi_ancillary] = get_phi(Epar,vph,tint_all,tint_single);
-  
+
+%phi_add = 50; % bugged at the moment
+phi = phi*phi_mult;%+phi_add; 
 
 
 dntrap_all = cell(numel(obs_lpp),1);
@@ -80,13 +105,16 @@ fun_fit_all = cell(numel(obs_lpp),1);
 
 % F0
 if 1
-  [f0,params] = mms_20170706_135303.get_f0(3);
+  %iff = 17;
+  [f0,params] = mms_20170706_135303.get_f0(iff);
   n = params.n;
   ntot = sum(n);
   R = n(1)/ntot;
   T = params.T;
   vd = params.vd;
   vt = params.vt;
+  n0 = sum(n);
+  ff4 = f0(v_vec,n,vd,vt);
 else
   n = [0.02 0.02]*1e6; % m-3
   ntot = sum(n);
@@ -162,9 +190,9 @@ dntrap_obs = ntrap_obs - torow(ntrap_flat_obs);
 %[Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
 [Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel_split_by_phi_at_zero(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
 Fabel_obs = Fabel_obs + Fflat_trap_obs;              
-[Fscha_obs,Fscha_free_obs,Fscha_trap_obs,beta_obs] = get_f_schamel(V_obs,n,vt,vd,PHI_obs,VPH_obs,ntrap_obs,beta_range);
+%[Fscha_obs,Fscha_free_obs,Fscha_trap_obs,beta_obs] = get_f_schamel(V_obs,n,vt,vd,PHI_obs,VPH_obs,ntrap_obs,beta_range);
 
-FVscha_obs = Fscha_obs.*V_obs;
+%FVscha_obs = Fscha_obs.*V_obs;
 FVabel_obs = Fabel_obs.*V_obs;
 
 % Set up specrec for plotting
@@ -1097,7 +1125,7 @@ if 0 % average over time, comaprison to FPI
 end
 end
 end
-if 1 % plot, timeseries, for paper
+if 0 % 1 % plot, timeseries, for paper
   %%
   fig = figure(39);
   npanels = 5;
@@ -1207,6 +1235,7 @@ if 1 % plot, timeseries, for paper
     ax1 = hca;
     ax2 = axes('Position',get(ax1,'Position'));
     irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale,'color',colors(2,:))      
+    %irf_plot(ax2,fluxModel180/f_scale,'color',colors(2,:))      
     set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
     set(ax2,'YAxisLocation','right');
     set(ax2,'Color','none','box','off'); % color of axis      
@@ -1303,7 +1332,7 @@ if 1 % plot, timeseries, for paper
   end
   c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
 end
-if 1 % plot, time-averaged distributions, for paper  
+if 0 % 1 % plot, time-averaged distributions, for paper  
   %%
   clear h;
   figure(40)
@@ -1314,24 +1343,29 @@ if 1 % plot, time-averaged distributions, for paper
   mod_f0 = f0(v_vec,n,vd,vt);
   edist = ePDist1.tlim(tint_phi);
   vg = -40e3:1000:40e3; % km/s
-  lowerelim = 100;
-  %ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
+  lowerelim = 30;
+  ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
   v_fpi = ef1D.depend{1}(1,:);
   f_fpi = mean(ef1D.data,1);
+  f_fpi = ef1D.data;
   if 1 % F, 
     hca = h(isub); isub = isub + 1;
     v_scale = 1e-3;
-    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f0,v_vec*v_scale*1e-3,mod_f_average,v_fpi*v_scale,1*f_fpi*1e0,'--');
+    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f0,v_vec*v_scale*1e-3,mod_f_average,'linewidth',1.5);
+    hold(hca,'on')
+    hlines = plot(hca,v_fpi*v_scale,1*f_fpi*1e0,'--');
+    hlines = plot(hca,v_fpi*v_scale,1*mean(f_fpi,1)*1e0,'-','linewidth',1.5);
+    hold(hca,'off')
     hca.YLabel.String = {'f','(s^1/m^4)'};
     hca.XLabel.String = {'v','(10^3 km/s)'};
     hca.XLim = [-40 40];
-    str_lines = {'f_{mod}';'f_{mod,\phi=0}';'-- fpi';'-- fpi';'-- fpi';'-- fpi'};
+    str_lines = {'f_{mod,\phi=0}';'f_{mod}';'-- fpi';'-- fpi';'-- fpi';'-- fpi';'- mean fpi'};
     %legend(hlines,str_lines)
     irf_legend(hca,str_lines,[0.99 0.99])
-    str_info = {['T_{in}= [' sprintf('%g  ',T) '] eV'];...
-      ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
-      ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
-      sprintf('beta_{Schamel}=%g',beta);...
+    str_info = {['T_{0}= [' sprintf('%g  ',T) '] eV'];...
+      ['n_{0}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+      ['v_{d,0}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+      ...sprintf('beta_{Schamel}=%g',beta);...
       };
     set(hca,'ColorOrder',zeros(10,3))
     irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
@@ -1345,7 +1379,273 @@ if 1 % plot, time-averaged distributions, for paper
        end
       hold(hca,'off')
     end
+    if 1 % vph
+      hold(hca,'on')
+      plot(hca,vph*1e-6*[1 1],hca.YLim,'linewidth',1.0)
+      hleg = irf_legend(hca,'vph',[0.51+vph*1e-6/hca.XLim(2)/2 0.02],[0 0 0]);     
+      hold(hca,'off')
+    end
   end  
+end
+if 0 % 1 % plot, timeseries and averaged, for diagnostics
+  %%
+  fig = figure(41);
+  npanels = 5;
+  [h,h2] = initialize_combined_plot(npanels,2,1,0.6,'vertical'); % horizontal
+  clear h_all;
+  h_all = h;
+  isub = 1;
+
+  vlim_f = 30;
+  if 1 % Epar
+    hca = h(isub); isub = isub + 1;
+    irf_plot(hca,{Epar.tlim(tint_all)},'comp');  
+    hca.YLabel.String = {'E_{||}','(mV/m)'};
+    hca.YLabel.Interpreter = 'tex';
+  end
+  if 1 % PHI, TSeries, plot
+    hca = h(isub); isub = isub + 1;
+    irf_plot(hca,phi);  
+    irf_legend(hca,{sprintf('v_{ph,av}= %g km/s, phi multiplier = %.1f',vph*1e-3,phi_mult)},[0.08 0.99],'color',[0 0 0]);
+    hca.YLabel.String = {'\phi','(V)'};  
+    hca.YLabel.Interpreter = 'tex';
+  end
+  if 1 % F
+    hca = h(isub); isub = isub + 1;
+    irf_spectrogram(hca,Fspecrec,'lin');
+    hca.YLabel.String = {'v_{||}','(10^3 km/s)'};
+    edi_color = [1 1 1];
+    vph_color = [1 1 1];
+    h_all_markings = [];
+    if 1 % EDI energies
+      hold(hca,'on')
+      %lines_EDI_plus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
+      lines_EDI_minus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
+      hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_minus(1).Color);  
+      hold(hca,'off')
+      %h_all_markings = [h_all_markings; lines_EDI_plus; lines_EDI_minus; hleg_EDI];
+      h_all_markings = [h_all_markings; lines_EDI_minus; hleg_EDI]; 
+    end
+    if 1 % model phase velocity
+      hold(hca,'on')
+      line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
+      lines_vphav = irf_plot(hca,tsVph*1e-6,'LineWidth',1.0,'Color',vph_color,'LineStyle','--');
+      %lines_vphav = irf_plot(hca,tsVph*1e-6,'--k');
+      hleg_vphav = irf_legend(hca,{'-- v_{ph,mod}'},[0.32 0.99],'color',lines_vphav(1).Color);  
+      hold(hca,'off')
+      h_all_markings = [h_all_markings; lines_vphav; hleg_vphav];
+    end
+    if 1 % observed phase velocity
+      hold(hca,'on')
+      lines_vphobs = irf_plot(hca,obs_vph*1e-3,'*k','LineWidth',1.5,'Color',vph_color);
+      lines_vphobs.MarkerSize = 4;
+      hleg_vphobs = irf_legend(hca,{'* v_{ph,obs}'},[0.18 0.99],'color',lines_vphobs(1).Color);  
+      hold(hca,'off')
+      h_all_markings = [h_all_markings; lines_vphobs; hleg_vphobs];
+    end  
+    colormap(hca,cn.cmap('white_blue'))
+    if 0 % str info
+    str_info = {'unperturbed f:';...
+      ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+      ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+      ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+      sprintf('beta_{Schamel}=%g',beta);...
+      };
+    irf_legend(hca,str_info,[1.01 1.4],'color',hlines(1).Color);    
+    end
+    hca.YLim = vlim_f*[-1 1];
+  end
+  if 1 % diff E (Poisson) (density)
+    hca = h(isub); isub = isub + 1;  
+    nscale = 1e-3;
+    irf_plot(hca,{-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
+    hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
+    hca.YLabel.Interpreter = 'tex';
+    %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
+    %irf_legend(hca,{'n_{et}^{obs}  ','  n_{et}^{mod}'},[0.01 0.10]);
+    irf_legend(hca,{'obs.  ','model'},[0.08 0.98]);
+    doDoubleAxis = 1; % dn
+    if doDoubleAxis  
+      ax1 = hca;
+      ax2 = axes('Position',get(ax1,'Position'));
+      ax2.YLim = ax1.YLim/nscale/n0;    
+      set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+      set(ax2,'YAxisLocation','right');
+      set(ax2,'Color','none','box','off'); % color of axis      
+      %set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+      %set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+      irf_timeaxis(ax2,'nolabels')
+      ax2.XLabel.String = [];
+      ax2.YLabel.String = {'\delta n/n'};
+      ax2.YLabel.Interpreter = 'tex';    
+      ax2.YTick = hca.YTick*1e-3/n0;  
+      h_all = [h_all,ax2];
+      ax2_dn = ax2;
+      ax1_dn = ax1;
+      ax2.YTick = ax1.YTick;
+    end      
+  end  
+  if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
+    hca = h(isub); isub = isub + 1;
+    %%        
+    f_scale = 1e6;
+    colors = mms_colors('matlab');
+    %colors = colors([2 1],:)
+    %hca = subplot(1,1,1);
+    
+    irf_plot(hca,ts_edi_flux180/f_scale,'color',colors(1,:));
+    ax1 = hca;
+    ax2 = axes('Position',get(ax1,'Position'));
+    irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale/f_scale,'color',colors(2,:))      
+    %irf_plot(ax2,fluxModel180/f_scale,'color',colors(2,:))      
+    set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+    set(ax2,'YAxisLocation','right');
+    set(ax2,'Color','none','box','off'); % color of axis      
+    set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+    set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+    irf_timeaxis(ax2,'nolabels')
+    
+    ax2.YLabel.String = {'j^{mod}',sprintf('(10^%g cm^{-2}s^{-1})',log10(f_scale))};
+    ax2.YLabel.Interpreter = 'tex';
+    ax1.YLabel.String = {'j^{EDI}',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
+    ax1.YLabel.Interpreter = 'tex';
+    irf_legend(hca,{'EDI','model'},[0.08 0.98])
+    %irf_legend(hca,{'EDI: \theta = [168.75 180]^o','model: v = [-13600 -12900] km/s'},[0.08 0.98])
+    %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
+    ax1.YLim = [0 3.7];
+    ax2.YLim = [0 3.7];
+    h_all = [h_all,ax2];
+    ax2_flux = ax2;
+    ax1_flux = ax1;    
+  end
+  if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
+    hca = h(isub); isub = isub + 1;
+    %%        
+    f_scale = 1e6;
+    colors = mms_colors('matlab');
+    %colors = colors([2 1],:)
+    %hca = subplot(1,1,1);
+    if 0
+      %irf_plot({fluxModel180,ts_edi_flux180},'comp')  
+    else
+      irf_plot(hca,ts_edi_flux0/f_scale,'color',colors(1,:));
+      ax1 = hca;
+      ax2 = axes('Position',get(ax1,'Position'));
+      irf_plot(ax2,fluxModel0/f_scale,'color',colors(2,:))      
+      set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required      
+      set(ax2,'YAxisLocation','right');
+      set(ax2,'Color','none','box','off'); % color of axis      
+      set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+      set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+      irf_timeaxis(ax2,'nolabels')
+    end
+    ax2.YLabel.String = {'flux 0^o, Model',sprintf('(10^%g cm^{-2}s^{-1})',log10(f_scale))};
+    ax2.YLabel.Interpreter = 'tex';
+    ax1.YLabel.String = {'flux 0^o, EDI',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
+    ax1.YLabel.Interpreter = 'tex';
+    irf_legend(hca,{'EDI','model'},[0.02 0.98])
+    %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
+    ax1.YLim = [0 4];
+    ax2.YLim = [0 4];
+    h_all = [h_all,ax2];
+  end
+
+  if 0 % sum FVdv, bulk velocity
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
+    hca.YLabel.String = {'v','(km/s)'};
+  end   
+    
+  irf_plot_axis_align(h)
+  
+  h(3).YLabel.String = {'v_{||}','(10^3 km/s)'};
+  h(3).YLabel.Interpreter = 'tex';
+  
+  iref = 1;
+  ijmp = 1;
+  %h_all(iref+4+ijmp).Position = h_all(iref+4).Position;  
+  
+  
+  %h_all(iref+7).Position = h_all(iref+5).Position;
+  
+  %irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
+  irf_zoom(h_all,'x',[tint_phi(1) tint_phi(end)])  % tint_phi
+  
+  h_all(iref+4+ijmp).XLabel = [];
+  
+  h(1).YLim = [-70 70];
+  h(4).YLim = [-0.9 1.7];
+  
+  ax2_flux.Position = ax1_flux.Position;
+  ax2_dn.Position = ax1_dn.Position;
+  ax2_dn.YTick = ax1_dn.YTick/1e-3/n0;
+  ax2_dn.YLim = ax1_dn.YLim/1e-3/n0;
+
+  
+  h(3).YLabel.Position(1) = h(1).YLabel.Position(1);
+  
+  %h_all(iref+7).XLabel = [];
+  %h_all(end-2).YAxisLocation = 'right';
+  %h_all(end-3).YAxisLocation = 'right';
+  legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)'};
+  legends_color = {'k','k','k','k','k','k','k','k','k','k','k','k'};
+  for ipanel = 1:npanels
+    irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
+  end
+  c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
+  
+  % averaged distributions
+  isub = 1;
+  
+  mod_f_average = mean(Fabel_obs,1);
+  mod_f0 = f0(v_vec,n,vd,vt);
+  edist = ePDist1.tlim(tint_phi);
+  vg = -40e3:1000:40e3; % km/s
+  lowerelim = 30;
+  ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
+  v_fpi = ef1D.depend{1}(1,:);
+  f_fpi = mean(ef1D.data,1);
+  f_fpi = ef1D.data;
+  if 1 % F, 
+    hca = h2(isub); isub = isub + 1;
+    v_scale = 1e-3;
+    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f0,v_vec*v_scale*1e-3,mod_f_average,'linewidth',1.5);
+    hold(hca,'on')
+    hlines = plot(hca,v_fpi*v_scale,1*f_fpi*1e0,'--');
+    hlines = plot(hca,v_fpi*v_scale,1*mean(f_fpi,1)*1e0,'-','linewidth',1.5);
+    hold(hca,'off')
+    hca.YLabel.String = {'f','(s^1/m^4)'};
+    hca.XLabel.String = {'v','(10^3 km/s)'};
+    hca.XLim = [-40 40];
+    str_lines = {'f_{mod,\phi=0}';'f_{mod}';'-- fpi';'-- fpi';'-- fpi';'-- fpi';'- mean fpi'};
+    %legend(hlines,str_lines)
+    irf_legend(hca,str_lines,[0.99 0.99])
+    str_info = {['T_{0}= [' sprintf('%g  ',T) '] eV'];...
+      ['n_{0}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+      ['v_{d,0}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+      ...sprintf('beta_{Schamel}=%g',beta);...
+      };
+    set(hca,'ColorOrder',zeros(10,3))
+    irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+    if 1 % EDI velocities                
+      hold(hca,'on')
+      all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                 -v_edi_minus; -v_edi_plus]*[1 1];
+       if 1
+         plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+         irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
+       end
+      hold(hca,'off')
+    end
+    if 1 % vph
+      hold(hca,'on')
+      plot(hca,vph*1e-6*[1 1],hca.YLim,'linewidth',1.0)
+      hleg = irf_legend(hca,'vph',[0.51+vph*1e-6/hca.XLim(2)/2 0.02],[0 0 0]);     
+      hold(hca,'off')
+    end
+  end  
+  delete(h2(2))
+  %cn.print(sprintf('%g_bgk_tsav_phi_mult_%.1f_scPot_corr_vph%.0f_n%g',iff,phi_mult,vph*1e-3,n0))
 end
 
 %% Find f at center of EH.
@@ -1421,7 +1721,12 @@ if 0
   end
 end
 
+%% Collect data in cell-matrices, for comparison later on
+  
+flux_all{i_vph,i_phi_mult,i_iff} = fluxModel180/f_scale;
+psd_all{i_vph,i_phi_mult,i_iff} = {{v_vec*v_scale*1e-3,f0(v_vec,n,vd,vt)},{v_vec*v_scale*1e-3,mean(Fabel_obs,1)},{v_fpi*v_scale,1*f_fpi*1e0}};
+n_all{i_vph,i_phi_mult,i_iff} = {-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale};
 
-
-
-
+end
+end
+end
