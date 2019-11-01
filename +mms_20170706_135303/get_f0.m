@@ -32,18 +32,20 @@ switch inp
         T = [T1 T2];
     end
   case 2
-    ntot = 0.04*1e6;
-    R = 0.60; 
-    n1 = ntot*R; 
-    n2 = ntot*(1-R);
-    T1 = 50;
-    T2 = 1000;
-    vd1 = -18000*1e3;
-    vd2 = 4000*1e3;  
+    ntot = 0.035*1e6;
+    R = [0.4 0.25 0.35]; 
+    n = ntot.*R;        
     
-    n = [n1 n2];
-    vd = [vd1 vd2];
-    T = [T1 T2];
+    T1 = 50;
+    T2 = 100;
+    T3 = 1500;
+    vd1 = -11000*1e3;
+    vd2 = -8000*1e3;
+    vd3 = 6000*1e3;  
+    
+    n = n;
+    vd = [vd1 vd2 vd3];
+    T = [T1 T2 T3];
   case 3
     ntot = 0.04*1e6;
     R = 0.65; 

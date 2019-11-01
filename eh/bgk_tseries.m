@@ -1387,7 +1387,7 @@ if 0 % 1 % plot, time-averaged distributions, for paper
     end
   end  
 end
-if 0 % 1 % plot, timeseries and averaged, for diagnostics
+if 1 % 1 % plot, timeseries and averaged, for diagnostics
   %%
   fig = figure(41);
   npanels = 5;
@@ -1496,7 +1496,7 @@ if 0 % 1 % plot, timeseries and averaged, for diagnostics
     irf_plot(hca,ts_edi_flux180/f_scale,'color',colors(1,:));
     ax1 = hca;
     ax2 = axes('Position',get(ax1,'Position'));
-    irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale/f_scale,'color',colors(2,:))      
+    irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale,'color',colors(2,:))      
     %irf_plot(ax2,fluxModel180/f_scale,'color',colors(2,:))      
     set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
     set(ax2,'YAxisLocation','right');
@@ -1722,11 +1722,12 @@ if 0
 end
 
 %% Collect data in cell-matrices, for comparison later on
-  
+load('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat')
 flux_all{i_vph,i_phi_mult,i_iff} = fluxModel180/f_scale;
 psd_all{i_vph,i_phi_mult,i_iff} = {{v_vec*v_scale*1e-3,f0(v_vec,n,vd,vt)},{v_vec*v_scale*1e-3,mean(Fabel_obs,1)},{v_fpi*v_scale,1*f_fpi*1e0}};
 n_all{i_vph,i_phi_mult,i_iff} = {-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale};
-
+save('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat','flux_all','psd_all','n_all')
+%pause
 end
 end
 end

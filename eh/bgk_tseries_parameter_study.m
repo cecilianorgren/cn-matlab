@@ -10,7 +10,7 @@
 
 [n_vph_all,n_phi_mult_all,n_iff_all] = size(flux_all);
 
-doCollectCorr = 0;
+doCollectCorr = 1;
 if doCollectCorr
   corr_j_all = nan(n_vph_all,n_phi_mult_all,n_iff_all);
   corr_n_all = nan(n_vph_all,n_phi_mult_all,n_iff_all);
@@ -28,7 +28,7 @@ end
 % run through all and get correlation
 for i_vph = 1:n_vph_all
   for i_phi_mult = 1:n_phi_mult_all
-    for i_iff = 8%1:n_iff_all %3%[3 8] % 
+    for i_iff = 2%1:n_iff_all %3%[3 8] % 
       % Pick out data from cell matrix, just for ease of reading code.
       ts_n_mod = n_all{i_vph,i_phi_mult,i_iff}{2};
       ts_n_obs = n_all{i_vph,i_phi_mult,i_iff}{1};
@@ -125,7 +125,9 @@ for i_vph = 1:n_vph_all
         hca.YGrid = 'on';
         legend(hca,{'entire diff','included for correlation'})
         irf_legend(hca,{['\Sigma_v' sprintf('|<f^{mod}>-<f^{fpi}>|^2 = %g',corr_f_tmp)]},[0.02 0.98])
+        %cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))
         pause
+        
       end
     end
   end
@@ -144,7 +146,7 @@ n_cominations_vph_phi = n_vph_all*n_phi_mult_all;
 h = setup_subplots(2,2,1);
 isub = 1;
 
-i_iff_plot = [1 3:n_iff_all]; % remove outlier
+i_iff_plot = [1 2 3:n_iff_all]; % remove outlier
 colors = pic_colors('matlab');
 
 if 1
