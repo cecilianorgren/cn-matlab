@@ -1,11 +1,61 @@
 %% Perform queries
 query = ['select X,Y,Z from MMS1a limit 20'];
+
+query = ['select X,Y,Z from MMS3 limit 20'];
  
 [X,Y,Z] = mysql(query); %SymH assumed equal to DST
 clear query;
 
+%% Load all time intervals,
+query = ['select X,Y,Z,Bmin,t_0,t_12,t_88 from MMS3'];
+[X,Y,Z,Bmin,t_0,t_12,t_88] = mysql(query); %SymH assumed equal to DST
+clear query;
+
+% Make EpochTT list
+t_0_epochtt = EpochTT(cell2mat(cellfun(@(x) (cat(2,strrep(x,' ','T'),'Z')),t_0,'UniformOutput', false)));
+t_12_epochtt = EpochTT(cell2mat(cellfun(@(x) (cat(2,strrep(x,' ','T'),'Z')),t_12,'UniformOutput', false)));
+t_88_epochtt = EpochTT(cell2mat(cellfun(@(x) (cat(2,strrep(x,' ','T'),'Z')),t_88,'UniformOutput', false)));
+
+dt = t_88_epochtt-t_12_epochtt;
+
+hist(dt,0:1:max(dt))
+
+%% Load ve LMN
+query = ['select eventId,X,Y,Z,Bmin,t_0,t_12,t_88 from MMS3'];
+[eventId,X,Y,Z,Bmin,t_0,t_12,t_88] = mysql(query); %SymH assumed equal to DST
+clear query;
+
+% Make EpochTT list
+t_0_epochtt = EpochTT(cell2mat(cellfun(@(x) (cat(2,strrep(x,' ','T'),'Z')),t_0,'UniformOutput', false)));
+t_12_epochtt = EpochTT(cell2mat(cellfun(@(x) (cat(2,strrep(x,' ','T'),'Z')),t_12,'UniformOutput', false)));
+t_88_epochtt = EpochTT(cell2mat(cellfun(@(x) (cat(2,strrep(x,' ','T'),'Z')),t_88,'UniformOutput', false)));
+
+dt = t_88_epochtt-t_12_epochtt;
+
+hist(dt,0:1:max(dt))
+%% Load B profiles, doesnt work
+query = ['select EventId,B_profile,E_profile from MMS3_profiles'];
+[eventId,B_profile,E_profile] = mysql(query); %SymH assumed equal to DST
+clear query;
+
+%% Separate data by flags
+
+query = ['select eventId,X,Y,Z,Bmin,t_0,t_12,t_88,Lx,Ly,Lz,Mx,My,Mz,Nx,Ny,Nz,Flag,FlagStr from MMS4'];
+[eventId,X,Y,Z,Bmin,t_0,t_12,t_88,Lx,Ly,Lz,Mx,My,Mz,Nx,Ny,Nz,Flag,FlagStr] = mysql(query); %SymH assumed equal to DST
+clear query;
+
+query = ['select eventId,Vex_tmaxJ,Vey_tmaxJ,Vez_tmaxJ from MMS3_elctrns'];
+[eventId_elctrns,Vex_tmaxJ,Vey_tmaxJ,Vez_tmaxJ] = mysql(query); %SymH assumed equal to DST
+% get lmn velocities
+
+[C,ia,ib] = intersect(eventId,eventId_elctrns);
+VeL_tmaxJ = Vex_tmaxJ(ib).*Lx(ia) + Vey_tmaxJ(ib).*Ly(ia) + Vez_tmaxJ(ib).*Lz(ia);
+VeM_tmaxJ = Vex_tmaxJ(ib).*Mx(ia) + Vey_tmaxJ(ib).*My(ia) + Vez_tmaxJ(ib).*Mz(ia);
+VeN_tmaxJ = Vex_tmaxJ(ib).*Nx(ia) + Vey_tmaxJ(ib).*Ny(ia) + Vez_tmaxJ(ib).*Nz(ia);
+
+
 %% Load all locations
-query = ['select X,Y,Z,Bmin from MMS1 where Bmin<10'];
+query = ['select X,Y,Z,Bmin from MMS3 where Bmin<10'];
 [X,Y,Z,Bmin] = mysql(query); %SymH assumed equal to DST
 clear query;
 scatter3(X,Y,Z,Bmin,Bmin)
@@ -22,7 +72,7 @@ axis equal
 colorbar()
 
 %% Plot Bshear Bmin at all locations
-query = ['select EventId,DateStart,B1x,B1y,B1z,B2x,B2y,B2z,X,Y,Z,Bmin from MMS1']; % where Y<2 and Y>-2
+query = ['select EventId,DateStart,B1x,B1y,B1z,B2x,B2y,B2z,X,Y,Z,Bmin from MMS3']; % where Y<2 and Y>-2
 [EventId,DateStart,B1x,B1y,B1z,B2x,B2y,B2z,X,Y,Z,Bmin] = mysql(query); %SymH assumed equal to DST
 clear query;
 B1abs = sqrt(B1x.^2+B1y.^2+B1z.^2);
