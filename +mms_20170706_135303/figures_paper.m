@@ -678,7 +678,7 @@ isub_short = (isub+1):npanels;
 
 % common time shifts
 dt = [0.0000  -0.0012  -0.0009  -0.0012];
-dt = dt+0.0008;
+dt = dt+0.0008; % why add 0.8 ms? % so it's closer to time centered
   
 if 0 % E par, 4 sc
   isub = isub + 1;
