@@ -22,6 +22,7 @@ egedal.phi = [8 0.8 5 10 2 2 9 2.1 3 11 11 5 6 8 6 5 6 1]*1e3;
 egedal.Te = [210 340 90 150 500 650 80 200 220 230 170 120 350 1500 70 400 150 100];
 egedal.beta_lobe = [0.003 0.003 0.001 0.008 0.004 0.03 0.003 0.0003 0.001 0.0009 0.002 0.0003 0.0006 0.002 0.003 0.002 0.002 0.001];
 egedal.beta_inflow = [0.008 0.21 0.026 0.018 0.22 0.15 0.011 0.038 0.034 0.054 0.030 0.0048 0.12 0.51 0.0094 0.064 0.011 0.017];
+
 %% Plot
 n_events = numel(event.phi);
 
@@ -99,6 +100,7 @@ if 1 % phi/Telobe vs beta e lobe
   hca.XLabel.String =  'T e sheet';
   hca.YLabel.String =  'phi';  
 end
+
 %% Figure for presentation
 figure(42)
 nrows = 1;

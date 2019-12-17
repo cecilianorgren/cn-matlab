@@ -5,7 +5,7 @@ events = 1:20;
 nevents = numel(events);
 
 %acc_pot = nan(nevents,1);
-doPlot = 0;
+doPlot = 1;
 
 ic = 1;
 for ievent = 1:nevents
@@ -14,18 +14,12 @@ for ievent = 1:nevents
   load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')
   tsAccPot_nobg_abs = acc_pot_data.tsAccPot_nobg_abs;
   tsAccPot = tsAccPot_nobg_abs;
-  tsAccPot_nobg_rel = acc_pot_data.tsAccPot_nobg_rel;
-  acc_pot_all_nobg_abs{ievent} = tsAccPot_nobg_abs;
-  acc_pot_all_nobg_rel{ievent} = tsAccPot_nobg_rel;
+  ac_pot_all_nobg_abs{ievent} = tsAccPot_nobg_abs;
+  ac_pot_all{ievent} = tsAccPot;
   
   for ic = 1:3
     [maxPot,iMaxPot] = max(tsAccPot{ic}.tlim(tint_phi+0.1*[-1 1]).abs.data);
     acc_pot(ievent,ic) = maxPot;
-    acc_pot_abs(ievent,ic) = maxPot;
-    
-    [maxPotRel,iMaxPotRel] = max(tsAccPot_nobg_rel{ic}.tlim(tint_phi+0.1*[-1 1]).abs.data);
-    acc_pot_rel(ievent,ic) = maxPotRel;
-    
     iMaxPots(ievent,ic) = iMaxPot;
     beta_lobe(ievent,ic) = acc_pot_data.be_lobe;
     tepar_lobe(ievent,ic) = acc_pot_data.Tepar_lobe;
@@ -39,36 +33,22 @@ for ievent = 1:nevents
     
     B_lobe_(ievent,ic) = acc_pot_data.B_lobe;
   end
-  if doPlot
-    %%
+  if doPlot       
     [h,h2] = initialize_combined_plot(2,1,1,0.6,'vertical');
     isub = 1;
-    if 1 % timeseries of potential and point where they maximize, nobg
-      hca = h(isub); isub = isub + 1;
-      set(hca,'colororder',mms_colors('1234'))      
-      celltmp = cellfun(@(x) x.tlim(tint_phi+0.1*[-1 1]).abs,acc_pot_all_nobg_abs{ievent},'UniformOutput',0);
-      irf_plot(hca,celltmp,'comp')
-      hold(hca,'on')
-      %celltmppoint = cellfun(@(x) x(),celltmp,'UniformOutput',0);
-      hlines = irf_plot(hca,{celltmp{1}(iMaxPot),celltmp{2}(iMaxPot),celltmp{3}(iMaxPot)},'comp');
-      c_eval('hlines.Children(?).Marker = ''o'';',1:3)
-      hold(hca,'off')
-    end
     if 1 % timeseries of potential and point where they maximize
       hca = h(isub); isub = isub + 1;
-      set(hca,'colororder',mms_colors('1234'))      
-      celltmp = cellfun(@(x) x.tlim(tint_phi+0.1*[-1 1]).abs,acc_pot_all_nobg_rel{ievent},'UniformOutput',0);
+      set(hca,'colororder',mms_colors('1234'))
+      celltmp = ac_pot_all_nobg_abs{ievent};
+      celltmp=cellfun(@(x) x.tlim(tint_phi+0.1*[-1 1]),celltmp,'UniformOutput',0)
       irf_plot(hca,celltmp,'comp')
-      hold(hca,'on')
-      %celltmppoint = cellfun(@(x) x(),celltmp,'UniformOutput',0);
-      hlines = irf_plot(hca,{celltmp{1}(iMaxPot),celltmp{2}(iMaxPot),celltmp{3}(iMaxPot)},'comp');
-      c_eval('hlines.Children(?).Marker = ''o'';',1:3)
-      hold(hca,'off')
     end
-    if 1 % plot shape of the 2D , not possible, need reduced for that.
+    if 1 % timeseries of potential and point where they maximize, nobg
+      hca = h(isub); isub = isub + 1;
+      set(hca,'colororder',mms_colors('123'))
+      
     end
-    drawnow
-    pause(2)
+    pause
   end
 end
 

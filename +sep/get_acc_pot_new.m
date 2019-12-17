@@ -1,16 +1,19 @@
+% In this new version, use min peak height and min peak prominence
+
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
 db_info = datastore('mms_db');   
 localuser = datastore('local','user');
 
-doSave = 0;
+doSave = 1;
 
 events = 1:20;
 nevents = numel(events);
-saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential/'];
+saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential_new/'];
 printAccPotPath = ['/Users/' localuser '/GoogleDrive/Research/Separatrix_acceleration_events/acceleration_potential/'];
 
-for ievent = 1%:nevents
+%% Run through events
+for ievent = 1:nevents
   event = events(ievent); % set event id
   sep.get_tints; % get tints for that event id
  
@@ -121,7 +124,7 @@ for ievent = 1%:nevents
   %% Remove photoelectron and secondary electron background, for tint_phi
   %tint_fred = tint_phi;%tint_phi;
   tint_phi_ = tint_fred;
-  tint_phi_ = tint_phi + 2*[-1 1];
+  tint_phi_ = tint_phi + 1.5*[-1 1];
   c_eval('eDist?_orig = ePDist?.tlim(tint_phi_);',ic)  
   % Remove background, try first with these default values, mostly for
   % cosmetics anyways
@@ -143,6 +146,10 @@ for ievent = 1%:nevents
   c_eval('tic; ef1D?_lowe = eDist?_orig.reduce(''1D'',dmpaB?.resample(eDist?_orig).norm,''scpot'',scPot?.resample(eDist?_orig),''lowerelim'',lowerelim,''nMC'',nMC,''vg'',vg); toc',ic) % reduced distribution along B
   c_eval('tic; ef1D?_nobg = eDist?_nobg.reduce(''1D'',dmpaB?.resample(eDist?_nobg).norm,''scpot'',scPot?.resample(eDist?_nobg),''nMC'',nMC,''vg'',vg); toc',ic) % reduced distribution along B
 
+  c_eval('ef1D_orig{?} = ef1D?_orig;',ic)
+  c_eval('ef1D_lowe{?} = ef1D?_lowe;',ic)
+  c_eval('ef1D_nobg{?} = ef1D?_nobg;',ic)
+  
   %% Get acceleration potential
   Te_lobe = (Tepar_lobe + 2*Teperp_lobe)/3;
   vte_lobe = sqrt(2*units.eV*Te_lobe/units.me);
@@ -150,132 +157,183 @@ for ievent = 1%:nevents
   % Decreased interval of tint_phi so that its not always including lobes 
   % or sheet now. Use density and thermal velocity instead.
   
-  %c_eval('f_lobe = ef1D?_nobg.tlim(tint_lobe);',1) 
-  %c_eval('f_sheet = ef1D?_nobg.tlim(tint_sheet);',1)
-  %f_lobe = max(mean(f_lobe.data,1)); % this includes center peaks, use instead n/sqrt(pi*vt)
-  %f_sheet = max(mean(f_sheet.data,1));
-  %f_prom = 0.05*f_lobe*n_sep/n_lobe;
-  f_prom = 0.05*f_lobe;
-  f_min_peak = 0.1*f_lobe;
+  f_prom = 0.1*f_lobe;
+  f_min_peak = 0.2*f_lobe;
   
   eint = [000 40000];
   if any(quadrant([1 4])) % top left or bottom right, inflow is antiparallel to B
-    vint = [-100000 0];
+    vint = [-100000 -5000];
   else  % top right or bottom left, inflow is parallel to B
-    vint = [0 100000];
+    vint = [5000 100000];
   end
   %relativeminpeakprominence = f_prom_abs;
   minpeakheight = f_min_peak;
-  minpeakprominence = f_prom_rel;
+  minpeakprominence = f_prom;
   resample_timestep = 3;
   % Need to make for-loop for printing, since figure is done within script
-  for iic = ic    
+  clear tsAccPot_orig tsAccPot_lowe tsAccPot_nobg
+  for iic = ic
     % There seems to be no such thing as relativeminpeakprominence
-    %  Relative peak prominence
-    c_eval('tsAccPot?_orig_rel = find_acc_pot(ef1D?_orig,''eint'',eint,''vint'',vint,''minpeakheight'',minpeakheight,''minpeakprominence'',minpeakprominence,''resample'',resample_timestep);',iic)    
+    %% Absolute peak prominence and min peak height
+    [tmpTsAccPot,tmppPeakF] = find_acc_pot(ef1D_orig{iic},...
+      'eint',eint,...
+      'vint',vint,...
+      'minpeakheight',minpeakheight,... % fraction of f_lobe
+      'minpeakprominence',minpeakprominence,... % smaller fraction of f_lobe
+      'resample',resample_timestep);
+    % Collect data
+    tsAccPot_orig{iic} = tmpTsAccPot;
+    peakF_orig{iic} = tmppPeakF;
+    % Adjust figure and print
     hcf = gcf;
     hcf.Position = [0 100 700 800];
     h = findobj(hcf.Children,'type','axes');
     c_eval('irf_pl_mark(h(?),tint_phi,''r'');',1:numel(h))
-    c_eval('h(?).CLim(2) = log10(f_lobe);',2:3)
-    cn.print(sprintf('event%g_tsAccPot%g_orig_rel',event,iic),'path',printAccPotPath)
-    break
-    %  Absolute peak prominence
-    c_eval('tsAccPot?_orig_abs = find_acc_pot(ef1D?_orig,''eint'',eint,''vint'',vint,''minpeakprominence'',minpeakprominence,''resample'',resample_timestep);',iic)    
-    hcf = gcf;
-    hcf.Position = [0 100 700 800];
-    cn.print(sprintf('event%g_tsAccPot%g_orig_abs',event,iic),'path',printAccPotPath)
-    break
-    %  Relative peak prominence
-    c_eval('tsAccPot?_nobg_rel = find_acc_pot(ef1D?_nobg,''eint'',eint,''vint'',vint,''relativeminpeakprominence'',relativeminpeakprominence,''resample'',resample_timestep);',iic)    
+    c_eval('h(?).CLim = log10([0.1*f_lobe f_lobe]);',2:3)
+    cn.print(sprintf('event%g_tsAccPot%g_orig',event,iic),'path',printAccPotPath)    
+    %%
+    %break
+    %% Absolute peak prominence and min peak height
+    [tmpTsAccPot,tmppPeakF] = find_acc_pot(ef1D_lowe{iic},...
+      'eint',eint,...
+      'vint',vint,...
+      'minpeakheight',minpeakheight,... % fraction of f_lobe
+      'minpeakprominence',minpeakprominence,... % smaller fraction of f_lobe
+      'resample',resample_timestep);
+    % Collect data
+    tsAccPot_lowe{iic} = tmpTsAccPot;
+    peakF_lowe{iic} = tmppPeakF;        
+    % Adjust figure and print
     hcf = gcf;   
     hcf.Position = [0 100 700 800];
-    cn.print(sprintf('event%g_tsAccPot%g_nobg_rel',event,iic),'path',printAccPotPath)
-     
-    %  Absolute peak prominence
-    c_eval('tsAccPot?_nobg_abs = find_acc_pot(ef1D?_nobg,''eint'',eint,''vint'',vint,''minpeakprominence'',minpeakprominence,''resample'',resample_timestep);',iic)    
-    hcf = gcf;    
+    h = findobj(hcf.Children,'type','axes');
+    c_eval('h(?).CLim = log10([0.1*f_lobe f_lobe]);',2:3)
+    cn.print(sprintf('event%g_tsAccPot%g_lowe',event,iic),'path',printAccPotPath)
+    
+    %% Absolute peak prominence and min peak height
+    [tmpTsAccPot,tmppPeakF] = find_acc_pot(ef1D_nobg{iic},...
+      'eint',eint,...
+      'vint',vint,...
+      'minpeakheight',minpeakheight,... % fraction of f_lobe
+      'minpeakprominence',minpeakprominence,... % smaller fraction of f_lobe
+      'resample',resample_timestep);
+    % Collect data
+    tsAccPot_nobg{iic} = tmpTsAccPot;
+    peakF_nobg{iic} = tmppPeakF;        
+    % Adjust figure and print
+    hcf = gcf;   
     hcf.Position = [0 100 700 800];
-    cn.print(sprintf('event%g_tsAccPot%g_nobg_abs',event,iic),'path',printAccPotPath)
+    h = findobj(hcf.Children,'type','axes');
+    c_eval('h(?).CLim = log10([0.1*f_lobe f_lobe]);',2:3)
+    cn.print(sprintf('event%g_tsAccPot%g_nobg',event,iic),'path',printAccPotPath)
     
   end
-  clear tsAccPot_orig_rel tsAccPot_orig_abs tsAccPot_nobg_rel tsAccPot_nobg_abs
-  c_eval('tsAccPot_orig_rel{?} = tsAccPot?_orig_rel;',ic)
-  c_eval('tsAccPot_orig_abs{?} = tsAccPot?_orig_abs;',ic)
-  c_eval('tsAccPot_nobg_rel{?} = tsAccPot?_nobg_rel;',ic)
-  c_eval('tsAccPot_nobg_abs{?} = tsAccPot?_nobg_abs;',ic)
-          
-  % From timeseries, pick out maximal value
-  % Can do this when reloading data
-  c_eval('acc_pot?_orig_abs = max(tsAccPot?_orig_abs.data);',ic)
-  c_eval('acc_pot?_nobg_abs = max(tsAccPot?_nobg_abs.data);',ic)
-  c_eval('acc_pot?_orig_rel = max(tsAccPot?_orig_rel.data);',ic)
-  c_eval('acc_pot?_nobg_rel = max(tsAccPot?_nobg_rel.data);',ic)
+  
+  % Already doing this above now
+%   c_eval('tsAccPot_orig{?} = tsAccPot?_orig;',ic) 
+%   c_eval('tsAccPot_lowe{?} = tsAccPot?_lowe;',ic)
+%   c_eval('tsAccPot_nobg{?} = tsAccPot?_nobg;',ic)  
+%           
+%   % From timeseries, pick out maximal value
+%   % Can do this when reloading data
+%   c_eval('acc_pot?_orig = max(tsAccPot?_orig.data);',ic)
+%   c_eval('acc_pot?_lowe = max(tsAccPot?_lowe.data);',ic)
+%   c_eval('acc_pot?_nobg = max(tsAccPot?_nobg.data);',ic)  
   
   %% Plot acceleration potentials for all spacecraft
   c_eval('legends_mms{?,1} = sprintf(''mms %g'',?);',ic)
   
-  h = irf_plot(4);
+  h = irf_plot(3);
   
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. nobg. rel.');
+  if 1 % orig
+    hca = irf_panel('acc. pot. orig.');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_nobg_rel,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
+    irf_plot(hca,tsAccPot_orig,'comp')
+    hca.YLabel.String = {'Acc. pot. orig.','(eV)'};
     irf_legend(hca,legends_mms,[0.02 0.98])
   end
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. nobg. abs.');
-    set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_nobg_abs,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. abs.','(eV)'};
-    irf_legend(hca,legends_mms,[0.02 0.98])
-  end
-  if 1 % nobg_rel
+  if 1 % lowe
     hca = irf_panel('acc. pot. orig. rel.');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_orig_rel,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
+    irf_plot(hca,tsAccPot_lowe,'comp')
+    hca.YLabel.String = {'Acc. pot. lowe.','(eV)'};
     irf_legend(hca,legends_mms,[0.02 0.98])
   end
-  if 1 % nobg_rel
-    hca = irf_panel('acc. pot. orig. abs.');
+  if 1 % nobg
+    hca = irf_panel('acc. pot. nobg.');
     set(hca,'ColorOrder',mms_colors('1234'))
-    irf_plot(hca,tsAccPot_orig_abs,'comp')
-    hca.YLabel.String = {'Acc. pot. nobg. rel.','(eV)'};
+    irf_plot(hca,tsAccPot_nobg,'comp')
+    hca.YLabel.String = {'Acc. pot. nobg.','(eV)'};
     irf_legend(hca,legends_mms,[0.02 0.98])
   end
   irf_zoom(h,'x',tint_phi_)
   
-  %% Plot Liouville mapping of lobe population, based on potential
-  iicc = 1;
-  load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,19),'acc_pot_data')
-  c_eval('acc_pot? = acc_pot_data.tsAccPot_nobg_abs{?};,',iicc)
-  tt = ef1D1_orig.time;  
-  tphi = 8;
-  ttrans = 1;
-  acc_pot = irf.ts_scalar(tt,1000*(1+1*tanh((tt-tt(1)-tphi)/ttrans)));
-  %irf_plot({acc_pot1.abs,acc_pot},'comp') 
-  c_eval('[f?_lio,n?_lio] = acc_pot_lio_map(ef1D?_orig.tlim(tint_lobe),acc_pot);',iicc)
-  %%
-  ic = 1;
-  h = irf_plot(5);
+  %% Plot 1D phase space density that gave maximum beam energy
+  if numel(ic) == 3
+    colors = mms_colors('123');
+  elseif  numel(ic) == 4
+    colors = mms_colors('1234');
+  end
+  h = setup_subplots(3,1);
+  isub = 1;
+  if 1 % orig
+    hca = h(isub); isub = isub + 1;
+    ff = peakF_orig;
+    plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
+    hold(hca,'on')
+    set(hca,'ColorOrder',colors)
+    for iic = ic      
+      plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+      errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+    end    
+    hold(hca,'off')
+    hca.XLim = ff{1}.v([1 end])*1e-3;
+    hca.XLabel.String = 'v_{||} (10^3 km/s)';
+    hca.YLabel.String = 'f/f_{lobe}';
+    irf_legend(hca,{'f_{orig}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+  end
+  if 1 % lowe
+    hca = h(isub); isub = isub + 1;
+    ff = peakF_lowe;
+    plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
+    hold(hca,'on')
+    set(hca,'ColorOrder',colors)
+    for iic = ic      
+      plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+      errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+    end    
+    hold(hca,'off')
+    hca.XLim = ff{1}.v([1 end])*1e-3;
+    hca.XLabel.String = 'v_{||} (10^3 km/s)';
+    hca.YLabel.String = 'f/f_{lobe}';
+    irf_legend(hca,{'f_{lowe}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+  end
+  if 1 % nobg
+    hca = h(isub); isub = isub + 1;
+    ff = peakF_nobg;
+    plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
+    hold(hca,'on')
+    set(hca,'ColorOrder',colors)
+    for iic = ic      
+      plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+      errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+    end    
+    hold(hca,'off')
+    hca.XLim = ff{1}.v([1 end])*1e-3;
+    hca.XLabel.String = 'v_{||} (10^3 km/s)';
+    hca.YLabel.String = 'f/f_{lobe}';
+    irf_legend(hca,{'f_{nobg}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+  end
+  ylimmax = 0;
+  for ip = 1:3
+    h(ip).XGrid = 'on';
+    h(ip).YGrid = 'on';
+    ylimmax = max([ylimmax h(ip).YLim(2)]);    
+  end
+  hlinks = linkprop(h,{'YLim'});
+  hlinks.Targets(1).YLim(2) = ylimmax;
+  compact_panels(0.01)
   
-  if 1 % f red orig.
-    hca = irf_panel('f red. orig.');
-    c_eval('irf_spectrogram(hca,ef1D?_orig.specrec);',ic)
-  end
-  if 1 % f red nobg.
-    hca = irf_panel('f red. nobg.');
-    c_eval('irf_spectrogram(hca,ef1D?_nobg.specrec);',ic)
-  end
-  if 1 % f red nobg. model
-    hca = irf_panel('f red. model');
-    c_eval('irf_spectrogram(hca,f?_lio.specrec);',ic)
-  end
-  linkprop(h(1:3),'CLim')
-  
-  %cn.print(sprintf('event%g_tsAccPot%g_nobg_abs',event,iic))
   %% Save data to file
   % .mat or .txt (together or separate?)  
   acc_pot_data.event_id = event;
@@ -302,12 +360,25 @@ for ievent = 1%:nevents
   acc_pot_data.acc_pot_vint = vint;
   acc_pot_data.acc_pot_eint = eint;
   acc_pot_data.acc_pot_resample_timestep = resample_timestep;
+  
   acc_pot_data.acc_pot_minpeakprominence = minpeakprominence;
-  acc_pot_data.tsAccPot_orig_abs = tsAccPot_orig_abs;
-  acc_pot_data.tsAccPot_nobg_abs = tsAccPot_nobg_abs;
-  acc_pot_data.acc_pot_relativeminpeakprominence = relativeminpeakprominence;  
-  acc_pot_data.tsAccPot_orig_rel = tsAccPot_orig_rel;
-  acc_pot_data.tsAccPot_nobg_rel = tsAccPot_nobg_rel;
+  acc_pot_data.acc_pot_minpeakheight = minpeakheight;
+  acc_pot_data.tsAccPot_orig = tsAccPot_orig;
+  acc_pot_data.tsAccPot_lowe = tsAccPot_lowe;
+  acc_pot_data.tsAccPot_nobg = tsAccPot_nobg;
+  
+  acc_pot_data.ef1D_orig = ef1D_orig;
+  acc_pot_data.ef1D_lowe = ef1D_lowe;
+  acc_pot_data.ef1D_nobg = ef1D_nobg;
+  
+  acc_pot_data.peakF_orig = peakF_orig;
+  acc_pot_data.peakF_lowe = peakF_lowe;
+  acc_pot_data.peakF_nobg = peakF_nobg;
+  
+  acc_pot_data.fe_lobe = f_lobe;
+  acc_pot_data.f_prom = f_prom;
+  acc_pot_data.f_min_peak = f_min_peak;
+  
   
   if doSave
     save(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')

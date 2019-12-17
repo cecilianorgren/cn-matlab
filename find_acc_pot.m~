@@ -73,8 +73,7 @@ end
 % Prepare data
 nt = fred.length;
 phi = nan(nt,1);
-f_orig = fred.data;
-f = f_orig;
+f = fred.data;
 
 units = irf_units;
 velocity = fred.depend{1};
@@ -153,15 +152,10 @@ tsVel = irf.ts_scalar(fred.time,vel);
 % find indice of maximum phi and save the corresponding f
 [val,ind] = max(TS.abs.data);
 fpick.f = f(ind,:);
-fpick.f_orig = f_orig(ind,:);
 fpick.v = fred(ind).depend{1}(1,:);
-f_ind = find(fpick.v==vel(ind)); % sometimes this is not working
-f_ind = find(abs(fpick.v-vel(ind))==min(abs(fpick.v-vel(ind))));
-fpick.fbeam = fpick.f(f_ind);
+fpick.fbeam = vel(ind);
 fpick.vbeam = vel(ind);
 fpick.ebeam = phi(ind);
-fpick.MinPeakHeight = MinPeakHeight;
-fpick.MinPeakProminence = MinPeakProminence;
 
 
 if doPlot  

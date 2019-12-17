@@ -3,6 +3,7 @@
 tintZoom = irf.tint('2017-07-06T00:55:20.00Z',5);
 tintZoom = irf.tint('2017-07-06T00:55:10.00Z',60);
 %tintZoom = irf.tint('2017-07-06T08:18:00.00Z',13);
+tintZoom = irf.tint('2017-07-06T00:54:05.00Z',40);
 strTintZoom = [irf_time(tintZoom(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tintZoom(2),'epochtt>utc_HHMMSS')];
 
 eint = [000 40000];
@@ -17,7 +18,7 @@ scpot_lim = scPot1.resample(eDist)*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
 iLine = dmpaB1.resample(iDist).norm;
 
-tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim); toc % reduced distribution along B
+tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim',); toc % reduced distribution along B
 tic; if1D = iDist.reduce('1D',iLine,'vint',vint); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B
 lineVi = vi.dot(iLine); % projection of Vi on B

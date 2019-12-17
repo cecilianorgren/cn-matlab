@@ -63,7 +63,7 @@ if 1 % load esw_properties_irf_4_v_gui.txt
   data_format_read = '%s %s %s %s %s %f %f %f %f %f %f %f %f %f %f %f %f %f'; 
   esw_data_ = textscan(fid,[data_format_read]);
   fclose(fid)
-  for icell = 1:numel(esw_data_)
+  for icell = 1:17%numel(esw_data_)
     esw_data{icell} = cat(1,esw_data{icell},esw_data_{icell});
   end
 end
@@ -71,7 +71,7 @@ end
 all_t_center = EpochTT(char(esw_data{5}));
 [all_t_center_sorted,ind_sorted] = all_t_center.sort;
 
-for icell = 1:numel(esw_data)
+for icell = 1:17%numel(esw_data)
   esw_data{icell} = esw_data{icell}(ind_sorted);  
 end
 
