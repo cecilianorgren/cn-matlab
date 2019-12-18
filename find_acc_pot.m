@@ -152,6 +152,7 @@ tsVel = irf.ts_scalar(fred.time,vel);
 
 % find indice of maximum phi and save the corresponding f
 [val,ind] = max(TS.abs.data);
+fpick.time = TS.time(ind);
 fpick.f = f(ind,:);
 fpick.f_orig = f_orig(ind,:);
 fpick.v = fred(ind).depend{1}(1,:);
@@ -285,4 +286,3 @@ elseif nargout == 2
   varargout{1} = TS;
   varargout{2} = fpick;
 end
-return

@@ -1,19 +1,182 @@
-% In this new version, use min peak height and min peak prominence
+% Rerun of get_acc_pot_new to test different peak heights etc. Reduced
+% dists are saved to .mat file.
 
 %% Load datastore
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
 db_info = datastore('mms_db');   
 localuser = datastore('local','user');
 
-doSave = 0;
+doSave = 1;
 
 events = 1:20;
 nevents = numel(events);
-saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential/'];
+saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential_new/'];
 printAccPotPath = ['/Users/' localuser '/GoogleDrive/Research/Separatrix_acceleration_events/acceleration_potential/'];
 
+%% Run through events and check whats in there
+for ievent = 1:nevents
+  event = events(ievent); % set event id
+  sep.get_tints; % get tints for that event id
+ 
+  ic = 1:4;
+    
+  %% Load saved acc data
+  load(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data'); % acc_pot_data
+  tint_dist = acc_pot_data.ef1D_orig{1}.time([1 end]);
+  fields = fieldnames(acc_pot_data);
+  for ifield = 1:numel(fields)
+    eval(sprintf('%s = acc_pot_data.(''%s'');',fields{ifield},fields{ifield}))
+  end
+  f_lobe = fe_lobe;
+
+  if 0 % Plot acceleration potentials for all spacecraft
+    c_eval('legends_mms{?,1} = sprintf(''mms %g'',?);',ic)
+
+    h = irf_plot(3);
+
+    if 1 % orig
+      hca = irf_panel('acc. pot. orig.');
+      set(hca,'ColorOrder',mms_colors('1234'))
+      irf_plot(hca,tsAccPot_orig,'comp')
+      hca.YLabel.String = {'Acc. pot. orig.','(eV)'};
+      irf_legend(hca,legends_mms,[0.02 0.98])
+    end
+    if 1 % lowe
+      hca = irf_panel('acc. pot. orig. rel.');
+      set(hca,'ColorOrder',mms_colors('1234'))
+      irf_plot(hca,tsAccPot_lowe,'comp')
+      hca.YLabel.String = {'Acc. pot. lowe.','(eV)'};
+      irf_legend(hca,legends_mms,[0.02 0.98])
+    end
+    if 1 % nobg
+      hca = irf_panel('acc. pot. nobg.');
+      set(hca,'ColorOrder',mms_colors('1234'))
+      irf_plot(hca,tsAccPot_nobg,'comp')
+      hca.YLabel.String = {'Acc. pot. nobg.','(eV)'};
+      irf_legend(hca,legends_mms,[0.02 0.98])
+    end
+    irf_zoom(h,'x',tint_dist)
+  end
+  if 1 % Plot 1D phase space density that gave maximum beam energy
+    if numel(ic) == 3
+      colors = mms_colors('123');
+    elseif  numel(ic) == 4
+      colors = mms_colors('1234');
+    end
+    h = setup_subplots(3,1);
+    isub = 1;
+    if 1 % orig
+      hca = h(isub); isub = isub + 1;
+      ff = peakF_orig;
+      plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
+      hold(hca,'on')
+      set(hca,'ColorOrder',colors)
+      for iic = ic      
+        plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+        errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+      end    
+      hold(hca,'off')
+      hca.XLim = ff{1}.v([1 end])*1e-3;
+      hca.XLabel.String = 'v_{||} (10^3 km/s)';
+      hca.YLabel.String = 'f/f_{lobe}';
+      irf_legend(hca,{'f_{orig}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+    end
+    if 1 % lowe
+      hca = h(isub); isub = isub + 1;
+      ff = peakF_lowe;
+      plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
+      hold(hca,'on')
+      set(hca,'ColorOrder',colors)
+      for iic = ic      
+        plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+        errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+      end    
+      hold(hca,'off')
+      hca.XLim = ff{1}.v([1 end])*1e-3;
+      hca.XLabel.String = 'v_{||} (10^3 km/s)';
+      hca.YLabel.String = 'f/f_{lobe}';
+      irf_legend(hca,{'f_{lowe}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+    end
+    if 1 % nobg
+      hca = h(isub); isub = isub + 1;
+      ff = acc_pot_data.peakF_nobg;
+      plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
+      hold(hca,'on')
+      set(hca,'ColorOrder',colors)
+      for iic = ic      
+        plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+        errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+      end    
+      hold(hca,'off')
+      hca.XLim = ff{1}.v([1 end])*1e-3;
+      hca.XLabel.String = 'v_{||} (10^3 km/s)';
+      hca.YLabel.String = 'f/f_{lobe}';
+      irf_legend(hca,{'f_{nobg}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+    end
+    ylimmax = 0;
+    for ip = 1:3
+      h(ip).XGrid = 'on';
+      h(ip).YGrid = 'on';
+      ylimmax = max([ylimmax h(ip).YLim(2)]);    
+    end
+    hlinks = linkprop(h,{'YLim'});
+    hlinks.Targets(1).YLim(2) = ylimmax;
+    compact_panels(0.01)
+    if doPrint
+      cn.print(sprintf('iev=%02.0f_1D_dis',ievent),'path',printAccPotPath)
+    end
+  end
+    
+  if 0 % re-collect data
+    % .mat or .txt (together or separate?)  
+    acc_pot_data.event_id = event;
+    acc_pot_data.ic = ic;
+    acc_pot_data.vix = vix;
+    acc_pot_data.bix = bix;
+    acc_pot_data.B_lobe = B_lobe;
+    acc_pot_data.n_lobe = n_lobe;
+    acc_pot_data.n_sheet = n_sheet;
+    acc_pot_data.n_sep = n_sep;
+    acc_pot_data.n_sep_min = n_sep_min;
+    acc_pot_data.be_lobe = be_lobe;
+    acc_pot_data.be_sheet = be_sheet;
+    acc_pot_data.be_sep = be_sep;
+    acc_pot_data.Tepar_lobe = Tepar_lobe;
+    acc_pot_data.Tepar_sheet = Tepar_sheet;
+    acc_pot_data.Tepar_sep = Tepar_sep;
+    acc_pot_data.Teperp_lobe = Teperp_lobe;
+    acc_pot_data.Teperp_sheet = Teperp_sheet;
+    acc_pot_data.Teperp_sep = Teperp_sep;
+    acc_pot_data.bg_nSecondary = nSecondary;
+    acc_pot_data.bg_nPhoto = nPhoto;
+    acc_pot_data.red_nMC = nMC;
+    acc_pot_data.acc_pot_vint = vint;
+    acc_pot_data.acc_pot_eint = eint;
+    acc_pot_data.acc_pot_resample_timestep = resample_timestep;
+
+    acc_pot_data.acc_pot_minpeakprominence = minpeakprominence;
+    acc_pot_data.acc_pot_minpeakheight = minpeakheight;
+    acc_pot_data.tsAccPot_orig = tsAccPot_orig;
+    acc_pot_data.tsAccPot_lowe = tsAccPot_lowe;
+    acc_pot_data.tsAccPot_nobg = tsAccPot_nobg;
+
+    acc_pot_data.ef1D_orig = ef1D_orig;
+    acc_pot_data.ef1D_lowe = ef1D_lowe;
+    acc_pot_data.ef1D_nobg = ef1D_nobg;
+
+    acc_pot_data.peakF_orig = peakF_orig;
+    acc_pot_data.peakF_lowe = peakF_lowe;
+    acc_pot_data.peakF_nobg = peakF_nobg;
+
+    acc_pot_data.fe_lobe = f_lobe;
+    acc_pot_data.f_prom = f_prom;
+    acc_pot_data.f_min_peak = f_min_peak;
+  end
+  pause
+end
+
 %% Run through events
-for ievent = 1%:nevents
+for ievent = 1:nevents
   event = events(ievent); % set event id
   sep.get_tints; % get tints for that event id
  
@@ -124,7 +287,7 @@ for ievent = 1%:nevents
   %% Remove photoelectron and secondary electron background, for tint_phi
   %tint_fred = tint_phi;%tint_phi;
   tint_phi_ = tint_fred;
-  tint_phi_ = tint_phi + 2*[-1 1];
+  tint_phi_ = tint_phi + 1.5*[-1 1];
   c_eval('eDist?_orig = ePDist?.tlim(tint_phi_);',ic)  
   % Remove background, try first with these default values, mostly for
   % cosmetics anyways
@@ -157,7 +320,7 @@ for ievent = 1%:nevents
   % Decreased interval of tint_phi so that its not always including lobes 
   % or sheet now. Use density and thermal velocity instead.
   
-  f_prom = 0.10*f_lobe;
+  f_prom = 0.1*f_lobe;
   f_min_peak = 0.2*f_lobe;
   
   eint = [000 40000];
@@ -287,41 +450,52 @@ for ievent = 1%:nevents
       errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
     end    
     hold(hca,'off')
-    hca.XLim = peakF_nobg{1}.v([1 end])*1e-3;
+    hca.XLim = ff{1}.v([1 end])*1e-3;
     hca.XLabel.String = 'v_{||} (10^3 km/s)';
     hca.YLabel.String = 'f/f_{lobe}';
-    irf_legend(hca,{'f_{}',sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
+    irf_legend(hca,{'f_{orig}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
   end
   if 1 % lowe
     hca = h(isub); isub = isub + 1;
-    plot(hca,peakF_nobg{1}.v*1e-3,peakF_nobg{1}.v*0+f_min_peak)
+    ff = peakF_lowe;
+    plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
     hold(hca,'on')
     set(hca,'ColorOrder',colors)
     for iic = ic      
-      plot(hca,peakF_nobg{iic}.v*1e-3,peakF_nobg{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
-      errorbar(hca,peakF_nobg{iic}.vbeam*1e-3,peakF_nobg{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+      plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+      errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
     end    
     hold(hca,'off')
-    hca.XLim = peakF_nobg{1}.v([1 end])*1e-3;
+    hca.XLim = ff{1}.v([1 end])*1e-3;
     hca.XLabel.String = 'v_{||} (10^3 km/s)';
     hca.YLabel.String = 'f/f_{lobe}';
-    irf_legend(hca,sprintf('f_{lobe} = %g s/m^4',f_lobe),[0.02 0.98])
+    irf_legend(hca,{'f_{lowe}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
   end
   if 1 % nobg
     hca = h(isub); isub = isub + 1;
-    plot(hca,peakF_nobg{1}.v*1e-3,peakF_nobg{1}.v*0+f_min_peak)
+    ff = peakF_nobg;
+    plot(hca,ff{1}.v*1e-3,ff{1}.v*0+f_min_peak)
     hold(hca,'on')
     set(hca,'ColorOrder',colors)
     for iic = ic      
-      plot(hca,peakF_nobg{iic}.v*1e-3,peakF_nobg{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
-      errorbar(hca,peakF_nobg{iic}.vbeam*1e-3,peakF_nobg{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
+      plot(hca,ff{iic}.v*1e-3,ff{iic}.f_orig/f_lobe,'color',colors(iic,:))%,peakF_nobg{iic}.vbeam,peakF_nobg{iic}.fbeam,'o')
+      errorbar(hca,ff{iic}.vbeam*1e-3,ff{iic}.fbeam/f_lobe,f_prom/f_lobe,0,'color',colors(iic,:))
     end    
     hold(hca,'off')
-    hca.XLim = peakF_nobg{1}.v([1 end])*1e-3;
+    hca.XLim = ff{1}.v([1 end])*1e-3;
     hca.XLabel.String = 'v_{||} (10^3 km/s)';
     hca.YLabel.String = 'f/f_{lobe}';
-    irf_legend(hca,sprintf('f_{lobe} = %g s/m^4',f_lobe),[0.02 0.98])
+    irf_legend(hca,{'f_{nobg}';sprintf('f_{lobe} = %g s/m^4',f_lobe)},[0.02 0.98])
   end
+  ylimmax = 0;
+  for ip = 1:3
+    h(ip).XGrid = 'on';
+    h(ip).YGrid = 'on';
+    ylimmax = max([ylimmax h(ip).YLim(2)]);    
+  end
+  hlinks = linkprop(h,{'YLim'});
+  hlinks.Targets(1).YLim(2) = ylimmax;
+  compact_panels(0.01)
   
   %% Save data to file
   % .mat or .txt (together or separate?)  
@@ -370,7 +544,7 @@ for ievent = 1%:nevents
   
   
   if doSave
-    save(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data_new')
+    save(sprintf('%s/acc_pot_data_event_%g',saveAccPotPath,event),'acc_pot_data')
   end
   %fid = fopen([matlabPath 'acc_pot_statistics.txt'],'a+');
   % event_id
