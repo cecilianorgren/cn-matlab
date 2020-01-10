@@ -115,9 +115,11 @@ if 1 % findpeaks()
         disp(sprintf('it = %g: Multiple peaks at same (plus/minus) energy. Using largest positive value: iloc(2). Consider setting vint.',it));
         iloc = iloc(2);
       end      
+      fall(it) = PKS(iloc);
       phi(it) = LOCS(iloc);
       vel(it) = sign(LOCS(iloc))*sqrt(2*abs(LOCS(iloc))*units.e/units.me)*1e-3;      
     else
+      fall(it) = NaN;
       phi(it) = NaN;
       vel(it) = NaN;
     end
@@ -146,9 +148,11 @@ if doRemoveAfter
   end
 end
 vel(isnan(phi)) = NaN;
+all(isnan(phi)) = NaN;
 
 TS = irf.ts_scalar(fred.time,phi);
 tsVel = irf.ts_scalar(fred.time,vel);
+tsFall = irf.ts_scalar(fred.time,fall);
 
 % find indice of maximum phi and save the corresponding f
 [val,ind] = max(TS.abs.data);
@@ -180,7 +184,7 @@ if doPlot
   end
   
   
-  h = irf_plot(3);  
+  h = irf_plot(4);  
   plotAccVel = 1;
   steps = [1 2 4 6];  % for downsampling
   
@@ -276,7 +280,13 @@ if doPlot
     hlegs = legend(hca,legends,'location','best');
     hlegs.Title.String = {'additionally','downsampled to:'};
   end
-  
+  if 1 % plot f_beam
+    hca = irf_panel('fbeam');  
+    hold(hca,'on')
+    irf_plot(hca,tsFall)
+    hold(hca,'off')
+    hca.YLabel.String = {'f_{beam}.', '(s/m^4)'};    
+  end  
   irf_plot_axis_align
   irf_zoom(h,'x',fred.time)
 end
@@ -285,4 +295,8 @@ if nargout == 1
 elseif nargout == 2
   varargout{1} = TS;
   varargout{2} = fpick;
+elseif nargout == 3
+  varargout{1} = TS;
+  varargout{2} = fpick;
+  varargout{3} = tsFall;
 end

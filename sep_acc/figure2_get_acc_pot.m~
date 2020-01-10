@@ -76,7 +76,6 @@ c_eval('Teperp_lobe{!}  = 0.5*mean(facTe?.tlim(tints_lobe{!}).data(:,2,2)+facTe?
 c_eval('Teperp_sheet{!} = 0.5*mean(facTe?.tlim(tints_sheet{!}).data(:,2,2)+facTe?.tlim(tints_sheet{!}).data(:,3,3),1);',ic,1:nevents)
 c_eval('Teperp_sep{!}   = 0.5*mean(facTe?.tlim(tints_sep{!}).data(:,2,2)+facTe?.tlim(tints_sep{!}).data(:,3,3),1);',ic,1:nevents)
 
-c_eval('Te_lobe{?} = (2*Teperp_lobe{?}+Tepar_lobe{?})/3',1:nevents);
 if 0
 wce0 = units.e*B_lobe*1e-9/units.me; % fce0*2pi
 wpe0 = sqrt(n_sheet*1e6*units.e^2/units.eps0/units.me); % fpe0*2*pi
@@ -197,7 +196,12 @@ for iic = ic
   hcf.Position = [700 100 700 800];
   %cn.print(sprintf('event%g_tsAccPot%g_nobg_abs',event,iic),'path',printAccPotPath)
 
-  c_eval('[tmpTsAccPot?,tmppPeakF?,tmpTsFe?] = find_acc_pot(cond.dist,''eint'',eint,''vint'',vint,''minpeakheight'',minpeakheight,''minpeakprominence'',minpeakprominence,''resample'',3);',ic)
+  [tmpTsAccPot?,tmppPeakF,tmpTsFe] = find_acc_pot(cond.dist,...
+    'eint',cond.eint,...
+    'vint',cond.vint,...
+    'minpeakheight',cond.minpeakheight,... % fraction of f_lobe
+    'minpeakprominence',cond.minpeakprominence,... % smaller fraction of f_lobe
+    'resample',cond.resample_timestep);
   
 end
  
