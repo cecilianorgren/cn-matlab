@@ -32,7 +32,7 @@ phi_all = zeros(nEvents,1);
 
 countEvent = 0;
 
-for iEvent = 5%[1 3:19]%:nEvents
+for iEvent = [1 3:19]%:nEvents
   countEvent = countEvent + 1;
   event = events(iEvent); % set event id
   sep.get_tints; % get tints for that event id  
@@ -302,7 +302,7 @@ for iEvent = 5%[1 3:19]%:nEvents
   for ifield = 1:numel(fields)
     results(countEvent).(fields{ifield}) = cond.(fields{ifield});
   end
-  %pause
+  pause
   
 end
 
@@ -322,7 +322,7 @@ if 1 % f/flobe vs v/vbeam, remove all below 100 eV
     yy = results(ir).ts_f_all.data/results(ir).f_lobe;
         
     xx(abs(xx)==min(abs(xx))) = NaN;
-    plot(hca,xx,yy,'-','color',colors(ir,:))
+    plot(hca,xx,yy,'o','color',colors(ir,:))
     %plot(hca,xx/vbeam(ir),yy)
     if ir == 1
       hold(hca,'on')
@@ -339,7 +339,6 @@ if 1 % f/flobe vs v/vbeam, remove all below 100 eV
   hca.FontSize = 14;
   %hca.XLim = [0 5];
 end
-
 
 %% Plot all beams and statistics
 ebeam = [cellfun(@(x) ( x.ebeam ), {results(:).peakF}, 'UniformOutput', false)]; ebeam = [ebeam{:}];
@@ -565,10 +564,10 @@ if 0 % print out data as should be inserted in table in paper
   all_events = 1:18;
   all_events = all_events(sort_ind);
   for ievent_ = 1:18
-    ievent = ievent_;%events(ievent_);
+    ievent = all_events(ievent_);
     t1_utc = event.time1{ievent}.utc;
     t2_utc = event.time2{ievent}.utc;
-    str = sprintf('%s - %s & %4.0f & %3.0f & %4.0f & %5.3f',t1_utc(1:23),t2_utc(15:23),100*round(event.phi(ievent)/100),10*round(event.T_lobe(ievent)/10),100*round(event.T_sheet(ievent)/100),event.beta_e_lobe(ievent));
+    str = sprintf('%s - %s & %4.0f & %3.0f & %4.0f & %5.3f \\\\ \\hline',t1_utc(1:23),t2_utc(15:23),100*round(event.phi(ievent)/100),10*round(event.T_lobe(ievent)/10),100*round(event.T_sheet(ievent)/100),event.beta_e_lobe(ievent));
     disp(str)
   end 
 end

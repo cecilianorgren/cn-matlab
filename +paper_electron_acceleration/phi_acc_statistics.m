@@ -14,7 +14,7 @@ localuser = datastore('local','user');
 saveAccPotPath = ['/Users/' localuser '/MATLAB/cn-matlab/+sep/acc_potential/'];
 printAccPotPath = ['/Users/' localuser '/GoogleDrive/Research/Separatrix_acceleration_events/acceleration_potential/'];
 
-events = [1 3:20];
+events = [1 3:19];
 nevents = numel(events);
 %acc_pot = nan(nevents,1);
 
@@ -430,12 +430,14 @@ if 1 % phi vs beta e lobe
   hca.XLim(1) = 0;
   hca.XLim(2) = 0.09;
   hca.YLim(1) = 0;
+  if 0
   hold(hca,'on')
   hline = plot(hca,diff(hca.XLim)*hca.YLim/hca.XLim(2),hca.YLim,'color',[0.8 0.8 0.8]);
   hline = plot(hca,hca.XLim,0.5*hca.XLim,'color',[0.8 0.8 0.8]);
   hline = plot(hca,hca.XLim,0.25*hca.XLim,'color',[0.8 0.8 0.8]);
   hline = plot(hca,hca.XLim,0.1*hca.XLim,'color',[0.8 0.8 0.8]);
   hold(hca,'off')  
+  end
   legend(hca,'off')
 end
 if 1 % n_sep/n_lobe vs phi/te
