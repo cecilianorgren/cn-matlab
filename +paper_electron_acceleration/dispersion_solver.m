@@ -380,7 +380,7 @@ if 1 % input info
   hca.Visible = 'off';
   text(hca,0,1,info_str,'verticalalignment','top','Tag','info_str')
 end
-if 1 % xis
+if 0 % xis
   hca = h(isub); isub = isub + 1;
   %plot(hca,kvec*1e3,real(xis_imag),'-',kvec*1e3,imag(xis_imag),'--')
   %plot(hca,kvec*1e3,real(xis_real),'-',kvec*1e3,imag(xis_real),'--')

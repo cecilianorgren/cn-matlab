@@ -524,7 +524,7 @@ h(1).Position(3) = 0.4;
 
 fontsize = 14;
 colors = pic_colors('matlab');
-colors =[0 0 0; colors([1:end],:)];
+colors =[0 0 0; colors([ 4:end],:)];
 ic = 1;
 isub = 1;
 
@@ -588,7 +588,7 @@ if 1 % fit for both slow and fast ESWs
     ax2.YLim = [0 hca.YLim(2)]*iscale;
     ax2.YLabel.String = 'f_i (s/m^4)';
     ax2.FontSize = fontsize;
-    plot(hca,f_1{1}*1e-3,f_1{3}/iscale,'color',colors(3,:),'linewidth',1.5,'displayname',sprintf('ions:\n%s','model input'))
+    plot(hca,f_1{1}*1e-3,f_1{3}/iscale,'color',0*colors(3,:),'linewidth',1.5,'displayname',sprintf('ions:\n%s','model input'))
     hold(hca,'off')
   end
   
@@ -598,7 +598,7 @@ if 1 % fit for both slow and fast ESWs
   hca.YLabel.String = 'f_e (s/m^4)';
   hleg = legend(hca,'location','northwest');
   hleg.Position(1) = 0.09;
-  hleg.Position(2) = 0.46;
+  hleg.Position(2) = 0.43;
   hleg.Box = 'off';
   hleg.FontSize = 11;
 end
@@ -684,7 +684,7 @@ if 1 % f vs kpar, with all the semi-manual velocities added.
   hca.YLim = [0 1];
   colormap(hca,'parula')
   hleg = legend(hca,'Location','East');
-  %hleg.Box = 'off';
+  hleg.Box = 'off';
 end
 %colormap(h(2),pic_colors('candy'))
 %colormap(h(2),'gray')
