@@ -154,7 +154,7 @@ tsK_max_inst = irf.ts_scalar(char(esw_data{5}),kmax_instability);
 %c_eval('facE?perp_lowpass = facE?.filt(0,fhigh,[],5);')
 %load('/Users/cno062/GoogleDrive/Data/polarization_paper_electron_acceleration_perppar.mat')
 
-if 0 
+if 1 
   %%
   Tints_tmp = Tints;
   Tints = Tints +[-1 1];
@@ -167,6 +167,7 @@ toc
 Tints = Tints_tmp;
 end
 
+return
 %% Basic plot of dispersion relation
 h = setup_subplots(3,3,'vertical');
 isub = 1;
@@ -265,10 +266,10 @@ if 0 % Remove background
   nPhoto = 1;
   c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''ZeroNaN'',0);',1:numel(nSecondary))
 end
-tic; ef1D = eDist.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
-tic; ef1D_nobg1 = eDist_nobg1.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
-tic; ef1D_nobg2 = eDist_nobg2.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
-tic; ef1D_nobg3 = eDist_nobg3.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
+tic; ef1D = eDist.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
+tic; ef1D_nobg1 = eDist_nobg1.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
+tic; ef1D_nobg2 = eDist_nobg2.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
+tic; ef1D_nobg3 = eDist_nobg3.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
 %tic; ef1D_nobg4 = eDist_nobg4.reduce('1D',dir_red,'scpot',scpot,'lowerelim',lowerelim,'nMC',200); toc % reduced distribution along B
 
 %% Plot timeseries and 4SC disprel

@@ -158,7 +158,7 @@ tsK_max_inst = irf.ts_scalar(char(esw_data{5}),kmax_instability);
 %c_eval('facE?perp_lowpass = facE?.filt(0,fhigh,[],5);')
 %load('/Users/cno062/GoogleDrive/Data/polarization_paper_electron_acceleration_perppar.mat')
 
-if 0 
+if 1 
   %%
   Tints_tmp = Tints;
   Tints = Tints +2*[-1 1];
@@ -327,8 +327,8 @@ if 1 % e psd vpar
   end
   if 1 % plot vepar +- vth
     hold(hca,'on')
-    irf_plot(hca,gseVe1.dot(gseB1.norm.resample(gseVe1))*vscale+vte1par.resample(gseVe1)*vscale,'--');
-    irf_plot(hca,gseVe1.dot(gseB1.norm.resample(gseVe1))*vscale+-1*vte1par.resample(gseVe1)*vscale,'--');
+    irf_plot(hca,gseVe1.dot(gseB1.norm.resample(gseVe1))*vscale+vte1par.resample(gseVe1)*vscale,'--','linewidth',1.5);
+    irf_plot(hca,gseVe1.dot(gseB1.norm.resample(gseVe1))*vscale+-1*vte1par.resample(gseVe1)*vscale,'--','linewidth',1.5);
     hold(hca,'off')
   end
   
