@@ -6,7 +6,10 @@
 %psd_all{i_vph,i_phi_mult,i_iff} = {{v_vec*v_scale*1e-3,mod_f0},{v_vec*v_scale*1e-3,mod_f_average},{v_fpi*v_scale,1*f_fpi*1e0}};
 %n_all{i_vph,i_phi_mult,i_iff} = {-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale};
 
-
+ts_edi_flux180 = ePitch1_flux_edi.palim([173 180]);
+%tint_phi = irf.tint('2017-07-06T13:54:05.490Z/2017-07-06T13:54:05.620Z');
+f_scale = 1e6;
+lowerelim = [];
 
 [n_vph_all,n_phi_mult_all,n_iff_all] = size(flux_all);
 
@@ -17,7 +20,8 @@ if doCollectCorr
   corr_f_all = nan(n_vph_all,n_phi_mult_all,n_iff_all);
 end
 
-doPlot = 1;
+doPlot = 0;
+doPrint = 0;
 if doPlot
   fig = figure(42);
   fig.Position = [200,200,1307,600];
@@ -25,7 +29,7 @@ if doPlot
   [h,h2] = initialize_combined_plot(npanels,2,1,0.6,'vertical'); % horizontal
 end
       
-c_eval('n?_mom_fpi = ne?.resample(ef1D.time).data;',1:4)
+c_eval('n?_mom_fpi = ne?.resample(gseVe1.time).data;',1:4)
 n_mom_fpi = mean([n1_mom_fpi,n2_mom_fpi,n3_mom_fpi,n4_mom_fpi],2);
 
 % run through all and get correlation
@@ -58,15 +62,15 @@ for i_vph = 1:n_vph_all
       % Collect correlation data into matrix     
       % Density
       if doCollectCorr
-        corr_n_tmp = sum(abs(ts_n_diff.tlim(tint_phi).data).^2);
+        corr_n_tmp = nansum(abs(ts_n_diff.tlim(tint_phi).data).^2);
         corr_n_all(i_vph,i_phi_mult,i_iff) = corr_n_tmp;
 
         % Flux
-        corr_j_tmp = sum(abs(ts_j_diff.tlim(tint_phi).data).^2);      
+        corr_j_tmp = nansum(abs(ts_j_diff.tlim(tint_phi).data).^2);      
         corr_j_all(i_vph,i_phi_mult,i_iff) = corr_j_tmp;
 
         % PSD
-        corr_f_tmp = sum(f_diff_ampl(v_ind).^2);
+        corr_f_tmp = nansum(f_diff_ampl(v_ind).^2);
         corr_f_all(i_vph,i_phi_mult,i_iff) = corr_f_tmp;            
       end
       % Averaged PSD
@@ -137,8 +141,11 @@ for i_vph = 1:n_vph_all
         hca.YGrid = 'on';
         legend(hca,{'entire diff','included for correlation'})
         irf_legend(hca,{['\Sigma_v' sprintf('|<f^{mod}>-<f^{fpi}>|^2 = %g',corr_f_tmp)]},[0.02 0.98])
-        cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))
-        %pause
+        if doPrint 
+          drawnow
+          cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))          
+          pause(0.1)
+        end
         
       end
     end
@@ -155,7 +162,7 @@ figure(43)
 [VPH_ALL,PHI_MULT_ALL,IFF_ALL] = ndgrid(vph_all,phi_mult_all,iff_all);
 n_cominations = n_vph_all*n_phi_mult_all*n_iff_all;
 n_cominations_vph_phi = n_vph_all*n_phi_mult_all;
-h = setup_subplots(2,2,1);
+h = setup_subplots(2,2);
 isub = 1;
 
 i_iff_plot = [1 2 3:n_iff_all]; % remove outlier
