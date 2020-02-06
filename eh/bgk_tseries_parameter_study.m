@@ -20,8 +20,8 @@ if doCollectCorr
   corr_f_all = nan(n_vph_all,n_phi_mult_all,n_iff_all);
 end
 
-doPlot = 0;
-doPrint = 0;
+doPlot = 1;
+doPrint = 1;
 if doPlot
   fig = figure(42);
   fig.Position = [200,200,1307,600];
@@ -98,6 +98,7 @@ for i_vph = 1:n_vph_all
         irf_legend(hca,{['\Sigma_t' sprintf('|j^{mod}-j^{edi}|^2 = %g',corr_j_tmp)]},[0.02 0.98])
 
         irf_zoom(h,'x',tint_phi)
+        irf_zoom(h,'x',ts_n_obs.time([1 end]))       
         
         h(1).Title.String = sprintf('iff = %.0f, v_{ph} = %.0f km/s,  phi multiplier = %.1f',iff_all(i_iff),vph_all(i_vph)*1e-3,phi_mult_all(i_phi_mult));
 
@@ -114,6 +115,7 @@ for i_vph = 1:n_vph_all
         hca.YLabel.String = 'f (s/m^4)';      
         hca.XLim = 40*[-1 1];
         hca.YLim = [0 3.5*1e-3];
+        n0 = sum(fav_mod_resamp);
         %legend(hca,{'f_0','<f^{mod}>','f^{fpi}','f^{fpi}','f^{fpi}','f^{fpi}',sprintf('<f^{fpi}>: n = %.4f cc',sum(f_fpi_mean))})
         legend(hca,{sprintf('f_0: n = %.3f cc',sum(f0_mod_resamp)),...
           sprintf('<f^{mod}>: n = %.3f cc',sum(fav_mod_resamp)),...
@@ -141,12 +143,11 @@ for i_vph = 1:n_vph_all
         hca.YGrid = 'on';
         legend(hca,{'entire diff','included for correlation'})
         irf_legend(hca,{['\Sigma_v' sprintf('|<f^{mod}>-<f^{fpi}>|^2 = %g',corr_f_tmp)]},[0.02 0.98])
-        if doPrint 
-          drawnow
-          cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))          
-          pause(0.1)
+        drawnow
+        if doPrint           
+          cn.print(sprintf('iff_%g_phi_mult_%.1f_vph_%.0f_n%g',iff_all(i_iff),phi_mult_all(i_phi_mult),vph_all(i_vph)*1e-3,n0*1e-6))                    
         end
-        
+        pause(0.1)
       end
     end
   end
