@@ -3,7 +3,7 @@
 
 units = irf_units;
 B0 = 20e-9; % T
-PB = B0/2/units.mu0;
+PB = B0/2/units.mu0; % Pa
 
 TiTe = 5;
 fun_P = @(n,T) units.eV*T*(1+1/TiTe)*n;
@@ -21,11 +21,33 @@ vecN = linspace(minN,maxN,nN);
 
 [N,T] = meshgrid(vecN,vecTi);
 
-hca = subplot(1,1,1);
+
+h = setup_subplots(2,1);
+isub = 1;
+
+hca = h(isub); isub = isub + 1;
 P = fun_P(N,T);
 [c,hclab] = contour(hca,N*1e-6,T,P'*1e9);
 clabel(c,hclab)
+hold(hca,'on')
+%[c,hclab] = contour(hca,N*1e-6,T,[1 1]*PB'*1e9);
+clabel(c,hclab)
+hold(hca,'off')
 hcb = colorbar('peer',hca);
 hcb.YLabel.String = 'P (nPa)';
+hca.XLabel.String = 'n (cm^{-3})';
+hca.YLabel.String = 'T_i (eV)';
+
+
+hca = h(isub); isub = isub + 1;
+P = fun_P(N,T);
+[c,hclab] = contour(hca,N*1e-6,T,P'/PB);
+clabel(c,hclab)
+hold(hca,'on')
+%[c,hclab] = contour(hca,N*1e-6,T,[1 1]*PB'*1e9);
+clabel(c,hclab)
+hold(hca,'off')
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = sprintf('P/P_B(B_0 = %g nT)',B0*1e9);
 hca.XLabel.String = 'n (cm^{-3})';
 hca.YLabel.String = 'T_i (eV)';

@@ -23,6 +23,7 @@ ePerp2 = ePara.cross(ePerp1);
 tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc 
 tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc
 tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc
+
 %%
 tic; ef1D = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
 lineVe = ve.dot(ePara); % projection of Vi on B
