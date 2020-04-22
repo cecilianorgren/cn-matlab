@@ -509,36 +509,19 @@ for ii = 1:npanels
   h(ii+pshift).YLabel.FontSize = 11;
 end
 
-%% Delta B relation for LHW dynamics
-c_eval('bdryB?dc = bdryB?.filt(0,0.1,[],5);',1:4)
-c_eval('bdryB?ac = bdryB?-bdryB?dc;',1:4)
-c_eval('bdryB?acdc = bdryB?ac/bdryB?dc;',1:4)
-c_eval('ne?dc = ne?.filt(0,0.1,[],5);',1:4)
-c_eval('ne?ac = ne?-ne?dc;',1:4)
-c_eval('ne?acdc = ne?_ac/ne?dc;',1:4)
+%% Delta B relation 
+c_eval('bdrydB? =',1:4)
 
-npanels = 5;
+npanels = 7;
 h = irf_plot(npanels);
 
 if 1 % B abs
   hca = irf_panel('B abs');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryB1dc.abs.tlim(tint),bdryB2dc.abs.tlim(tint),bdryB3dc.abs.tlim(tint),bdryB4dc.abs.tlim(tint)},'comp');
-  hca.YLabel.String = {'|B|_{DC}','(nT)'};
+  irf_plot(hca,{gseB1.abs.tlim(tint),gseB2.abs.tlim(tint),gseB3.abs.tlim(tint),gseB4.abs.tlim(tint)},'comp');
+  hca.YLabel.String = {'B_{z}','(nT)'};
 end
-if 1 % B abs
-  hca = irf_panel('B abs');
-  set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryB1.abs.tlim(tint),bdryB2.abs.tlim(tint),bdryB3.abs.tlim(tint),bdryB4.abs.tlim(tint)},'comp');
-  hca.YLabel.String = {'|B|_{AC}','(nT)'};
-end
-if 1 % B abs
-  hca = irf_panel('B abs');
-  set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{bdryB1ac.abs.tlim(tint),bdryB2ac.abs.tlim(tint),bdryB3ac.abs.tlim(tint),bdryB4ac.abs.tlim(tint)},'comp');
-  hca.YLabel.String = {'|B|_{AC}','(nT)'};
-end
-if 0 % BX
+if 1 % BX
   hca = irf_panel('BX');
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_plot(hca,{gseB1.x.tlim(tint),gseB2.x.tlim(tint),gseB3.x.tlim(tint),gseB4.x.tlim(tint)},'comp');
@@ -546,23 +529,17 @@ if 0 % BX
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_legend(hca,{'mms 1','mms 2','mms 3','mms 4'},[0.98 0.9],'fontsize',12);
 end
-if 0 % BY
+if 1 % BY
   hca = irf_panel('BY');
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_plot(hca,{gseB1.y.tlim(tint),gseB2.y.tlim(tint),gseB3.y.tlim(tint),gseB4.y.tlim(tint)},'comp');
   hca.YLabel.String = {'B_{y}','(nT)'};
 end
-if 0 % BZ
+if 1 % BZ
   hca = irf_panel('BZ');
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_plot(hca,{gseB1.z.tlim(tint),gseB2.z.tlim(tint),gseB3.z.tlim(tint),gseB4.z.tlim(tint)},'comp');
   hca.YLabel.String = {'B_{z}','(nT)'};
-end
-if 1 % ne
-  hca = irf_panel('ne');
-  set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{ne1dc.tlim(tint),ne2dc.tlim(tint),ne3dc.tlim(tint),ne4dc.tlim(tint)},'comp');
-  hca.YLabel.String = {irf_ssub('n_{e}',ic),'(cm^{-3})'};
 end
 if 1 % ne
   hca = irf_panel('ne');

@@ -7,8 +7,9 @@ if 0
   return
 end
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Nexus/data');
-db_info = datastore('mms_db');   
+%mms.db_init('local_file_db','/Volumes/Nexus/data');
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+db_info = datastore('mms_db');
 
 %% Make event directory
 if 0 % already done

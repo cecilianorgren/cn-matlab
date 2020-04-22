@@ -31,6 +31,7 @@ c_eval('tsV?_timing = irf.ts_vec_xyz(gseE?.time,repmat(v_timing,gseE?.length,1))
 v_direction = irf_norm(v_timing);
 v_amplitude = sqrt(sum(v_timing.^2));
 tintLH = tint; % LH wave packet
+
 %% intermediate LH waves, large EDC ~40-50
 ic = 1:4;
 tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:22.50Z'); % LH separatrix
