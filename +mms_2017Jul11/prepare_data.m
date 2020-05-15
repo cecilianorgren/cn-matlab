@@ -62,6 +62,8 @@ c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.units = '
 
 % Non-ideal electric field, E+VexB
 c_eval('gseEVexB? = gseE?.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''E+VexB'';',ic)
+c_eval('gseEperpVixB? = gseE?perp.resample(gseVixB?.time)+gseVixB?; gseEVixB?.name = ''Eperp+VixB'';',ic)
+c_eval('gseEperpVexB? = gseE?perp.resample(gseVexB?.time)+gseVexB?; gseEVexB?.name = ''Eperp+VexB'';',ic)
 
 % JxB
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?));',ic)
@@ -341,22 +343,67 @@ curvBradius = 1/mvaCurvB.abs; curvBradius.name = 'R_c';
 %% Assume normal electric fields are directly proportional to ion pressure gradient at boundary
 c_eval('gseGradPi?_fromE = gseE?.resample(ne?)*ne?*units.e*1e-3*1e6*1e9*1e3; gseGradPi?_fromE.units = ''nPa/km'';',ic)
 c_eval('Pi?perp = irf.ts_scalar(facPi?.time,(facPi?.yy.data+facPi?.zz.data)/2);',ic)
-c_eval('Lp?= Pi?perp/ne?.resample(Pi?perp)/gseE?perp.abs/units.e*1e-9*1e-6*1e3;',ic)
-c_eval('gseE?perp_filt = gseE?perp.filt(0,3,[],3);',ic)
-c_eval('Lp?_filt= Pi?perp/ne?.resample(Pi?perp)/gseE?perp_filt.resample(Pi?perp).abs/units.e*1e-9*1e-6*1e3;',ic)
+c_eval('Ti?perp = irf.ts_scalar(facTi?.time,(facTi?.yy.data+facTi?.zz.data)/2);',ic)
+c_eval('Te?perp = irf.ts_scalar(facTe?.time,(facTe?.yy.data+facTe?.zz.data)/2);',ic)
+c_eval('Lp?_fromE= Pi?perp/ne?.resample(Pi?perp)/gseE?perp.abs/units.e*1e-9*1e-6*1e3;',ic)
+ffilt = 1;
+c_eval('gseE?perp_filt = gseE?perp.filt(0,ffilt,[],3);',ic)
+c_eval('Lp?_fromE_filt= Pi?perp/ne?.resample(Pi?perp)/gseE?perp_filt.resample(Pi?perp).abs/units.e*1e-9*1e-6*1e3;',ic)
 
 
 tintZoom = irf.tint('2017-07-11T22:33:15.00Z/2017-07-11T22:33:35.00Z');
 
-h = irf_plot(2);
-hca = h(1);
+h = irfh_plot(4);
+hca = irf_panel('gseE1perp');
 set(hca,'ColorOrder',mms_colors('matlab')) 
 irf_plot(hca,{gseE1perp.abs,gseE1perp_filt.abs},'comp')
+hca.YLabel.String = {'|E_{\perp}|','(mv/m)'};
+irf_legend(hca,{'|E_{\perp}|',['|E_{\perp}|' sprintf('(f<%g Hz)',ffilt)]},[0.98 0.98])
 
-hca = h(2);
+if 0
+hca = irf_panel('gseEperpVixBperp');
 set(hca,'ColorOrder',mms_colors('matlab')) 
-irf_plot(hca,{Lp1*1e-3,Lp1_filt*1e-3},'comp')
+irf_plot(hca,{gseE1perp.abs,gseEperpVixB1.abs},'comp')
+hca.YLabel.String = {'E_{\perp}+v_ixB','(mv/m)'};
+irf_legend(hca,{'|E_{\perp}|','|E_{\perp}+v_ixB|'},[0.98 0.98])
+end
+if 0
+hca = irf_panel('gseEperpVexBperp');
+set(hca,'ColorOrder',mms_colors('matlab')) 
+irf_plot(hca,{gseE1perp.abs,gseEperpVexB1.abs},'comp')
+hca.YLabel.String = {'E_{\perp}+v_exB','(mv/m)'};
+irf_legend(hca,{'|E_{\perp}|','|E_{\perp}+v_exB|'},[0.98 0.98])
+end
+if 0
+hca = irf_panel('Pi1perp');
+set(hca,'ColorOrder',mms_colors('matlab')) 
+irf_plot(hca,{Pi1perp},'comp')
+hca.YLabel.String = {'P_{i,\perp}','(nPa)'};
+end
+hca = irf_panel('Ti1perp');
+set(hca,'ColorOrder',mms_colors('matlab')) 
+irf_plot(hca,{Ti1perp,Te1perp},'comp')
+hca.YLabel.String = {'T','(eV)'};
+irf_legend(hca,{'T_i','T_e'},[0.98 0.98])
 
-irf_zoom(h,'x',tintZoom)
+hca = irf_panel('Lp from E');
+set(hca,'ColorOrder',mms_colors('matlab')) 
+irf_plot(hca,{Lp1_fromE*1e-3,Lp1_fromE_filt*1e-3},'comp')
+hca.YTick = 0:200:2000;
+hca.YLabel.String = {'L_{P} (from E)','(km)'};
+irf_legend(hca,{'L_{P}',sprintf('L_{P} (f<%g Hz)',ffilt)},[0.98 0.1])
+
+
+hca = irf_panel('Lp from E log scale');
+set(hca,'ColorOrder',mms_colors('matlab')) 
+irf_plot(hca,{Lp1_fromE_filt*1e-3,rp1,Lp1,re1,Le1},'comp')
+hca.YTick = 10.^(-1:5);
+hca.YScale = 'log';
+hca.YLabel.String = {'L_{P} (from E)','(km)'};
+irf_legend(hca,{sprintf('L_{P} (f<%g Hz)',ffilt),'p gyro','p inert','e gyro','e inert'},[0.98 0.98])
+
+%irf_zoom(h,'x',tintZoom)
+irf_zoom(h,'x',tint)
 irf_zoom(h,'y')
-h(2).YLim = [0 1000];
+
+hca = irf_panel('Lp from E'); hca.YLim = [0 1000];

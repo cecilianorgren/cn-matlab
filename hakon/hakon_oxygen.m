@@ -7,7 +7,7 @@ c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',ti
 c_eval('dobj? = dataobj(''/Volumes/Fountain/Data/MMS/mms?/fgm/brst/l2/2017/08/04/mms?_fgm_brst_l2_20170804100003_v5.98.0.cdf'');',ic)
 c_eval('tt? = get_variable(dobj?,''Epoch_state'');',ic)
 c_eval('rr? = get_variable(dobj?,''mms?_fgm_r_gse_brst_l2'');',ic)
-c_eval('gseR? = irf.ts_vec_xyz(EpochTT(tt?.data),rr?.data(:,2:4));',ic)
+c_eval('gseR? = irf.ts_vec_xyz(EpochTT(tt?.data),rr?.data(:,1:3));',ic)
 
 %%
 fs = 1/(gseB1.time(2)-gseB1.time(1));
