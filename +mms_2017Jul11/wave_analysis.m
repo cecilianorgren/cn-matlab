@@ -1,6 +1,221 @@
+% Newer version of LH wave analysis,
+% First define time intervals, then do automatic correlation, 4sc wave
+% spectra (Daniels), then make generic figure
+
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+db_info = datastore('mms_db');
+units = irf_units;
+ic = 1;
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:34:30.00Z'); % psbl + EDR
+
+c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
+c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
+R = mms.get_data('R_gse',tint);
+if size(R.gseR1,2) == 4
+  c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
+else
+  c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
+end
+gseRav = 0.25*(gseR1 + gseR2 + gseR3 + gseR4);
+
+%% Define times
 % Go through, and save these (maybe not all if they overlap etc) into a structure array
 iw = 0;
 clear wprop
+iw = iw + 1; % OK
+wprop(iw).tint = irf.tint('2017-07-11T22:32:02.00Z/2017-07-11T22:32:03.00Z'); % leading edge of jet
+wprop(iw).tintLH = wprop(iw).tint;
+iw = iw + 1; % OK
+wprop(iw).tint = irf.tint('2017-07-11T22:33:28.00Z/2017-07-11T22:33:30.00Z'); % after island, closest to EDR
+wprop(iw).tintLH = irf.tint('2017-07-11T22:33:28.00Z/2017-07-11T22:33:30.00Z'); % if different than tint, for some reason
+iw = iw + 1; % Needs tweaking, filtering?
+wprop(iw).tint = irf.tint('2017-07-11T22:33:21.00Z/2017-07-11T22:33:23.00Z'); % largest gradients, needs some tweaking
+wprop(iw).tintLH = wprop(iw).tint;
+iw = iw + 1;
+wprop(iw).tint = irf.tint('2017-07-11T22:33:19.00Z/2017-07-11T22:33:20.50Z'); % modulated field aligned waves
+wprop(iw).tintLH = wprop(iw).tint;
+%iw = iw + 1;
+%wprop(iw).tint = irf_time('2017-07-11T22:33:28.85Z','utc>epochtt') + [-0.05 0.06]; % epar waves
+%wprop(iw).tintLH = wprop(iw).tint;
+iw = iw + 1;
+wprop(iw).tint = irf_time('2017-07-11T22:33:05.1Z','utc>epochtt') + [-0.3 0.3]; % double layer
+wprop(iw).tintLH = wprop(iw).tint;
+iw = iw + 1;
+wprop(iw).tint = irf_time('2017-07-11T22:33:09.25Z','utc>epochtt') + [-0.5 0.5]; % dont know
+wprop(iw).tintLH = wprop(iw).tint;
+iw = iw + 1;
+wprop(iw).tint = irf.tint('2017-07-11T22:32:53.00Z/2017-07-11T22:33:12.00Z'); % dont know
+wprop(iw).tintLH = wprop(iw).tint;
+
+%% Find wave vector
+% I think it's best to rotate the coordinate system a bit so that x and y
+% are not so mixed.
+z = mean(gseB1.tlim(tint).data,1); z = z/sqrt(sum(z.^2));
+[out,l,vE] = irf_minvar(gseE1perp.tlim(tint));
+meanE = mean(gseE1.tlim(tint).data,1); meanE = meanE/sqrt(sum(meanE.^2));
+[out,l,vVe] = irf_minvar(gseVe1perp.tlim(tint));
+meanVeperp = mean(gseE1.tlim(tint).data,1); meanE = meanE/sqrt(sum(meanE.^2));
+x1 = cross(z,cross(vE(1,:),z)); x1 = x1/sqrt(sum(x1.^2));
+x2 = cross(z,cross(meanE,z)); x2 = x2/sqrt(sum(x2.^2));
+x3 = cross(z,cross(vVe(1,:),z)); x3 = x3/sqrt(sum(x3.^2));
+x4 = cross(z,cross(meanVeperp(1,:),z)); x4 = x4/sqrt(sum(x4.^2));
+%%
+x = x4;
+y = cross(z,x);
+R = [x;y;z];
+c_eval('R? = gseR?*R'';')
+c_eval('B? = gseB?*R'';')
+c_eval('E? = gseE?*R'';')
+c_eval('E?par = gseE?par;')
+c_eval('E?perp = gseE?perp*R'';')
+for iw = 4%:numel(wprop)
+  
+  maxdt = 0.5; % s
+  [wprop(iw).dtall, wprop(iw).vall, wprop(iw).call]           = v4_xcorr(R1,R2,R3,R4,E1,E2,E3,E4,wprop(iw).tint);
+  [wprop(iw).dtall_rms, wprop(iw).vall_rms, wprop(iw).call_rms] = v4_rms(R1,R2,R3,R4,E1,E2,E3,E4,wprop(iw).tint,maxdt);
+  [wprop(iw).dtper, wprop(iw).vper, wprop(iw).cper]           = v4_xcorr(R1,R2,R3,R4,E1perp,E2perp,E3perp,E4perp,wprop(iw).tint);
+  [wprop(iw).dtper_rms, wprop(iw).vper_rms, wprop(iw).cper_rms] = v4_rms(R1,R2,R3,R4,E1perp,E2perp,E3perp,E4perp,wprop(iw).tint,maxdt);
+  [wprop(iw).dtpar, wprop(iw).vpar, wprop(iw).cpar]           = v4_xcorr(R1,R2,R3,R4,E1par,E2par,E3par,E4par,wprop(iw).tint);
+  [wprop(iw).dtpar_rms, wprop(iw).vpar_rms, wprop(iw).cpar_rms] = v4_rms(R1,R2,R3,R4,E1par,E2par,E3par,E4par,wprop(iw).tint,maxdt);
+  
+  [xvecs_perp1,yvecs_perp1,Power_perp1] = mms.fk_powerspec4SC('E?.tlim(wprop(iw).tint).y','R?','B?',wprop(iw).tint,'linear',10,'numk',400,'numf',200,'cav',4,'wwidth',2);
+  wprop(iw).R = R;
+  %%
+  npanels = 8;
+  nrows = 3;
+  ncols = 2;
+  %[h,h2] = initialize_combined_plot(npanels,3,2,0.6,'vertical');
+  [h,h2] = initialize_combined_plot(npanels,nrows,ncols,0.5,'vertical');
+  if 0 % E full
+    hca = irf_panel('E');
+    irf_plot(hca,{E1.x.tlim(wprop(iw).tint),E2.x.tlim(wprop(iw).tint),E3.x.tlim(wprop(iw).tint),E4.x.tlim(wprop(iw).tint)},'comp')
+  end
+  if 0 % E full dt
+    hca = irf_panel('E dt');
+    irf_plot(hca,{E1.x.tlim(wprop(iw).tint),E2.x.tlim(wprop(iw).tint),E3.x.tlim(wprop(iw).tint),E4.x.tlim(wprop(iw).tint)},'comp','dt',wprop(iw).dtall{1})
+  end
+  for icomp = 1:3 % Eperp x,y,z
+    comp_str = E1perp.representation{1}{icomp};
+    comp_str
+    if 1
+      hca = irf_panel(['E' comp_str]);
+      irf_plot(hca,{E1perp.(comp_str).tlim(wprop(iw).tint),E2perp.(comp_str).tlim(wprop(iw).tint),E3perp.(comp_str).tlim(wprop(iw).tint),E4perp.(comp_str).tlim(wprop(iw).tint)},'comp')
+      hca.YLabel.String = {sprintf('E_%s',comp_str),'(mV/m)'};
+    end
+    if 1
+      hca = irf_panel(['E' comp_str 'dt']);
+      irf_plot(hca,{E1perp.(comp_str).tlim(wprop(iw).tint),E2perp.(comp_str).tlim(wprop(iw).tint),E3perp.(comp_str).tlim(wprop(iw).tint),E4perp.(comp_str).tlim(wprop(iw).tint)},'comp','dt',wprop(iw).dtper{icomp})
+      irf_legend(hca,{sprintf('dt = [%.0f, ',wprop(iw).dtper{icomp}(1)*1e3),sprintf('%.0f,',wprop(iw).dtper{icomp}(2)*1e3),sprintf('%.0f,',wprop(iw).dtper{icomp}(3)*1e3),sprintf('%.0f] ms',wprop(iw).dtper{icomp}(4)*1e3)},[0.02 0.98])
+      hca.YLabel.String = {sprintf('E_%s',comp_str),'(mV/m)'};
+    end
+  end
+  if 1 % Epar
+    hca = irf_panel('Epar');
+    irf_plot(hca,{E1par.tlim(wprop(iw).tint),E2par.tlim(wprop(iw).tint),E3par.tlim(wprop(iw).tint),E4par.tlim(wprop(iw).tint)},'comp')
+  end
+  if 1 % Epar dt
+    hca = irf_panel('Epar dt');
+    irf_plot(hca,{E1par.tlim(wprop(iw).tint),E2par.tlim(wprop(iw).tint),E3par.tlim(wprop(iw).tint),E4par.tlim(wprop(iw).tint)},'comp','dt',wprop(iw).dtpar{1})    
+  end
+  irf_zoom(h,'x',wprop(iw).tint)
+  
+  colors = pic_colors('matlab');
+  isDisp = [];
+  isub = 1;
+  if 1 % c_xcorr, c_rms
+    hca = h2(isub); isub = isub + 1;  
+    scatter(hca,wprop(iw).cper{1},wprop(iw).cper_rms{1},[],colors(1:4,:),'o'); hold(hca,'on')
+    scatter(hca,wprop(iw).cper{2},wprop(iw).cper_rms{2},[],colors(1:4,:),'^');
+    scatter(hca,wprop(iw).cper{3},wprop(iw).cper_rms{3},[],colors(1:4,:),'s'); hold(hca,'off')
+    %plot(hca,cat(1,wprop(iw).cper{:}),cat(1,wprop(iw).cper_rms{:}),'o')
+    hca.XLabel.String = 'C_{xcorr}';
+    hca.YLabel.String = 'C_{rms}';
+    hca.Title.String = 'E_\perp';
+    legend(hca,{'x','y','z'},'location','best')
+  end  
+  if 1 % dt for xcorr and rms
+    hca = h2(isub); isub = isub + 1;    
+    scatter(hca,wprop(iw).dtper{1},wprop(iw).dtper_rms{1},[],colors(1:4,:),'o'); hold(hca,'on')
+    scatter(hca,wprop(iw).dtper{2},wprop(iw).dtper_rms{2},[],colors(1:4,:),'^');
+    scatter(hca,wprop(iw).dtper{3},wprop(iw).dtper_rms{3},[],colors(1:4,:),'s'); hold(hca,'off')
+    hold(hca,'on')
+    plot(hca,hca.XLim,hca.XLim,'k-')
+    hold(hca,'off')
+    %plot(hca,cat(1,wprop(iw).cper{:}),cat(1,wprop(iw).cper_rms{:}),'o')
+    hca.XLabel.String = 'dt_{xcorr}';
+    hca.YLabel.String = 'dt_{rms}';
+    hca.Title.String = 'E_\perp';
+    legend(hca,{'x','y','z'},'location','best')
+  end
+  if 1 % c_xcorr vs c_rms
+    hca = h2(isub); isub = isub + 1;  
+    plot(hca,cat(1,wprop(iw).cpar{:}),cat(1,wprop(iw).cpar_rms{:}),'o')
+    hca.XLabel.String = 'C_{xcorr}';
+    hca.YLabel.String = 'C_{rms}';
+    hca.Title.String = 'E_{||}';
+  end
+  if 1 % Dispersion
+    hca = h2(isub); isub = isub + 1;  
+    isDisp(end+1) = isub - 1;
+    kscale = 1e3;
+    %pcolor(hca,xvecs_par.kmag*kscale,yvecs_par.fkmag*1e-3,log10(Power_par.Powerkmagf)); 
+    %pcolor(hca,xvecs_par.kzf*kscale,yvecs_par.fkzf*1e-3,log10(Power_par.Powerkzf));  
+    pcolor(hca,xvecs_perp1.kxf*kscale,yvecs_perp1.fkxf*1e-3,log10(Power_perp1.Powerkxf));
+    shading(hca,'flat');
+    if kscale == 1e3
+      xlabel(hca,'k_{x} (km^{-1})');
+    else
+      xlabel(hca,'k_{x} (m^{-1})');
+    end
+    ylabel(hca,'f (kHz)');
+    c=colorbar('peer',hca,'ver');
+    ylabel(c,'log_{10} P(f,k)/P_{max}');
+    colormap('jet');  
+  end
+  if 1 % Dispersion
+    hca = h2(isub); isub = isub + 1; 
+    isDisp(end+1) = isub - 1; 
+    kscale = 1e3;
+    %pcolor(hca,xvecs_par.kmag*kscale,yvecs_par.fkmag*1e-3,log10(Power_par.Powerkmagf)); 
+    %pcolor(hca,xvecs_par.kzf*kscale,yvecs_par.fkzf*1e-3,log10(Power_par.Powerkzf));  
+    pcolor(hca,xvecs_perp1.kyf*kscale,yvecs_perp1.fkyf*1e-3,log10(Power_perp1.Powerkyf));
+    shading(hca,'flat');
+    if kscale == 1e3
+      xlabel(hca,'k_{y} (km^{-1})');
+    else
+      xlabel(hca,'k_{y} (m^{-1})');
+    end
+    ylabel(hca,'f (kHz)');
+    c=colorbar('peer',hca,'ver');
+    ylabel(c,'log_{10} P(f,k)/P_{max}');
+    colormap('jet');  
+  end
+  if 1 % Dispersion
+    hca = h2(isub); isub = isub + 1;
+    isDisp(end+1) = isub - 1;      
+    kscale = 1e3;
+    %pcolor(hca,xvecs_par.kmag*kscale,yvecs_par.fkmag*1e-3,log10(Power_par.Powerkmagf)); 
+    %pcolor(hca,xvecs_par.kzf*kscale,yvecs_par.fkzf*1e-3,log10(Power_par.Powerkzf));  
+    pcolor(hca,xvecs_perp1.kzf*kscale,yvecs_perp1.fkzf*1e-3,log10(Power_perp1.Powerkzf));
+    shading(hca,'flat');
+    if kscale == 1e3
+      xlabel(hca,'k_{z} (km^{-1})');
+    else
+      xlabel(hca,'k_{z} (m^{-1})');
+    end
+    ylabel(hca,'f (kHz)');
+    c=colorbar('peer',hca,'ver');
+    ylabel(c,'log_{10} P(f,k)/P_{max}');
+    colormap('jet');  
+  end
+  linkDisp = linkprop(h2(isDisp),{'YLim','CLim'});
+  for ip = isDisp
+    h2(ip).YLim = [0 0.5]; % kHz
+  end
+end
 
 %% Separatrix LH waves
 ic = 1:4;
