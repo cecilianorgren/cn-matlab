@@ -87,9 +87,3 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 disp('Done loading data.');
 
-%% Event path
-fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
-fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
-dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
-  
