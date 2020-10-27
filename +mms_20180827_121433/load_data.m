@@ -1,4 +1,4 @@
-ic = 1:4;
+ic = 1:3;
 tint = irf.tint('2018-08-27T12:14:33Z/2018-08-27T12:16:33Z');
 
 %% Load datastore
@@ -35,16 +35,16 @@ c_eval('tic; dslE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_d
 c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_par_epar_brst_l2'',tint); toc',ic);
 
 %% Load spacecraft position
-disp('Loading spacecraft position...')
-gsmR = mms.get_data('R_gsm',tint);
-gseR = mms.get_data('R_gse',tint);
-if size(R.gseR1,2) == 4
-  c_eval('gseR? = irf.ts_vec_xyz(gseR.time,gseR.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
-  c_eval('gsmR? = irf.ts_vec_xyz(gsmR.time,gsmR.gsmR?(:,2:4));',1:4); % dfg_srvy_l2pre
-else
-  c_eval('gseR? = irf.ts_vec_xyz(gseR.time,gseR.gseR?);',1:4); % mec
-  c_eval('gsmR? = irf.ts_vec_xyz(gsmR.time,gsmR.gsmR?);',1:4); % mec
-end
+% disp('Loading spacecraft position...')
+% gsmR = mms.get_data('R_gsm',tint);
+% gseR = mms.get_data('R_gse',tint);
+% if size(R.gseR1,2) == 4
+%   c_eval('gseR? = irf.ts_vec_xyz(gseR.time,gseR.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
+%   c_eval('gsmR? = irf.ts_vec_xyz(gsmR.time,gsmR.gsmR?(:,2:4));',1:4); % dfg_srvy_l2pre
+% else
+%   c_eval('gseR? = irf.ts_vec_xyz(gseR.time,gseR.gseR?);',1:4); % mec
+%   c_eval('gsmR? = irf.ts_vec_xyz(gsmR.time,gsmR.gsmR?);',1:4); % mec
+% end
 
 %% Spacecraft potential
 disp('Loading spacecraft potential...')
@@ -65,6 +65,7 @@ c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
 c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 
 %% Pressure and temperature
+ic = 1:3;
 disp('Loading pressure and temperature...'); tic
 c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic) 
 c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
@@ -92,7 +93,7 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 %c_eval('tic; gseVe?fast = mms.get_data(''Ve_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 %c_eval('tic; gseVi?fast = mms.get_data(''Vi_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
-
+ic = 1:4;
 disp('Done loading data.');
 
 %% Event path

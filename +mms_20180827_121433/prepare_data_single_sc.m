@@ -153,13 +153,24 @@ c_eval('wavVe?perp = irf_wavelet(gseVe?perp.abs.tlim(tint),''wavelet_width'',5.3
 c_eval('wavVe?perp.f_units = ''Hz''; wavVe?perp.f_label = ''f [Hz]''; wavVe?perp.p_label = {''log_{10} v_{e,\perp}^2'',''(km/s)^2/Hz''};',ic)
 
 %% LMN
+tint_zoom = irf.tint('2018-08-27T12:15:35Z/2018-08-27T12:15:50Z');
+
 L = [0.91, -0.41, 0.10];
 M = [0.41, 0.91, -0.02];
 N = [-0.08, 0.06, 0.99];
 lmn = [L;M;N];
+% try tiny rotation in MN plane
+angle = 14;
+Rmat = [cosd(angle) -sind(angle); sind(angle) cosd(angle)];
+MNnew = Rmat*[M;N];
+lmn_new = [L;MNnew];
+N = MNnew(2,:);
+M = MNnew(1,:);
+lmn = lmn_new;
+
 disp(sprintf('L = [%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',L,M,N))
 % Rotate data
-c_eval('mvaR? = gsmR?*lmn''; mvaR?.name = ''R LMN'';',ic)
+% c_eval('mvaR? = gsmR?*lmn''; mvaR?.name = ''R LMN'';',ic)
 c_eval('mvaB? = gsmB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 %c_eval('mvaB?scm = gsmB?scm*lmn''; mvaB?scm.name = ''B LMN'';')
 c_eval('mvaE? = gsmE?*lmn''; mvaE?.name = ''E LMN'';',ic)
