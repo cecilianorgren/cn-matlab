@@ -1,6 +1,6 @@
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');
-ic = 1:4;
+ic = 1;
 tint = irf.tint('2017-08-04T10:00:03.00Z/2017-08-04T10:04:03.00Z');
 tint = irf.tint('2018-07-05T20:19:00.00Z/2018-07-05T20:23:45.00Z');
 tint = irf.tint('2018-07-05T00:00:00.00Z/2018-07-05T24:00:00.00Z');
@@ -15,6 +15,8 @@ c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
 c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
 c_eval('nO? = mms.get_data(''Noplus_hpca_brst_l2'',tint,?);',ic);
 
+c_eval('nO? = mms.get_data(''Noplus_hpca_omni'',tint,?);',ic);
+%%
 %c_eval('dobj? = dataobj(''/Volumes/Fountain/Data/MMS/mms?/fgm/brst/l2/2017/08/04/mms?_fgm_brst_l2_20170804100003_v5.98.0.cdf'');',ic)
 %c_eval('tt? = get_variable(dobj?,''Epoch_state'');',ic)
 %c_eval('rr? = get_variable(dobj?,''mms?_fgm_r_gse_brst_l2'');',ic)
