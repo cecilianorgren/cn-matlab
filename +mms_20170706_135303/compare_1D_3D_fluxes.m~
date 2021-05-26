@@ -1,7 +1,6 @@
 units = irf_units;
 tint_zoom = irf.tint('2017-07-06T13:54:00.000Z/2017-07-06T13:54:10.000Z');
 tint_zoom = irf.tint('2017-07-06T13:53:55.000Z/2017-07-06T13:54:15.000Z');
-
 % EDI energy and corresponding velocity
 E_edi = 500; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
@@ -35,53 +34,30 @@ c_eval('eRed?_fpi_edi_range_180 = ePDist?.tlim(tint_zoom).reduce(''1D'',dmpaB?.r
 c_eval('eRed?_fpi_flux_edi_range = eRed?_fpi_edi_range_180.flux_red;',1)
 
 %% Plot, compare EDI and FPI for different spacecraft
-npanels = 5;
+npanels = 8;
 h = irf_plot(npanels);
 isub = 1;
+palim = 180-12*0;
 elim = 500;
 
 hlink = gobjects(0);
-% for sc = 1:4 % EDI vs FPI
-%   c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',sc)
-%   c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',sc)  
-% end
-
-if 1 % Epar
-  hca = irf_panel('Epar');
-  irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp')
-  irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'},[0.98 0.98])
-  hca.YLabel.String = {'E_{||}','(mV/m)'};
+for sc = 1:4 % EDI vs FPI
+  c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',sc)
+  c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',sc)  
 end
 
-palim = 180-12*0;
-for ic = 1:4
 if 1 % j FPI EDI 180 
-  hca = irf_panel(sprintf('mms %g, j_%g',ic,palim));      
-  c_eval('pa_edi = ePitch?_flux_edi.palim(palim).depend{2};',ic)
-  c_eval('en_edi = ePitch?_flux_edi.palim(palim).depend{1}(1);',ic)
-  c_eval('pa_fpi = ePitch?_flux_fpi.elim(elim).palim(palim).depend{2};',ic)
-  c_eval('en_fpi = ePitch?_flux_fpi.elim(elim).palim(palim).depend{1}(1);',ic)  
+  hca = irf_panel('j180-0*12');    
+  palim = 180-12*0;
+  c_eval('pa_edi = ePitch?_flux_edi.palim(palim).depend{2};',1)
+  c_eval('en_edi = ePitch?_flux_edi.palim(palim).depend{1}(1);',1)  
   
-  c_eval('j_edi = ePitch?_flux_edi.palim(palim)*1e-6;',ic)
-  c_eval('j_fpi = ePitch?_flux_fpi.elim(elim).palim(palim)*1e-6;',ic)
-  
-  irf_plot(hca,{j_edi,j_fpi},'comp');  
-  irf_legend(hca,{'EDI','FPI'},[0.98 0.98])
-  hca.YLabel.String = {sprintf('j_{MMS %g}',ic);'(10^{6} cm^{-2} s^{-1} sr^{-1})'};
-  irf_legend(hca,{['E_{FPI/EDI} = ' sprintf('%.2f',en_fpi) '/' sprintf('%.2f',en_edi)];...
-    ['\theta_{FPI/EDI} = ' sprintf('%.2f',pa_fpi) '/' sprintf('%.2f',pa_edi)]},[0.02 0.98],'color',[0 0 0])
-  
-  hl = findall(hca.Children,'type','line');
-  hl(1).LineWidth = 1;
-  
+  irf_plot(hca,{ePitch1_flux_edi.elim(elim).palim(palim)*1e-6,...
+                ePitch1_flux_fpi.elim(elim).palim(palim)*1e-6,'comp')
+  irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'},[0.98 0.98])
+  hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
+  irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
 end
-end
-
-irf_zoom(h,'x',tint_zoom)
-irf_zoom(h,'y')
-c_eval('h(?).YLim = [0 10];',2:5)
-
-cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10',pa_edi))
 
 %% Plot compare flux at different pitch angles
 npanels = 8;
@@ -94,7 +70,7 @@ if 0 % B
   irf_legend(hca,{'x','y','z'},[0.98 0.98])
   hca.YLabel.String = {'B_1','(nT)'};
 end
-if 1 % Epar
+if 1 % Eper
   hca = irf_panel('Epar');
   irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp')
   irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'},[0.98 0.98])
@@ -176,7 +152,6 @@ if 1 % EDI 180
 end
 irf_zoom(h,'x',tint_zoom)
 irf_zoom(h,'y')
-
 %% Plot, compare fpi to edi for individual spacecraft
 for sc = 1:4
   for palim = 180-[0 1 2 3]*12
@@ -288,7 +263,7 @@ ncols = 2;
 npanels = nrows*ncols;
 h = setup_subplots(nrows,ncols);
 isub = 1;
-palim = 180-12*0;
+palim = 180-12*2;
 elim = 500;
 
 hlink = gobjects(0);
@@ -298,14 +273,12 @@ for sc = 1:4 % EDI vs FPI
     hlink(end+1) = hca;
     c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',sc)
     c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',sc)
-    if 1 % downsample EDI to FPI
+    if 0 % downsample EDI to FPI
       c_eval('xx = ePitch?_flux_edi.palim(palim).resample(ePitch?_flux_fpi.time).data*1e-6;',sc)
       c_eval('yy = ePitch?_flux_fpi.palim(palim).elim(elim).data*1e-6;',sc)
-      clim = [0 2];
     else % upsample FPI to EDI
       c_eval('xx = ePitch?_flux_edi.palim(palim).data*1e-6;',sc)
       c_eval('yy = ePitch?_flux_fpi.palim(palim).resample(ePitch?_flux_edi.time).elim(elim).data*1e-6;',sc)
-      clim = [0 3];
     end
     edges = linspace(0,10,100);
     data = [xx yy];
@@ -320,7 +293,7 @@ for sc = 1:4 % EDI vs FPI
     hca.YGrid = 'on';
     hca.Layer = 'top';
     axis(hca,'square')
-    hca.CLim = clim;
+    hca.CLim = [0 3];
     %plot(hca,xx,yy,'.')
     hca.XTick = hca.YTick;
     hca.XLabel.String = sprintf('EDI (%s 10^6)',ePitch1_flux_edi.units);
