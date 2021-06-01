@@ -12,17 +12,70 @@ f = @(Lx) f0*Lx.*exp(-(Lx/Lf).^lexp);
 % lexp = 0.4;
 % f0 = 1.5;
 % f = @(Lx) f0*(Lx).^(lexp-1)./Lf*lexp.*exp(-(Lx/Lf).^lexp);
-Lf = 0.18;
-lexp = 0.4;
-f0 = 1.6;
-exp0 = 0.01;
-f = @(Lx) f0*Lx.*(exp(-((Lx/Lf)).^lexp)+exp0./Lx);
+funstr = '';
+model = 6;
+switch model
+  case 0
+    Lf = 0.17; % b
+    lexp = 0.4; % c
+    f0 = 1.7; % a
+    exp0 = 0.02; % zero level
+    f = @(Lx) f0*Lx.*exp(-((Lx/Lf)).^lexp)+exp0;    
+  case 1
+    Lf = 0.18;
+    lexp = 0.4;
+    f0 = 1.6;
+    f = @(Lx) f0*Lx.*exp(-(Lx/Lf).^lexp);
+  case 2 % Judit
+    b = 0.026; % b
+    a = 4.838; % a
+    c = 0.299; % c
+    f = @(Lx) a*Lx.*exp(-(Lx/b).^c);
+  case 3 
+    b = 1.6; % b
+    a = 0.4; % a
+    c = 0.55; % c
+    E0 = 0.03;
+    f = @(Lx) a*(c+1)*(Lx/b).^(c).*exp(-(Lx/b).^c) + E0;
+  case 4 
+    b = 8; % b
+    a = 0.3; % a
+    c = 0.2; % c
+    E0 = 0.03;
+    f = @(Lx) a*(c+1)*(Lx/b).^(c).*exp(-(Lx/b).^(c+1)) + E0;
+    funstr = {'f(L_x) = a(c+1)(L_x/b)^c exp[-(L_x/b)^{c+1}]+f_{0,inf}';...
+      sprintf('a = %g, b = %g, c = %g, f_{0,inf} = %g',a,b,c,E0)};
+  case 5 
+    b = 8; % b
+    a = 2.4; % a
+    c = 0.2; % c
+    E0 = 0.03;
+    f = @(Lx) a/b*(c+1)*(Lx/b).^(c).*exp(-(Lx/b).^(c+1)) + E0;
+    funstr = {'f(L_x) = (a/b)(c+1)(L_x/b)^c exp[-(L_x/b)^{c+1}]+f_{0,inf}';...
+      sprintf('a = %g, b = %g, c = %g, f_{0,inf} = %g',a,b,c,E0)};
+  case 6 
+    b = 8; % b
+    a = 2.4*8; % a
+    c = 0.18; % c
+    E0 = 0.03;
+    f = @(Lx) a/b/b*(c+1)*(Lx/b).^(c).*exp(-(Lx/b).^(c+1)) + E0;
+    funstr = {'f(L_x) = (a/b)(c+1)(L_x/b)^c exp[-(L_x/b)^{c+1}]+f_{0,inf}';...
+      sprintf('a = %g, b = %g, c = %g, f_{0,inf} = %g',a,b,c,E0)};
+end
+    
+
+%f = @(Lx) f0*Lx.*(exp(-((Lx/Lf)).^lexp)+exp0./Lx);
+
+
+% Judits fit
+
+%f = @(Lx) f0*Lx.*(exp(-((Lx/Lf)).^lexp)+exp0./Lx);
 L = sqrt(Lx.^2 + Lz.^2);
 
 Lz = 1;
-f = @(Lx) Lz./(Lx+3).^0.5-0.15;
-f = @(Lx) (Lz./(Lx+5)).^0.5-0.12;
-f = @(Lx) (Lz./(Lx)).^0.5-0.15;
+%f = @(Lx) Lz./(Lx+3).^0.5-0.15;
+%f = @(Lx) (Lz./(Lx+5)).^0.5-0.12;
+%f = @(Lx) (Lz./(Lx)).^0.5-0.15;
 %f = @(Lx) atan((Lz)./(Lx)+0.02).^0.95;
 %f = @(Lx) atan(2*(Lz)./(Lx)+1.00).^1.0;
 
@@ -32,8 +85,10 @@ plot(Lx,R,'*',xx,f(xx),'-')
 %plot(L,R,'*')
 %semilogx(Lx,R,'*',xx,f(xx),'-')
 hca = gca;
-hca.YLim = [0 0.4];
+hca.YLim = [0 0.3];
 grid on;
+
+irf_legend(hca,funstr,[0.98 0.98],'color',[0 0 0])
 
 %%
 % Judits fit to data 

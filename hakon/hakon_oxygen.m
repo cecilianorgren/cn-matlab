@@ -8,6 +8,8 @@ tint = irf.tint('2018-07-05T20:23:00.00Z/2018-07-05T20:23:45.00Z');
 
 tint = irf.tint('2018-07-05T20:21:00.00Z/2018-07-05T20:24:00.00Z');
 
+tint = irf.tint('2017-08-04T10:00:03.00Z/2017-08-04T10:04:03.00Z');
+
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',ic);
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
@@ -15,7 +17,7 @@ c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
 c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
 c_eval('nO? = mms.get_data(''Noplus_hpca_brst_l2'',tint,?);',ic);
 
-c_eval('nO? = mms.get_data(''Noplus_hpca_omni'',tint,?);',ic);
+%c_eval('nO? = mms.get_data(''Noplus_hpca_omni'',tint,?);',ic);
 %%
 %c_eval('dobj? = dataobj(''/Volumes/Fountain/Data/MMS/mms?/fgm/brst/l2/2017/08/04/mms?_fgm_brst_l2_20170804100003_v5.98.0.cdf'');',ic)
 %c_eval('tt? = get_variable(dobj?,''Epoch_state'');',ic)
