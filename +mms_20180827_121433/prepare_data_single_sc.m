@@ -1,4 +1,4 @@
-ic = 1:3;
+  ic = 1:3;
 units = irf_units;
 
 %% Current

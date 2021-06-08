@@ -392,3 +392,30 @@ hca.YLim = [0 3]*1e6;
 hca.Box = 'on';
 hca.XGrid = 'on';
 hca.YGrid = 'on';
+
+%% Skymaps of FPI, to see if there are significant non-gyrotropies that may explain discrepancies
+tint_zoom = irf.tint('2017-07-06T13:54:05.000Z/2017-07-06T13:54:06.000Z');
+tint_zoom_edi = irf.tint('2017-07-06T13:54:05.510Z/2017-07-06T13:54:05.630Z'); % 4 ePDist
+nrows = 4;
+ncols = 4;
+npanels = nrows*ncols;
+h = setup_subplots(nrows,ncols);
+
+elim = 500;
+
+% Multiple spacecraft
+isub = 1;
+ic_all = 1:4; % spacecraft id
+for ic = ic_all
+  c_eval('pdist = ePDist?.tlim(tint_zoom_edi).elim(elim);',ic)
+  nt = pdist.length;  
+  for it = 1:nt    
+    hca = h(isub); isub = isub + 1;
+    B = mean(dmpaB1.tlim(pdist(it).time+0.033*0.5*[-1 1]).data,1);
+    mms.plot_skymap(hca,pdist(it).dpflux,'log','vectors',{B,'B'});
+  end
+end
+hb = findobj(gcf,'type','colorbar');
+delete(hb(2:end))
+hb = findobj(gcf,'type','colorbar');
+hb.Position(1) = hb.Position(1)+0.03;
