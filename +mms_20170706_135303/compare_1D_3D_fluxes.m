@@ -81,7 +81,7 @@ irf_zoom(h,'x',tint_zoom)
 irf_zoom(h,'y')
 c_eval('h(?).YLim = [0 10];',2:5)
 
-cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10',pa_edi))
+%cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10',pa_edi))
 
 %% Plot compare flux at different pitch angles
 npanels = 8;

@@ -9,7 +9,7 @@ eint = [000 40000];
 vint = [-Inf Inf];
 
 eDist = ePDist1.tlim(tintZoom).elim(eint);
-%iDist = iPDist1.tlim(tintZoom).elim(eint);
+iDist = iPDist1.tlim(tintZoom).elim(eint);
 
 %% Remove background electrons
 [eDist1_bgremoved, eDist1_bg, ephoto_scale] = ...
@@ -27,10 +27,10 @@ h(2).CLim = [-35 -25];
 h(1).CLim = [-35 -25];
 irf_zoom(h,'x',tintZoom)
 %% electrons
-%ve = gseVe1.tlim(eDist.time).resample(eDist);
+ve = dbcsVe1.tlim(eDist.time).resample(eDist);
 scpot = scPot1.resample(eDist);
 scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower energies
-lowerelim = scpot*0 + 0;
+lowerelim = scpot*1 + 0;
 eLine = dmpaB1.resample(eDist).norm;
 %tic; ef1D_ = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
 tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
@@ -467,6 +467,8 @@ obs_velocity = obs_eh_properties.vel;
 obs_neh = numel(obs_velocity);
 c_eval('obs_t0_epoch_mms? = obs_eh_properties.time_mms?;')
 c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
+c_eval('phi? = obs_phi?;')
+
 c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 c_eval('obs_vtrap? = irf.ts_scalar(obs_t0_epoch_mms?,obs_vtrap(:,?));')
 c_eval('obs_vph?.data(isnan(obs_potential(:,?))) = NaN;')
@@ -789,7 +791,9 @@ if 1 % edi flux 180 4sc
   zoomy = [zoomy isub];
   hca = irf_panel('edi flux');
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  palim = 180-1;
+  %irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6,ePitch3_flux_edi.palim(palim)*1e-6,ePitch4_flux_edi.palim(palim)*1e-6},'comp','dt',dt);
   hca.YLabel.String = {'flux','(10^6 s^{-1}cm^{-2})'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'EDI 180^o'},[0.01 0.99],'fontsize',12);
@@ -820,7 +824,7 @@ hca = irf_panel('Vi'); hca.YLim = [-799 399];
 
 
 %% Plot fred, electrons
-ic = 1;
+ic = 1; 
 npanels = 9;
 h = irf_plot(npanels); 
 isub = 0;
