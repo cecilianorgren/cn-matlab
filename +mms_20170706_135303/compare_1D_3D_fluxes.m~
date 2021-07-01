@@ -52,6 +52,7 @@ if 1 % Epar
   irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp')
   irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'}',[1.01 0.98])
   hca.YLabel.String = {'E_{||}','(mV/m)'};
+  hca.YLim = [-60 60];
 end
 
 palim = 180-12*0;
@@ -78,13 +79,12 @@ if 1 % j FPI EDI 180
 end
 end
 
-irf_zoom(h,'x',tint_zoom+[-1 1])
+irf_zoom(h,'x',tint_zoom)
 irf_zoom(h,'y')
-set(irf_panel('Epar'),'ylim',[-60 60]);
+set(irf_panel('Epar'),'ylim',[];
 c_eval('h(?).YLim = [0 10];',2:5)
 
-cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10_zoomout',pa_edi))
-
+cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10',pa_edi))
 
 %% Plot compare flux at different pitch angles
 npanels = 8;
