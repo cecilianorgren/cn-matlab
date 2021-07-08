@@ -32,7 +32,7 @@ c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,
 
 %% Plot, local plasma properties, wave properties from observations combined, larger time + zoomin
 ic = 1;
-npanels = 10;
+npanels = 11;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -239,13 +239,35 @@ if 0 % E perp
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
-if 0 % ne
+if 1 % ne
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('12'))
   c_eval('irf_plot(hca,{ne?},''comp'');',ic)
   hca.YLabel.String = {'n_e','(cm^{-3})'};
+end
+if 0 % E par, 4 sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if 1 % E par, 1 sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par overview');
+  set(hca,'ColorOrder',mms_colors('1'))  
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  set(hca,'ColorOrder',mms_colors('1')) 
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  %irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
 end
 
 % zoom in
@@ -388,12 +410,12 @@ end
 if 1 % edi flux 180 4sc
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('edi flux');
+  hca = irf_panel('j_{e}^{EDI}');
   set(hca,'ColorOrder',mms_colors('1234'))
   palim = [168 180];  
   %irf_plot(hca,{flux180_mms1*1e-6,flux180_mms2*1e-6,flux180_mms3*1e-6,flux180_mms4*1e-6},'comp','dt',dt);
   irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6,ePitch3_flux_edi.palim(palim)*1e-6,ePitch4_flux_edi.palim(palim)*1e-6},'comp','dt',dt);
-  hca.YLabel.String = {'flux','(10^6 s^{-1}cm^{-2})'};
+  hca.YLabel.String = {'j_e^{EDI}','(10^6 s^{-1}cm^{-2})'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'EDI 180^o'},[0.05 0.99],'fontsize',12);
 end

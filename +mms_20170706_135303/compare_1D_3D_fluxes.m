@@ -54,7 +54,7 @@ if 1 % Epar
   hca.YLabel.String = {'E_{||}','(mV/m)'};
 end
 
-palim = 180-12*0;
+palim = 180-12*3;
 for ic = 1:4
 if 1 % j FPI EDI 180 
   hca = irf_panel(sprintf('mms %g, j_%g',ic,palim));      
@@ -78,12 +78,14 @@ if 1 % j FPI EDI 180
 end
 end
 
-irf_zoom(h,'x',tint_zoom+[-1 1])
+%irf_zoom(h,'x',tint_zoom+[-1 1])
+irf_zoom(h,'x',tint)
 irf_zoom(h,'y')
 set(irf_panel('Epar'),'ylim',[-60 60]);
 c_eval('h(?).YLim = [0 10];',2:5)
 
-cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10_zoomout',pa_edi))
+%cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10_zoomout',pa_edi))
+cn.print(sprintf('j_EDI_FPI_pa_%.0f_ylim10_zoomout_all',pa_edi))
 
 
 %% Plot compare flux at different pitch angles
@@ -91,6 +93,7 @@ npanels = 8;
 h = irf_plot(npanels);
 elim = 500;
 eflow = 10; efhigh = 0;
+timeline = gseVe1.time;
 
 if 0 % B
   hca = irf_panel('B1');
@@ -133,7 +136,7 @@ if 1 % Eperpz
    irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'}',[1.01 0.98])
   hca.YLabel.String = {'E_{\perp,z}','(mV/m)'};
 end
-if 1 % EDI 180 
+if 0 % EDI 180 
   hca = irf_panel('j EDI 180-0*12');    
   palim = 180-12*0;
   c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
@@ -148,7 +151,7 @@ if 1 % EDI 180
   hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
   irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
 end
-if 1 % EDI 180 
+if 0 % EDI 180 
   hca = irf_panel('j EDI 180-1*12');    
   palim = 180-12*1;
   c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
@@ -163,7 +166,7 @@ if 1 % EDI 180
   hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
   irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
 end
-if 1 % EDI 180 
+if 0 % EDI 180 
   hca = irf_panel('j EDI 180-2*12');    
   palim = 180-12*2;
   c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
@@ -178,7 +181,7 @@ if 1 % EDI 180
   hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
   irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
 end
-if 1 % EDI 180 
+if 0 % EDI 180 
   hca = irf_panel('j EDI 180-3*12');    
   palim = 180-12*3;
   c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
@@ -193,7 +196,67 @@ if 1 % EDI 180
   hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
   irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
 end
-irf_zoom(h,'x',tint_zoom)
+if 1 % EDI 180 resample fpi
+  hca = irf_panel('j EDI 180-0*12');    
+  palim = 180-12*0;
+  c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
+  c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',1)  
+  
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch2_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch3_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch4_flux_edi.palim(palim).resample(timeline)*1e-6},'comp')
+   irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'}',[1.01 0.98])
+  hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
+  irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
+end
+if 1 % EDI 180 
+  hca = irf_panel('j EDI 180-1*12');    
+  palim = 180-12*1;
+  c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
+  c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',1)  
+  
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch2_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch3_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch4_flux_edi.palim(palim).resample(timeline)*1e-6},'comp')
+   irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'}',[1.01 0.98])
+  hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
+  irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
+end
+if 1 % EDI 180 
+  hca = irf_panel('j EDI 180-2*12');    
+  palim = 180-12*2;
+  c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
+  c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',1)  
+  
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch2_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch3_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch4_flux_edi.palim(palim).resample(timeline)*1e-6},'comp')
+   irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'}',[1.01 0.98])
+  hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
+  irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
+end
+if 1 % EDI 180 
+  hca = irf_panel('j EDI 180-3*12');    
+  palim = 180-12*3;
+  c_eval('pa = ePitch?_flux_edi.palim(palim).depend{2};',1)
+  c_eval('en = ePitch?_flux_edi.palim(palim).depend{1}(1);',1)  
+  
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{ePitch1_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch2_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch3_flux_edi.palim(palim).resample(timeline)*1e-6,...
+                ePitch4_flux_edi.palim(palim).resample(timeline)*1e-6},'comp')
+   irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'}',[1.01 0.98])
+  hca.YLabel.String = {'j^{EDI}';'(10^{6} cm^{-2} s^{-1})'};
+  irf_legend(hca,{['energy = ' sprintf('%.2f',en)];['\theta = ' sprintf('%.2f',pa)]},[0.02 0.98],'color',[0 0 0])
+end
+%irf_zoom(h,'x',tint_zoom+[-1 1])
 irf_zoom(h,'y')
 
 %c_eval('h(?).YLim = [0 8];',5:8)
@@ -291,15 +354,15 @@ for sc = 1:4
 
     irf_zoom(h,'x',tint)
     drawnow
-    cn.print(sprintf('edi_fpi_comp_mms%g_en=%.0f_pa=%.0f_zoom_0',sc,en,pa))
+    %cn.print(sprintf('edi_fpi_comp_mms%g_en=%.0f_pa=%.0f_zoom_0',sc,en,pa))
     
     irf_zoom(h,'x',tint_zoom+[-5 5])
     drawnow
-    cn.print(sprintf('edi_fpi_comp_mms%g_en=%.0f_pa=%.0f_zoom_1',sc,en,pa))
+    %cn.print(sprintf('edi_fpi_comp_mms%g_en=%.0f_pa=%.0f_zoom_1',sc,en,pa))
     
     irf_zoom(h,'x',tint_zoom)
     drawnow
-    cn.print(sprintf('edi_fpi_comp_mms%g_en=%.0f_pa=%.0f_zoom_2',sc,en,pa))
+    %cn.print(sprintf('edi_fpi_comp_mms%g_en=%.0f_pa=%.0f_zoom_2',sc,en,pa))
   end
 end
 
