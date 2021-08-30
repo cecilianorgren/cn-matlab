@@ -1,4 +1,5 @@
 ic = 1:4;
+units = irf_units;
 tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
 tint = tint + [+5 -5]; % using the above edges causes problem with new EDI files because they have different versions that adjoining file
 localuser = datastore('local','user');

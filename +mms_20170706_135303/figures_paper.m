@@ -33,7 +33,8 @@ scpot_margin = 1.0; % keep in mind that this also affects the velocity at lower 
 lowerelim = scpot*1 + 0;
 eLine = dmpaB1.resample(eDist).norm;
 %tic; ef1D_ = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
-tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
+%tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
+tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B
 
 %% Plot, local plasma properties, wave properties from observations

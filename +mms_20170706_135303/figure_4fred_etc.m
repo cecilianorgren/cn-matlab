@@ -72,9 +72,9 @@ tic; ef2D_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint
 
 % Make pitch angle spectrograms
 ePitch = eDist.pitchangles(dmpaB1.resample(eDist),12);
-ePitch_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
+ePitch_bgremoved = eDist_bgremoved.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
 %%
-for it = 4%1:4
+for it = 1:4
   %%
   figure(21)
   %it = 3;
@@ -156,18 +156,20 @@ for it = 4%1:4
     h(ipanel).XLim = vg([1 end])*1e-3*0.5;
     h(ipanel).YLim = [0 4e-3];
   end  
+  links_2d = linkprop(h([2:4 7:9]),{'XLim','YLim','CLim'});
   for ipanel = [2:4 7:9]
-    h(ipanel).CLim = [-13 -9.5];
+    h(ipanel).CLim = [-15 -9.5];
     axis(h(ipanel),'square');
     h(ipanel).XLim = vg([1 end])*1e-3*1;
     h(ipanel).YLim = vg([1 end])*1e-3*1;
   end
-  %cn.print(sprintf('f1D_2D_bgrem_it=%g_nPhoto=%g_nSecond=%g',it,nPhoto,nSecond))
+  colormap(pic_colors('candy4'))
+  cn.print(sprintf('f1D_2D_bgrem_it=%g_nPhoto=%g_nSecond=%g_clim',it,nPhoto,nSecond))
 end
 
 % Run instability anaysis
-[f_ins,params_ins] = mms_20170706_135303.get_f0(2);
-[f0,params_0] = mms_20170706_135303.get_f0(1);
+%[f_ins,params_ins] = mms_20170706_135303.get_f0(2);
+%[f0,params_0] = mms_20170706_135303.get_f0(1);
 
 %% 4 fred, vph/trapping range, EDI range, average flux from model, and f0 of model
 

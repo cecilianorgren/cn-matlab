@@ -5,6 +5,10 @@ vph_all = [-9000*1e3 -10000*1e3];
 phi_mult_all = [1.0 1.5];
 iff_all = 1:17;
 
+vph_all = [-9000*1e3];
+phi_mult_all = [1.0];
+iff_all = 18;
+
 n_vph_all = numel(vph_all);
 n_phi_mult_all = numel(phi_mult_all);
 n_iff_all = numel(iff_all);
@@ -207,8 +211,8 @@ vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
 vind_edi_180 = intersect(find(v_vec<-v_edi_minus),find(v_vec>-v_edi_plus));
 FVdv_abel_obs_edi_0 = nansum(FVabel_obs(:,vind_edi_0),2)*dv;
 FVdv_abel_obs_edi_180 = nansum(FVabel_obs(:,vind_edi_180),2)*dv;
-FVdv_scha_obs_edi_0 = nansum(FVscha_obs(:,vind_edi_0),2)*dv;
-FVdv_scha_obs_edi_180 = nansum(FVscha_obs(:,vind_edi_180),2)*dv;
+%FVdv_scha_obs_edi_0 = nansum(FVscha_obs(:,vind_edi_0),2)*dv;
+%FVdv_scha_obs_edi_180 = nansum(FVscha_obs(:,vind_edi_180),2)*dv;
 
 fluxModel0 = irf.ts_scalar(phi.time,abs(FVdv_abel_obs_edi_0)*1e-4); % 1/m2 -> 1/cm2
 fluxModel0.units = 'cm^{-2}s^{-1}';
@@ -911,9 +915,12 @@ end
 irf_plot_axis_align
 
 if 0 % average over time, comaprison to FPI, add to right side of figure
+  %%
+  figure(49)
   %h = subplot(nrows,3,[3 6 9 12]);
-  h = subplot(nrows,2,[2 4 6 8]+0);
-  h.Position = [0.65    0.65    0.3    0.3];
+  %h = subplot(nrows,2,[2 4 6 8]+0);
+  h = subplot(1,1,1);
+  %h.Position = [0.65    0.65    0.3    0.3];
   isub = 1;
   if 1 % F, 
     hca = h(isub); isub = isub + 1;
@@ -1125,7 +1132,7 @@ if 0 % average over time, comaprison to FPI
 end
 end
 end
-if 0 % 1 % plot, timeseries, for paper
+if 1 % 1 % plot, timeseries, for paper
   %%
   fig = figure(39);
   npanels = 5;
@@ -1235,6 +1242,9 @@ if 0 % 1 % plot, timeseries, for paper
     ax1 = hca;
     ax2 = axes('Position',get(ax1,'Position'));
     irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale,'color',colors(2,:))      
+    hold(ax2,'on')
+    irf_plot(ax2,fluxModel180/f_scale,'color',colors(3,:))      
+    hold(ax2,'off')
     %irf_plot(ax2,fluxModel180/f_scale,'color',colors(2,:))      
     set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
     set(ax2,'YAxisLocation','right');
@@ -1331,61 +1341,6 @@ if 0 % 1 % plot, timeseries, for paper
     irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
   end
   c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
-end
-if 0 % 1 % plot, time-averaged distributions, for paper  
-  %%
-  clear h;
-  figure(40)
-  h = subplot(1,1,1);   
-  isub = 1;
-  
-  mod_f_average = mean(Fabel_obs,1);
-  mod_f0 = f0(v_vec,n,vd,vt);
-  edist = ePDist1.tlim(tint_phi);
-  vg = -40e3:1000:40e3; % km/s
-  lowerelim = 30;
-  ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
-  v_fpi = ef1D.depend{1}(1,:);
-  f_fpi = mean(ef1D.data,1);
-  f_fpi = ef1D.data;
-  if 1 % F, 
-    hca = h(isub); isub = isub + 1;
-    v_scale = 1e-3;
-    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f0,v_vec*v_scale*1e-3,mod_f_average,'linewidth',1.5);
-    hold(hca,'on')
-    hlines = plot(hca,v_fpi*v_scale,1*f_fpi*1e0,'--');
-    hlines = plot(hca,v_fpi*v_scale,1*mean(f_fpi,1)*1e0,'-','linewidth',1.5);
-    hold(hca,'off')
-    hca.YLabel.String = {'f','(s^1/m^4)'};
-    hca.XLabel.String = {'v','(10^3 km/s)'};
-    hca.XLim = [-40 40];
-    str_lines = {'f_{mod,\phi=0}';'f_{mod}';'-- fpi';'-- fpi';'-- fpi';'-- fpi';'- mean fpi'};
-    %legend(hlines,str_lines)
-    irf_legend(hca,str_lines,[0.99 0.99])
-    str_info = {['T_{0}= [' sprintf('%g  ',T) '] eV'];...
-      ['n_{0}= [' sprintf('%g  ',n*1e-6) '] cc'];...
-      ['v_{d,0}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
-      ...sprintf('beta_{Schamel}=%g',beta);...
-      };
-    set(hca,'ColorOrder',zeros(10,3))
-    irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
-    if 1 % EDI velocities                
-      hold(hca,'on')
-      all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
-                 -v_edi_minus; -v_edi_plus]*[1 1];
-       if 1
-         plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
-         irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
-       end
-      hold(hca,'off')
-    end
-    if 1 % vph
-      hold(hca,'on')
-      plot(hca,vph*1e-6*[1 1],hca.YLim,'linewidth',1.0)
-      hleg = irf_legend(hca,'vph',[0.51+vph*1e-6/hca.XLim(2)/2 0.02],[0 0 0]);     
-      hold(hca,'off')
-    end
-  end  
 end
 if 1 % 1 % plot, timeseries and averaged, for diagnostics
   %%
@@ -1647,13 +1602,67 @@ if 1 % 1 % plot, timeseries and averaged, for diagnostics
   delete(h2(2))
   %cn.print(sprintf('%g_bgk_tsav_phi_mult_%.1f_scPot_corr_vph%.0f_n%g',iff,phi_mult,vph*1e-3,n0))
 end
+if 0 % 1 % plot, time-averaged distributions, for paper
+  %%
+  clear h;
+  figure(40)
+  h = subplot(1,1,1);   
+  isub = 1;
+  
+  mod_f_average = mean(Fabel_obs,1);
+  mod_f0 = f0(v_vec,n,vd,vt);
+  edist = ePDist1.tlim(tint_phi);
+  vg = -40e3:1000:40e3; % km/s
+  lowerelim = 30;
+  ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
+  v_fpi = ef1D.depend{1}(1,:);
+  f_fpi = mean(ef1D.data,1);
+  f_fpi = ef1D.data;
+  if 1 % F, 
+    hca = h(isub); isub = isub + 1;
+    v_scale = 1e-3;
+    hlines = plot(hca,v_vec*v_scale*1e-3,mod_f0,v_vec*v_scale*1e-3,mod_f_average,'linewidth',1.5);
+    hold(hca,'on')
+    hlines = plot(hca,v_fpi*v_scale,1*f_fpi*1e0,'--');
+    hlines = plot(hca,v_fpi*v_scale,1*mean(f_fpi,1)*1e0,'-','linewidth',1.5);
+    hold(hca,'off')
+    hca.YLabel.String = {'f','(s^1/m^4)'};
+    hca.XLabel.String = {'v','(10^3 km/s)'};
+    hca.XLim = [-40 40];
+    str_lines = {'f_{mod,\phi=0}';'f_{mod}';'-- fpi';'-- fpi';'-- fpi';'-- fpi';'- mean fpi'};
+    %legend(hlines,str_lines)
+    irf_legend(hca,str_lines,[0.99 0.99])
+    str_info = {['T_{0}= [' sprintf('%g  ',T) '] eV'];...
+      ['n_{0}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+      ['v_{d,0}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+      ...sprintf('beta_{Schamel}=%g',beta);...
+      };
+    set(hca,'ColorOrder',zeros(10,3))
+    irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
+    if 1 % EDI velocities                
+      hold(hca,'on')
+      all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
+                 -v_edi_minus; -v_edi_plus]*[1 1];
+       if 1
+         plot(hca,all_edi_plusminus*1e-6,hca.YLim,'k-.')
+         irf_legend(hca,'EDI',[0.55 + 0.5*v_edi_plus*1e-6/hca.XLim(2) 0.5],[0 0 0])
+       end
+      hold(hca,'off')
+    end
+    if 1 % vph
+      hold(hca,'on')
+      plot(hca,vph*1e-6*[1 1],hca.YLim,'linewidth',1.0)
+      hleg = irf_legend(hca,'vph',[0.51+vph*1e-6/hca.XLim(2)/2 0.02],[0 0 0]);     
+      hold(hca,'off')
+    end
+  end  
+end
 
 %% Find f at center of EH.
 ff = Fspecrec.p;
 vv = Fspecrec.f;
 vv_ind = find(abs(vv--9)==min(abs(vv-9)));
 ff_ehcenter = ff(:,vv_ind);
-
 
 %% Plot, compare dntrap/dphi
 if 0
@@ -1722,12 +1731,14 @@ if 0
 end
 
 %% Collect data in cell-matrices, for comparison later on
+if 0
 load('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat')
 flux_all{i_vph,i_phi_mult,i_iff} = fluxModel180/f_scale;
 psd_all{i_vph,i_phi_mult,i_iff} = {{v_vec*v_scale*1e-3,f0(v_vec,n,vd,vt)},{v_vec*v_scale*1e-3,mean(Fabel_obs,1)},{v_fpi*v_scale,1*f_fpi*1e0}};
 n_all{i_vph,i_phi_mult,i_iff} = {-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale};
 save('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat','flux_all','psd_all','n_all')
 %pause
+end
 end
 end
 end

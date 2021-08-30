@@ -1,0 +1,288 @@
+% paper_fig_2d_vdfs
+time = irf.tint('2017-07-06T13:54:05.30Z/2017-07-06T13:54:05.80Z');
+time = irf_time('2017-07-06T13:54:05.50Z','utc>EpochTT');
+tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
+mms_id = 1;
+
+%% Make reduced distribution
+strTint = [irf_time(tint(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tint(2),'epochtt>utc_HHMMSS')];
+eint = [000 40000];
+vint = [-Inf Inf];
+vg = (-100:2:100)*1e3;
+c_eval('eDist = ePDist?.tlim(tint);',mms_id)
+c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint);',mms_id)
+
+vgi = [-800:50:800];
+c_eval('iDist = iPDist?.tlim(tint+[-0.05 +0.05]);',mms_id)
+
+scpot = scPot1.resample(eDist);
+ePara = dmpaB1.resample(eDist).norm;
+zhat = irf.ts_vec_xyz(ePara.time,repmat([0 0 1],ePara.length,1));
+ePerp1 = zhat.cross(ePara).norm;
+ePerp2 = ePara.cross(ePerp1).norm;
+
+lowerelim = 40;
+nMC = 500;
+tic; ef1D_ = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',nMC); toc % reduced distribution along B
+tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+tic; ef1D_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',nMC); toc % reduced distribution along B
+tic; ef2D_parperp1_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+tic; ef2D_parperp2_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+tic; ef2D_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+tic; if1D_ = iDist.reduce('1D',ePara,'vint',vint,'nMC',nMC); toc % reduced distribution along B
+tic; if2D_parperp1 = iDist.reduce('2D',ePara,ePerp1,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc 
+tic; if2D_parperp2 = iDist.reduce('2D',ePara,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+tic; if2D_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+
+
+% Make pitch angle spectrograms
+ePitch = eDist.pitchangles(dmpaB1.resample(eDist),12);
+ePitch_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
+
+%%
+it = 2;
+h = setup_subplots(1,3);
+npanels = 3;
+isub = 1;
+
+if 1 % parperp1
+  hca = h(isub); isub = isub + 1;
+  [h_surf,h_axis,h_all] = ef2D_parperp1_bgremoved(it).plot_plane(hca);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp1} (10^3 km/s)';    
+end
+if 1 % par1perp2
+  hca = h(isub); isub = isub + 1;
+  [h_surf,h_axis,h_all] = ef2D_parperp2_bgremoved(it).plot_plane(hca);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp2} (10^3 km/s)';
+end
+if 1 % perp1perp2
+  hca = h(isub); isub = isub + 1;
+  [h_surf,h_axis,h_all] = ef2D_perp1perp2_bgremoved(it).plot_plane(hca);
+  hca.XLabel.String = 'v_{\perp1} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp2} (10^3 km/s)';
+end
+
+links_2d = linkprop(h,{'XLim','YLim','CLim'});
+for ipanel = 1:npanels
+  h(ipanel).CLim = [-15 -9.5];
+  axis(h(ipanel),'square');
+  %h(ipanel).XLim = vg([1 end])*1e-3*1;
+  %h(ipanel).YLim = vg([1 end])*1e-3*1;
+  h(ipanel).XLim = 60*[-1 1];
+  h(ipanel).YLim = 60*[-1 1];
+end
+colormap(pic_colors('candy4'))
+
+for ipanel = 1:npanels
+  h(ipanel).Position(1) = h(ipanel).Position(1)-0.05;
+  axis(h(ipanel),'square');
+  %h(ipanel).XLim = vg([1 end])*1e-3*1;
+  %h(ipanel).YLim = vg([1 end])*1e-3*1;
+  h(ipanel).XLim = 60*[-1 1];
+  h(ipanel).YLim = 60*[-1 1];
+end
+
+hcb = findobj(gcf,'type','colorbar');
+delete(hcb(3))
+delete(hcb(2))
+hcb(1).Position(1) = 0.9;
+hcb(1).Position(2) = h(1).Position(2)+0.05;
+hcb(1).Position(4) = h(1).Position(4)-0.05;
+hcb(1).Position(3) = 0.02;
+
+%% Plot, 2D + 1D, vphav overlaid
+it = 2;
+h = setup_subplots(1,3);
+npanels = 3;
+isub = 1;
+vlim = [-70 70];
+flim_2D = [-14.5 -9.5]; % log
+flim_1D = [0 1.7]*1e-3;
+%vphmark = -9000; % vpar
+vphmark = [-11400 -7000]*1e-3;
+
+% EDI parameters
+E_edi = 500; % eV
+v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
+dE_edi = 25; % eV
+E_edi_plus = E_edi + dE_edi;
+E_edi_minus = E_edi - dE_edi;
+v_edi_plus = sqrt(2*units.e*E_edi_plus./units.me)*1e-6; % Mm/s
+v_edi_minus = sqrt(2*units.e*E_edi_minus./units.me)*1e-6; % Mm/s
+
+colors = mms_colors('matlab');
+
+
+if 1 % parperp1
+  hca = h(isub); isub = isub + 1;
+  [h_surf,h_axis,h_all] = ef2D_parperp1_bgremoved(it).plot_plane(hca);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp1} (10^3 km/s)'; 
+  h_all.Colorbar.YLabel.String = 'log_{10} f_e (s^2/m^5)';
+  hca.XLim = vlim;
+  hca.YLim = vlim;
+  hca.CLim = flim_2D;
+  position = hca.Position;
+  delete(h_all.Colorbar)
+  hca.Position = position;
+  axis(hca,'square')
+  hca.XTick = hca.YTick;
+  if 1 % vph range
+    hold(hca,'on')    
+    for iv = 1:numel(vphmark)
+      plot(hca,vphmark(iv)*[1 1],hca.YLim,'k')      
+    end    
+    patch(hca,[vphmark(1) vphmark(2) vphmark(2) vphmark(1) vphmark(1)],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              'b','facealpha',0.1)    
+    hold(hca,'off')
+  end
+  if 1 % edi range
+    hold(hca,'on')        
+    %plot(hca,v_edi_minus*[1 1],hca.YLim,'k')
+    %plot(hca,v_edi_plus*[1 1],hca.YLim,'k')          
+    
+    patch(hca,[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              colors(5,:),'facealpha',0.5)
+    patch(hca,-[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              colors(5,:),'facealpha',0.5)
+                
+    hold(hca,'off')
+  end
+  set(hca,'children',flipud(get(hca,'children')))
+end
+if 1 % par1perp2
+  hca = h(isub); isub = isub + 1;
+  [h_surf,h_axis,h_all] = ef2D_parperp2_bgremoved(it).plot_plane(hca);
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp2} (10^3 km/s)';
+  h_all.Colorbar.YLabel.String = 'log_{10} f_e (s^2/m^5)';
+  h_all.Colorbar.YLabel.FontSize = 12;
+  h_all.Colorbar.FontSize = 12;
+  hca.XLim = vlim;
+  hca.YLim = vlim;
+  hca.CLim = flim_2D;
+  axis(hca,'square')
+  hca.XTick = hca.YTick;
+  if 1
+    hold(hca,'on')
+    for iv = 1:numel(vphmark)
+      plot(hca,vphmark(iv)*[1 1],hca.YLim,'k')
+    end
+    patch(hca,[vphmark(1) vphmark(2) vphmark(2) vphmark(1) vphmark(1)],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              'b','facealpha',0.1)    
+    hold(hca,'off')
+    hold(hca,'off')
+  end
+  if 1 % edi range
+    hold(hca,'on')        
+    %plot(hca,v_edi_minus*[1 1],hca.YLim,'k')
+    %plot(hca,v_edi_plus*[1 1],hca.YLim,'k')          
+    
+    patch(hca,[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              colors(5,:),'facealpha',0.5)
+    patch(hca,-[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              colors(5,:),'facealpha',0.5)
+               
+    hold(hca,'off')
+  end
+  set(hca,'children',flipud(get(hca,'children')))
+end
+if 1 % par
+  hca = h(isub); isub = isub + 1;
+  plot(hca,ef1D_bgremoved(it).depend{1}*1e-3,ef1D_bgremoved(it).data,'color',[0 0 0],'linewidth',1)
+  hca.XLabel.String = 'v_{||} (10^3 km/s)';
+  hca.YLabel.String = 'f_e (s/m^4)';
+  hca.XLim = vlim;  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = flim_1D;
+  if 1
+    hold(hca,'on')
+    for iv = 1:numel(vphmark)
+      plot(hca,vphmark(iv)*[1 1],hca.YLim,'k')
+    end
+    patch(hca,[vphmark(1) vphmark(2) vphmark(2) vphmark(1) vphmark(1)],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              'b','facealpha',0.1)    
+    
+    patch(hca,[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              colors(5,:),'facealpha',0.5)
+    patch(hca,-[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
+              [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
+              colors(5,:),'facealpha',0.5)
+            
+    set(hca,'children',flipud(get(hca,'children')))        
+    hold(hca,'off')
+  end
+end
+if 0 % perp1perp2
+  hca = h(isub); isub = isub + 1;
+  [h_surf,h_axis,h_all] = ef2D_perp1perp2_bgremoved(it).plot_plane(hca);
+  hca.XLabel.String = 'v_{\perp1} (10^3 km/s)';
+  hca.YLabel.String = 'v_{\perp2} (10^3 km/s)';
+end
+
+h(3).XLim = [-35 35];
+
+legends = {'a)','b)','c)'};
+legends_color = {'k','k','k'};
+for ipanel = 1:3
+  irf_legend(h(ipanel),legends{ipanel},[-0.15 0.99],'fontsize',15,'color',legends_color{ipanel});
+end
+
+
+h(1).Position(1) = 0.12;
+h(2).Position(1) = 0.35;
+h(3).Position(1) = 0.63;
+
+h(1).Position(2) = 0.15;
+h(2).Position(2) = 0.15;
+h(3).Position(2) = 0.15;
+
+h(1).Position(4) = 0.7;
+h(2).Position(4) = 0.7;
+h(3).Position(4) = 0.7;
+
+for ipanel = 1:npanels
+  h(ipanel).FontSize = 12;
+end
+colormap(pic_colors('candy4'))
+
+%annotation('textarrow',[0.17 0.19],[0.78 0.78],'string',{'range of','obs. v_{ph}'},'fontsize',12);
+annotation('textarrow',[0.175 0.19],[0.78 0.78],'string',{'antiparallel','EDI range'},'fontsize',13,'horizontalalignment','center');
+annotation('textarrow',[0.248 0.225],[0.78 0.78],'string',{'parallel','EDI range'},'fontsize',13,'horizontalalignment','center');
+annotation('textarrow',[0.195 0.195],[0.87 0.85],'string',{'range of observed v_{ph}'},'fontsize',13);
+%%
+links_2d = linkprop(h,{'XLim','YLim','CLim'});
+
+
+
+for ipanel = 1:npanels
+  h(ipanel).Position(1) = h(ipanel).Position(1)-0.05;
+  axis(h(ipanel),'square');
+  %h(ipanel).XLim = vg([1 end])*1e-3*1;
+  %h(ipanel).YLim = vg([1 end])*1e-3*1;
+  h(ipanel).XLim = 60*[-1 1];
+  h(ipanel).YLim = 60*[-1 1];
+end
+
+hcb = findobj(gcf,'type','colorbar');
+delete(hcb(3))
+delete(hcb(2))
+hcb(1).Position(1) = 0.9;
+hcb(1).Position(2) = h(1).Position(2)+0.05;
+hcb(1).Position(4) = h(1).Position(4)-0.05;
+hcb(1).Position(3) = 0.02;
