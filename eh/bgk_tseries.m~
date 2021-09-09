@@ -110,7 +110,6 @@ fun_fit_all = cell(numel(obs_lpp),1);
 % F0
 if 1
   %iff = 17;
-  iff = 20;
   [f0,params] = mms_20170706_135303.get_f0(iff);
   n = params.n;
   ntot = sum(n);
@@ -1345,8 +1344,6 @@ if 1 % 1 % plot, timeseries, for paper
   
   % annotation
   annotation('textarrow',[0.71 0.71],[0.47 0.485],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
-  annotation('textarrow',[0.76 0.76],[0.550 0.500],'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
-  annotation('textarrow',[0.30 0.325],[0.550 0.510],'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
 end
 if 1 % 1 % plot, timeseries and averaged, for diagnostics
   %%
@@ -1617,11 +1614,9 @@ if 0 % 1 % plot, time-averaged distributions, for paper
   
   mod_f_average = mean(Fabel_obs,1);
   mod_f0 = f0(v_vec,n,vd,vt);
-  %edist = ePDist1.tlim(tint_phi);
-  edist = eDist_bgremoved.tlim(tint_phi);
-  
+  edist = ePDist1.tlim(tint_phi);
   vg = -40e3:1000:40e3; % km/s
-  lowerelim = 50;
+  lowerelim = 30;
   ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
   v_fpi = ef1D.depend{1}(1,:);
   f_fpi = mean(ef1D.data,1);

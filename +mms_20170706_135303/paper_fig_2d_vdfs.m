@@ -2,9 +2,10 @@
 time = irf.tint('2017-07-06T13:54:05.30Z/2017-07-06T13:54:05.80Z');
 time = irf_time('2017-07-06T13:54:05.50Z','utc>EpochTT');
 tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
+tint_cold = irf.tint('2017-07-06T13:54:13.000Z/2017-07-06T13:54:13.040Z');
 mms_id = 1;
 
-%% Make reduced distribution
+%% Make reduced distribution, EH range
 strTint = [irf_time(tint(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tint(2),'epochtt>utc_HHMMSS')];
 eint = [000 40000];
 vint = [-Inf Inf];
@@ -23,12 +24,12 @@ ePerp2 = ePara.cross(ePerp1).norm;
 
 lowerelim = 40;
 nMC = 500;
-tic; ef1D_ = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',nMC); toc % reduced distribution along B
+tic; ef1D_ = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
 tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
 tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 
-tic; ef1D_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',nMC); toc % reduced distribution along B
+tic; ef1D_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
 tic; ef2D_parperp1_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
 tic; ef2D_parperp2_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 tic; ef2D_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
@@ -42,6 +43,45 @@ tic; if2D_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'bas
 % Make pitch angle spectrograms
 ePitch = eDist.pitchangles(dmpaB1.resample(eDist),12);
 ePitch_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
+
+%% Make reduced distribution, lobe/cold range
+strTint_cold = [irf_time(tint_cold(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tint_cold(2),'epochtt>utc_HHMMSS')];
+eint = [000 40000];
+vint = [-Inf Inf];
+vg = (-100:2:100)*1e3;
+c_eval('eDist = ePDist?.tlim(tint_cold);',mms_id)
+c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint_cold);',mms_id)
+
+vgi = [-800:50:800];
+c_eval('iDist = iPDist?.tlim(tint_cold+[-0.05 +0.05]);',mms_id)
+
+scpot = scPot1.resample(eDist);
+ePara = dmpaB1.resample(eDist).norm;
+zhat = irf.ts_vec_xyz(ePara.time,repmat([0 0 1],ePara.length,1));
+ePerp1 = zhat.cross(ePara).norm;
+ePerp2 = ePara.cross(ePerp1).norm;
+
+lowerelim = 40;
+nMC = 500;
+tic; ef1D_cold = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
+tic; ef2D_cold_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+tic; ef2D_cold_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+tic; ef2D_cold_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+tic; ef1D_cold_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
+tic; ef2D_cold_parperp1_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+tic; ef2D_cold_parperp2_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+tic; ef2D_cold_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+
+tic; if1D_cold_ = iDist.reduce('1D',ePara,'vint',vint,'nMC',nMC); toc % reduced distribution along B
+tic; if2D_cold_parperp1 = iDist.reduce('2D',ePara,ePerp1,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc 
+tic; if2D_cold_parperp2 = iDist.reduce('2D',ePara,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+tic; if2D_cold_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+
+
+% Make pitch angle spectrograms
+ePitch_cold = eDist.pitchangles(dmpaB1.resample(eDist),12);
+ePitch_cold_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
 
 %%
 it = 2;
@@ -98,12 +138,15 @@ hcb(1).Position(3) = 0.02;
 
 %% Plot, 2D + 1D, vphav overlaid
 it = 2;
+it = 2;
 h = setup_subplots(1,3);
+
 npanels = 3;
 isub = 1;
 vlim = [-70 70];
 flim_2D = [-14.5 -9.5]; % log
 flim_1D = [0 1.7]*1e-3;
+flim_1D = [0 3.2]*1e-3;
 %vphmark = -9000; % vpar
 vphmark = [-11400 -7000]*1e-3;
 
@@ -158,6 +201,8 @@ if 1 % parperp1
     hold(hca,'off')
   end
   set(hca,'children',flipud(get(hca,'children')))
+  irf_legend(hca,{'towards';'X line'},[0.12 0.02],'color',[0 0 0],'fontsize',13,'horizontalalignment','center')
+  irf_legend(hca,{'away from';'X line'},[0.85 0.02],'color',[0 0 0],'fontsize',13,'horizontalalignment','center')
 end
 if 1 % par1perp2
   hca = h(isub); isub = isub + 1;
@@ -201,13 +246,17 @@ if 1 % par1perp2
 end
 if 1 % par
   hca = h(isub); isub = isub + 1;
-  plot(hca,ef1D_bgremoved(it).depend{1}*1e-3,ef1D_bgremoved(it).data,'color',[0 0 0],'linewidth',1)
+  hhot = plot(hca,ef1D_bgremoved(it).depend{1}*1e-3,ef1D_bgremoved(it).data,'color',[0 0 0],'linewidth',1);
+  hold(hca,'on')
+  hcold = plot(hca,ef1D_cold_bgremoved(1).depend{1}*1e-3,ef1D_cold_bgremoved(1).data,'color',colors(1,:),'linewidth',1);
+  hold(hca,'off')
   hca.XLabel.String = 'v_{||} (10^3 km/s)';
   hca.YLabel.String = 'f_e (s/m^4)';
   hca.XLim = vlim;  
   hca.XGrid = 'on';
   hca.YGrid = 'on';
-  hca.YLim = flim_1D;
+  hca.YLim = flim_1D;  
+  %hleg = legend([hhot,hcold],{'time of EHs','lobe'});
   if 1
     hold(hca,'on')
     for iv = 1:numel(vphmark)
@@ -224,9 +273,10 @@ if 1 % par
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
               colors(5,:),'facealpha',0.5)
             
-    set(hca,'children',flipud(get(hca,'children')))        
+    %set(hca,'children',flipud(get(hca,'children')))        
     hold(hca,'off')
   end
+  %hleg = legend([hhot,hcold],{'time of EHs','lobe'});
 end
 if 0 % perp1perp2
   hca = h(isub); isub = isub + 1;
@@ -263,8 +313,16 @@ colormap(pic_colors('candy4'))
 
 %annotation('textarrow',[0.17 0.19],[0.78 0.78],'string',{'range of','obs. v_{ph}'},'fontsize',12);
 annotation('textarrow',[0.175 0.19],[0.78 0.78],'string',{'antiparallel','EDI range'},'fontsize',13,'horizontalalignment','center');
-annotation('textarrow',[0.248 0.225],[0.78 0.78],'string',{'parallel','EDI range'},'fontsize',13,'horizontalalignment','center');
+annotation('textarrow',[0.246 0.225],[0.78 0.78],'string',{'parallel','EDI range'},'fontsize',13,'horizontalalignment','center');
 annotation('textarrow',[0.195 0.195],[0.87 0.85],'string',{'range of observed v_{ph}'},'fontsize',13);
+
+
+utc_warm = ef1D_(it).time.utc; utc_warm = utc_warm(12:19);
+utc_cold = ef1D_cold(1).time.utc; utc_cold = utc_cold(12:19);
+%annotation('textarrow',[0.68 0.69]+0.003,[0.45 0.39]+0.005,'string',{'warmer','population','observed','with EHs',['~' utc_warm]},'fontsize',13,'color',[0 0 0],'horizontalalignment','right','TextBackgroundColor',[1 1 1]);
+annotation('textarrow',[0.785 0.756],[0.60 0.57]-0.2,'string',{'warmer','population','observed','with EHs',['~' utc_warm]},'fontsize',13,'color',[0 0 0],'horizontalalignment','right','TextBackgroundColor',[1 1 1]);
+%annotation('textarrow',[0.76 0.745],[0.60 0.57],'string',{'cold population','observed closer','to the lobe',['~' utc_cold]},'fontsize',13,'color',colors(1,:),'TextBackgroundColor',[1 1 1]);
+annotation('textarrow',[0.76 0.745],[0.60 0.57]+0.1,'string',{'cold population','observed closer','to the lobe',['~' utc_cold]},'fontsize',13,'color',colors(1,:),'TextBackgroundColor',[1 1 1]);
 %%
 links_2d = linkprop(h,{'XLim','YLim','CLim'});
 

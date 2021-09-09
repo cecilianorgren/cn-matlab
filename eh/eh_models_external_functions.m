@@ -38,7 +38,7 @@ fun_fit_all = cell(numel(obs_velocity),1);
 
 % F0
 if 1
-  [f0,params] = mms_20170706_135303.get_f0(1);
+  [f0,params] = mms_20170706_135303.get_f0(20);
   n = params.n;  
   ntot = sum(n);
   n0 = ntot;
@@ -954,7 +954,7 @@ if 1 % plot 3
     all_hcb{ihcb} = hcb; ihcb = ihcb + 1;
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = 'v_{||} (10^3 km/s)';
-    hcb.YLabel.String = 'vf^{mod} (m^{-3})';  
+    hcb.YLabel.String = 'vf_e^{mod} (m^{-3})';  
     hca.YLim = vlim*[-1 1]*1e-6;
     hca.CLim = max(abs(FVabel_obs(:)))*[-1 1];    
     colormap(hca,cn.cmap('blue_red'))  
@@ -968,7 +968,7 @@ if 1 % plot 3
           x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
           'LineWidth',0.5);
         for iline = 1:numel(hlines), hlines(iline).LineStyle = '-'; hlines(iline).Color = [0 0 0]; end
-        irf_legend(hca,{'- EDI'},[0.01 0.85],'color',hlines(1).Color);   
+       % irf_legend(hca,{'- EDI'},[0.01 0.85],'color',hlines(1).Color);   
       else % dashed lines
         hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
         for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
@@ -1019,8 +1019,8 @@ if 1 % plot 3
     
         
     hca.XLabel.String = 'x (km)';
-    hca.YLabel.String = sprintf('j^{mod} (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-    ax(2).YLabel.String = sprintf('j^{EDI} (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));
+    hca.YLabel.String = sprintf('j_e^{mod} (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
+    ax(2).YLabel.String = sprintf('j_e^{EDI} (10^%g cm^{-2}s^{-1}sr^{-1})',log10(units_scale_2));
     %irf_legend(hca,{'Model';'* EDI'},[0.02 0.3])
     text(hca,0.5*hca.XLim(2),0.2*hca.YLim(2),'0^o','verticalalignment','bottom')
     text(hca,0.5*hca.XLim(2),1.0*hca.YLim(2),'180^o','verticalalignment','top')

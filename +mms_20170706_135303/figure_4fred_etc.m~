@@ -675,7 +675,8 @@ if doAverage
   f_fpi = mean(ef1D.data,1);
   f_fpi_bgrem = nanmean(ef1D_bgremoved.data,1);
   fpi_utc = ef1D.time([1 end]) + [-0.015 0.015];
-  fpi_utc = fpi_utc.utc;  
+  fpi_utc = fpi_.utc;
+  
   fpi_utc = sprintf('%s - %s',fpi_utc(1,12:23),fpi_utc(2,12:23));
 else
   f_fpi = ef1D.data;
@@ -917,10 +918,5 @@ legend([h_lines(end:-1:5); h_patches(end:-1:2); h_edi(1)],{'<f_e^{FPI}>';'<f_e^{
 c_eval('h_edi(?).LineWidth = 1.0;',1:4)
 hca.FontSize = 12;
 
-set(hca,'children',flipud(get(hca,'children')))  
-
-hca.Title.String = ['FPI time interval:' fpi_utc];
-hca.Title.FontWeight = 'normal';
-hca.XLim = [-25 25];
-
+set(hca,'children',flipud(get(hca,'children')))        
 end

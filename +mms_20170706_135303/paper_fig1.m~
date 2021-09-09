@@ -30,6 +30,26 @@ tic; ef1D = eDist_nobg1.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scp
 vph = -9000e3;
 c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
 
+% Prepare flux in closest FPI energy channel.
+if 0
+  %%
+  c_eval('ePitch?_fpi = ePDist?.pitchangles(dmpaB?,16);',1:4);
+  c_eval('ePitch?_flux_fpi = ePitch?_fpi.flux;',1:4);
+  c_eval('ePitch?_flux_fpi_apar500 = ePitch?_flux_fpi.elim(500).palim(180);',1:4);
+  c_eval('ePitch?_flux_fpi_par500 = ePitch?_flux_fpi.elim(500).palim(0);',1:4);
+  %% Make the data stepfunction-like, so that it shows the accumulation time
+  dt = 0.015;
+  for iic = 1:4
+    c_eval('pitch_tmp = ePitch?_flux_fpi_apar500;',iic)
+    newtime = [pitch_tmp.time+-dt pitch_tmp.time+dt];
+    [newtime,sortind] = newtime.sort;
+    newdata = zeros(newtime.length,1); 
+    newdata(1:2:end) = pitch_tmp.data;
+    newdata(2:2:end) = pitch_tmp.data;  
+    c_eval('ePitch?_flux_fpi_apar500_step = irf.ts_scalar(newtime,newdata);',iic)
+  end
+end
+
 %% Plot, local plasma properties, wave properties from observations combined, larger time + zoomin
 ic = 1;
 npanels = 10;
@@ -1049,7 +1069,7 @@ if 1 % charge perturbation
                      dn_E3par/v_for_density_scaling*1e-6/units_scaling,...
                      dn_E4par/v_for_density_scaling*1e-6/units_scaling,...
                      dn_divE/units_scaling,...
-                     },'comp','dt',[dt 0]); 
+                     },'comp','dt',[dt 0]);                    
   hh(1).Children(1).LineWidth = 2;
   hca.YLabel.String = {'\delta n',sprintf('(10^{%g} cm^{-3})',log10(units_scaling))};
   hca.YLabel.FontSize = fontsize;
@@ -1196,6 +1216,9 @@ end
   
 irf_plot_axis_align
 
+hcl = findobj(gcf,'type','line');
+c_eval('hcl(?).LineWidth = 0.5;',1:numel(hcl))
+hh(1).Children(3).LineWidth = 2;
 %% Plot, overview only
 ic = 1;
 npanels = 5;
@@ -1630,7 +1653,7 @@ hca = irf_panel('Vi'); hca.YLim = [-799 399];
 
 %% Plot, zoom only
 ic = 1;
-npanels = 5;
+npanels = 7;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -1698,10 +1721,41 @@ if 0 % E par
   c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
   hca.YLabel.String = {'E_{||}','(mV/m)'};
 end
-if 0 % E perp, 4 sc, time shifted for visibility
+if 0 % E perp, abs, 4 sc, time shifted for visibility
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('E perp z dt');
+  hca = irf_panel('E perp abs dt');
+  set(hca,'ColorOrder',mms_colors('1234'))  
+  irf_plot(hca,{gseE1perp.abs,gseE2perp.abs,gseE3perp.abs,gseE4perp.abs},'comp','dt',dt);
+  set(hca,'ColorOrder',mms_colors('12341'))
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  format_ms = '%.1f';
+  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],['  ',num2str(dt(2)*1e3,format_ms)],['  ',num2str(dt(3)*1e3,format_ms)],['  ',num2str(dt(4)*1e3,format_ms)],'] ms'},[0.01 0.1],'fontsize',12);
+  %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  
+  hca.YLabel.String = {'|E_{\perp}|','(mV/m)'};  
+end
+if 1 % E perp, abs, filt, 4 sc, time shifted for visibility
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E perp abs dt filt');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  flow = 3;
+  irf_plot(hca,{gseE1perp.filt(flow,0,[],5).abs,gseE2perp.filt(flow,0,[],5).abs,gseE3perp.filt(flow,0,[],5).abs,gseE4perp.filt(flow,0,[],5).abs},'comp','dt',dt);
+  set(hca,'ColorOrder',mms_colors('12341'))
+  %irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  format_ms = '%.1f';
+  %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],['  ',num2str(dt(2)*1e3,format_ms)],['  ',num2str(dt(3)*1e3,format_ms)],['  ',num2str(dt(4)*1e3,format_ms)],'] ms'},[0.01 0.1],'fontsize',12);
+  %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  irf_legend(hca,{sprintf('f > %g Hz',flow)},[0.05 0.98],'fontsize',12);
+  hca.YLabel.String = {'|E_{\perp}|','(mV/m)'};  
+end
+if 0 % E perp, z, 4 sc, time shifted for visibility
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E perp z dt filt');
   set(hca,'ColorOrder',mms_colors('1234'))
   flow = 3;
   irf_plot(hca,{gseE1perp.filt(flow,0,[],5).z,gseE2perp.filt(flow,0,[],5).z,gseE3perp.filt(flow,0,[],5).z,gseE4perp.filt(flow,0,[],5).z},'comp','dt',dt);
@@ -1710,13 +1764,14 @@ if 0 % E perp, 4 sc, time shifted for visibility
   %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
   format_ms = '%.1f';
   irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],['  ',num2str(dt(2)*1e3,format_ms)],['  ',num2str(dt(3)*1e3,format_ms)],['  ',num2str(dt(4)*1e3,format_ms)],'] ms'},[0.01 0.1],'fontsize',12);
+  irf_legend(hca,{sprintf('f>%g Hz',flow)},[0.98 0.1],'fontsize',12);
   %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
   hca.YLabel.String = {'E_{\perp,z}','(mV/m)'};  
 end
-if 0 % E perp, 4 sc, time shifted for visibility
+if 0 % E perp, y, 4 sc, time shifted for visibility
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('E perp y dt');
+  hca = irf_panel('E perp y dt filt');
   set(hca,'ColorOrder',mms_colors('1234'))
   flow = 3;
   irf_plot(hca,{gseE1perp.filt(flow,0,[],5).y,gseE2perp.filt(flow,0,[],5).y,gseE3perp.filt(flow,0,[],5).y,gseE4perp.filt(flow,0,[],5).y},'comp','dt',dt);
@@ -1726,6 +1781,7 @@ if 0 % E perp, 4 sc, time shifted for visibility
   format_ms = '%.1f';
   irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],['  ',num2str(dt(2)*1e3,format_ms)],['  ',num2str(dt(3)*1e3,format_ms)],['  ',num2str(dt(4)*1e3,format_ms)],'] ms'},[0.01 0.1],'fontsize',12);
   %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  irf_legend(hca,{sprintf('f>%g Hz',flow)},[0.98 0.1],'fontsize',12);
   hca.YLabel.String = {'E_{\perp,y}','(mV/m)'};  
 end
 if 0 % Phi
@@ -1830,7 +1886,7 @@ if 0 % edi flux 0 180 1 sc
   set(hca,'ColorOrder',mms_colors('12'))
   %irf_legend(hca,{'0^o','180^o'},[0.98 0.9],'fontsize',12);
 end
-if 1 % edi flux 180 4sc
+if 1 % edi flux 0 4sc
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('edi flux par');
@@ -1839,9 +1895,9 @@ if 1 % edi flux 180 4sc
   palim = [0 12];  
   irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6,ePitch3_flux_edi.palim(palim)*1e-6,ePitch4_flux_edi.palim(palim)*1e-6},'comp','dt',dt);
   %irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6*0.4,ePitch3_flux_edi.palim(palim)*1e-6*0.5,ePitch4_flux_edi.palim(palim)*1e-6*0.5},'comp','dt',dt);  
-  hca.YLabel.String = {'j_e^{EDI}','antiparallel','(10^6 s^{-1}cm^{-2}sr^{-1})'};
+  hca.YLabel.String = {'j_e^{EDI}','parallel','(10^6 s^{-1}cm^{-2}sr^{-1})'};
   set(hca,'ColorOrder',mms_colors('12'))
-  irf_legend(hca,{'EDI: \theta = [0 11.25]^o'},[0.05 0.99],'fontsize',12);
+  %irf_legend(hca,{'EDI: \theta = [0 11.25]^o'},[0.05 0.99],'fontsize',12);
 end
 if 1 % edi flux 180 4sc
   isub = isub + 1;
@@ -1854,6 +1910,18 @@ if 1 % edi flux 180 4sc
   %irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6,ePitch2_flux_edi.palim(palim)*1e-6*0.4,ePitch3_flux_edi.palim(palim)*1e-6*0.5,ePitch4_flux_edi.palim(palim)*1e-6*0.5},'comp','dt',dt);  
   hca.YLabel.String = {'j_e^{EDI}','(10^6 s^{-1}cm^{-2}sr^{-1})'};
   hca.YLabel.String = {'j_e^{EDI}','antiparallel','(10^6 s^{-1}cm^{-2}sr^{-1})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  %irf_legend(hca,{'EDI: \theta = [168.75 180]^o'},[0.05 0.99],'fontsize',12);
+end
+
+if 1 % fpi flux 180 4sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('fpi flux');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot({ePitch1_flux_fpi_apar500_step*1e-6,ePitch2_flux_fpi_apar500_step*1e-6,ePitch3_flux_fpi_apar500_step*1e-6,ePitch4_flux_fpi_apar500_step*1e-6},'comp')  
+  %hca.YLabel.String = {'j_e^{FPI}','(10^6 s^{-1}cm^{-2}sr^{-1})'};
+  hca.YLabel.String = {'j_e^{FPI}','antiparallel','(10^6 s^{-1}cm^{-2}sr^{-1})'};
   set(hca,'ColorOrder',mms_colors('12'))
   %irf_legend(hca,{'EDI: \theta = [168.75 180]^o'},[0.05 0.99],'fontsize',12);
 end
@@ -1918,6 +1986,7 @@ end
 %hca = irf_panel('Vi'); hca.YLim = [-799 399];
 hca = irf_panel('edi flux'); hca.YLim = [0 7.990];
 hca = irf_panel('edi flux par'); hca.YLim = [0 7.999];
+hca = irf_panel('fpi flux'); hca.YLim = [0 7.990];
 %hca = irf_panel('n'); hca.YLim = [0 0.199]; hca.YTick = [0 0.05 0.1 0.15];
 hca = irf_panel('E par dt'); hca.YLim = [-70 60];
 
@@ -1941,9 +2010,10 @@ if doDoubleAxis
 end  
   
 irf_plot_axis_align(h)
-ax.YLabel.Position(1) = 1.07;
+%ax.YLabel.Position(1) = 1.07;
 
 set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+
 %% Plot, only 1 panel of EDI phi comparison
 h = irf_plot(1); 
 if 1 % edi, phi comparison for one spacecraft
@@ -1954,7 +2024,8 @@ if 1 % edi, phi comparison for one spacecraft
   c_eval('irf_plot(hca,{ePitch?_flux_edi.palim(palim)*1e-6},''color'',[0 0 0]);',ic)
   %irf_plot(hca,{ePitch1_flux_edi.palim(palim)*1e-6});
   %hca.YLabel.String = {'j_e^{EDI}','(10^6 s^{-1}cm^{-2}sr^{-1})'};
-  hca.YLabel.String = {'j_e^{EDI}','\theta = [168.75 180]^o','(10^6 s^{-1}cm^{-2}sr^{-1})'};  
+  %hca.YLabel.String = {'j_e^{EDI}','\theta = [168.75 180]^o','(10^6 s^{-1}cm^{-2}sr^{-1})'};  
+  hca.YLabel.String = {'j_e^{EDI}','antiparallel','(10^6 s^{-1}cm^{-2}sr^{-1})'};  
   hca.YLabel.Interpreter = 'tex';
   set(hca,'ColorOrder',mms_colors('12'))
   %irf_legend(hca,{'0^o','180^o'},[0.98 0.9],'fontsize',12);
