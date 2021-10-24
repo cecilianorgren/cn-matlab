@@ -95,6 +95,11 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 %% EDI
 %mms.load_data_edi;
 c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
+c_eval('ePitch?_flux_edi_err = mms.get_data(''Flux-err-amb-pm2_edi_brst_l2'',tint,?);',ic)
+c_eval('ePitch?_flux_edi_err_plus   = ePitch?_flux_edi+(ePitch?_flux_edi_err*+1);',ic)
+c_eval('ePitch?_flux_edi_err_minus  = ePitch?_flux_edi+(ePitch?_flux_edi_err*-1);',ic)        
+
+c_eval('ePitch?_counts_edi = mms.get_data(''Counts-amb-pm2_edi_brst_l1a'',tint,?);',ic)
 disp('Done loading data.');
 
 %% Event path

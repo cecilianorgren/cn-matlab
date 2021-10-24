@@ -8,21 +8,11 @@ nx = size(PHI,1);
 v = V(1,:);
 dv = v(2) - v(1);
 
-% find where phi = 0 (bug, does not work if phi is not 0 anywhere...)
-ind_phi_0 = find(phi == 0);
-if ind_phi_0(1) > 1; ind_phi_0 = [1 ind_phi_0]; end
-if ind_phi_0(end) < nx 1; ind_phi_0 = [ind_phi_0 nx]; end
-ind_phi_0_all = ind_phi_0;
-diff_tmp = diff(ind_phi_0);
-ind_phi_0(diff_tmp==1) = [];
-nPhi = numel(ind_phi_0)-1;
-
 % Set up f0
 nPop = numel(n);
 f0_str = ['f0 = @(v) ' sprintf('n(%g)*(1/pi./vt(%g).^2)^(1/2)*exp(-(v-vd(%g)).^2./vt(%g).^2)+',repmat((1:nPop),4,1))];
 f0_str = [f0_str(1:end-1) ';'];
 eval(f0_str)
-
 
 if numel(unique(VPH)) == 1  
   fsep = f0(VPH(1,1)); % only works for single vph  
@@ -82,9 +72,20 @@ if 0 % plot
   plot(phi,nt,phi,fun_net(phi))
 end
 
+% find where phi = 0 (bug, does not work if phi is not 0 anywhere...)
+ind_phi_0 = find(phi == 0);
+if ind_phi_0(1) > 1; ind_phi_0 = [1 ind_phi_0]; end
+if ind_phi_0(end) < nx 1; ind_phi_0 = [ind_phi_0 nx]; end
+ind_phi_0_all = ind_phi_0;
+diff_tmp = diff(ind_phi_0);
+ind_phi_0(diff_tmp==1) = [];
+nPhi = numel(ind_phi_0)-1;
+
 phi_count = 0;
 %fun_net_prime = @(V,a,b,c,d) b*a*V.^(b-1) + d*c*V.^(d-1);  
 for ix = 1:nx % something wrong with uneven numel(itrap_ngtvE)
+  % each time we find the index of a new EH, we recalculate the fit between
+  % phi and ntrap
   % first find dn/dphi  
   if ix == ind_phi_0(1) && ix < nx
     phi_count = phi_count + 1;
@@ -92,6 +93,7 @@ for ix = 1:nx % something wrong with uneven numel(itrap_ngtvE)
     ind_phi = (ind_phi_0(1)+1):(ind_phi_0(2)-1-1);
     ind_phi_0(1) = [];
     [fitresult, gof, fun_net, fun_net_prime] = createFit(tocolumn(phi(ind_phi)), tocolumn(nt(ind_phi)));
+    disp(sprintf('Npoints to fit = %g',numel(tocolumn(phi(ind_phi)))))
   end
   
   

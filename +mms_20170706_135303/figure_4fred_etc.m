@@ -8,6 +8,7 @@ db_info = datastore('mms_db');
 mms_id = 1;
 tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
 c_eval('eDist = ePDist?;',mms_id)
+c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint);',mms_id)
 
 % Load EH properties
 % observed/measured properties (konrad)
@@ -41,7 +42,7 @@ if 0
 [eDist_bgremoved, eDist_bg, ephoto_scale] = ...
              mms.remove_edist_background(eDist, 'tint', tint, ...
              'Nphotoe_art', nPhoto, 'nSecondary', nSecond, 'ZeroNaN', 0);
-else
+elseif 0
 [eDist_bgremoved, eDist_bg, ephoto_scale] = ...
              mms.remove_edist_background(eDist, 'tint', tint,...
              'ZeroNaN', 0);  
@@ -60,12 +61,12 @@ ePerp2 = ePara.cross(ePerp1).norm;
 
 lowerelim = 40;
 nMC = 500;
-tic; ef1D = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',nMC); toc % reduced distribution along B
+tic; ef1D = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
 tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
 tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 
-tic; ef1D_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',nMC); toc % reduced distribution along B
+tic; ef1D_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
 tic; ef2D_parperp1_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
 tic; ef2D_parperp2_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 tic; ef2D_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
@@ -796,7 +797,7 @@ if 1 % v_edi
   if 1 % plot dashed lines
     %h_edi = plot(hca,[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim*0.20,'k--',-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--');
     h_edi = plot(hca,[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--',-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--');
-    %plot(hca,-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--')
+           %plot(hca,-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6,hca.YLim,'k--')
   end
   %hleg = irf_legend(hca,'vph',[0.5*21/hca.XLim(2) 0.95],[0 0 0]);
   %hleg.BackgroundColor = [1 1 1];

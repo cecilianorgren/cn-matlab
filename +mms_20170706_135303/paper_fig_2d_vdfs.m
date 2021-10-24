@@ -2,7 +2,7 @@
 time = irf.tint('2017-07-06T13:54:05.30Z/2017-07-06T13:54:05.80Z');
 time = irf_time('2017-07-06T13:54:05.50Z','utc>EpochTT');
 tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
-tint_cold = irf.tint('2017-07-06T13:54:13.000Z/2017-07-06T13:54:13.040Z');
+tint_cold = irf.tint('2017-07-06T13:54:13.000Z/2017-07-06T13:54:13.040Z')+0;
 mms_id = 1;
 
 %% Make reduced distribution, EH range
@@ -150,6 +150,7 @@ flim_1D = [0 3.2]*1e-3;
 %vphmark = -9000; % vpar
 vphmark = [-11400 -7000]*1e-3;
 
+
 % EDI parameters
 E_edi = 500; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
@@ -160,6 +161,7 @@ v_edi_plus = sqrt(2*units.e*E_edi_plus./units.me)*1e-6; % Mm/s
 v_edi_minus = sqrt(2*units.e*E_edi_minus./units.me)*1e-6; % Mm/s
 
 colors = mms_colors('matlab');
+edi_color = [0 0 0]; %colors(2,:);
 
 
 if 1 % parperp1
@@ -193,10 +195,10 @@ if 1 % parperp1
     
     patch(hca,[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
-              colors(5,:),'facealpha',0.5)
+              edi_color,'facealpha',0.5)
     patch(hca,-[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
-              colors(5,:),'facealpha',0.5)
+              edi_color,'facealpha',0.5)
                 
     hold(hca,'off')
   end
@@ -235,10 +237,10 @@ if 1 % par1perp2
     
     patch(hca,[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
-              colors(5,:),'facealpha',0.5)
+              edi_color,'facealpha',0.5)
     patch(hca,-[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
-              colors(5,:),'facealpha',0.5)
+              edi_color,'facealpha',0.5)
                
     hold(hca,'off')
   end
@@ -268,10 +270,10 @@ if 1 % par
     
     patch(hca,[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
-              colors(5,:),'facealpha',0.5)
+              edi_color,'facealpha',0.5)
     patch(hca,-[v_edi_minus v_edi_plus v_edi_plus v_edi_minus v_edi_minus],...
               [hca.YLim(1) hca.YLim(1) hca.YLim(2) hca.YLim(2) hca.YLim(1)],...
-              colors(5,:),'facealpha',0.5)
+              edi_color,'facealpha',0.5)
             
     %set(hca,'children',flipud(get(hca,'children')))        
     hold(hca,'off')
@@ -286,6 +288,7 @@ if 0 % perp1perp2
 end
 
 h(3).XLim = [-35 35];
+h(3).XLim = [-25 25];
 
 legends = {'a)','b)','c)'};
 legends_color = {'k','k','k'};
@@ -311,18 +314,44 @@ for ipanel = 1:npanels
 end
 colormap(pic_colors('candy4'))
 
+%irf_legend(h(1),utc_warm,[0.02 0.75],'color',[0 0 0],'fontsize',13,'horizontalalignment','left')
+%irf_legend(h(2),utc_warm,[0.98 0.98],'color',[0 0 0],'fontsize',13,'horizontalalignment','right')
+
+% plot ring and annotate wamr/hot populations
+if 1
+  %%
+v1warm = 15*sind(0:360)-6;
+v2warm = 15*cosd(0:360)-0;
+v1hot = 40*sind(0:360)+15;
+v2hot = 40*cosd(0:360)+0;
+hold(h(1),'on')
+plot(h(1),v1warm,v2warm,'--k','linewidth',1)
+plot(h(1),v1hot,v2hot,'--k','linewidth',1)
+hold(h(1),'off')
+hold(h(2),'on')
+plot(h(2),v1warm,v2warm,'--k','linewidth',1)
+plot(h(2),v1hot,v2hot,'--k','linewidth',1)
+hold(h(2),'off')
+
+annotation('textarrow',[0.405 0.425],[0.35 0.438],'string',{'warm/','heated','electrons'},'fontsize',13,'horizontalalignment','center');
+annotation('textarrow',[0.405 0.42],[0.70 0.63],'string',{'hot','electrons'},'fontsize',13,'horizontalalignment','center');
+end
+
 %annotation('textarrow',[0.17 0.19],[0.78 0.78],'string',{'range of','obs. v_{ph}'},'fontsize',12);
 annotation('textarrow',[0.175 0.19],[0.78 0.78],'string',{'antiparallel','EDI range'},'fontsize',13,'horizontalalignment','center');
 annotation('textarrow',[0.246 0.225],[0.78 0.78],'string',{'parallel','EDI range'},'fontsize',13,'horizontalalignment','center');
 annotation('textarrow',[0.195 0.195],[0.87 0.85],'string',{'range of observed v_{ph}'},'fontsize',13);
 
+%annotation('textarrow',[0.175 0.185]+0.21,[0.50 0.50],'string',{'warm/heated','electrons'},'fontsize',13,'horizontalalignment','center');
+%annotation('textarrow',[0.5 0.48],[0.35 0.45],'string',{'hot','electrons'},'fontsize',13,'horizontalalignment','center');
 
-utc_warm = ef1D_(it).time.utc; utc_warm = utc_warm(12:19);
-utc_cold = ef1D_cold(1).time.utc; utc_cold = utc_cold(12:19);
+utc_warm = ef1D_(it).time.utc; utc_warm = utc_warm(12:22);
+utc_cold = ef1D_cold(1).time.utc; utc_cold = utc_cold(12:22);
 %annotation('textarrow',[0.68 0.69]+0.003,[0.45 0.39]+0.005,'string',{'warmer','population','observed','with EHs',['~' utc_warm]},'fontsize',13,'color',[0 0 0],'horizontalalignment','right','TextBackgroundColor',[1 1 1]);
-annotation('textarrow',[0.785 0.756],[0.60 0.57]-0.2,'string',{'warmer','population','observed','with EHs',['~' utc_warm]},'fontsize',13,'color',[0 0 0],'horizontalalignment','right','TextBackgroundColor',[1 1 1]);
+%annotation('textarrow',[0.780 0.756]-0.005,[0.60 0.57]-0.2,'string',{['' utc_warm],'warm/heated','population','observed','with EHs'},'fontsize',13,'color',[0 0 0],'horizontalalignment','right','TextBackgroundColor',[1 1 1]);
+annotation('textarrow',[0.777 0.765],[0.59 0.57]-0.2,'string',{['' utc_warm],'warm/heated','population','observed','with EHs'},'fontsize',13,'color',[0 0 0],'horizontalalignment','right','TextBackgroundColor',[1 1 1]);
 %annotation('textarrow',[0.76 0.745],[0.60 0.57],'string',{'cold population','observed closer','to the lobe',['~' utc_cold]},'fontsize',13,'color',colors(1,:),'TextBackgroundColor',[1 1 1]);
-annotation('textarrow',[0.76 0.745],[0.60 0.57]+0.1,'string',{'cold population','observed closer','to the lobe',['~' utc_cold]},'fontsize',13,'color',colors(1,:),'TextBackgroundColor',[1 1 1]);
+annotation('textarrow',[0.764 0.748],[0.60 0.57]+0.1,'string',{['' utc_cold],'cold population','observed closer','to the lobe'},'fontsize',13,'color',colors(1,:),'TextBackgroundColor',[1 1 1]);
 %%
 links_2d = linkprop(h,{'XLim','YLim','CLim'});
 

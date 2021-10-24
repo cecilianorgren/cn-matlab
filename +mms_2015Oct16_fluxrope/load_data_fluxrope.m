@@ -1,20 +1,23 @@
 tint = irf.tint('2015-10-16T10:32:54.00Z/2015-10-16T10:34:14.00Z'); % magnetosphere-magnetosheath-magnetosphere
-ic = 1:4;
+ic = 1:2;
 if 0 
   %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
   load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-24.mat')
   return
 end
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Nexus/data');
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
 db_info = datastore('mms_db');   
 
 %% Particle distributions: electrons and ions
 disp('Loading particle distributions...')
-c_eval('tic; [ePDist?,ePDist?error] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
-c_eval('tic; iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0])); toc',ic)
-
+mms.get_filepath('mms3_fpi_brst_l2_des-dist',tint+[20 0])
+%c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+%c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+%c_eval('tic; [ePDist?,ePDist?error] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
+%c_eval('tic; iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0])); toc',ic)
 %% Make event directory
+if 0
 fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
 fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
 dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
@@ -26,14 +29,15 @@ else
 end
 
 mkdir(eventPath)
-
+end
 %% Load defatt, for coordinate tranformation
 disp('Loading defatt...')
+if 0
 %load /Users/Cecilia/Data/MMS/2015Oct16/defatt.mat
 c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic);
 c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic);
 c_eval('defatt? = mms_removerepeatpnts(defatt?);',ic)
-    
+end
 %% Magnetic field
 disp('Loading magnetic field...')
 c_eval('tic; dmpaB?=mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);

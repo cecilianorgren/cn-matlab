@@ -1,35 +1,14 @@
 ic = 1:4;
-tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
+tint = irf.tint('2017-07-09T04:41:43.00Z/2017-07-09T04:43:32.00Z');
 
-if 0
-  %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
-  load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-24.mat')
-  return
-end
 %% Load datastore
-%mms.db_init('local_file_db','/Volumes/Nexus/data');
 mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-db_info = datastore('mms_db');
-
-%% Make event directory
-if 0 % already done
-fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
-fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
-dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
-else
-  dirName = '2017-07-11_223323';
-end
-
-[~,computername]=system('hostname');
-if strfind(computername,'ift0227887')
-  eventPath = ['/Users/cno062/Research/Events/' dirName '/'];
-else
-  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/'];
-end
-mkdir(eventPath)
+db_info = datastore('mms_db');   
+localuser = datastore('local','user');
 
 %% Load defatt, for coordinate tranformation
 if 0 % not nessecary unless E needs to be recalibrated
+  %%
   disp('Loading defatt...')
   %load /Users/Cecilia/Data/MMS/2015Oct16/defatt.mat
   c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic);
@@ -71,8 +50,15 @@ c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l
 %% Particle moments
 % Skymap distributions
 disp('Loading skymaps...')
-c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
-c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+%c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+%c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+
+c_eval('tic; [iPDist?,iPDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0])); toc',ic)
+c_eval('tic; [ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
+
+% Remove all one-count "noise"
+c_eval('iPDist?.data(iPDist?.data<iPDistErr?.data*1.1) = 0;',ic)
+c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 
 %% Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -101,11 +87,14 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 %c_eval('tic; gseVe?fast = mms.get_data(''Ve_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 %c_eval('tic; gseVi?fast = mms.get_data(''Vi_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 
-%% EDI
-%mms.load_data_edi;
-c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
-c_eval('ePitch?_flux_edi_err = mms.get_data(''Flux-err-amb-pm2_edi_brst_l2'',tint,?);',ic)
-c_eval('ePitch?_flux_edi_err_plus   = ePitch?_flux_edi+(ePitch?_flux_edi_err*+1);',ic)
-c_eval('ePitch?_flux_edi_err_minus  = ePitch?_flux_edi+(ePitch?_flux_edi_err*-1);',ic)        
-
 disp('Done loading data.');
+
+%% Event path
+fileName = ePDist1.userData.GlobalAttributes.Logical_file_id;
+fileNameSplit = strsplit(fileName{1},'_'); numName = fileNameSplit{6};
+dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+dirNameMatlab = sprintf('+mms_%s%s%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9:14));
+eventPath = ['/Users/' localuser '/Research/Events/' dirName '/'];  
+matlabPath = ['/Users/' localuser '/MATLAB/cn-matlab/' dirNameMatlab '/'];
+  
+mkdir(eventPath)

@@ -735,7 +735,7 @@ end
 if 1 % PHI, TSeries, plot
   hca = h(isub); isub = isub + 1;
   irf_plot(hca,phi);  
-  irf_legend(hca,{sprintf('v_{ph}= %g km/s',vph*1e-3)},[0.01 0.99],'color',[0 0 0]);
+  irf_legend(hca,{sprintf('v_{ph}= %g km/s',vph*1e-3)},[0.1 0.99],'color',[0 0 0]);
   hca.YLabel.String = {'\phi','(V)'};  
   hca.YLabel.Interpreter = 'tex';
 end
@@ -1155,6 +1155,11 @@ if 1 % 1 % plot, timeseries, for paper
     irf_legend(hca,{sprintf('v_{ph,av}= %g km/s',vph*1e-3)},[0.08 0.99],'color',[0 0 0]);
     hca.YLabel.String = {'\phi','(V)'};  
     hca.YLabel.Interpreter = 'tex';
+    if 1 % add locations where dphi/dntrap is recalculated every time
+      hold(hca,'on')
+      irf_plot(hca,phi_progressive.ts_detrend_locs,'*','color',[0,0.4470,0.7410])
+      hold(hca,'off')
+    end
   end
   if 1 % F
     hca = h(isub); isub = isub + 1;
@@ -1167,27 +1172,27 @@ if 1 % 1 % plot, timeseries, for paper
       hold(hca,'on')
       %lines_EDI_plus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
       lines_EDI_minus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
-      hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_minus(1).Color);  
+      %hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_minus(1).Color);  
       hold(hca,'off')
       %h_all_markings = [h_all_markings; lines_EDI_plus; lines_EDI_minus; hleg_EDI];
-      h_all_markings = [h_all_markings; lines_EDI_minus; hleg_EDI]; 
+      %h_all_markings = [h_all_markings; lines_EDI_minus; hleg_EDI]; 
     end
     if 1 % model phase velocity
       hold(hca,'on')
       line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
       lines_vphav = irf_plot(hca,tsVph*1e-6,'LineWidth',1.0,'Color',vph_color,'LineStyle','--');
       %lines_vphav = irf_plot(hca,tsVph*1e-6,'--k');
-      hleg_vphav = irf_legend(hca,{'-- v_{ph,mod}'},[0.32 0.99],'color',lines_vphav(1).Color);  
+      %hleg_vphav = irf_legend(hca,{'-- v_{ph,mod}'},[0.32 0.99],'color',lines_vphav(1).Color);  
       hold(hca,'off')
-      h_all_markings = [h_all_markings; lines_vphav; hleg_vphav];
+      %h_all_markings = [h_all_markings; lines_vphav; hleg_vphav];
     end
     if 1 % observed phase velocity
       hold(hca,'on')
       lines_vphobs = irf_plot(hca,obs_vph*1e-3,'*k','LineWidth',1.5,'Color',vph_color);
       lines_vphobs.MarkerSize = 4;
-      hleg_vphobs = irf_legend(hca,{'* v_{ph,obs}'},[0.18 0.99],'color',lines_vphobs(1).Color);  
+      %hleg_vphobs = irf_legend(hca,{'* v_{ph,obs}'},[0.18 0.99],'color',lines_vphobs(1).Color);  
       hold(hca,'off')
-      h_all_markings = [h_all_markings; lines_vphobs; hleg_vphobs];
+      %h_all_markings = [h_all_markings; lines_vphobs; hleg_vphobs];
     end  
     colormap(hca,cn.cmap('white_blue'))
     if 0 % str info
@@ -1258,7 +1263,7 @@ if 1 % 1 % plot, timeseries, for paper
     ax2.YLabel.Interpreter = 'tex';
     ax1.YLabel.String = {'j^{EDI}',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
     ax1.YLabel.Interpreter = 'tex';
-    irf_legend(hca,{'EDI','model'},[0.08 0.98])
+    irf_legend(hca,{'EDI','  model'},[0.08 0.98])
     %irf_legend(hca,{'EDI: \theta = [168.75 180]^o','model: v = [-13600 -12900] km/s'},[0.08 0.98])
     %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
     ax1.YLim = [0 3.7];
@@ -1344,9 +1349,18 @@ if 1 % 1 % plot, timeseries, for paper
   c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
   
   % annotation
-  annotation('textarrow',[0.71 0.71],[0.47 0.485],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
-  annotation('textarrow',[0.76 0.76],[0.550 0.500],'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
-  annotation('textarrow',[0.30 0.325],[0.550 0.510],'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
+  if 0  % for h(3).YLim = [-29 29]
+    h(3).YLim = [-29.9 29.9]
+    annotation('textarrow',[0.71 0.71],[0.47 0.485],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
+    annotation('textarrow',[0.76 0.76],[0.550 0.500],'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
+    annotation('textarrow',[0.30 0.325],[0.550 0.510],'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
+  elseif 1 
+    %%
+    h(3).YLim = [-29 15]
+    annotation('textarrow',[0.685 0.685],[0.47 0.495],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
+    annotation('textarrow',[0.76 0.76],[0.550 0.500]+0.02,'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
+    annotation('textarrow',[0.30 0.325],[0.550 0.510]+0.02,'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
+  end
 end
 if 1 % 1 % plot, timeseries and averaged, for diagnostics
   %%

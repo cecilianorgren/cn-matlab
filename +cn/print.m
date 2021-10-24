@@ -11,6 +11,7 @@ function print(filename,varargin)
 
 filepath = '/';
 frmt = 'png';
+fileending = 'png';
 print_flag = 1;
 have_options = 0;
 extrapath = '/';
@@ -33,6 +34,15 @@ while have_options
     switch lower(varargin{1})
       case 'eps'
           frmt = 'epsc';
+          fileending = 'eps';
+          varargin(1) = [];
+      case 'jpeg'
+          frmt = 'jpeg';
+          fileending = 'jpg';
+          varargin(1) = [];
+      case 'pdf'
+          frmt = 'pdf';
+          fileending = 'pdf';
           varargin(1) = [];
       case 'incr'
           doIncrement = 1;    
@@ -67,6 +77,7 @@ while have_options
         varargin(1) = [];
       otherwise
         disp(sprintf(' -- Can not recognize input %s',varargin{1}))
+        varargin{1} = [];
     end
     if isempty(varargin); break; end
 end
@@ -114,17 +125,20 @@ else
   end
 end
 % Add filename to directory path
-path_and_file= [directory,filename,'.',frmt(1:3)];
+%path_and_file= [directory,filename,'.',frmt(1:3)];
+path_and_file= [directory,filename,'.',fileending];
+
 
 % Check if file already exists-
 % If a file with that name already exist, 
 % ask if you want to overwrite it, or make increment
-if doIncrement
-    
-elseif exist(path_and_file,'file')
-    question = 'File alreade exists, do you want to overwrite it? [1/0] >';
+%if doIncrement
+%    
+%else
+if exist(path_and_file,'file')
+    question = 'File already exists, do you want to overwrite it? [1/0] >';
     print_flag = irf_ask(question,[],1);
-else 
+%else 
     
 end
 
@@ -133,12 +147,13 @@ if print_flag
     set(gcf, 'InvertHardCopy', 'off');
     set(gcf,'paperpositionmode','auto');
     set(gcf,'color','white');
+    %set(gcf,'color','none');
     %eval(['print -d',frmt,' ',directory,filename,'.',frmt(1:3)])
     %print(['-d',frmt],'-opengl','-r300',[directory,filename,'.',frmt(1:3)]);
     %print(['-d',frmt],'-painters','-r300',[directory,filename,'.',frmt(1:3)]);
     %print(['-d',frmt],'-painters','-r600',[directory,filename,'.',frmt(1:3)]);
     %print(['-d',frmt],'-opengl','-r300',[directory,filename,'.',frmt(1:3)]);
-    print(['-d',frmt],renderer,'-r300',[directory,filename,'.',frmt(1:3)]);
+    print(['-d',frmt],renderer,'-r300',[directory,filename,'.',fileending]);
     disp(['Printed ',path_and_file])
 else
     disp('Did not print.')

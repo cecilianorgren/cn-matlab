@@ -6,7 +6,7 @@ mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load data
-ic=1:4;
+ic = 1:4;
 units = irf_units;
 R = mms.get_data('R_gse',tint);
 if size(R.gseR1,2) == 4
@@ -25,6 +25,15 @@ c_eval('jedi?_err = mms.get_data(''Flux-err-amb-pm2_edi_brst_l2'',tint,?);',ic)
 c_eval(['jedi?_err_plus   = jedi?+jedi?_err;' ...  
         'jedi?_err_minus  = jedi?+(jedi?_err*-1);'],ic)
 
+if 0
+  %%
+  c_eval('jedi? = ePitch?_flux_edi;',ic)
+  c_eval('jedi?_err = ePitch?_flux_edi_err;',ic)
+  c_eval('jedi?_err_minus = ePitch?_flux_edi_err_minus;',ic)
+  c_eval('jedi?_err_plus = ePitch?_flux_edi_err_plus;',ic)
+  
+end
+      
 % div E
 
 if 1
@@ -62,7 +71,7 @@ if 1 % EDI 1234
   pa = [170 180];
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_plot(hca,{jedi1.palim(pa).tlim(tintzoom),jedi2.palim(pa).tlim(tintzoom),jedi3.palim(pa).tlim(tintzoom),jedi4.palim(pa).tlim(tintzoom)},'comp');
-  hca.YLabel.String = {'j^{EDI}','(cm^{-2} s^{-1})'};
+  hca.YLabel.String = {'j^{EDI}','(cm^{-2} s^{-1} sr^{-1})'};
   irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.98])
 end
 if 1 % EDI 1234
@@ -70,7 +79,7 @@ if 1 % EDI 1234
   pa = [170 180];
   set(hca,'ColorOrder',mms_colors('1234'))
   irf_plot(hca,{jedi1_err.palim(pa).tlim(tintzoom),jedi2_err.palim(pa).tlim(tintzoom),jedi3_err.palim(pa).tlim(tintzoom),jedi4_err.palim(pa).tlim(tintzoom)},'comp');
-  hca.YLabel.String = {'j^{EDI} (err)','(cm^{-2} s^{-1})'};
+  hca.YLabel.String = {'j^{EDI} (err)','(cm^{-2} s^{-1} sr^{-1})'};
   irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.98])
 end
 if 0 % EDI err 1
@@ -127,7 +136,7 @@ if 1 % EDI err 1234, patch - pretty but quite cost intensive, so only do for tin
   hp.EdgeColor = mms_colors('4');
   hold(hca,'off')
   %irf_plot(hca,{jedi1.palim(pa),jedi2.palim(pa).palim(pa),jedi3.palim(pa),jedi4.palim(pa)},'comp');
-  hca.YLabel.String = {'j^{EDI}','(cm^{-2} s^{-1})'};
+  hca.YLabel.String = {'j^{EDI}','(cm^{-2} s^{-1} sr^{-1})'};
   hca.YLabel.Interpreter = 'tex';
   irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.98])
 end

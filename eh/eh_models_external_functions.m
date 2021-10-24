@@ -924,7 +924,7 @@ if 1 % plot 3
     hca.YLim = [0 0.042];
     hca.XLim = xlim;
   end
-  if 1 % free, trapped, and total densities
+  if 0 % free, trapped, and total densities
     hca = h(isub); isub = isub + 1;
     hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
                       x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,...
@@ -934,6 +934,7 @@ if 1 % plot 3
     %hlines(1).LineWidth = 1.5;
     hca.XLabel.String = 'x (km)';
     hca.YLabel.String = 'n_e (cm^{-3})';
+    
     %hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
     irf_legend(hca,{...
       'n_{e}^{obs}';...%'n_{0}+(\epsilon_0/e)\nabla^2\phi';...
@@ -945,6 +946,33 @@ if 1 % plot 3
     %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
     hca.YLim = [0 0.042];
     hca.XLim = xlim;
+  end
+  if 1 % free, trapped, and total densities, 2 yscales
+    hca = h(isub); isub = isub + 1;
+    colors = pic_colors('matlab');
+    ploty1 = [(n0+dn_obs)*1e-6, nansum(Fabel_obs,2)*dv*1e-6];
+    ploty2 = [nansum(Fabel_free_obs,2)*dv*1e-6, nansum(Fabel_trap_obs,2)*dv*1e-6];
+    [AX,H1,H2] = plotyy(hca,x_obs*1e-3,ploty2',x_obs*1e-3,ploty1');
+    H1(1).Color = colors(3,:);
+    H1(2).Color = colors(4,:);
+    H2(1).Color = colors(1,:);
+    H2(2).Color = colors(2,:);
+    %hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n_{ef}, n_{ep} (cm^{-3})';
+    hca.YLabel.String = 'n_e (cm^{-3})';
+    %hca.Title.String = 'n_t = n_0+(\epsilon_0/e)\nabla^2\phi-n_f';
+    irf_legend(hca,{...
+      'n_{e}^{obs}';...%'n_{0}+(\epsilon_0/e)\nabla^2\phi';...
+      'n_{e}^{mod}';...
+      'n_{ep}';...
+      'n_{et}'},...
+      [0.02 0.25])    
+%                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
+    %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
+    %hca.YLim = [0 0.042];
+    hca.XLim = xlim;
+    AX(2).XLim = xlim;
   end
   if 1 % FV obs, Abel
     hca = h(isub); isub = isub + 1;
@@ -1061,6 +1089,14 @@ if 1 % plot 3
   for ip = 1:npanels
     h(ip).Position(3) = width;
   end
+  end
+  if 0
+    %%
+    AX(2).YLabel.String = 'n_e^{obs}, n_e^{mod} (cm^{-3})';
+    AX(1).YLabel.String = 'n_{ep}, n_{et} (cm^{-3})';
+    h(1).YLim = [0 370];
+    annotation('textarrow',[0.27 0.27],[0.55 0.525],'string',{'trapped/passing','boundary'},'fontsize',12,'horizontalalignment','center');
+    annotation('textarrow',[0.25 0.25],[0.29 0.27],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
   end
 end
 %% Collect for all eh

@@ -353,7 +353,7 @@ c_eval('Lp?_fromE_filt= Pi?perp/ne?.resample(Pi?perp)/gseE?perp_filt.resample(Pi
 
 tintZoom = irf.tint('2017-07-11T22:33:15.00Z/2017-07-11T22:33:35.00Z');
 
-h = irfh_plot(4);
+h = irf_plot(4);
 hca = irf_panel('gseE1perp');
 set(hca,'ColorOrder',mms_colors('matlab')) 
 irf_plot(hca,{gseE1perp.abs,gseE1perp_filt.abs},'comp')
