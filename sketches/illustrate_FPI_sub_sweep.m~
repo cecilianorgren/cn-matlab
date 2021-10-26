@@ -12,10 +12,8 @@ C = AZ;
 surf(X,Y,Z,C)
 cmap = pic_colors('thermal');
 colormap(cmap(20:end,:))
-cmap = [1 0 0; 0 1 0; 0 1 1; 1 0 1]*0.95;
-colormap(cmap)
 axis equal;
-axis off
+
 %% FPI, 4 DES
 nPolar = 16;  polar = linspace(-90,90,nPolar+1);
 nAzimuth = 8; azim  = linspace(2,360/nAzimuth-2,nAzimuth+1);
@@ -54,7 +52,7 @@ C = AZ;
 surf(X,Y,Z,C)
 cmap = pic_colors('thermal');
 colormap(cmap(20:end,:))
-cmap = [1 0 0; 0 1 0; 0 1 1; 1 0 1]*0.95;
+cmap = [1 0 0; 0 1 0; 0 1 0; 1 0 1];
 colormap(cmap)
 axis equal;
 

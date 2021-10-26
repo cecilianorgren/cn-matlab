@@ -43,7 +43,7 @@ if 0 % Make the data stepfunction-like, so that it shows the accumulation time
   c_eval('ePitch?_fpi2 = ePDist?.pitchangles(dmpaB?,180-[22.5 0]);',1:4);
   c_eval('ePitch?_flux_fpi2 = ePitch?_fpi2.flux;',1:4);
   c_eval('ePitch?_flux_fpi2_apar500 = ePitch?_flux_fpi2.elim(500).palim(180);',1:4);  
-  %% Make the data stepfunction-like, so that it shows the accumulation time
+  % Make the data stepfunction-like, so that it shows the accumulation time
   dt = 0.015;
   for iic = 1:4        
     c_eval('pitch_tmp = ePitch?_flux_edi_apar;',iic)
