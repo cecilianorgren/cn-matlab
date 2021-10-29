@@ -317,7 +317,7 @@ h = pic.plot_map(varstrs,'A',1,'clim',clims,'cmap',cmaps,'smooth',2,'cbarlabels'
 
 % first part of mms_20170706_135303.paper_fig1.m
 
-%% Plot, zoom only, edi fpi compariso
+%% Plot, zoom only, edi fpi comparison
 ic = 1;
 npanels = 3;
 h = irf_plot(npanels); 
@@ -373,7 +373,7 @@ if doOne % E par, single spacecraft
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E par');
-  set(hca,'ColorOrder',mms_colors('xyza'))
+  set(hca,'ColorOrder',mms_colors('1234'))
   c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
   hca.YLabel.String = {'E_{||}','(mV/m)'};
 end
@@ -393,7 +393,7 @@ if doOne % Phi, use eh_model_optimization_abel to get phi?
   zoomy = [zoomy isub];
   hca = irf_panel('phi');
   set(hca,'ColorOrder',mms_colors('1234'))
-  c_eval('h = irf_plot(hca,{phi?},''comp'',''dt'',dt);',ic)
+  c_eval('hh = irf_plot(hca,{phi?},''comp'',''dt'',dt);',ic)
   hca.YLabel.String = {'\phi','(V)'};  
   ylabel(hca,hca.YLabel.String,'interpreter','tex')
 end
@@ -434,30 +434,27 @@ if doOne % charge perturbation
   set(hca,'ColorOrder',mms_colors('1234b'))
   % cm scale 
   units_scaling = 1e-3;
-  hh = irf_plot(hca,{dn_E1par/v_for_density_scaling*1e-6/units_scaling
-                     },'comp','dt',[dt 0]); 
-  hh(1).Children(1).LineWidth = 2;
+  if doFour
+    c_eval('hh = irf_plot(hca,{dn_E?par/v_for_density_scaling*1e-6/units_scaling},''comp'',''dt'',[dt 0]);',ic) 
+    hh(1).Children(1).LineWidth = 2;
+  else
+    c_eval('irf_plot(hca,{dn_E?par/v_for_density_scaling*1e-6/units_scaling},''comp'',''dt'',[dt 0]);',ic)     
+  end
   hca.YLabel.String = {'\delta n',sprintf('(10^{%g} cm^{-3})',log10(units_scaling))};
   hca.YLabel.FontSize = fontsize;
   ylabel(hca,hca.YLabel.String,'interpreter','tex')
 
-  if 1 % 4sc
+  if doFour % 4sc
     set(hca,'ColorOrder',mms_colors('b'))
     hleg_4sc = irf_legend(hca,{'4 sc'},[0.99 0.98],'fontsize',12);
-    hleg_4sc.FontWeight = 'bold';
-  elseif 1 % legend mms1 mms2 mms43 mms4, 4sc
-    set(hca,'ColorOrder',mms_colors('1234b'))
-    irf_legend(hca,{'mms1';'mms2';'mms3';'mms4';'4 sc'},[1.02 0.9],'fontsize',12);
-  else
-    set(hca,'ColorOrder',mms_colors('b'))
-    irf_legend(hca,{'4 sc'},[1.02 0.9],'fontsize',12);
+    hleg_4sc.FontWeight = 'bold';  
   end
 end
 
 %hca = irf_panel('edi flux'); hca.YLim = [0 7.999];
 
 irf_zoom(h,'x',phi1.time)
-irf_zoom(h(zoomy),'y')
+irf_zoom(h,'y')
 irf_plot_axis_align
 
 
@@ -471,7 +468,7 @@ end
 
 hca = irf_panel('E par'); hca.YLim = [-60 60];
 hca = irf_panel('phi'); hca.YLim = [0.001 399];
-hca = irf_panel('density perturbation'); hca.YLim = 1.8*[-1 1];
+hca = irf_panel('density perturbation'); hca.YLim = [-1 1.8];
 
 
 doDoubleAxis = 0; % dn
@@ -497,3 +494,233 @@ irf_plot_axis_align(h)
 %ax.YLabel.Position(1) = 1.07;
 
 %set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+
+%% Plot, zoom only, Epar edi comparison
+ic = 4;
+npanels = 2;
+h = irf_plot(npanels); 
+isub = 0;
+zoomy = [];
+fontsize = 12;
+
+v_for_density_scaling = 9000e3; % m/s
+
+tint = irf.tint('2017-07-06T13:53:40.00Z/2017-07-06T13:54:15.00Z')+0*[-8 8];
+tint_zoom = irf.tint('2017-07-06T13:54:05.30Z/2017-07-06T13:54:05.80Z');
+tint_zoom = irf.tint('2017-07-06T13:54:05.40Z/2017-07-06T13:54:06.80Z');
+tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
+tint_zoom = phi1.time([1 end]);
+
+% common time shifts
+dt = [0.0000  -0.0012  -0.0009  -0.0012];
+dt0 = 0.0008;
+dt = dt + dt0;
+
+doDt = 0;
+if not(doDt), dt = [0,0,0,0]; end
+doFour = 0;
+doOne = 1;
+  
+if 0 % E par, 4 sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'mms1';'mms2';'mms3';'mms4'},[1.02 0.9],'fontsize',12);
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if 0*doFour % E par, 4 sc, time shifted for visibility
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('1234'))  
+  irf_plot(hca,{gseE1par,gseE2par,gseE3par,gseE4par},'comp','dt',dt);
+  set(hca,'ColorOrder',mms_colors('12341'))
+  irf_legend(hca,{'MMS 1';'MMS 2';'MMS 3';'MMS 4'},[1.02 0.9],'fontsize',12);
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+  format_ms = '%.1f';
+  irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],['  ',num2str(dt(2)*1e3,format_ms)],['  ',num2str(dt(3)*1e3,format_ms)],['  ',num2str(dt(4)*1e3,format_ms)],'] ms'},...
+                 [0.01 1.05],'fontsize',12);
+  %irf_legend(hca,{['dt = [' num2str(dt(1)*1e3,format_ms)],' ',num2str(dt(2)*1e3,format_ms),' ',num2str(dt(3)*1e3,format_ms),' ',num2str(dt(4)*1e3,format_ms),'] ms'},[0.01 0.1],'fontsize',12);
+  hca.YLabel.String = {'E_{||}','(mV/m)'};  
+end
+if doOne % E par, single spacecraft
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E par');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  c_eval('irf_plot(hca,{gseE?par},''comp'');',ic)
+  hca.YLabel.String = {'E_{||}','(mV/m)'};
+end
+if 0*doFour % Phi, use eh_model_optimization_abel to get phi?
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  hh = irf_plot(hca,{phi1,phi2,phi3,phi4},'comp','dt',dt);  
+  hca.YLabel.String = {'\phi','(V)'};  
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+  %set(hca,'ColorOrder',mms_colors('1234'))
+  %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
+end
+if 0*doOne % Phi, use eh_model_optimization_abel to get phi?
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('phi');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  c_eval('hh = irf_plot(hca,{phi?},''comp'',''dt'',dt);',ic)
+  hca.YLabel.String = {'\phi','(V)'};  
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+end
+if 0*doFour % charge perturbation
+  sub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('density perturbation');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  % cm scale 
+  units_scaling = 1e-3;
+  hh = irf_plot(hca,{dn_E1par/v_for_density_scaling*1e-6/units_scaling,...
+                     dn_E2par/v_for_density_scaling*1e-6/units_scaling,...
+                     dn_E3par/v_for_density_scaling*1e-6/units_scaling,...
+                     dn_E4par/v_for_density_scaling*1e-6/units_scaling,...
+                     dn_divE/units_scaling,...
+                     },'comp','dt',[dt 0]); 
+  hh(1).Children(1).LineWidth = 2;
+  hca.YLabel.String = {'\delta n',sprintf('(10^{%g} cm^{-3})',log10(units_scaling))};
+  hca.YLabel.FontSize = fontsize;
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+
+  if 1 % 4sc
+    set(hca,'ColorOrder',mms_colors('b'))
+    hleg_4sc = irf_legend(hca,{'4 sc'},[0.99 0.98],'fontsize',12);
+    hleg_4sc.FontWeight = 'bold';
+  elseif 1 % legend mms1 mms2 mms43 mms4, 4sc
+    set(hca,'ColorOrder',mms_colors('1234b'))
+    irf_legend(hca,{'mms1';'mms2';'mms3';'mms4';'4 sc'},[1.02 0.9],'fontsize',12);
+  else
+    set(hca,'ColorOrder',mms_colors('b'))
+    irf_legend(hca,{'4 sc'},[1.02 0.9],'fontsize',12);
+  end
+end
+if 0*doOne % charge perturbation
+  sub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('density perturbation');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  % cm scale 
+  units_scaling = 1e-3;
+  if doFour
+    c_eval('hh = irf_plot(hca,{dn_E?par/v_for_density_scaling*1e-6/units_scaling},''comp'',''dt'',[dt 0]);',ic) 
+    hh(1).Children(1).LineWidth = 2;
+  else
+    c_eval('irf_plot(hca,{dn_E?par/v_for_density_scaling*1e-6/units_scaling},''comp'',''dt'',[dt 0]);',ic)     
+  end
+  hca.YLabel.String = {'\delta n',sprintf('(10^{%g} cm^{-3})',log10(units_scaling))};
+  hca.YLabel.FontSize = fontsize;
+  ylabel(hca,hca.YLabel.String,'interpreter','tex')
+
+  if doFour % 4sc
+    set(hca,'ColorOrder',mms_colors('b'))
+    hleg_4sc = irf_legend(hca,{'4 sc'},[0.99 0.98],'fontsize',12);
+    hleg_4sc.FontWeight = 'bold';  
+  end
+end
+if 1 % edi flux 0 180 1 sc
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('edi flux');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ePitch?_flux_edi.palim(180)*1e-6},''comp'',''dt'',dt);',ic)
+  hca.YLabel.String = {'j_e^{EDI}','antiparallel','(10^6 s^{-1}m^{-2} sr^{-1})'};
+  set(hca,'ColorOrder',mms_colors('12'))
+  hc
+  %irf_legend(hca,{'0^o','180^o'},[0.98 0.9],'fontsize',12);
+end
+
+%hca = irf_panel('edi flux'); hca.YLim = [0 7.999];
+
+irf_zoom(h,'x',phi1.time)
+irf_zoom(h,'y')
+irf_plot_axis_align
+%%
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)'};
+legends_color = {'k','k','k','k','k','k','k','k','k','k','k','k'};
+for ipanel = 1:npanels
+  irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
+  h(ipanel).YLabel.FontSize = fontsize;
+  h(ipanel).FontSize = fontsize;
+end
+
+hca = irf_panel('E par'); hca.YLim = [-60 60];
+hca = irf_panel('phi'); hca.YLim = [0.001 399];
+hca = irf_panel('density perturbation'); hca.YLim = [-1 1.8];
+
+
+doDoubleAxis = 0; % dn
+if doDoubleAxis  
+  hca = irf_panel('density perturbation');
+  ax1 = hca;
+  ax2 = axes('Position',get(ax1,'Position'));
+  ax2.YLim = ax1.YLim*1e-3/n0;    
+  set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+  set(ax2,'YAxisLocation','right');
+  set(ax2,'Color','none','box','off'); % color of axis      
+  %set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+  %set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+  irf_timeaxis(ax2,'nolabels')
+  ax2.XLabel.String = [];
+  ax2.YLabel.String = {'\delta n/n'};
+  ax2.YLabel.Interpreter = 'tex';    
+  ax2.YTick = hca.YTick*1e-3/n0;  
+  ax2.FontSize = fontsize;
+end  
+  
+irf_plot_axis_align(h)
+%ax.YLabel.Position(1) = 1.07;
+
+%set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+
+%% Anticorrelation of phi and jedi
+
+h = setup_subplots(1,1);
+hca = h(1);
+xx = phi1.resample(ePitch1_flux_edi).tlim(phi1.time).data;
+yy = ePitch1_flux_edi.palim(palim).tlim(phi1.time).data*1e-6;
+plot(xx,yy,'.k','markersize',15)
+hold on
+xvec = linspace(0,400,100);
+%hfit = plot(xvec,(1/0.007)./xvec,'linewidth',1);
+hfit = plot(xvec,(140)./xvec,'linewidth',1);
+%scatter(xx,yy,'.')
+hca.YLim = [0 4];
+hca.XLim = [0 350];
+hca.XLabel.String = '\phi (V)';
+hca.YLabel.String = 'j_e^{EDI} (10^6 s^{-1}cm^{-2}sr^{-1})';
+hca.FontSize = 12;
+
+%% Anticorrelation of phi and jedi
+
+h = setup_subplots(1,1);
+hca = h(1);
+xx = phi1.resample(ePitch1_flux_edi).tlim(phi1.time).data;
+yy = ePitch1_flux_edi.palim(palim).tlim(phi1.time).data*1e-6;
+yy = 1./yy;
+yy(yy==Inf) = NaN;
+plot(xx,yy,'.k','markersize',15)
+hold on
+xvec = linspace(0,400,100);
+%hfit = plot(xvec,50./xvec,'linewidth',1);
+%scatter(xx,yy,'.')
+hold off
+hca.YLim = [0 4];
+hca.XLim = [0 350];
+hca.XLabel.String = '\phi (V)';
+hca.YLabel.String = 'j_e^{EDI} (10^6 s^{-1}cm^{-2}sr^{-1})';
+hca.FontSize = 12;
+
+%% More EDI plots
+

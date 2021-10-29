@@ -2147,9 +2147,9 @@ irf_plot_axis_align(h)
 
 set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
 
-%% Plot, zoom only, edi fpi compariso
+%% Plot, zoom only, edi fpi comparison
 ic = 1;
-npanels = 6;
+npanels = 5;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -2515,7 +2515,7 @@ end
 
 %irf_zoom(h(isub_long),'x',tint)
 %irf_zoom(h(isub_short),'x',tint_zoom)
-irf_zoom(h,'x',phi1.time)
+%irf_zoom(h,'x',phi1.time)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %h(isub_long(end)).XLabel.String = [];
