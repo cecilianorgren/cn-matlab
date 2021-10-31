@@ -1,6 +1,6 @@
 function [Fsave,Ffreesave,Ftrapsave] = get_f_abel_split_by_phi_at_zero(V,n,vt,vd,PHI,VPH,nt)  
 % [F,Ffree,Ftrap] = GET_F_ABEL(V,n,vt,vd,PHI,VPH,nt);  
-
+max(nt)
 units = irf_units;
 phi = PHI(:,1);
 vph = VPH(1,1);
@@ -93,6 +93,7 @@ for ix = 1:nx % something wrong with uneven numel(itrap_ngtvE)
     ind_phi = (ind_phi_0(1)+1):(ind_phi_0(2)-1-1);
     ind_phi_0(1) = [];
     [fitresult, gof, fun_net, fun_net_prime] = createFit(tocolumn(phi(ind_phi)), tocolumn(nt(ind_phi)));
+    %fitresult
     disp(sprintf('Npoints to fit = %g',numel(tocolumn(phi(ind_phi)))))
   end
   

@@ -1,30 +1,28 @@
-%% Set up grid and phi
-% diff in flux
+% Cleaned-up script to reproduce figure from paper
 
-vph_all = [-9000*1e3 -10000*1e3];
-phi_mult_all = [1.0 1.5];
-iff_all = 1:17;
-
-vph_all = [-9000*1e3];
-phi_mult_all = [1.0];
-iff_all = 19;
-
-n_vph_all = numel(vph_all);
-n_phi_mult_all = numel(phi_mult_all);
-n_iff_all = numel(iff_all);
-
-flux_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
-psd_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
-n_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
-
-for i_vph = 1:n_vph_all
-for i_phi_mult = 1:n_phi_mult_all
-for i_iff = 1:n_iff_all
-vph = vph_all(i_vph);
-phi_mult = phi_mult_all(i_phi_mult);
-iff = iff_all(i_iff);
-  
+%% Set up for loading data
+ic = 1:4;
 units = irf_units;
+tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
+tint = tint + [+5 -5]; % using the above edges causes problem with new EDI files because they have different versions that adjoining file
+localuser = datastore('local','user');
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+db_info = datastore('mms_db');   
+
+%% Load data
+c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
+
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+
+tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
+vph = -9000e3;
+c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
+tint_phi = phi1.time([1 end]);
+
+%% This is where the loop in bgk_timeseries.m starts
 mms_id = 1;
 tint_all = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
 tint = tint_all;
@@ -37,9 +35,6 @@ vmax = 90000e3;
 nv = 2000;
 v_vec = linspace(-vmax,vmax,nv);
 dv = v_vec(2) - v_vec(1);
-
-% Get EDI data
-%mms.load_data_edi;
 
 %% EDI energy and corresponding velocity
 E_edi = 500 - 0*scPot; % eV
@@ -54,26 +49,22 @@ v_edi_plusminus = v_edi_plus-v_edi_minus;
 dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
-%%
+
+%% Change name on edi flux because it was different before
 % EDI flux
-edi_nodes = 1;
-% if 0
-%   c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint).time,mean(flux180_mms?.tlim(tint).data(:,edi_nodes),2));')
-%   c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint).time,mean(flux0_mms?.tlim(tint).data(:,edi_nodes),2));')
-%   c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
-%   c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
-% else  
-  c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
-  c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
-  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
-  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
-% end
+c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
+c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
+c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
+c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
+
 
 % Indices corresponding to edi energy/velocity interval
+% NOT USED?
 vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
 vind_edi_180 = intersect(find(v_vec<-v_edi_minus),find(v_vec>-v_edi_plus));
 
 % Get properties of individual eh's
+% NOT USED?
 data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
 obs_eh_properties = data_tmp.EH_properties;
 obs_lpp = obs_eh_properties.Lpp; % peak to peak length
@@ -88,6 +79,7 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 c_eval('obs_vph = obs_vph?;',mms_id)
 
 % charge separation assuming potential structure is single gaussian
+% NOT USED?
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 dn = dn;
 
@@ -109,31 +101,18 @@ x_all = cell(numel(obs_lpp),1);
 fun_fit_all = cell(numel(obs_lpp),1);
 
 
-% F0
-if 1
-  %iff = 17;
-  iff = 20;
-  [f0,params] = mms_20170706_135303.get_f0(iff);
-  n = params.n;
-  ntot = sum(n);
-  R = n(1)/ntot;
-  T = params.T;
-  vd = params.vd;
-  vt = params.vt;
-  n0 = sum(n);
-  ff4 = f0(v_vec,n,vd,vt);
-else
-  n = [0.02 0.02]*1e6; % m-3
-  ntot = sum(n);
-  R = 0.7;
-  n = [R (1-R)]*ntot;
-  T = [150 4000]; % eV
-  vd = [-11000e3 4000e3]; % ms-1 
-  vt = sqrt(2*units.e*T./units.me); % m/s
-  n0 = sum(n);
-end
-
-
+% Load f0 from external function
+%iff = 17;
+iff = 20;
+[f0,params] = mms_20170706_135303.get_f0(iff);
+n = params.n;
+ntot = sum(n);
+R = n(1)/ntot;
+T = params.T;
+vd = params.vd;
+vt = params.vt;
+n0 = sum(n);
+ff4 = f0(v_vec,n,vd,vt);
 
 str_info = {'unperturbed f:';...
             ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
@@ -141,7 +120,7 @@ str_info = {'unperturbed f:';...
             ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...            
             };
                
-beta_range = [-2.5 0];
+beta_range = [-2.5 0]; 
 mms_id = 1;
 
 %% For entire time series
@@ -1757,17 +1736,4 @@ if 0
     plot(hca,phi_long,fun_net_long(phi_long)) 
     hold(hca,'off')
   end
-end
-
-%% Collect data in cell-matrices, for comparison later on
-if 0
-load('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat')
-flux_all{i_vph,i_phi_mult,i_iff} = fluxModel180/f_scale;
-psd_all{i_vph,i_phi_mult,i_iff} = {{v_vec*v_scale*1e-3,f0(v_vec,n,vd,vt)},{v_vec*v_scale*1e-3,mean(Fabel_obs,1)},{v_fpi*v_scale,1*f_fpi*1e0}};
-n_all{i_vph,i_phi_mult,i_iff} = {-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale};
-save('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat','flux_all','psd_all','n_all')
-%pause
-end
-end
-end
 end
