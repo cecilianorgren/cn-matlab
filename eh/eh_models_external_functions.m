@@ -30,6 +30,7 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 % charge separation assuming potential structure is single gaussian
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 
+
 dntrap_all = cell(numel(obs_velocity),1);
 phi_all = cell(numel(obs_velocity),1);
 x_all = cell(numel(obs_velocity),1);
@@ -248,6 +249,7 @@ c_eval('Efield_obs = gseE?par.tlim(tint).data;',mms_id)
 dn_obs = diff(phi_obs,2)/dx_obs/dx_obs*units.eps0/units.e;
 dn_obs = [dn_obs(1); tocolumn(dn_obs); dn_obs(end)]; % assume phi -> at edges
 %dn_obs = dn_obs.*phi_obs'/max(phi_obs)*2;
+dn_obs = dn_obs*1;
 
 dx_mod = x_mod(2) - x_mod(1);
 x_mod_diff1 = x_mod(1:end-1) + 0.5*dx_mod;

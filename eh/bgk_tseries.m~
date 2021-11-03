@@ -34,7 +34,7 @@ scPot = double(mean(scPot1.tlim(tint_phi).data));
 
 % Set velocity grid
 vmax = 90000e3;
-nv = 2000;
+nv = 5000;
 v_vec = linspace(-vmax,vmax,nv);
 dv = v_vec(2) - v_vec(1);
 
@@ -89,7 +89,7 @@ c_eval('obs_vph = obs_vph?;',mms_id)
 
 % charge separation assuming potential structure is single gaussian
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
-dn = dn;
+dn = dn*2;
 
 % Get potential from Efield
 %vph = -9000*1e3;    
@@ -204,8 +204,7 @@ Fabel_obs = Fabel_obs + Fflat_trap_obs;
 %FVscha_obs = Fscha_obs.*V_obs;
 FVabel_obs = Fabel_obs.*V_obs;
 
-tsFabel_nfree_obs = irf.ts_scalar(phi.time,nansum(Fabel_free_obs,2)*dv);
-tsFabel_ntrap_obs = irf.ts_scalar(phi.time,nansum(Fabel_trap_obs,2)*dv);
+tsFabel_nfree = irf.ts_scalar(phi/time);
 
 % Set up specrec for plotting
 Fspecrec.t = phi.time.epochUnix;  

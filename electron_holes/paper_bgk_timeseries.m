@@ -1,30 +1,65 @@
-%% Set up grid and phi
-% diff in flux
+% Cleaned-up script to reproduce figure from paper
+% Parameters that 
+dn_obs_multi = 1; % ultiplication factor for density
 
-vph_all = [-9000*1e3 -10000*1e3];
-phi_mult_all = [1.0 1.5];
-iff_all = 1:17;
-
-vph_all = [-9000*1e3];
-phi_mult_all = [1.0];
-iff_all = 19;
-
-n_vph_all = numel(vph_all);
-n_phi_mult_all = numel(phi_mult_all);
-n_iff_all = numel(iff_all);
-
-flux_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
-psd_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
-n_all = cell(n_vph_all,n_phi_mult_all,n_iff_all);
-
-for i_vph = 1:n_vph_all
-for i_phi_mult = 1:n_phi_mult_all
-for i_iff = 1:n_iff_all
-vph = vph_all(i_vph);
-phi_mult = phi_mult_all(i_phi_mult);
-iff = iff_all(i_iff);
-  
+%% Set up for loading data
+ic = 1:4;
 units = irf_units;
+tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
+tint = tint + [+5 -5]; % using the above edges causes problem with new EDI files because they have different versions that adjoining file
+localuser = datastore('local','user');
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%db_info = datastore('mms_db');   
+
+doLoad = 0;
+%% Load data
+if doLoad
+  c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+  c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+  c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+  c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
+  c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+end
+
+%% Prepare data 
+% Electrostatic potential, from parallel electric field
+tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
+vph = -9000e3;
+c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
+tint_phi = phi1.time([1 end]);
+
+% Density perturbation
+phi_vec = phi.data;
+phi_obs = phi_vec;
+x_vec = phi_ancillary.x_vec;
+x_obs = x_vec;
+
+% Get electric field and n
+dx_obs = x_obs(2) - x_obs(1);
+x_obs_diff1 = x_obs(1:end-1) + 0.5*dx_obs;
+x_obs_diff2 = x_obs(2:end-1) + dx_obs;
+EfieldFromPhi = -diff(phi_obs)/(-dx_obs);
+c_eval('Efield_obs = gseE?par.tlim(tint_all).data;',mms_id)
+c_eval('Etmp = gseE?par.tlim(tint_all);',mms_id)
+dtE = Etmp.time(2) - Etmp.time(1);
+ttmp = [Etmp.time+-0.5*dtE Etmp.time(end)+0.5*dtE]; 
+Efield_obs_todiff = Etmp.resample(ttmp); % offcenter E, so that diffed field is centered
+dn_obs = -diff(Efield_obs_todiff.data,1)*1e-3/(sign(vph)*dx_obs)*units.eps0/units.e;
+% Test the effect of increased dn, e.g. due to 3D effects, dn_obs_multi is 
+% specified above
+dn_obs = dn_obs*dn_obs_multi;
+
+% E-field shifted with half a data point because I take finite differences between
+% two adjacent points (therefore the diff value is not centered)
+% EfieldFromPhi is used to check what the effects of fitlering the
+% potential is. If there is a large difference or not.
+tsEfieldFromPhi = irf.ts_scalar(phi.time(1:end-1) + 0.5*(phi.time(2)-phi.time(1)),EfieldFromPhi.data*1e3);
+tsEfieldFromPhi.units = 'mV/m';
+tsDnObs = irf.ts_scalar(phi.time,dn_obs*1e-6);
+tsDnObs.units = 'cm^{-3}';
+
+
+%% This is where the loop in bgk_timeseries.m starts
 mms_id = 1;
 tint_all = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
 tint = tint_all;
@@ -37,9 +72,6 @@ vmax = 90000e3;
 nv = 2000;
 v_vec = linspace(-vmax,vmax,nv);
 dv = v_vec(2) - v_vec(1);
-
-% Get EDI data
-%mms.load_data_edi;
 
 %% EDI energy and corresponding velocity
 E_edi = 500 - 0*scPot; % eV
@@ -54,26 +86,22 @@ v_edi_plusminus = v_edi_plus-v_edi_minus;
 dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
-%%
+
+%% Change name on edi flux because it was different before
 % EDI flux
-edi_nodes = 1;
-% if 0
-%   c_eval('ts_edi_flux180_mms? = irf.ts_scalar(flux180_mms?.tlim(tint).time,mean(flux180_mms?.tlim(tint).data(:,edi_nodes),2));')
-%   c_eval('ts_edi_flux0_mms? = irf.ts_scalar(flux0_mms?.tlim(tint).time,mean(flux0_mms?.tlim(tint).data(:,edi_nodes),2));')
-%   c_eval('ts_edi_flux180 = ts_edi_flux180_mms?',mms_id)
-%   c_eval('ts_edi_flux0 = ts_edi_flux0_mms?',mms_id)
-% else  
-  c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
-  c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
-  c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
-  c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
-% end
+c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
+c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
+c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
+c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
+
 
 % Indices corresponding to edi energy/velocity interval
+% NOT USED?
 vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
 vind_edi_180 = intersect(find(v_vec<-v_edi_minus),find(v_vec>-v_edi_plus));
 
 % Get properties of individual eh's
+% NOT USED?
 data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
 obs_eh_properties = data_tmp.EH_properties;
 obs_lpp = obs_eh_properties.Lpp; % peak to peak length
@@ -88,6 +116,7 @@ c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
 c_eval('obs_vph = obs_vph?;',mms_id)
 
 % charge separation assuming potential structure is single gaussian
+% NOT USED?
 dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
 dn = dn;
 
@@ -102,38 +131,25 @@ c_eval('Epar = gseE?par;',mms_id)
 %phi_add = 50; % bugged at the moment
 phi = phi*phi_mult;%+phi_add; 
 
-
-dntrap_all = cell(numel(obs_lpp),1);
-phi_all = cell(numel(obs_lpp),1);
-x_all = cell(numel(obs_lpp),1);
-fun_fit_all = cell(numel(obs_lpp),1);
-
-
-% F0
-if 1
-  %iff = 17;
-  iff = 20;
-  [f0,params] = mms_20170706_135303.get_f0(iff);
-  n = params.n;
-  ntot = sum(n);
-  R = n(1)/ntot;
-  T = params.T;
-  vd = params.vd;
-  vt = params.vt;
-  n0 = sum(n);
-  ff4 = f0(v_vec,n,vd,vt);
-else
-  n = [0.02 0.02]*1e6; % m-3
-  ntot = sum(n);
-  R = 0.7;
-  n = [R (1-R)]*ntot;
-  T = [150 4000]; % eV
-  vd = [-11000e3 4000e3]; % ms-1 
-  vt = sqrt(2*units.e*T./units.me); % m/s
-  n0 = sum(n);
-end
+% NOT USED?
+%dntrap_all = cell(numel(obs_lpp),1);
+%phi_all = cell(numel(obs_lpp),1);
+%x_all = cell(numel(obs_lpp),1);
+%fun_fit_all = cell(numel(obs_lpp),1);
 
 
+% Load f0 from external function
+%iff = 17;
+iff = 20;
+[f0,params] = mms_20170706_135303.get_f0(iff);
+n = params.n;
+ntot = sum(n);
+R = n(1)/ntot;
+T = params.T;
+vd = params.vd;
+vt = params.vt;
+n0 = sum(n);
+ff4 = f0(v_vec,n,vd,vt);
 
 str_info = {'unperturbed f:';...
             ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
@@ -141,50 +157,12 @@ str_info = {'unperturbed f:';...
             ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...            
             };
                
-beta_range = [-2.5 0];
-mms_id = 1;
-
-%% For entire time series
-  
-phi_vec = phi.data;
-phi_obs = phi_vec;
-x_vec = phi_ancillary.x_vec;
-x_obs = x_vec;
-
-% Get electric field and n
-dx_obs = x_obs(2) - x_obs(1);
-x_obs_diff1 = x_obs(1:end-1) + 0.5*dx_obs;
-x_obs_diff2 = x_obs(2:end-1) + dx_obs;
-EfieldFromPhi = -diff(phi_obs)/(-dx_obs);
-c_eval('Efield_obs = gseE?par.tlim(tint_all).data;',mms_id)
-if 0 % from phi
-  dn_obs = diff(phi_obs,2)/dx_obs/dx_obs*units.eps0/units.e;
-  dn_obs = [dn_obs(1); tocolumn(dn_obs); dn_obs(end)]; % assume phi -> phi at edges
-else % from E  
-  c_eval('Etmp = gseE?par.tlim(tint_all);',mms_id)
-  dtE = Etmp.time(2) - Etmp.time(1);
-  ttmp = [Etmp.time+-0.5*dtE Etmp.time(end)+0.5*dtE];
-  Efield_obs_todiff = Etmp.resample(ttmp);
-  dn_obs = -diff(Efield_obs_todiff.data,1)*1e-3/(sign(vph)*dx_obs)*units.eps0/units.e;
-end
-dn_obs = dn_obs*2;
-
-% Divergence of E
-if 1
-  %%
-  c_eval('R? = gseR?.resample(gseE1).tlim(tint_all)*1e3;',1:4)
-  c_eval('E? = gseE?.resample(gseE1).tlim(tint_all)*1e-3;',1:4)
-  [divE,avE]=c_4_grad('R?','E?','div'); divE.name = 'div E';
-  dn_divE = divE*units.eps0/units.e ; dn_divE.name = 'dn from div E';
-end
+%beta_range = [-2.5 0]; % for schamel
+% already specified
+%mms_id = 1;
 
 
-
-tsEfieldFromPhi = irf.ts_scalar(phi.time(1:end-1) + 0.5*(phi.time(2)-phi.time(1)),EfieldFromPhi*1e3);
-tsEfieldFromPhi.units = 'mV/m';
-tsDnFromPhi = irf.ts_scalar(phi.time,dn_obs*1e-6);
-tsDnFromPhi.units = 'cm^{-3}';
-%%
+%% Calculate phase space densitites, fmod
 [X_obs,V_obs] = meshgrid(x_obs,v_vec); X_obs = permute(X_obs,[2 1]); V_obs = permute(V_obs,[2 1]);
 PHI_obs = repmat(tocolumn(phi_obs),1,nv);
 VPH_obs = V_obs*0 + vph;
@@ -723,6 +701,7 @@ if 0 % plot 2
     1;
   end
 if 0 % plot, timeseries
+
 fig = figure(39);
 h = irf_plot(8);
 isub = 1;
@@ -749,7 +728,7 @@ end
 if 1 % diff E (Poisson) (density)
   hca = h(isub); isub = isub + 1;  
   nscale = 1e-3;
-  irf_plot(hca,{tsDnFromPhi/nscale,(tsDnModel-ntot*1e-6)/nscale},'comp')
+  irf_plot(hca,{tsDnObs/nscale,(tsDnModel-ntot*1e-6)/nscale},'comp')
   hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
   hca.YLabel.Interpreter = 'tex';
 end
@@ -1216,7 +1195,7 @@ if 1 % 1 % plot, timeseries, for paper
   if 1 % diff E (Poisson) (density)
     hca = h(isub); isub = isub + 1;  
     nscale = 1e-3;
-    irf_plot(hca,{-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
+    irf_plot(hca,{-1*tsDnObs/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
     hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
     hca.YLabel.Interpreter = 'tex';
     %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
@@ -1440,7 +1419,7 @@ if 0 % 0 % plot, timeseries and averaged, for diagnostics
   if 1 % diff E (Poisson) (density)
     hca = h(isub); isub = isub + 1;  
     nscale = 1e-3;
-    irf_plot(hca,{-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
+    irf_plot(hca,{-1*tsDnObs/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
     hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
     hca.YLabel.Interpreter = 'tex';
     %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
@@ -1757,17 +1736,4 @@ if 0
     plot(hca,phi_long,fun_net_long(phi_long)) 
     hold(hca,'off')
   end
-end
-
-%% Collect data in cell-matrices, for comparison later on
-if 0
-load('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat')
-flux_all{i_vph,i_phi_mult,i_iff} = fluxModel180/f_scale;
-psd_all{i_vph,i_phi_mult,i_iff} = {{v_vec*v_scale*1e-3,f0(v_vec,n,vd,vt)},{v_vec*v_scale*1e-3,mean(Fabel_obs,1)},{v_fpi*v_scale,1*f_fpi*1e0}};
-n_all{i_vph,i_phi_mult,i_iff} = {-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale};
-save('/Users/cno062/MATLAB/cn-matlab/liouville/liouville_eh_abel_parameter_study.mat','flux_all','psd_all','n_all')
-%pause
-end
-end
-end
 end
