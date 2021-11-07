@@ -1,0 +1,51 @@
+function varargout = fit_gaussian(tsE,tsL,varargin)
+  % Returns the 
+
+  % Electric field from Gaussian
+  % phi = phi0*exp(-z^2/2/lz^2)
+  % Ez = (phi0*z*exp(-z^2/(2*lz^2)))/lz^2
+ 
+
+  if isnumeric(tsL) && numel(tsL == 1) % tsL is a speed
+    L = (tsE.time - tsE.time(1))*tsL;
+  elseif isa(tsL,'TSeries')
+    tsL = tsL.resample(tsE);
+    L = tsL.data;
+  end
+  L = L - mean(L);
+  E = tsE.data;
+
+  if isempty(varargin) % initial guess of half width
+    imax = find(E == max(E));
+    imin = find(E == min(E));
+    guessL = 0.5*abs(L(imax)-L(imin));
+  else % make gaussion fit
+    guess_params = varargin{1};
+    fun = @(params) costfunction(params,L,E); % costfuction, root mean squared
+    params0 = double(guess_params);
+    %options = optimset
+    %bestx = fminsearch(fun,params0);
+    bestx = fmincon(fun,params0,[-1 -1 -1],zeros(numel(params0),numel(params0)));
+    guessL = bestx;
+    figure(77)
+    mf_E = @(z,phi0,lz,z0)(phi0.*exp(-(z - z0).^2./(2*lz^2)).*(2*z - 2*z0))./(2*lz.^2);
+    plot(L,E,L,mf_E(L,bestx(1),bestx(2),bestx(3)))
+  end
+
+  guessL;
+  varargout = {guessL};
+
+
+  function sse = costfunction(params,tdata,Edata)
+    % tdata or zdata
+    z = tdata;
+    % fit parameters
+    phi0 = params(1);
+    lz   = params(2);
+    z0   = params(3);
+    %sse = sum((ydata - (B0 + B1*tanh(tdata/dt))).^2);
+    sse = sum((Edata - (phi0.*exp(-(z - z0).^2./(2*lz^2)).*(2*z - 2*z0))./(2*lz.^2)).^2);
+  end
+  function sse = constraint(params,tdata,Edata)
+  end
+end

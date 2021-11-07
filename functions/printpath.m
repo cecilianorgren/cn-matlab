@@ -8,7 +8,7 @@ if days
   if strfind(computername,'ift0227887')
     directory = ['/Users/cno062/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
   else
-    directory = ['/Users/Cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+    directory = ['/Users/cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
   end 
   if ~exist(directory,'dir')
     eval(['mkdir ', directory])
