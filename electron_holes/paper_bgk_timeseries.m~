@@ -1,43 +1,81 @@
-% Cleaned-up script to reproduce figure from paper
+% Cleaned-up script to reproduce figure from paper, to be executed without
+% having to run any otherscript beforehand.
 
-%% Set up for loading data
-ic = 1:4;
-units = irf_units;
-tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-tint = tint + [+5 -5]; % using the above edges causes problem with new EDI files because they have different versions that adjoining file
+%% Define spacecraft and time intervals to be used
+% Spacecraft id
+ic = 1;
+
+% Time interval of event
+tint_burst = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
+tint_burst = tint_burst + [+5 -5]; % using the above edges causes problem with new EDI files because they have different versions that adjoining file
+
+% Time intervals for modelling the distribution
+tint_model = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); 
+tint_model = irf.tint('2017-07-06T13:54:05.51Z/2017-07-06T13:54:05.64Z'); 
+
+% Time interval for figure
+tint_figure = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
+
+%% Set up database
 localuser = datastore('local','user');
-mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load data
-c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
-c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
-c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
-c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
+doLoad = 1;
+units = irf_units;
 
-c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+% Load MMS data
+if doLoad
+  c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint_burst);',ic);
+  c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint_burst);',ic);
+  c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint_burst);',ic);  
+  c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint_burst,?);',ic);
+  %c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint_burst,?);',ic);
+  c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint_burst,?);',ic)
+  c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+end
 
-tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
-vph = -9000e3;
-c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
-tint_phi = phi1.time([1 end]);
+% Average spacecraft to be used to adjust the EDI energy level
+c_eval('scPot = double(mean(scPot?.tlim(tint_model).data));',ic)
 
-%% This is where the loop in bgk_timeseries.m starts
-mms_id = 1;
-tint_all = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
-tint = tint_all;
+% Average density during the model interval, extract them here to compare
+% to the density of f0, such that they are approximately the same.
+c_eval('n_model = double(mean(ne?.tlim(tint_model).data));',ic)
+c_eval('n_figure = double(mean(ne?.tlim(tint_figure).data));',ic)
 
-% Can probably change this to tint_all;
-scPot = double(mean(scPot1.tlim(tint_phi).data));
+% Select electric field of spacecraft you want to use.
+c_eval('Epar = gseE?par.tlim(tint_model);',ic)
 
-% Set velocity grid
-vmax = 90000e3;
-nv = 2000;
-v_vec = linspace(-vmax,vmax,nv);
-dv = v_vec(2) - v_vec(1);
+% Extract EDI flux at 0 and 180 pitch angles
+c_eval('jedi_apar = ePitch?_flux_edi.palim([168.75 180]);',ic)
+c_eval('jedi_par = ePitch?_flux_edi.palim([0 11.25]);',ic)
 
-%% EDI energy and corresponding velocity
-E_edi = 500 - 0*scPot; % eV
+% Load f0 from external function
+iff = 20; %iff = 17;
+[f0,params] = mms_20170706_135303.get_f0(iff);
+n = params.n; % m^(-3)
+ntot = sum(n);
+%R = n(1)/ntot;
+T = params.T;
+vd = params.vd;
+vt = params.vt;
+n0 = sum(n); % Used to normalize density perturbations later on
+%ff4 = f0(v_vec,n,vd,vt);
+
+str_info = {'unperturbed f:';...
+            ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+            ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+            ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...            
+            };        
+          
+% EDI energy and corresponding velocity
+% The positive spacecraft potential pulls in electrons. So if an electron
+% comes in with an energy of 100 eV, it actually only had 100-scPot eV
+% before it saw the potential. Therefore, if the EDI energy is 500 eV,
+% electrons coming in at 500 eV only had 500 - scPot eV before.
+E_edi = 500 - scPot; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
 dE_edi = 25; % eV
 
@@ -50,179 +88,180 @@ dv_edi_minus = v_edi_minus - v_edi;
 dv_edi_plus = v_edi_plus - v_edi;
 dv_edi = dv_edi_plus - dv_edi_minus; % m/s
 
-%% Change name on edi flux because it was different before
-% EDI flux
-c_eval('ts_edi_flux180_mms? = ePitch?_flux_edi.palim([168.75 180]);')
-c_eval('ts_edi_flux0_mms? = ePitch?_flux_edi.palim([0 11.25]);')
-c_eval('ts_edi_flux180 = ts_edi_flux180_mms?;',mms_id)
-c_eval('ts_edi_flux0 = ts_edi_flux0_mms?;',mms_id)
+% Load esw parameters manually obtained, stored in function edi_event_manual_dt
+manual = edi_event_manual_dt;
 
+%% Prepare data 
+% Average parallel speed, used to guide the selection of vph
+vparav = mean([manual.vpar]); 
 
-% Indices corresponding to edi energy/velocity interval
-% NOT USED?
-vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
-vind_edi_180 = intersect(find(v_vec<-v_edi_minus),find(v_vec>-v_edi_plus));
+% Parallel phase speed used to obtain phi, which is thereafter used in the
+% modelling. Round average parallel phase speed to nearest hundred.
+vph = 100*round(vparav/100)*1e3; % m/s
 
-% Get properties of individual eh's
-% NOT USED?
-data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
-obs_eh_properties = data_tmp.EH_properties;
-obs_lpp = obs_eh_properties.Lpp; % peak to peak length
-obs_potential = obs_eh_properties.potential;
-obs_vtrap_all = sqrt(2*units.e*obs_potential/units.me);
-obs_potential_max = obs_eh_properties.max_potential;
-obs_velocity = obs_eh_properties.vel;
-obs_neh = numel(obs_velocity);
-c_eval('obs_t0_epoch_mms? = obs_eh_properties.time_mms?;')
-c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
-c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
-c_eval('obs_vph = obs_vph?;',mms_id)
+% Create TSeries of parallel phase speeds, to be used in figure
+tsVphIndividual = irf.ts_scalar(EpochTT(cat(1,manual.t_ref)),[manual.vpar]);
+tsVph = irf.ts_scalar(tint_model,vph*ones(tint_model.length,1));
 
-% charge separation assuming potential structure is single gaussian
-% NOT USED?
-dn = units.eps0/units.e*obs_potential_max./(obs_lpp*1e3)*1e-6; % cc
-dn = dn;
+% Parameters that can affect modelling, most for trying out things/effects
+dn_obs_multi = 1.5; % multiplication factor for density
+phi_mult = 1.0;     % multiplication factor for potential
 
-% Get potential from Efield
-%vph = -9000*1e3;    
-tsVph = irf.ts_scalar(tint_all,vph*ones(tint_all.length,1));
-tint_single = tint_all;
-tint_utc = tint_single.utc;
-c_eval('Epar = gseE?par;',mms_id)
-[phi,phi_progressive,phi_ancillary] = get_phi(Epar,vph,tint_all,tint_single);
+% Electrostatic potential (V), derived from parallel electric field and vph
+[phi,phi_progressive,phi_ancillary] = get_phi(Epar,vph,tint_model,tint_model);% 
+phi = phi*phi_mult; 
 
-%phi_add = 50; % bugged at the moment
-phi = phi*phi_mult;%+phi_add; 
+% Obtain density perturbation and reconstruct electric field from phi. The
+% reconstructed electric field is used to compare what effects the
+% detrending and filtering had: irf_plot({tsEfieldFromPhi,Epar},'comp')
 
-
-dntrap_all = cell(numel(obs_lpp),1);
-phi_all = cell(numel(obs_lpp),1);
-x_all = cell(numel(obs_lpp),1);
-fun_fit_all = cell(numel(obs_lpp),1);
-
-
-% Load f0 from external function
-%iff = 17;
-iff = 20;
-[f0,params] = mms_20170706_135303.get_f0(iff);
-n = params.n;
-ntot = sum(n);
-R = n(1)/ntot;
-T = params.T;
-vd = params.vd;
-vt = params.vt;
-n0 = sum(n);
-ff4 = f0(v_vec,n,vd,vt);
-
-str_info = {'unperturbed f:';...
-            ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
-            ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
-            ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...            
-            };
-               
-beta_range = [-2.5 0]; 
-mms_id = 1;
-
-%% For entire time series
-  
-phi_vec = phi.data;
-phi_obs = phi_vec;
-x_vec = phi_ancillary.x_vec;
-x_obs = x_vec;
+% Phi data and x = (t-t0)*vph
+phi_obs = phi.data; % V
+x_obs = phi_ancillary.x_vec; % m
 
 % Get electric field and n
-dx_obs = x_obs(2) - x_obs(1);
-x_obs_diff1 = x_obs(1:end-1) + 0.5*dx_obs;
-x_obs_diff2 = x_obs(2:end-1) + dx_obs;
+dx_obs = x_obs(2) - x_obs(1); % m
+%x_obs_diff1 = x_obs(1:end-1) + 0.5*dx_obs;
+%x_obs_diff2 = x_obs(2:end-1) + dx_obs;
 EfieldFromPhi = -diff(phi_obs)/(-dx_obs);
-c_eval('Efield_obs = gseE?par.tlim(tint_all).data;',mms_id)
-if 0 % from phi
-  dn_obs = diff(phi_obs,2)/dx_obs/dx_obs*units.eps0/units.e;
-  dn_obs = [dn_obs(1); tocolumn(dn_obs); dn_obs(end)]; % assume phi -> phi at edges
-else % from E  
-  c_eval('Etmp = gseE?par.tlim(tint_all);',mms_id)
-  dtE = Etmp.time(2) - Etmp.time(1);
-  ttmp = [Etmp.time+-0.5*dtE Etmp.time(end)+0.5*dtE];
-  Efield_obs_todiff = Etmp.resample(ttmp);
-  dn_obs = -diff(Efield_obs_todiff.data,1)*1e-3/(sign(vph)*dx_obs)*units.eps0/units.e;
-end
-dn_obs = dn_obs*2;
+%Efield_obs = Epar.data;
 
-% Divergence of E
-if 1
-  %%
-  c_eval('R? = gseR?.resample(gseE1).tlim(tint_all)*1e3;',1:4)
-  c_eval('E? = gseE?.resample(gseE1).tlim(tint_all)*1e-3;',1:4)
-  [divE,avE]=c_4_grad('R?','E?','div'); divE.name = 'div E';
-  dn_divE = divE*units.eps0/units.e ; dn_divE.name = 'dn from div E';
-end
+% E-field shifted with half a data point because I take finite differences 
+% between two adjacent points (therefore the diff value is not centered)
+dtE = Epar.time(2) - Epar.time(1);
+ttmp = [Epar.time+-0.5*dtE Epar.time(end)+0.5*dtE]; 
+Efield_obs_todiff = Epar.resample(ttmp); % offcenter E, so that diffed field is centered
+dn_obs = -diff(Efield_obs_todiff.data,1)*1e-3/(sign(vph)*dx_obs)*units.eps0/units.e;
 
+% Test the effect of increased dn, e.g. due to 3D effects, dn_obs_multi is 
+% specified above
+dn_obs = dn_obs*dn_obs_multi;
 
-
+% EfieldFromPhi is used to check what the effects of fitlering the
+% potential is. If there is a large difference or not.
 tsEfieldFromPhi = irf.ts_scalar(phi.time(1:end-1) + 0.5*(phi.time(2)-phi.time(1)),EfieldFromPhi*1e3);
 tsEfieldFromPhi.units = 'mV/m';
-tsDnFromPhi = irf.ts_scalar(phi.time,dn_obs*1e-6);
-tsDnFromPhi.units = 'cm^{-3}';
-%%
-[X_obs,V_obs] = meshgrid(x_obs,v_vec); X_obs = permute(X_obs,[2 1]); V_obs = permute(V_obs,[2 1]);
-PHI_obs = repmat(tocolumn(phi_obs),1,nv);
-VPH_obs = V_obs*0 + vph;
-E_obs = units.me*(V_obs-vph).^2/2 - units.e*PHI_obs;
-ifree_obs = find(E_obs>0); itrap_obs = find(E_obs<=0);
 
-[Fflat_obs,Fflat_free_obs,Fflat_trap_obs] = get_f_flat(V_obs,n,vt,vd,PHI_obs,VPH_obs);
-nfree_obs = nansum(Fflat_free_obs,2)*dv;
-ntrap_flat_obs = nansum(Fflat_trap_obs,2)*dv;
-ntrap_obs = ntot - torow(nfree_obs) + torow(dn_obs);
-dntrap_obs = ntrap_obs - torow(ntrap_flat_obs);
+% Used in final figure to compare the input dn to modelled dn
+tsDnObs = irf.ts_scalar(phi.time,dn_obs*1e-6);
+tsDnObs.units = 'cm^{-3}';
+
+%% This is where the loop in bgk_timeseries.m starts
+% Define velocity grid
+% The max range has impact on how accurate the modelling is. If the effect
+% of the ESWs on the electrons make them go outside of the range, some of 
+% the total density will not be captured/included. Don't forget that the 
+% hot population also needs to be uncluded in the time interval.
+vmin = 90000e3; % m/s
+vmax = 90000e3; % m/s
+% The number of v-points has impact on how accurate the modelling is.
+nv = 2000;
+v_vec = linspace(-vmin,vmax,nv);
+dv = v_vec(2) - v_vec(1);
+[X_obs,V_obs] = ndgrid(x_obs,v_vec); 
+
+%% Calculate phase space densitites, fmod
+PHI_obs = repmat(tocolumn(phi_obs),1,nv); % V
+VPH_obs = vph*ones(size(V_obs));
+
+% Sum of kinetic and potential energy from observations
+U_obs = units.me*(V_obs-vph).^2/2 - units.e*PHI_obs;
+ifree_obs = find(U_obs>0); 
+itrap_obs = find(U_obs<=0);
+
+% Distribution of free population (U>0) by Liouville mapping + a flat
+% distribution in the trapped region (U<0) with the phase space density 
+% equal to that of the separator (U=0).
+[Fflat_tot,Fflat_free,Fflat_trap] = get_f_flat(V_obs,n,vt,vd,PHI_obs,VPH_obs);
+
+% Density of free electrons
+nfree_mod = nansum(Fflat_free,2)*dv;
+
+% Density of trapped region with the constant f = f(U=0)
+ntrap_flat_obs = nansum(Fflat_trap,2)*dv;
+
+% Trapped density from observations
+% ntot = n from f0, but it is very similar to average n from observations
+% dn_obs = ni - ne obtained from Epar and derived phi (poisson's equation)
+% nfree_mod = density of free-streaming electrons obtained by Liouville
+%             mapping of f0
+% From dn = ni - ne = ni - (ne_trap + ne_free)
+% dn = ni - ne_trap - ne_free
+% dn = ni - ne_trap - ne_free
+%     --> ne_trap    =     ni     -      ne_free        -          dn
+%    obtained from   = (constant) - (Liouville from f0) - (poissons through Epar)
+% So ntrap is derived from both observations and model assumptions
+% Have I been using the wrong sign here (used +, should be -?) before 
+% dn_obs? No, it defenitely doesn't seems like that (tried)... The
+% reconstructed dn from the model should correspond well to the observed
+% one.
+ntrap = ntot - torow(nfree_mod) - torow(dn_obs);
+
+% Difference between the density obtained from the flat f(U=0) in the
+% trapped region and the trapped density derived as described above.
+% This made the modeling practically easier, suggested by Hutchinson. I
+% don't remember exactly what about it it was that made it easier though...
+dntrap_obs = ntrap - torow(ntrap_flat_obs);
+
+% Calculate distribution by solving Abel's equation
+% Approach suggest dy Hutchinson
 %[Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
-[Fabel_obs,Fabel_free_obs,Fabel_trap_obs] = get_f_abel_split_by_phi_at_zero(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
-Fabel_obs = Fabel_obs + Fflat_trap_obs;              
+% Divide phase space into subregions separated by locations where phi = 0.
+[Fabel_tot,Fabel_free,Fabel_trap] = get_f_abel_split_by_phi_at_zero(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
+Fabel_tot = Fabel_tot + Fflat_trap; 
+
+% Electron hole model
 %[Fscha_obs,Fscha_free_obs,Fscha_trap_obs,beta_obs] = get_f_schamel(V_obs,n,vt,vd,PHI_obs,VPH_obs,ntrap_obs,beta_range);
 
+% Calculate diffrential flux by multiplying the phasespace density with v: 
+% j = f(v)vdv -- > j/dv = f(v)v
 %FVscha_obs = Fscha_obs.*V_obs;
-FVabel_obs = Fabel_obs.*V_obs;
+FVabel_tot = Fabel_tot.*V_obs;
 
-tsFabel_nfree_obs = irf.ts_scalar(phi.time,nansum(Fabel_free_obs,2)*dv);
-tsFabel_ntrap_obs = irf.ts_scalar(phi.time,nansum(Fabel_trap_obs,2)*dv);
+% Make TSeries of modeled free and trapped density
+tsFabel_nfree = irf.ts_scalar(phi.time,nansum(Fabel_free,2)*dv);
+tsFabel_ntrap = irf.ts_scalar(phi.time,nansum(Fabel_trap,2)*dv);
 
 % Set up specrec for plotting
 Fspecrec.t = phi.time.epochUnix;  
-Fspecrec.p = Fabel_obs;  
-Fspecrec.p_label = 'f_e (m^{-4}s^{-1})';
+Fspecrec.p = Fabel_tot;  
+%Fspecrec.p_label = 'f_e (m^{-4}s^{-1})';
+Fspecrec.p_label = 'f_e (sm^{-4})';
 Fspecrec.f = v_vec*1e-6;
 Fspecrec.f_label = 'v (10^{3} km/s)';
 
 %% Flux at edi energy/velocity interval
+% Index of speed range corresponding to EDI interval.
 vind_edi_0 = intersect(find(v_vec>v_edi_minus),find(v_vec<v_edi_plus));
 vind_edi_180 = intersect(find(v_vec<-v_edi_minus),find(v_vec>-v_edi_plus));
-FVdv_abel_obs_edi_0 = nansum(FVabel_obs(:,vind_edi_0),2)*dv;
-FVdv_abel_obs_edi_180 = nansum(FVabel_obs(:,vind_edi_180),2)*dv;
+
+% Flux calculated as f*v*dv, sum over velocity range defined by EDI
+FVdv_abel_obs_edi_0 = nansum(FVabel_tot(:,vind_edi_0),2)*dv;
+FVdv_abel_obs_edi_180 = nansum(FVabel_tot(:,vind_edi_180),2)*dv;
 %FVdv_scha_obs_edi_0 = nansum(FVscha_obs(:,vind_edi_0),2)*dv;
 %FVdv_scha_obs_edi_180 = nansum(FVscha_obs(:,vind_edi_180),2)*dv;
 
-fluxModel0 = irf.ts_scalar(phi.time,abs(FVdv_abel_obs_edi_0)*1e-4); % 1/m2 -> 1/cm2
+fluxModel0 = irf.ts_scalar(phi.time,abs(FVdv_abel_obs_edi_0)*1e-4); % 1e-4: 1/m2 -> 1/cm2
 fluxModel0.units = 'cm^{-2}s^{-1}';
 fluxModel0.name = 'Model flux at pa 180 in EDI energy range';
 fluxModel180 = irf.ts_scalar(phi.time,abs(FVdv_abel_obs_edi_180)*1e-4); % 1/m2 -> 1/cm2
 fluxModel180.units = 'cm^{-2}s^{-1}';
 fluxModel0.name = 'Model flux at pa 0 in EDI energy range';
 
-tsDnModel = irf.ts_scalar(phi.time,sum(Fabel_obs*dv,2)*1e-6);
+tsDnModel = irf.ts_scalar(phi.time,sum(Fabel_tot*dv,2)*1e-6);
 tsDnModel.units = 'cm^{-3}';
 tsDnModel.name = 'Model electron density ';
 
-tsDnModel_all = irf.ts_scalar(phi.time,[sum(Fabel_obs*dv,2)*1e-6, sum(Fabel_free_obs*dv,2)*1e-6,sum(Fabel_trap_obs*dv,2)*1e-6]);
+tsDnModel_all = irf.ts_scalar(phi.time,[sum(Fabel_tot*dv,2)*1e-6, sum(Fabel_free*dv,2)*1e-6,sum(Fabel_trap*dv,2)*1e-6]);
 tsDnModel_all.units = 'cm^{-3}';
 tsDnModel_all.name = 'Model electron density ';
 
 
-phi_long = phi_vec;
+phi_long = phi_obs;
 dntrap_long = dntrap_obs;
-[fitreslts,gof,fun_net_long,fun_net_prime_long] = createFit(torow(phi_vec),torow(dntrap_obs));
+[fitreslts,gof,fun_net_long,fun_net_prime_long] = createFit(torow(phi_obs),torow(dntrap_obs));
   
 %% Plot
-tint_phi = tint_all;
 timeline = Epar.time;
 
 if 0 % plot 1
@@ -376,332 +415,333 @@ if 0 % plot 1
   %cn.print(sprintf('AbelScha_obs_eh%g_mms%g',ih,mms_id))
 end
 if 0 % plot 2
-    figure(93)
-    nrows = 3;
-    ncols = 4;
-    npanels = nrows*ncols;
-    isub = 0;
-    for icol = 1:ncols
-      for irow = 1:nrows  
-        isub = isub + 1;         
-        h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
-      end
+  figure(93)
+  nrows = 3;
+  ncols = 4;
+  npanels = nrows*ncols;
+  isub = 0;
+  for icol = 1:ncols
+    for irow = 1:nrows  
+      isub = isub + 1;         
+      h(isub) = subplot(nrows,ncols,icol+(irow-1)*ncols);    
     end
-    isub = 1;
-
-    vlim = 30000e3;
-    if 1 % phi(x)
-      hca = h(isub); isub = isub + 1;
-      plot(hca,x_obs*1e-3,phi_obs)
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = '\phi (V)';      
-      hca.Title.String = sprintf('tint_{obs} = %s - %s',tint_utc(1,:),tint_utc(2,:));
-      irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',vph*1e-3)},[0.99,0.99],'Color',[0 0 0])
-    end
-    if 0 % f0 info 
-      hca = h(isub); isub = isub + 1;
-      if exist('h_info_str','var'); delete(h_info_str);end
-      h_info_str = irf_legend(hca,str_info,[0.01 0.99],'color',[0 0 0]);  
-      hca.Visible = 'off';
-    end
-    if 1 % E
-      hca = h(isub); isub = isub + 1;
-      pcolor(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e)
-      shading(hca,'flat') 
-      hcb = colorbar('peer',hca);
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'v (10^3 km/s)';
-      hcb.YLabel.String = 'E/e (eV)';  
-      hca.YLim = vlim*[-1 1]*1e-6;
-      hca.CLim = max(abs(E_obs(:)/units.e))*[-1 1];
-      hca.CLim = 2e3*[-1 1];
-      colormap(hca,cn.cmap('blue_red'))
-       if 1 % E contours
-        hold(hca,'on')
-        %levels_E = [linspace(min(E_obs(:)),0,6) linspace(0,max(E_obs(:)),50)]; 
-        levels_E = linspace(min(E_obs(:)),0,5); 
-        levels_E = [levels_E 0:levels_E(2)-levels_E(1):max(E_obs(:))];                   
-        [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,levels_E/units.e,'k');
-        [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,0,'k','LineWidth',2);
-        hold(hca,'off')
-      end
-      hcb.YLim = [min(E_obs(:)) hca.CLim(2)*units.e]/units.e;
-      %hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
-    end
-    if 1 % F obs, Abel
-      hca = h(isub); isub = isub + 1;
-      pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fabel_obs)
-      shading(hca,'flat') 
-      hcb = colorbar('peer',hca);
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'v (10^3 km/s)';
-      hcb.YLabel.String = 'f_{Abel,obs} (s^1m^{-4})';  
-      hca.YLim = vlim*[-1 1]*1e-6;
-      colormap(hca,cn.cmap('white_blue'))
-      hca.Title.String = 'Abel obs';    
-    end
-    if 1 % F obs, Schamel
-      hca = h(isub); isub = isub + 1;
-      pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fscha_obs)
-      shading(hca,'flat') 
-      hcb = colorbar('peer',hca);
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'v (10^3 km/s)';
-      hcb.YLabel.String = 'f_{Scha,obs} (s^1m^{-4})';  
-      hca.YLim = vlim*[-1 1]*1e-6;
-      colormap(hca,cn.cmap('white_blue'))
-      hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
-      if 0 % E contours, not seen
-        hold(hca,'on')      
-        contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs,0,'c');      
-        hold(hca,'off')
-      end
-    end
-    if 1 % Free, trapped, and total densities
-      hca = h(isub); isub = isub + 1;
-      hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
-                        x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6,...
-                        x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6...
-                        );
-      %hlines(1).LineWidth = 1.5;
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'n (cm^{-3})';
-      hca.Title.String = 'n_t = n_0-n_f+(\epsilon_0/e)\nabla^2\phi';
-      irf_legend(hca,{'n_{0}+\delta n';'n_{f}';'n_{t}'},...
-                      [0.02 0.3])
-  %                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
-      %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
-    end
-    if 1 % FV obs, Abel
-      hca = h(isub); isub = isub + 1;
-      pcolor(hca,X_obs*1e-3,V_obs*1e-6,FVabel_obs)
-      shading(hca,'flat') 
-      hcb = colorbar('peer',hca);
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'v (10^3 km/s)';
-      hcb.YLabel.String = 'flux_{Abel,obs} (m^{-3})';  
-      hca.YLim = vlim*[-1 1]*1e-6;
-      hca.CLim = max(abs(FVabel_obs(:)))*[-1 1];    
-      colormap(hca,cn.cmap('blue_red'))    
-      hca.Title.String = 'Abel obs';
-      if 1 % EDI energies
-        hold(hca,'on')
-        hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
-        for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
-        hlines = plot(hca,...
-          x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
-          x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
-          x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
-          x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
-          'LineWidth',1.5);
-        for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
-        irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
-        hold(hca,'off')
-      end
-    end
-    if 1 % FV obs, Schamel
-      hca = h(isub); isub = isub + 1;    
-      pcolor(hca,X_obs*1e-3,V_obs*1e-6,FVscha_obs)
-      shading(hca,'flat') 
-      hcb = colorbar('peer',hca);
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'v (10^3 km/s)';
-      hcb.YLabel.String = 'flux_{Scha,obs} (m^{-3})';  
-      hca.YLim = vlim*[-1 1]*1e-6;
-      hca.CLim = max(abs(FVscha_obs(:)))*[-1 1];    
-      colormap(hca,cn.cmap('blue_red'))        
-      hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
-      if 0 % E contours, not seen
-        hold(hca,'on')      
-        contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs,0,'c');      
-        hold(hca,'off')
-      end    
-      if 1 % EDI energies
-        hold(hca,'on')
-        hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
-        for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
-        hlines = plot(hca,...
-          x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
-          x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
-          x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
-          x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
-          'LineWidth',1.5);
-        for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
-        irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
-        hold(hca,'off')
-      end
-    end
-    if 0 % FV mod, Abel
-      hca = h(isub); isub = isub + 1;
-      pcolor(hca,X_mod*1e-3,V_mod*1e-6,FVabel_mod)
-      shading(hca,'flat') 
-      hcb = colorbar('peer',hca);
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'v (10^3 km/s)';
-      hcb.YLabel.String = 'flux_{Abel,obs} (m^{-3})';  
-      hca.YLim = vlim*[-1 1]*1e-6;
-      hca.CLim = max(abs(FVabel_mod(:)))*[-1 1];    
-      colormap(hca,cn.cmap('blue_red'))    
-      hca.Title.String = 'Abel obs';
-      if 1 % EDI energies
-        hold(hca,'on')
-        hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
-        for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
-        hlines = plot(hca,...
-          x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
-          x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
-          x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
-          x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
-          'LineWidth',1.5);
-        for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
-        irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
-        hold(hca,'off')
-      end
-    end
-    if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
-      hca = h(isub); isub = isub + 1;    
-      nodes = 1;
-      units_scale = 1e-4; % m^-2 > cm^-2 
-      units_scale_2 = 1e6;
-      plot_EDI = mean(flux0.data(:,nodes),2)/units_scale_2;
-      plot_abel = abs(FVdv_abel_obs_edi_0)*units_scale/units_scale_2;
-      plot_scha = abs(FVdv_scha_obs_edi_0)*units_scale/units_scale_2;
-
-      plot(hca,x_obs,plot_abel,x_obs,plot_scha,x_edi_0,plot_EDI);
-      hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-      irf_legend(hca,{'Abel';'Scha';'EDI'},[0.02 0.99])
-      text(hca,0,hca.YLim(2),'0^o','verticalalignment','top')
-      hca.YLim(1) = 0;
-    end
-    if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
-      hca = h(isub); isub = isub + 1;    
-      nodes = 1;
-      units_scale = 1e-4; % m^-2 > cm^-2 
-      units_scale_2 = 1e6;
-      plot_EDI = mean(flux180.data(:,nodes),2)/units_scale_2;
-      plot_abel = abs(FVdv_abel_obs_edi_180)*units_scale/units_scale_2;
-      plot_scha = abs(FVdv_scha_obs_edi_180)*units_scale/units_scale_2;
-
-      plot(hca,x_obs,plot_abel,x_obs,plot_scha,x_edi_180,plot_EDI);
-      hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-      irf_legend(hca,{'Abel';'Scha';'EDI'},[0.02 0.99])
-      text(hca,0,hca.YLim(2),'180^o','verticalalignment','top')
-      hca.YLim(1) = 0;
-    end
-    if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0 and 180
-      hca = h(isub); isub = isub + 1;    
-      nodes = 1;
-      units_scale = 1e-4; % m^-2 > cm^-2 
-      units_scale_2 = 1e6;
-      plot_EDI_0 = mean(flux0.data(:,nodes),2)/units_scale_2;
-      plot_abel_0 = abs(FVdv_abel_obs_edi_0)*units_scale/units_scale_2;
-      plot_abel_mod_0 = abs(FVdv_abel_mod_edi_0)*units_scale/units_scale_2;
-      plot_scha_0 = abs(FVdv_scha_obs_edi_0)*units_scale/units_scale_2;    
-      plot_EDI_180 = mean(flux180.data(:,nodes),2)/units_scale_2;
-      plot_abel_180 = abs(FVdv_abel_obs_edi_180)*units_scale/units_scale_2;
-      plot_abel_mod_180 = abs(FVdv_abel_mod_edi_180)*units_scale/units_scale_2;
-      plot_scha_180 = abs(FVdv_scha_obs_edi_180)*units_scale/units_scale_2;    
-
-      hlines = plot(hca,x_obs*1e-3,plot_abel_0,x_obs*1e-3,plot_scha_0,x_obs*1e-3,plot_abel_mod_0,x_edi_0*1e-3,plot_EDI_0,...
-                        x_obs*1e-3,plot_abel_180,x_obs*1e-3,plot_scha_180,x_obs*1e-3,plot_abel_mod_180,x_edi_180*1e-3,plot_EDI_180);
-      colors = mms_colors('matlab');
-      nlines = 4;
-      c_eval('hlines(?).Color = colors(?,:);',1:nlines)
-      c_eval('hlines(nlines+?).Color = colors(?,:);',1:nlines)
-
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
-      irf_legend(hca,{'Abel';'Scha';'Abel Gauss';'EDI'},[0.02 0.6])
-      text(hca,0.6*hca.XLim(2),0.2*hca.YLim(2),'0^o','verticalalignment','bottom')
-      text(hca,0.6*hca.XLim(2),1.0*hca.YLim(2),'180^o','verticalalignment','top')
-      hca.YLim(1) = 0;
-    end
-    if 0 % Trapped densities
-      hca = h(isub); isub = isub + 1;
-      hlines = plot(hca,x_obs*1e-3,ntrap_obs*1e-6,x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6,x_obs*1e-3,nansum(Fscha_trap_obs,2)*dv*1e-6,...
-                        x_mod*1e-3,ntrap_mod*1e-6,x_mod*1e-3,nansum(Fabel_trap_mod,2)*dv*1e-6,x_mod*1e-3,nansum(Fscha_trap_mod,2)*dv*1e-6);
-      %hlines(1).LineWidth = 1.5;
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'n_t (cm^{-3})';
-      hca.Title.String = 'n_t = n_0-n_f+(\epsilon_0/e)\nabla^2\phi';
-  %     legend(hca,{'n_{t,obs}','n_{t,Abel,obs}','n_{t,Scha,obs}',...
-  %                 'n_{t,mod}','n_{t,Abel,mod}','n_{t,Scha,mod}'},'Box','off','Location','bestoutside')
-      irf_legend(hca,{'n_{t,obs}';'n_{t,Abel,obs}';'n_{t,Scha,obs}';...
-                      'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'},...
-                      [0.35 0.1])
-
-      irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
-    end
-    if 0 % Total densities
-      hca = h(isub); isub = isub + 1;
-      hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,x_obs*1e-3,nansum(Fscha_obs,2)*dv*1e-6,...
-                        x_mod*1e-3,(n0+dn_mod)*1e-6,x_mod*1e-3,nansum(Fabel_mod,2)*dv*1e-6,x_mod*1e-3,nansum(Fscha_mod,2)*dv*1e-6);
-      hlines(1).LineWidth = 1.5;
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'n (cm^{-3})';
-      hca.Title.String = 'n = n_0+(\epsilon_0/e)\nabla^2\phi';
-  %     legend(hca,{'n_{obs}','n_{Abel,obs}','n_{Scha,obs}',...
-  %                 'n_{mod}','n_{Abel,mod}','n_{Scha,mod}'},'Box','off','Location','bestoutside')
-      irf_legend(hca,{'n_{t,obs}';'n_{t,Abel,obs}';'n_{t,Scha,obs}';...
-                      'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'},...
-                      [0.99 0.02])
-      irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.1],'color',[0 0 0])
-    end
-    if 1 % Total densities, not alll
-      hca = h(isub); isub = isub + 1;
-      hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,x_obs*1e-3,nansum(Fscha_obs,2)*dv*1e-6);
-      hlines(1).LineWidth = 1.5;
-      hca.XLabel.String = 'x (km)';
-      hca.YLabel.String = 'n (cm^{-3})';
-      %hca.Title.String = 'n = n_i+(\epsilon_0/e)\nabla^2\phi';
-  %     legend(hca,{'n_{obs}','n_{Abel,obs}','n_{Scha,obs}',...
-  %                 'n_{mod}','n_{Abel,mod}','n_{Scha,mod}'},'Box','off','Location','bestoutside')
-      irf_legend(hca,{'n=n_i+(\epsilon_0/e)\nabla^2\phi';'n_{Abel}';'n_{Scha}'},...
-                      [0.99 0.06])
-      irf_legend(hca,{sprintf('beta_{Scha}=%.2f',beta_obs)},[0.02 0.1],'color',[0 0 0])
-    end
-    if 1 % nt(phi)
-      hca = h(isub); isub = isub + 1;
-      [fitreslts,gof,fun_net_obs,fun_net_prime_obs] = createFit(torow(phi_obs),torow(dntrap_obs));
-      %[fitreslts,gof,fun_net_mod,fun_net_prime_mod] = createFit(torow(phi_mod),torow(dntrap_mod));
-      plot(hca,phi_obs,dntrap_obs,'o',phi_obs,fun_net_obs(phi_obs))
-      hca.YLabel.String = 'n_t-n_{t,flat} (m^{-3})';  
-      hca.XLabel.String = '\phi (V)';  
-      legend(hca,{'n_{t,obs}','n_{t,obs} fit'},'Box','off')
-    end
-    if 1 % dnt/dphi)
-      hca = h(isub); isub = isub + 1;
-      [fitreslts,gof,fun_net_obs,fun_net_prime_obs] = createFit(torow(phi_obs),torow(dntrap_obs));      
-      plot(hca,phi_obs,fun_net_prime_obs(phi_obs))
-      hca.YLabel.String = 'dn_t/d\phi (m^{-3}/V)';  
-      hca.XLabel.String = '\phi (V)';
-    end
-    if 1 % F at a few x's
-      hca = h(isub); isub = isub + 1; 
-      colors = mms_colors('matlab');  
-      set(hca,'ColorOrder',colors(1:3,:))
-      indx = fix(nx_obs./[4 3 2]);
-      %set(hca,'LineStyleOrder',{'-','--'})
-    %   plot(hca,v,F_abel(fix(nx/6),:),v,F_abel(fix(nx/4),:),v,F_abel(fix(nx/2),:),...
-    %            v,F_scha(fix(nx/6),:),v,F_scha(fix(nx/4),:),v,F_scha(fix(nx/2),:))
-      set(hca,'ColorOrder',colors(1:3,:))
-      plot(hca,v*1e-6,Fabel_obs(indx(1),:),v*1e-6,Fabel_obs(indx(2),:),v*1e-6,Fabel_obs(indx(3),:))
-      hold(hca,'on'),
-      set(hca,'ColorOrder',colors(1:3,:))
-      plot(hca,v*1e-6,Fscha_obs(indx(1),:),'--',v*1e-6,Fscha_obs(indx(2),:),'--',v*1e-6,Fscha_obs(indx(3),:),'--')
-      hold(hca,'off')
-      %hca.YScale = 'log';
-      hca.YLabel.String = 'f (s^1m^{-4})';  
-      hca.XLabel.String = 'v (10^3 km)';
-      hca.XLim = (vph+vtrap*[-1 1]*1.5)*1e-6;
-      irf_legend(hca,{sprintf('x=%.0f km',x_obs(indx(1))*1e-3),sprintf('x=%.0f km',x_obs(indx(2))*1e-3),sprintf('x=%.0f km',x_obs(indx(3))*1e-3)},[0.1 0.15])
-      irf_legend(hca,{'- Abel','--Scha'},[0.1 0.05],'color',[0 0 0])
-      hca.Title.String = 'based on \phi_{obs}';
-    end
-    %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
-    1;
   end
+  isub = 1;
+
+  vlim = 30000e3;
+  if 1 % phi(x)
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x_obs*1e-3,phi_obs)
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = '\phi (V)';      
+    hca.Title.String = sprintf('tint_{obs} = %s - %s',tint_utc(1,:),tint_utc(2,:));
+    irf_legend(hca,{sprintf('v_{ph}= %.0f km/s',vph*1e-3)},[0.99,0.99],'Color',[0 0 0])
+  end
+  if 0 % f0 info 
+    hca = h(isub); isub = isub + 1;
+    if exist('h_info_str','var'); delete(h_info_str);end
+    h_info_str = irf_legend(hca,str_info,[0.01 0.99],'color',[0 0 0]);  
+    hca.Visible = 'off';
+  end
+  if 1 % E
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'E/e (eV)';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    hca.CLim = max(abs(E_obs(:)/units.e))*[-1 1];
+    hca.CLim = 2e3*[-1 1];
+    colormap(hca,cn.cmap('blue_red'))
+     if 1 % E contours
+      hold(hca,'on')
+      %levels_E = [linspace(min(E_obs(:)),0,6) linspace(0,max(E_obs(:)),50)]; 
+      levels_E = linspace(min(E_obs(:)),0,5); 
+      levels_E = [levels_E 0:levels_E(2)-levels_E(1):max(E_obs(:))];                   
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,levels_E/units.e,'k');
+      [hc_data,hc] = contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs/units.e,0,'k','LineWidth',2);
+      hold(hca,'off')
+    end
+    hcb.YLim = [min(E_obs(:)) hca.CLim(2)*units.e]/units.e;
+    %hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
+  end
+  if 1 % F obs, Abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fabel_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'f_{Abel,obs} (s^1m^{-4})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    colormap(hca,cn.cmap('white_blue'))
+    hca.Title.String = 'Abel obs';    
+  end
+  if 1 % F obs, Schamel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,Fscha_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'f_{Scha,obs} (s^1m^{-4})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    colormap(hca,cn.cmap('white_blue'))
+    hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
+    if 0 % E contours, not seen
+      hold(hca,'on')      
+      contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs,0,'c');      
+      hold(hca,'off')
+    end
+  end
+  if 1 % Free, trapped, and total densities
+    hca = h(isub); isub = isub + 1;
+    hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_free_obs,2)*dv*1e-6,...
+                      x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6...
+                      );
+    %hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n (cm^{-3})';
+    hca.Title.String = 'n_t = n_0-n_f+(\epsilon_0/e)\nabla^2\phi';
+    irf_legend(hca,{'n_{0}+\delta n';'n_{f}';'n_{t}'},...
+                    [0.02 0.3])
+%                     'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'
+    %irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
+  end
+  if 1 % FV obs, Abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,FVabel_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'flux_{Abel,obs} (m^{-3})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    hca.CLim = max(abs(FVabel_obs(:)))*[-1 1];    
+    colormap(hca,cn.cmap('blue_red'))    
+    hca.Title.String = 'Abel obs';
+    if 1 % EDI energies
+      hold(hca,'on')
+      hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+      hlines = plot(hca,...
+        x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+        'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+      irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
+      hold(hca,'off')
+    end
+  end
+  if 1 % FV obs, Schamel
+    hca = h(isub); isub = isub + 1;    
+    pcolor(hca,X_obs*1e-3,V_obs*1e-6,FVscha_obs)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'flux_{Scha,obs} (m^{-3})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    hca.CLim = max(abs(FVscha_obs(:)))*[-1 1];    
+    colormap(hca,cn.cmap('blue_red'))        
+    hca.Title.String = sprintf('Schamel, beta_{obs}=%.2f',beta_obs);
+    if 0 % E contours, not seen
+      hold(hca,'on')      
+      contour(hca,X_obs*1e-3,V_obs*1e-6,E_obs,0,'c');      
+      hold(hca,'off')
+    end    
+    if 1 % EDI energies
+      hold(hca,'on')
+      hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+      hlines = plot(hca,...
+        x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+        'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+      irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
+      hold(hca,'off')
+    end
+  end
+  if 0 % FV mod, Abel
+    hca = h(isub); isub = isub + 1;
+    pcolor(hca,X_mod*1e-3,V_mod*1e-6,FVabel_mod)
+    shading(hca,'flat') 
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'v (10^3 km/s)';
+    hcb.YLabel.String = 'flux_{Abel,obs} (m^{-3})';  
+    hca.YLim = vlim*[-1 1]*1e-6;
+    hca.CLim = max(abs(FVabel_mod(:)))*[-1 1];    
+    colormap(hca,cn.cmap('blue_red'))    
+    hca.Title.String = 'Abel obs';
+    if 1 % EDI energies
+      hold(hca,'on')
+      hlines = plot(hca,x_obs([1 end]),v_edi*1e-6*[1 1],x_obs([1 end]),-v_edi*1e-6*[1 1],'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = '--'; hlines(iline).Color = [0 0 0]; end  
+      hlines = plot(hca,...
+        x_obs([1 end]),(v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(v_edi_minus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_plus)*1e-6*[1 1],...
+        x_obs([1 end]),(-v_edi_minus)*1e-6*[1 1],...
+        'LineWidth',1.5);
+      for iline = 1:numel(hlines), hlines(iline).LineStyle = ':'; hlines(iline).Color = [0 0 0]; end
+      irf_legend(hca,{'-- EDI'},[0.01 0.99],'color',hlines(1).Color);   
+      hold(hca,'off')
+    end
+  end
+  if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
+    hca = h(isub); isub = isub + 1;    
+    nodes = 1;
+    units_scale = 1e-4; % m^-2 > cm^-2 
+    units_scale_2 = 1e6;
+    plot_EDI = mean(flux0.data(:,nodes),2)/units_scale_2;
+    plot_abel = abs(FVdv_abel_obs_edi_0)*units_scale/units_scale_2;
+    plot_scha = abs(FVdv_scha_obs_edi_0)*units_scale/units_scale_2;
+
+    plot(hca,x_obs,plot_abel,x_obs,plot_scha,x_edi_0,plot_EDI);
+    hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
+    irf_legend(hca,{'Abel';'Scha';'EDI'},[0.02 0.99])
+    text(hca,0,hca.YLim(2),'0^o','verticalalignment','top')
+    hca.YLim(1) = 0;
+  end
+  if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
+    hca = h(isub); isub = isub + 1;    
+    nodes = 1;
+    units_scale = 1e-4; % m^-2 > cm^-2 
+    units_scale_2 = 1e6;
+    plot_EDI = mean(flux180.data(:,nodes),2)/units_scale_2;
+    plot_abel = abs(FVdv_abel_obs_edi_180)*units_scale/units_scale_2;
+    plot_scha = abs(FVdv_scha_obs_edi_180)*units_scale/units_scale_2;
+
+    plot(hca,x_obs,plot_abel,x_obs,plot_scha,x_edi_180,plot_EDI);
+    hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
+    irf_legend(hca,{'Abel';'Scha';'EDI'},[0.02 0.99])
+    text(hca,0,hca.YLim(2),'180^o','verticalalignment','top')
+    hca.YLim(1) = 0;
+  end
+  if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0 and 180
+    hca = h(isub); isub = isub + 1;    
+    nodes = 1;
+    units_scale = 1e-4; % m^-2 > cm^-2 
+    units_scale_2 = 1e6;
+    plot_EDI_0 = mean(flux0.data(:,nodes),2)/units_scale_2;
+    plot_abel_0 = abs(FVdv_abel_obs_edi_0)*units_scale/units_scale_2;
+    plot_abel_mod_0 = abs(FVdv_abel_mod_edi_0)*units_scale/units_scale_2;
+    plot_scha_0 = abs(FVdv_scha_obs_edi_0)*units_scale/units_scale_2;    
+    plot_EDI_180 = mean(flux180.data(:,nodes),2)/units_scale_2;
+    plot_abel_180 = abs(FVdv_abel_obs_edi_180)*units_scale/units_scale_2;
+    plot_abel_mod_180 = abs(FVdv_abel_mod_edi_180)*units_scale/units_scale_2;
+    plot_scha_180 = abs(FVdv_scha_obs_edi_180)*units_scale/units_scale_2;    
+
+    hlines = plot(hca,x_obs*1e-3,plot_abel_0,x_obs*1e-3,plot_scha_0,x_obs*1e-3,plot_abel_mod_0,x_edi_0*1e-3,plot_EDI_0,...
+                      x_obs*1e-3,plot_abel_180,x_obs*1e-3,plot_scha_180,x_obs*1e-3,plot_abel_mod_180,x_edi_180*1e-3,plot_EDI_180);
+    colors = mms_colors('matlab');
+    nlines = 4;
+    c_eval('hlines(?).Color = colors(?,:);',1:nlines)
+    c_eval('hlines(nlines+?).Color = colors(?,:);',1:nlines)
+
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = sprintf('flux (10^%g cm^{-2}s^{-1})',log10(units_scale_2));
+    irf_legend(hca,{'Abel';'Scha';'Abel Gauss';'EDI'},[0.02 0.6])
+    text(hca,0.6*hca.XLim(2),0.2*hca.YLim(2),'0^o','verticalalignment','bottom')
+    text(hca,0.6*hca.XLim(2),1.0*hca.YLim(2),'180^o','verticalalignment','top')
+    hca.YLim(1) = 0;
+  end
+  if 0 % Trapped densities
+    hca = h(isub); isub = isub + 1;
+    hlines = plot(hca,x_obs*1e-3,ntrap_obs*1e-6,x_obs*1e-3,nansum(Fabel_trap_obs,2)*dv*1e-6,x_obs*1e-3,nansum(Fscha_trap_obs,2)*dv*1e-6,...
+                      x_mod*1e-3,ntrap_mod*1e-6,x_mod*1e-3,nansum(Fabel_trap_mod,2)*dv*1e-6,x_mod*1e-3,nansum(Fscha_trap_mod,2)*dv*1e-6);
+    %hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n_t (cm^{-3})';
+    hca.Title.String = 'n_t = n_0-n_f+(\epsilon_0/e)\nabla^2\phi';
+%     legend(hca,{'n_{t,obs}','n_{t,Abel,obs}','n_{t,Scha,obs}',...
+%                 'n_{t,mod}','n_{t,Abel,mod}','n_{t,Scha,mod}'},'Box','off','Location','bestoutside')
+    irf_legend(hca,{'n_{t,obs}';'n_{t,Abel,obs}';'n_{t,Scha,obs}';...
+                    'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'},...
+                    [0.35 0.1])
+
+    irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.98],'color',[0 0 0])
+  end
+  if 0 % Total densities
+    hca = h(isub); isub = isub + 1;
+    hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,x_obs*1e-3,nansum(Fscha_obs,2)*dv*1e-6,...
+                      x_mod*1e-3,(n0+dn_mod)*1e-6,x_mod*1e-3,nansum(Fabel_mod,2)*dv*1e-6,x_mod*1e-3,nansum(Fscha_mod,2)*dv*1e-6);
+    hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n (cm^{-3})';
+    hca.Title.String = 'n = n_0+(\epsilon_0/e)\nabla^2\phi';
+%     legend(hca,{'n_{obs}','n_{Abel,obs}','n_{Scha,obs}',...
+%                 'n_{mod}','n_{Abel,mod}','n_{Scha,mod}'},'Box','off','Location','bestoutside')
+    irf_legend(hca,{'n_{t,obs}';'n_{t,Abel,obs}';'n_{t,Scha,obs}';...
+                    'n_{t,mod}';'n_{t,Abel,mod}';'n_{t,Scha,mod}'},...
+                    [0.99 0.02])
+    irf_legend(hca,{sprintf('beta_{obs}=%.2f',beta_obs);sprintf('beta_{mod}=%.2f',beta_mod)},[0.02 0.1],'color',[0 0 0])
+  end
+  if 1 % Total densities, not alll
+    hca = h(isub); isub = isub + 1;
+    hlines = plot(hca,x_obs*1e-3,(n0+dn_obs)*1e-6,x_obs*1e-3,nansum(Fabel_obs,2)*dv*1e-6,x_obs*1e-3,nansum(Fscha_obs,2)*dv*1e-6);
+    hlines(1).LineWidth = 1.5;
+    hca.XLabel.String = 'x (km)';
+    hca.YLabel.String = 'n (cm^{-3})';
+    %hca.Title.String = 'n = n_i+(\epsilon_0/e)\nabla^2\phi';
+%     legend(hca,{'n_{obs}','n_{Abel,obs}','n_{Scha,obs}',...
+%                 'n_{mod}','n_{Abel,mod}','n_{Scha,mod}'},'Box','off','Location','bestoutside')
+    irf_legend(hca,{'n=n_i+(\epsilon_0/e)\nabla^2\phi';'n_{Abel}';'n_{Scha}'},...
+                    [0.99 0.06])
+    irf_legend(hca,{sprintf('beta_{Scha}=%.2f',beta_obs)},[0.02 0.1],'color',[0 0 0])
+  end
+  if 1 % nt(phi)
+    hca = h(isub); isub = isub + 1;
+    [fitreslts,gof,fun_net_obs,fun_net_prime_obs] = createFit(torow(phi_obs),torow(dntrap_obs));
+    %[fitreslts,gof,fun_net_mod,fun_net_prime_mod] = createFit(torow(phi_mod),torow(dntrap_mod));
+    plot(hca,phi_obs,dntrap_obs,'o',phi_obs,fun_net_obs(phi_obs))
+    hca.YLabel.String = 'n_t-n_{t,flat} (m^{-3})';  
+    hca.XLabel.String = '\phi (V)';  
+    legend(hca,{'n_{t,obs}','n_{t,obs} fit'},'Box','off')
+  end
+  if 1 % dnt/dphi)
+    hca = h(isub); isub = isub + 1;
+    [fitreslts,gof,fun_net_obs,fun_net_prime_obs] = createFit(torow(phi_obs),torow(dntrap_obs));      
+    plot(hca,phi_obs,fun_net_prime_obs(phi_obs))
+    hca.YLabel.String = 'dn_t/d\phi (m^{-3}/V)';  
+    hca.XLabel.String = '\phi (V)';
+  end
+  if 1 % F at a few x's
+    hca = h(isub); isub = isub + 1; 
+    colors = mms_colors('matlab');  
+    set(hca,'ColorOrder',colors(1:3,:))
+    indx = fix(nx_obs./[4 3 2]);
+    %set(hca,'LineStyleOrder',{'-','--'})
+  %   plot(hca,v,F_abel(fix(nx/6),:),v,F_abel(fix(nx/4),:),v,F_abel(fix(nx/2),:),...
+  %            v,F_scha(fix(nx/6),:),v,F_scha(fix(nx/4),:),v,F_scha(fix(nx/2),:))
+    set(hca,'ColorOrder',colors(1:3,:))
+    plot(hca,v*1e-6,Fabel_obs(indx(1),:),v*1e-6,Fabel_obs(indx(2),:),v*1e-6,Fabel_obs(indx(3),:))
+    hold(hca,'on'),
+    set(hca,'ColorOrder',colors(1:3,:))
+    plot(hca,v*1e-6,Fscha_obs(indx(1),:),'--',v*1e-6,Fscha_obs(indx(2),:),'--',v*1e-6,Fscha_obs(indx(3),:),'--')
+    hold(hca,'off')
+    %hca.YScale = 'log';
+    hca.YLabel.String = 'f (s^1m^{-4})';  
+    hca.XLabel.String = 'v (10^3 km)';
+    hca.XLim = (vph+vtrap*[-1 1]*1.5)*1e-6;
+    irf_legend(hca,{sprintf('x=%.0f km',x_obs(indx(1))*1e-3),sprintf('x=%.0f km',x_obs(indx(2))*1e-3),sprintf('x=%.0f km',x_obs(indx(3))*1e-3)},[0.1 0.15])
+    irf_legend(hca,{'- Abel','--Scha'},[0.1 0.05],'color',[0 0 0])
+    hca.Title.String = 'based on \phi_{obs}';
+  end
+  %cn.print(sprintf('AbelScha_obs_eh%g_flux_mms%g',ih,mms_id))
+  1;
+end
 if 0 % plot, timeseries
+
 fig = figure(39);
 h = irf_plot(8);
 isub = 1;
@@ -728,7 +768,7 @@ end
 if 1 % diff E (Poisson) (density)
   hca = h(isub); isub = isub + 1;  
   nscale = 1e-3;
-  irf_plot(hca,{tsDnFromPhi/nscale,(tsDnModel-ntot*1e-6)/nscale},'comp')
+  irf_plot(hca,{tsDnObs/nscale,(tsDnModel-ntot*1e-6)/nscale},'comp')
   hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
   hca.YLabel.Interpreter = 'tex';
 end
@@ -1127,16 +1167,19 @@ if 1 % 1 % plot, timeseries, for paper
   clear h_all;
   h_all = h;
   isub = 1;
+  fclim = [0 0.0025];
 
   vlim_f = 30;
   if 1 % Epar
-    hca = h(isub); isub = isub + 1;
-    irf_plot(hca,{Epar.tlim(tint_all)},'comp');  
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('Epar');
+    irf_plot(hca,{Epar.tlim(tint_model)},'comp');  
     hca.YLabel.String = {'E_{||}','(mV/m)'};
     hca.YLabel.Interpreter = 'tex';
   end
   if 1 % PHI, TSeries, plot
-    hca = h(isub); isub = isub + 1;
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('phi');
     irf_plot(hca,phi);  
     irf_legend(hca,{sprintf('v_{ph,av}= %g km/s',vph*1e-3)},[0.08 0.99],'color',[0 0 0]);
     hca.YLabel.String = {'\phi','(V)'};  
@@ -1148,7 +1191,8 @@ if 1 % 1 % plot, timeseries, for paper
     end
   end
   if 1 % F
-    hca = h(isub); isub = isub + 1;
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('fmodel map');
     irf_spectrogram(hca,Fspecrec,'lin');
     hca.YLabel.String = {'v_{||}','(10^3 km/s)'};
     edi_color = [1 1 1];
@@ -1174,7 +1218,7 @@ if 1 % 1 % plot, timeseries, for paper
     end
     if 1 % observed phase velocity
       hold(hca,'on')
-      lines_vphobs = irf_plot(hca,obs_vph*1e-3,'*k','LineWidth',1.5,'Color',vph_color);
+      lines_vphobs = irf_plot(hca,tsVphIndividual*1e-3,'*k','LineWidth',1.5,'Color',vph_color);
       lines_vphobs.MarkerSize = 4;
       %hleg_vphobs = irf_legend(hca,{'* v_{ph,obs}'},[0.18 0.99],'color',lines_vphobs(1).Color);  
       hold(hca,'off')
@@ -1182,20 +1226,22 @@ if 1 % 1 % plot, timeseries, for paper
     end  
     colormap(hca,cn.cmap('white_blue'))
     if 0 % str info
-    str_info = {'unperturbed f:';...
-      ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
-      ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
-      ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
-      sprintf('beta_{Schamel}=%g',beta);...
-      };
-    irf_legend(hca,str_info,[1.01 1.4],'color',hlines(1).Color);    
+      str_info = {'unperturbed f:';...
+        ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+        ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+        ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+        sprintf('beta_{Schamel}=%g',beta);...
+        };
+      irf_legend(hca,str_info,[1.01 1.4],'color',hlines(1).Color);    
     end
     hca.YLim = vlim_f*[-1 1];
+    %hca.CLim = fclim;
   end
   if 1 % diff E (Poisson) (density)
-    hca = h(isub); isub = isub + 1;  
+    %hca = h(isub); isub = isub + 1;  
+    hca = irf_panel('dn');
     nscale = 1e-3;
-    irf_plot(hca,{-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
+    irf_plot(hca,{-1*tsDnObs/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
     hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
     hca.YLabel.Interpreter = 'tex';
     %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
@@ -1223,17 +1269,18 @@ if 1 % 1 % plot, timeseries, for paper
     end      
   end  
   if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
-    hca = h(isub); isub = isub + 1;
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('j');
     %%        
     f_scale = 1e6;
     colors = mms_colors('matlab');
     %colors = colors([2 1],:)
     %hca = subplot(1,1,1);
     
-    irf_plot(hca,ts_edi_flux180/f_scale,'color',colors(1,:));
+    irf_plot(hca,jedi_apar/f_scale,'color',colors(1,:));
     ax1 = hca;
     ax2 = axes('Position',get(ax1,'Position'));
-    irf_plot(ax2,fluxModel180.resample(ts_edi_flux180)/f_scale,'color',colors(2,:))      
+    irf_plot(ax2,fluxModel180.resample(jedi_apar)/f_scale,'color',colors(2,:))      
     hold(ax2,'on')
     %irf_plot(ax2,fluxModel180/f_scale,'color',colors(3,:))      
     hold(ax2,'off')
@@ -1309,7 +1356,8 @@ if 1 % 1 % plot, timeseries, for paper
   %h_all(iref+7).Position = h_all(iref+5).Position;
   
   %irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
-  irf_zoom(h_all,'x',[tint_phi(1) tint_phi(end)])  % tint_phi
+  %irf_zoom(h_all,'x',[tint_model(1) tint_model(end)])  % tint_phi
+  irf_zoom(h_all,'x',tint_figure)  % tint_phi
   
   h_all(iref+4+ijmp).XLabel = [];
   
@@ -1419,7 +1467,7 @@ if 0 % 0 % plot, timeseries and averaged, for diagnostics
   if 1 % diff E (Poisson) (density)
     hca = h(isub); isub = isub + 1;  
     nscale = 1e-3;
-    irf_plot(hca,{-1*tsDnFromPhi/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
+    irf_plot(hca,{-1*tsDnObs/nscale,-1*(tsDnModel-ntot*1e-6)/nscale},'comp')
     hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
     hca.YLabel.Interpreter = 'tex';
     %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
@@ -1530,7 +1578,7 @@ if 0 % 0 % plot, timeseries and averaged, for diagnostics
   %h_all(iref+7).Position = h_all(iref+5).Position;
   
   %irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
-  irf_zoom(h_all,'x',[tint_phi(1) tint_phi(end)])  % tint_phi
+  irf_zoom(h_all,'x',tint_figure)  % tint_phi
   
   h_all(iref+4+ijmp).XLabel = [];
   

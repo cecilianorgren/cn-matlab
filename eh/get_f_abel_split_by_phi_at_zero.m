@@ -1,6 +1,6 @@
 function [Fsave,Ffreesave,Ftrapsave] = get_f_abel_split_by_phi_at_zero(V,n,vt,vd,PHI,VPH,nt)  
 % [F,Ffree,Ftrap] = GET_F_ABEL(V,n,vt,vd,PHI,VPH,nt);  
-max(nt)
+%max(nt)
 units = irf_units;
 phi = PHI(:,1);
 vph = VPH(1,1);

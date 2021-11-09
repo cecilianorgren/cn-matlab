@@ -167,7 +167,7 @@ else % from E
   Efield_obs_todiff = Etmp.resample(ttmp);
   dn_obs = -diff(Efield_obs_todiff.data,1)*1e-3/(sign(vph)*dx_obs)*units.eps0/units.e;
 end
-dn_obs = dn_obs*2;
+dn_obs = dn_obs*1;
 
 % Divergence of E
 if 1
