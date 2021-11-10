@@ -7,7 +7,7 @@ Etoint = E;
 Etoint = Etoint.filt(ffilt,0,[],3).tlim(tint1);
 intEdt = irf_integrate(Etoint,tint1(1));
 minpeakdistance = 40; % the one i had before
-minpeakdistance = 30;
+minpeakdistance = 40;
 [PKS,LOCS,W] = findpeaks(intEdt.data,'MinPeakDistance',minpeakdistance);
 
 % Remove phi baselevel

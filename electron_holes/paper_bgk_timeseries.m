@@ -19,8 +19,8 @@ tint_figure = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.620Z');
 
 %% Set up database
 localuser = datastore('local','user');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
-%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load data
@@ -99,12 +99,14 @@ vparav = mean([manual.vpar]);
 % Parallel phase speed used to obtain phi, which is thereafter used in the
 % modelling. Round average parallel phase speed to nearest hundred.
 vph = 100*round(vparav/100)*1e3; % m/s
+%vph = -12000*1e3;
 
 % Create TSeries of parallel phase speeds, to be used in figure
 tsVphIndividual = irf.ts_scalar(EpochTT(cat(1,manual.t_ref)),[manual.vpar]);
 tsVph = irf.ts_scalar(tint_model,vph*ones(tint_model.length,1));
 
-% Parameters that can affect modelling, most for trying out things/effects
+% Parameters that can affect modelling, most for trying out things/effects,
+% experimental purpose
 dn_obs_mult = 1.0; % multiplication factor for density
 phi_mult = 1.0;     % multiplication factor for potential
 
@@ -159,10 +161,10 @@ tsDnObs.units = 'cm^{-3}';
 % of the ESWs on the electrons make them go outside of the range, some of 
 % the total density will not be captured/included. Don't forget that the 
 % hot population also needs to be uncluded in the time interval.
-vmin = 90000e3; % m/s
-vmax = 90000e3; % m/s
+vmin = 110000e3; % m/s
+vmax = 110000e3; % m/s
 % The number of v-points has impact on how accurate the modelling is.
-nv = 2000;
+nv = 3000;
 v_vec = linspace(-vmin,vmax,nv);
 dv = v_vec(2) - v_vec(1);
 [X_obs,V_obs] = ndgrid(x_obs,v_vec); 
@@ -185,7 +187,7 @@ itrap_obs = find(U_obs<=0);
 nfree_mod = nansum(Fflat_free,2)*dv;
 
 % Density of trapped region with the constant f = f(U=0)
-ntrap_flat_obs = nansum(Fflat_trap,2)*dv;
+ntrap_flat_mod = nansum(Fflat_trap,2)*dv;
 
 % Trapped density from observations
 % ntot = n from f0, but it is very similar to average n from observations
@@ -209,7 +211,7 @@ ntrap = ntot - torow(nfree_mod) - torow(dn_obs);
 % trapped region and the trapped density derived as described above.
 % This made the modeling practically easier, suggested by Hutchinson. I
 % don't remember exactly what about it it was that made it easier though...
-dntrap_obs = ntrap - torow(ntrap_flat_obs);
+dntrap_obs = ntrap - torow(ntrap_flat_mod);
 
 % Calculate distribution by solving Abel's equation
 % Approach suggest dy Hutchinson
@@ -217,6 +219,9 @@ dntrap_obs = ntrap - torow(ntrap_flat_obs);
 % Divide phase space into subregions separated by locations where phi = 0.
 [Fabel_tot,Fabel_free,Fabel_trap] = get_f_abel_split_by_phi_at_zero(V_obs,n,vt,vd,PHI_obs,VPH_obs,dntrap_obs);
 Fabel_tot = Fabel_tot + Fflat_trap; 
+n_abel_free = nansum(Fabel_free,2)*dv;
+n_abel_trap = nansum(Fabel_trap,2)*dv;
+n_abel_tot = nansum(Fabel_tot,2)*dv;
 
 % Electron hole model
 %[Fscha_obs,Fscha_free_obs,Fscha_trap_obs,beta_obs] = get_f_schamel(V_obs,n,vt,vd,PHI_obs,VPH_obs,ntrap_obs,beta_range);
@@ -227,8 +232,8 @@ Fabel_tot = Fabel_tot + Fflat_trap;
 FVabel_tot = Fabel_tot.*V_obs;
 
 % Make TSeries of modeled free and trapped density
-tsFabel_nfree = irf.ts_scalar(phi.time,nansum(Fabel_free,2)*dv);
-tsFabel_ntrap = irf.ts_scalar(phi.time,nansum(Fabel_trap,2)*dv);
+tsFabel_nfree = irf.ts_scalar(phi.time,n_abel_free);
+tsFabel_ntrap = irf.ts_scalar(phi.time,n_abel_trap);
 
 % Set up specrec for plotting
 Fspecrec.t = phi.time.epochUnix;  

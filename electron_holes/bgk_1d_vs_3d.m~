@@ -1,0 +1,98 @@
+% Check funxctions from Chen et al.
+% Given a certain 3D structure of an ESW/EH, how much does the trapped
+% density and trapped phase space density matter? My take at the moment is
+% that even if the charge pertubation dn = ni-ne may change significantly,
+% the trapped density only changes a little, becase the overall variation
+% between trapped and passing are so large. I.e., if n0 = 0.04, the free
+% density goes down to about half of that, while the trapped density goes
+% up to a half... So the total density is still close to n0 = 0.04.
+% Therefore, even if dn = changes by a factor of two, the trapped density
+% only changes a little, and therefore the phase space density should also
+% only change a little.
+
+% Chen assumes the particles are strongly magnetized (based on observations 
+% from the auroral region by Ergun et al. 1998). Therefore, the parallel
+% motion can sort of be decoupled from the perpendicular motion. And there
+% is no trap bouncing in the perpendicular direction. Therefore, a 3D
+% structure of an electron hole can be modeled by many 1D electron holes.
+% I.e. for each radius, we have one 1D electron hole. The charge
+% perturbation is modified from the strictly 1D Poisson's equation.
+
+%% Chen et. al. 2002
+% Set up grid to work with
+r = linspace(0,3,1001);
+z = linspace(-3,3,2001);
+rs = linspace(0,1,1); % perpendicular scale size
+lz = linspace(0,1,1); % parallel scale size
+phi0 = 1; % potential at center of structure
+
+J0 = @(r) besselj(0,r); % Bessel function of zeroth order
+absJ0 = @(r) abs(besselj(0,r)); % Bessel function of zeroth order
+l00 = fminsearch(@(r) abs(J0(r)),0);
+
+% Parallel potential profile, Gaussian
+phi_par = @(z,lz) phi0.*exp(-0.5*(z./lz).^2); 
+
+% Total potential profile
+phi = @(r,z) phi_par(z,lz).*J0(l00*r./rs);
+
+
+%% Electron test particles
+% To see how the electrons move through the structure, I pass them through
+% the structure.
+% Define potential as afunction
+
+options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,obj.xi(([1 end]))));
+%options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,[190 210]));
+%options = odeset('AbsTol',1e-7,'AbsTol',1e-9,'Events',@exitBox);
+%options = odeset('RelTol',1e-6);
+EoM = @(ttt,xxx) eom_pic_internal(ttt,xxx,obj,m,q); 
+
+[t,x_sol_tmp] = ode45(EoM,[tstart tstop],x_init,options);%,options); % 
+        
+        
+function [value, isterminal, direction] = myEventBoxEdge(t, x_vect,boxedge)
+  % integration is terminated when value changes sign
+  % for this setup, value is initially negative
+  value      = (x_vect(1)-boxedge(1))*(x_vect(1)-boxedge(2));        
+  isterminal = 1;   % Stop the integration
+  direction  = 0;
+end
+function  x_res = eom_pic_internal(t,x_vect,pic,m,q)
+  x = x_vect(1);
+  y = x_vect(2);
+  z = x_vect(3);
+  vx = x_vect(4);
+  vy = x_vect(5);
+  vz = x_vect(6);
+
+  if isnan(x)
+    1;
+  end
+  %disp(sprintf('t = %g, x = %g, y = %g, z = %g',t,x,y,z))
+
+  %method = 'spline';        
+
+  [Ex,Ey,Ez,Bx,By,Bz] = pic.interp_EB(x,z,t,method);
+
+  %disp(sprintf('%.3f %.3f %.3f, %.3f %.3f %.3f, %.3f %.3f %.3f, %.3f, %.3f %.3f',Ex,Ey,Ez,Bx,By,Bz,x_vect(1),x_vect(2),x_vect(3),x_vect(4),x_vect(5),x_vect(6)))        
+  it = size(x_sol_all,1);
+  x_sol_all(it+1,1) = Ex;
+  x_sol_all(it+1,2) = Ey;
+  x_sol_all(it+1,3) = Ez;
+  x_sol_all(it+1,4) = Bx;
+  x_sol_all(it+1,5) = By;
+  x_sol_all(it+1,6) = Bz;
+  x_sol_all(it+1,7) = t;
+
+  % Equations to be solved
+  x_res = zeros(6,1);
+  x_res(1) = vx; % dx/dt = vx;
+  x_res(2) = vy; % dy/dt = vy;
+  x_res(3) = vz; % dz/dt = vz;
+  x_res(4) = (q/m)*(Ex + vy*Bz - vz*By);
+  x_res(5) = (q/m)*(Ey + vz*Bx - vx*Bz);
+  x_res(6) = (q/m)*(Ez + vx*By - vy*Bx);                                              
+
+end      
+      

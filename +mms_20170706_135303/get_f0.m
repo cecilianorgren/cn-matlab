@@ -314,6 +314,21 @@ switch inp
     n = n;
     vd = [vd1 vd2 vd3];
     T = [T1 T2 T3];
+  case 21 % new 2021-11-10
+    ntot = 0.04*1e6;
+    R = [0.4 0.25 0.35]; 
+    n = ntot.*R;        
+    
+    T1 = 50;
+    T2 = 100;
+    T3 = 1500;
+    vd1 = -10000*1e3;
+    vd2 = -2000*1e3;
+    vd3 = 6000*1e3;  
+    
+    n = n;
+    vd = [vd1 vd2 vd3];
+    T = [T1 T2 T3];
 end
 
 
