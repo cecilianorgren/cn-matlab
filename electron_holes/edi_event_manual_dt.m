@@ -189,6 +189,6 @@ for ieh = 1:numel(manual)
   manual(ieh).pppB = pppBav;
   manual(ieh).vpar = vpar;
   manual(ieh).tpp = tpp;
-  manual(ieh).tpp = tpp*vpar;    
+  manual(ieh).lpp = tpp*vpar;    
   manual(ieh).pitchangle = acosd(pppvnorm(3));
 end

@@ -45,10 +45,19 @@ phi = @(r,z) phi_par(z,lz).*J0(l00*r./rs);
 % expressions
 % phi0 = 1
 % x/lx -> x, y/ly -> y, z/lz -> z 
-lr = 10e3;
-lz = 10e3;
+units = irf_units;
+m = units.me;
+q = -units.e;
+T = 100;
+vt = sqrt(T*units.eV*2/units.me)*1e-3;
+Ek = 10;
+vk = sqrt(Ek*units.eV*2/units.me)*1e-3;
+lr = 2*4e3;
+lx = lr/sqrt(2);
+ly = lr/sqrt(2);
+lz = 4e3;
 phi0 = 300;
-B0 = 10e-9;
+B0 = 20e-9;
 syms x y z
 R = [x,y,z];
 
@@ -63,7 +72,13 @@ J0 = besselj(0,l00*r/lr); % redefine bessel function with 'normalized' r
 phi_par = phi0.*exp(-0.5*(z./lz).^2); 
 
 % Total potential profile
-phi = phi_par*J0;
+phi = phi_par*J0; % Chen 2002
+%phi = phi_par*exp(-0.5*(x./lx).^2)*exp(-0.5*(y./ly).^2);  % Gaussian
+mf_phi = matlabFunction(phi);
+
+
+rho = divergence(E,R)*units.mu0;
+mf_rho = matlabFunction(rho,'vars',R);
 
 % Electric field
 E = -gradient(phi,R);
@@ -72,7 +87,24 @@ mf_Ex = matlabFunction(E(1));
 mf_Ey = matlabFunction(E(2));
 mf_Ez = matlabFunction(E(3));
 
-%%
+% Magnetic field
+A = [0, B0*x, 0];
+B = curl(A,R);
+
+mf_Ay = matlabFunction(A(2),'vars',R); 
+mf_Bx = matlabFunction(B(1),'vars',R);
+mf_By = matlabFunction(B(2),'vars',R);
+mf_Bz = matlabFunction(B(3),'vars',R);
+
+xmax = lr*2;
+ymax = xmax;
+zmax = 2*xmax;
+xvec = linspace(-xmax,xmax,11);
+yvec = linspace(-ymax,ymax,11);
+zvec = linspace(-zmax,zmax,21);
+[X,Y,Z] = meshgrid(xvec,yvec,zvec);
+xvec2 = linspace(-xmax,xmax,101);
+
 %options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,obj.xi(([1 end]))));
 %options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,[190 210]));
 
@@ -80,36 +112,73 @@ mf_Ez = matlabFunction(E(3));
 inpEx = @(x,y,z) mf_Ex(x,y,z);
 inpEy = @(x,y,z) mf_Ey(x,y,z);
 inpEz = @(x,y,z) mf_Ez(x,y,z);
-inpBx = @(x,y,z) 0;
-inpBy = @(x,y,z) 0;
-inpBz = @(x,y,z) 0*B0;
-units = irf_units;
-m = units.me;
-q = -units.e;
+inpBx = @(x,y,z) mf_Bx(x,y,z);
+inpBy = @(x,y,z) mf_By(x,y,z);
+inpBz = @(x,y,z) mf_Bz(x,y,z);
 EoM = @(t,xyz) eom(t,xyz,inpEx,inpEy,inpEz,inpBx,inpBy,inpBz,m,q); 
 boxedge = [-50 50]*1e3; % terminate integration when electron exits this region in z.
 options = odeset('AbsTol',1e-7,'AbsTol',1e-9,'Events',@(tt,xx) myEventBoxEdge(tt,xx,boxedge));
 
 % Initial conditions
-x_init = [5,20,40,0,0,10*1e3]; % m, m/s
-T = [0 0.1];
+x_init = [1,0.5*lr*1e-3,40,0,vt,-vk]*1e3; % m, m/s
+T = [0 1];
 
-[t,x_final] = ode45(EoM,T,x_init); % 
+[t,x_sol] = ode45(EoM,T,x_init,options);
+r_sol = sqrt(x_sol(:,1).^2 + x_sol(:,2).^2);
+[PKS,LOCS]= findpeaks(r_sol); 
+mean_peak_distance = diff(LOCS);
+r_center = movmean(r_sol,fix(mean(mean_peak_distance)));
 
-h = setup_subplots(1,1);
+% Calculate total energy U = Ek + Ep
+Ep = -units.e*mf_phi(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+Ek = 0.5*units.me*(x_sol(:,4).^2 + x_sol(:,5).^2 + x_sol(:,6).^2);
+Eky = 0.5*units.me*(x_sol(:,5).^2);
+Ekpar = 0.5*units.me*(x_sol(:,6).^2);
+
+% Extract vector potential
+Ay = mf_Ay(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+
+
+h = setup_subplots(3,2);
 isub = 1;
-hca = h(isub); isub = isub + 1;
-plot3(hca,x_final(:,1)*1e-3,x_final(:,2)*1e-3,x_final(:,3)*1e-3)
-% hca.XLim = [-10 10];
-% hca.YLim = [-10 10];
-% hca.ZLim = boxedge*1e-3;
-% axis(hca,'equal')
-hca.XGrid = 'on';
-hca.YGrid = 'on';
-hca.ZGrid = 'on';
-hca.XLabel.String = 'x (km)';
-hca.YLabel.String = 'y (km)';
-hca.ZLabel.String = 'z (km)';
+if 1
+  hca = h(isub); isub = isub + 1;
+  plot3(hca,x_sol(:,1)*1e-3,x_sol(:,2)*1e-3,x_sol(:,3)*1e-3)
+  % hca.XLim = [-10 10];
+  % hca.YLim = [-10 10];
+  % hca.ZLim = boxedge*1e-3;
+  % axis(hca,'equal')
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.ZGrid = 'on';
+  hca.XLabel.String = 'x (km)';
+  hca.YLabel.String = 'y (km)';
+  hca.ZLabel.String = 'z (km)';
+  hold(hca,'on')
+  quiver3(hca,X*1e-3,Y*1e-3,Z*1e-3,mf_Ex(X,Y,Z),mf_Ey(X,Y,Z),mf_Ez(X,Y,Z))
+  hold(hca,'off')
+end
+if 1 % r
+  hca = h(isub); isub = isub + 1;
+  plot(hca,t,r_sol*1e-3,t,r_center*1e-3)
+  hca.YLim(1) = 0;
+  hca.YLabel.String = 'r/l_r';
+end
+if 1 % U = Ek + Ep
+  hca = h(isub); isub = isub + 1;
+  plot(hca,t,Ek/units.eV,t,Ep/units.eV,t,(Ek+Ep)/units.eV,t,-units.e*Ay)
+  legend(hca,{'E_k','E_p','E_k + E_p','E_{ky}+qA_y'})  
+end
+if 1 % U = Ek + Ep
+  hca = h(isub); isub = isub + 1;
+  plot(hca,t,m*x_sol(:,5)+q*Ay)
+  legend(hca,{'mv_y + qA_y'})  
+end
+if 1 % phi and rho
+  hca = h(isub); isub = isub + 1;
+  plotyy(hca,xvec2,mf_rho(xvec2,0,0),xvec2,mf_phi(xvec2,0,0))
+  legend(hca,{'rho','phi'})  
+end
 
 function [value, isterminal, direction] = myEventBoxEdge(t, x_vect,boxedge)
   % integration is terminated when value changes sign
