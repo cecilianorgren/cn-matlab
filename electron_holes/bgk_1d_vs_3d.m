@@ -36,6 +36,260 @@ phi_par = @(z,lz) phi0.*exp(-0.5*(z./lz).^2);
 % Total potential profile
 phi = @(r,z) phi_par(z,lz).*J0(l00*r./rs);
 
+% I need to estimate the difference in trapped phase space density.
+
+
+%% Chen et al. 2002, 1D
+Te = 1;
+m = 1;
+vte = sqrt(2*Te/m);
+lz = linspace(0,4.4,1); % parallel scale size
+z = linspace(-5,5,99)*lz;
+
+phi0 = 1; % potential at center of structure
+v = linspace(-3,3,1001)*sqrt(phi0/Te);
+dv = v(2) - v(1);
+[Z,V] = meshgrid(z,v); 
+
+% Parallel potential profile, Gaussian
+phi = @(z,lz) (phi0/Te).*exp(-0.5*(z./lz).^2); 
+
+% v in terms of vt, phi in terms of phi0
+w = @(v,z,lz) v.^2 - phi(z,lz);
+
+fp = @(v,z,lz) (2/sqrt(pi))*exp(-w(v,z,lz));
+%ft = @(phi0,v,z,lz) (2*sqrt(w(v,z,lz))./pi/lz.^2);%.*(1-2*log(-w(v,z,lz)/phi0))...
+%            + 2*exp(w(v,z,lz))/sqrt(pi).*(1-erf(sqrt(-w(v,z,lz))));
+
+ft1 = @(phi0,lz,w) (4*sqrt(-w)./pi./lz.^2).*(1-2*log(-4*w/phi0));
+ft2 = @(phi0,lz,w) 2*exp(-w)./sqrt(pi).*(1-erf(sqrt(-w)));
+
+%ft1 = @(phi0,v,z,lz) (4*sqrt(w(v,z,lz))./pi/lz.^2);
+%ft2 = @(phi0,v,z,lz) 2*exp(w(v,z,lz))/sqrt(pi).*(1-erf(sqrt(-w(v,z,lz))));
+
+
+W = w(V,Z,lz);
+WT = W; WT(W>0) = nan; % erf will give error if W is positive
+WP = W; WP(W<0) = nan;
+
+FT1 = ft1(phi0,lz,WT);
+FT2 = ft2(phi0,lz,WT);
+
+FT = FT1 + FT2;
+FT(W>0) = 0;
+
+FP = fp(V,Z,lz);
+FP(W<0) = 0;
+
+F = FP + FT;
+% Densities
+np = sum(FP,1)*dv;
+nt = sum(FT,1)*dv;
+n = sum(F,1)*dv;
+
+          
+nrows = 3;
+ncols = 2;
+h = setup_subplots(nrows,ncols);
+isub = 1;
+
+if 1 % phi
+  hca = h(isub); isub = isub + 1;
+  plot(hca,z,phi(z,lz))
+  hca.XLabel.String = 'z';
+end
+if 1 % w
+  hca = h(isub); isub = isub + 1;
+  levels = floor(min(W(:))):1:ceil(max(W(:)));
+  levels = 10;
+  contourf(hca,Z,V,W,levels)
+  shading(hca,'flat')
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 1 % fp + ft
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,Z,V,F)
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'f_p+f_t';
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 0 % ft
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,Z,V,FT)
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'f_t';
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 0 % fp
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,Z,V,FP)
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'f_p';
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 1 % cut through center, to see discontinuitites
+  hca = h(isub); isub = isub + 1;
+  plot(hca,v,F(:,fix(size(F,2)/2)))
+  hca.XLabel.String = 'v';
+end
+if 1 % cut through center, to see discontinuitites
+  hca = h(isub); isub = isub + 1;
+  plot(hca,z,F(fix(size(F,1)/2),:))
+  hca.XLabel.String = 'z';
+end
+if 1 % densities
+  hca = h(isub); isub = isub + 1;
+  plot(hca,z,np,z,nt,z,n)
+  hca.XLabel.String = 'z';
+  legend(hca,{'passing','trapped','total'})
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+end
+
+%% Chen et al. 2002, 3D
+Te = 1;
+m = 1;
+vte = sqrt(2*Te/m);
+phi0 = 1; % potential at center of structure
+% v is normalized to vt
+% phi is normalized to Te
+
+% Set up grid to work with
+r = linspace(0,0.5,1);
+z = linspace(-3,3,101);
+rs = linspace(0,1,1); % perpendicular scale size
+lz = linspace(0,1,1); % parallel scale size
+
+% Velocity space
+v = linspace(-3,3,1001)*sqrt(phi0/Te);
+dv = v(2) - v(1);
+[Z,V] = meshgrid(z,v); 
+
+% Potential
+J0 = @(r) besselj(0,r); % Bessel function of zeroth order
+absJ0 = @(r) abs(besselj(0,r)); % Bessel function of zeroth order
+l00 = fminsearch(@(r) abs(J0(r)),0);
+kperp = l00/rs;
+
+% Parallel potential profile, Gaussian
+phi_par = @(z,lz) phi0.*exp(-0.5*(z./lz).^2); 
+
+% Total potential profile
+phi = @(r,z) phi_par(z,lz).*J0(l00*r./rs);
+
+% Energy
+w = @(r,z,v) v.^2 - phi(r,z);
+
+% Passing electron phase space density
+fp = @(r,z,v) (2/sqrt(pi))*exp(-w(r,z,v));
+
+% Trapped electron phase space density
+
+
+if 0
+% Trapped phase space density
+ft1 = @(phi0,lz,w) (4*sqrt(-w)./pi./lz.^2).*(1-2*log(-4*w/phi0));
+ft2 = @(phi0,lz,w) 2*exp(-w)./sqrt(pi).*(1-erf(sqrt(-w)));
+
+
+W = w(V,Z,lz);
+WT = W; WT(W>0) = nan; % erf will give error if W is positive
+WP = W; WP(W<0) = nan;
+
+FT1 = ft1(phi0,lz,WT);
+FT2 = ft2(phi0,lz,WT);
+
+FT = FT1 + FT2;
+FT(W>0) = 0;
+
+FP = fp(V,Z,lz);
+FP(W<0) = 0;
+
+F = FP + FT;
+% Densities
+np = sum(FP,1)*dv;
+nt = sum(FT,1)*dv;
+n = sum(F,1)*dv;
+end
+  
+r1 = 0.0*rs;
+r2 = 0.5*rs;
+r3 = 0.7*rs;
+  
+nrows = 3;
+ncols = 2;
+h = setup_subplots(nrows,ncols);
+isub = 1;
+
+if 1 % phi
+  hca = h(isub); isub = isub + 1;  
+  plot(hca,z,phi(r1,z),z,phi(r2,z),z,phi(r3,z))
+  hca.XLabel.String = 'z';
+  legend(hca,{sprintf('r=%.1fr_s',r1/rs),sprintf('r=%.1fr_s',r2/rs),sprintf('r=%.1fr_s',r3/rs)},'box','off')
+end
+if 1 % w
+  hca = h(isub); isub = isub + 1;
+  levels = floor(min(W(:))):1:ceil(max(W(:)));
+  levels = 10;
+  contourf(hca,Z,V,W,levels)
+  shading(hca,'flat')
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 1 % fp + ft
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,Z,V,F)
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'f_p+f_t';
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 0 % ft
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,Z,V,FT)
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'f_t';
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 0 % fp
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,Z,V,FP)
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'f_p';
+  hca.XLabel.String = 'z';
+  hca.YLabel.String = 'v';
+end
+if 1 % cut through center, to see discontinuitites
+  hca = h(isub); isub = isub + 1;
+  plot(hca,v,F(:,fix(size(F,2)/2)))
+  hca.XLabel.String = 'v';
+end
+if 1 % cut through center, to see discontinuitites
+  hca = h(isub); isub = isub + 1;
+  plot(hca,z,F(fix(size(F,1)/2),:))
+  hca.XLabel.String = 'z';
+end
+if 1 % densities
+  hca = h(isub); isub = isub + 1;
+  plot(hca,z,np,z,nt,z,n)
+  hca.XLabel.String = 'z';
+  legend(hca,{'passing','trapped','total'})
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+end
+
+
 
 %% Electron test particles
 % To see how the electrons move through the structure, I pass them through
@@ -56,6 +310,13 @@ lr = 2*4e3;
 lx = lr/sqrt(2);
 ly = lr/sqrt(2);
 lz = 4e3;
+
+% From data fit 
+lx = 14*1e3;
+ly = 11*1e3;
+lz = 3*1e3;
+
+
 phi0 = 300;
 B0 = 20e-9;
 syms x y z

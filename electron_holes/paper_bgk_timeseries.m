@@ -19,8 +19,8 @@ tint_figure = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.620Z');
 
 %% Set up database
 localuser = datastore('local','user');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
-mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load data
@@ -54,7 +54,7 @@ c_eval('jedi_apar = ePitch?_flux_edi.palim([168.75 180]);',ic)
 c_eval('jedi_par = ePitch?_flux_edi.palim([0 11.25]);',ic)
 
 % Load f0 from external function
-iff = 20; %iff = 17;
+iff = 20; %iff = 20; used in first submission to PoP
 [f0,params] = mms_20170706_135303.get_f0(iff);
 n = params.n; % m^(-3)
 ntot = sum(n);
@@ -76,7 +76,7 @@ str_info = {'unperturbed f:';...
 % comes in with an energy of 100 eV, it actually only had 100-scPot eV
 % before it saw the potential. Therefore, if the EDI energy is 500 eV,
 % electrons coming in at 500 eV only had 500 - scPot eV before.
-E_edi = 500 - scPot; % eV
+E_edi = 500 - 1*scPot; % eV
 v_edi = sqrt(2*units.e*E_edi./units.me); % m/s
 dE_edi = 25; % eV
 
@@ -271,9 +271,24 @@ tsNeModel = irf.ts_scalar(phi.time,sum(Fabel_tot*dv,2)*1e-6);
 tsNeModel.units = 'cm^{-3}';
 tsNeModel.name = 'Model electron density';
 
+tsNeModelFree = irf.ts_scalar(phi.time,sum(Fabel_free*dv,2)*1e-6);
+tsNeModelFree.units = 'cm^{-3}';
+tsNeModelFree.name = 'n^{mod}_{e,free}';
+
+tsNeModelTrap = irf.ts_scalar(phi.time,sum(Fabel_trap*dv,2)*1e-6);
+tsNeModelTrap.units = 'cm^{-3}';
+tsNeModelTrap.name = 'n^{mod}_{e,trap}';
+
 tsDnModel_all = irf.ts_scalar(phi.time,[sum(Fabel_tot*dv,2)*1e-6, sum(Fabel_free*dv,2)*1e-6,sum(Fabel_trap*dv,2)*1e-6]);
 tsDnModel_all.units = 'cm^{-3}';
 tsDnModel_all.name = 'Model electron density';
+
+% Phase space density at the center of the structures, a small velocity
+% interval around vph.
+vind_vph = intersect(find(v_vec>(vph-1e6)),find(v_vec<(vph+1e6)));
+
+fvph = irf.ts_scalar(phi.time,nanmean(Fabel_tot(:,vind_vph),2)); % 1e-4: 1/m2 -> 1/cm2
+fvph.units = 'sm^{-4}';
 
 % phi_long = phi_obs;
 % dntrap_long = dntrap_obs;
@@ -1187,7 +1202,8 @@ if 1 % 1 % plot, timeseries, for paper
   isub = 1;
   fclim = [0 0.0025];
 
-  vlim_f = 30;
+  vlim_f = [-29 15];
+  
   if 1 % Epar
     %hca = h(isub); isub = isub + 1;
     hca = irf_panel('Epar');
@@ -1211,7 +1227,11 @@ if 1 % 1 % plot, timeseries, for paper
   if 1 % F
     %hca = h(isub); isub = isub + 1;
     hca = irf_panel('fmodel map');
-    irf_spectrogram(hca,Fspecrec,'lin');
+    i_vlim = find((Fspecrec.f>(vlim_f(1)*1.01)).*(Fspecrec.f<(vlim_f(2)*1.01)));
+    Fspecrec_plot = Fspecrec;
+    Fspecrec_plot.p = Fspecrec_plot.p(:,i_vlim);
+    Fspecrec_plot.f = Fspecrec_plot.f(i_vlim);
+    irf_spectrogram(hca,Fspecrec_plot,'lin');
     hca.YLabel.String = {'v_{||}','(10^3 km/s)'};
     edi_color = [1 1 1];
     vph_color = [1 1 1];
@@ -1252,7 +1272,7 @@ if 1 % 1 % plot, timeseries, for paper
         };
       irf_legend(hca,str_info,[1.01 1.4],'color',hlines(1).Color);    
     end
-    hca.YLim = vlim_f*[-1 1];
+    hca.YLim = vlim_f;
     %hca.CLim = fclim;
   end
   if 1 % diff E (Poisson) (density)
@@ -1401,18 +1421,11 @@ if 1 % 1 % plot, timeseries, for paper
   c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
   
   % annotation
-  if 0  % for h(3).YLim = [-29 29]
-    h(3).YLim = [-29.9 29.9]
-    annotation('textarrow',[0.71 0.71],[0.47 0.485],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
-    annotation('textarrow',[0.76 0.76],[0.550 0.500],'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
-    annotation('textarrow',[0.30 0.325],[0.550 0.510],'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
-  elseif 1 
-    %%
-    h(3).YLim = [-29 15]
-    annotation('textarrow',[0.685 0.685],[0.47 0.495],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
-    annotation('textarrow',[0.76 0.76],[0.550 0.500]+0.02,'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
-    annotation('textarrow',[0.30 0.325],[0.550 0.510]+0.02,'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
-  end
+  h(3).YLim = vlim_f;
+  annotation('textarrow',[0.685 0.685],[0.47 0.495],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
+  annotation('textarrow',[0.76 0.76],[0.550 0.500]+0.02,'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
+  annotation('textarrow',[0.30 0.325],[0.550 0.510]+0.02,'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
+  
 end
 if 0 % 0 % plot, timeseries and averaged, for diagnostics
   %%
@@ -1730,6 +1743,264 @@ if 0 % 0 % plot, time-averaged distributions, for paper
       hold(hca,'off')
     end
   end  
+end
+if 1 % 1 % plot, timeseries, investigate effect of changing various parameters
+  %%
+  fig = figure(49);
+  npanels = 7;
+  h = irf_plot(npanels);
+  clear h_all;
+  h_all = h;
+  isub = 1;
+  fclim = [0 0.0025];
+
+  vlim_f = [-29 15];
+  flim_center = [0 0.3e-2];
+  
+  
+  if 1 % Epar
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('Epar');
+    irf_plot(hca,{Epar.tlim(tint_model)},'comp');  
+    hca.YLabel.String = {'E_{||}','(mV/m)'};
+    hca.YLabel.Interpreter = 'tex';
+  end
+  if 1 % PHI, TSeries, plot
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('phi');
+    irf_plot(hca,phi);  
+    irf_legend(hca,{sprintf('v_{ph,av}= %g km/s',vph*1e-3)},[0.08 0.99],'color',[0 0 0]);
+    hca.YLabel.String = {'\phi','(V)'};  
+    hca.YLabel.Interpreter = 'tex';
+    if 1 % add locations where dphi/dntrap is recalculated every time
+      hold(hca,'on')
+      irf_plot(hca,phi_progressive.ts_detrend_locs,'*','color',[0,0.4470,0.7410])
+      hold(hca,'off')
+    end
+  end
+  if 1 % F
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('fmodel map');
+    i_vlim = find((Fspecrec.f>(vlim_f(1)*1.01)).*(Fspecrec.f<(vlim_f(2)*1.01)));
+    Fspecrec_plot = Fspecrec;
+    Fspecrec_plot.p = Fspecrec_plot.p(:,i_vlim);
+    Fspecrec_plot.f = Fspecrec_plot.f(i_vlim);
+    irf_spectrogram(hca,Fspecrec_plot,'lin');
+    hca.YLabel.String = {'v_{||}','(10^3 km/s)'};
+    hca.YLabel.Interpreter = 'tex';
+    edi_color = [1 1 1];
+    vph_color = [1 1 1];
+    h_all_markings = [];
+    if 1 % EDI energies
+      hold(hca,'on')
+      %lines_EDI_plus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
+      lines_EDI_minus = irf_plot(hca,irf.ts_scalar(phi.time([1 end]),-[v_edi_plus v_edi_minus;v_edi_plus, v_edi_minus]*1e-6),'color',edi_color);
+      %hleg_EDI = irf_legend(hca,{'- EDI'},[0.08 0.99],'color',lines_EDI_minus(1).Color);  
+      hold(hca,'off')
+      %h_all_markings = [h_all_markings; lines_EDI_plus; lines_EDI_minus; hleg_EDI];
+      %h_all_markings = [h_all_markings; lines_EDI_minus; hleg_EDI]; 
+    end
+    if 1 % model phase velocity
+      hold(hca,'on')
+      line_color = [0.5 0.5 0.5]; %line_color = mms_colors('matlab');
+      lines_vphav = irf_plot(hca,tsVph*1e-6,'LineWidth',1.0,'Color',vph_color,'LineStyle','--');
+      %lines_vphav = irf_plot(hca,tsVph*1e-6,'--k');
+      %hleg_vphav = irf_legend(hca,{'-- v_{ph,mod}'},[0.32 0.99],'color',lines_vphav(1).Color);  
+      hold(hca,'off')
+      %h_all_markings = [h_all_markings; lines_vphav; hleg_vphav];
+    end
+    if 1 % observed phase velocity
+      hold(hca,'on')
+      lines_vphobs = irf_plot(hca,tsVphIndividual*1e-3,'*k','LineWidth',1.5,'Color',vph_color);
+      lines_vphobs.MarkerSize = 4;
+      %hleg_vphobs = irf_legend(hca,{'* v_{ph,obs}'},[0.18 0.99],'color',lines_vphobs(1).Color);  
+      hold(hca,'off')
+      %h_all_markings = [h_all_markings; lines_vphobs; hleg_vphobs];
+    end  
+    colormap(hca,cn.cmap('white_blue'))
+    if 0 % str info
+      str_info = {'unperturbed f:';...
+        ['T_{in}= [' sprintf('%g  ',T) '] eV'];...
+        ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
+        ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...
+        sprintf('beta_{Schamel}=%g',beta);...
+        };
+      irf_legend(hca,str_info,[1.01 1.4],'color',hlines(1).Color);    
+    end
+    hca.YLim = vlim_f;
+    %hca.CLim = fclim;
+  end
+  if 1 % phase space density at the center (v=vph) of the structres
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('f model center');
+    irf_plot(hca,fvph);      
+    %irf_legend(hca,{'total','free','trapped'},[0.08 0.99]);
+    hca.YLabel.String = {'f_e(v=v_{ph})','()'};  
+    hca.YLabel.Interpreter = 'tex';
+    hca.YLim = flim_center;
+  end
+  if 1 % diff E (Poisson) (density)
+    %hca = h(isub); isub = isub + 1;  
+    hca = irf_panel('dn');
+    nscale = 1e-3;
+    irf_plot(hca,{tsDnObs/nscale,tsDnModel/nscale},'comp')
+    hca.YLabel.String = {'\delta n',sprintf('(10^{%.0f} cm^{-3})',log10(nscale))};
+    hca.YLabel.Interpreter = 'tex';
+    %irf_legend(hca,{'n_i - (\epsilon_0/e)\partial_{||}E_{||}  ','  \int f_{model}dv_{||}'},[0.01 0.10]);
+    %irf_legend(hca,{'n_{et}^{obs}  ','  n_{et}^{mod}'},[0.01 0.10]);
+    irf_legend(hca,{'obs.  ','model'},[0.08 0.98]);
+    doDoubleAxis = 1; % dn
+    if doDoubleAxis  
+      ax1 = hca;
+      ax2 = axes('Position',get(ax1,'Position'));
+      ax2.YLim = ax1.YLim/nscale/n0;    
+      set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+      set(ax2,'YAxisLocation','right');
+      set(ax2,'Color','none','box','off'); % color of axis      
+      %set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+      %set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+      irf_timeaxis(ax2,'nolabels')
+      ax2.XLabel.String = [];
+      ax2.YLabel.String = {'\delta n/n'};
+      ax2.YLabel.Interpreter = 'tex';    
+      ax2.YTick = hca.YTick*1e-3/n0;  
+      h_all = [h_all,ax2];
+      ax2_dn = ax2;
+      ax1_dn = ax1;
+      ax2.YTick = ax1.YTick;
+    end      
+  end  
+  if 1 % modelled densities, total, free, trapped
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('ne mod all');
+    irf_plot(hca,tsDnModel_all);      
+    irf_legend(hca,{'total','free','trapped'},[0.08 0.99]);
+    hca.YLabel.String = {'n_e^{mod}','(cm^{-3})'};  
+    hca.YLabel.Interpreter = 'tex';    
+  end
+  
+  if 1 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 180
+    %hca = h(isub); isub = isub + 1;
+    hca = irf_panel('j');
+    %%        
+    f_scale = 1e6;
+    colors = mms_colors('matlab');
+    %colors = colors([2 1],:)
+    %hca = subplot(1,1,1);
+    
+    irf_plot(hca,jedi_apar/f_scale,'color',colors(1,:));
+    ax1 = hca;
+    ax2 = axes('Position',get(ax1,'Position'));
+    irf_plot(ax2,fluxModel180.resample(jedi_apar)/f_scale,'color',colors(2,:))      
+    hold(ax2,'on')
+    %irf_plot(ax2,fluxModel180/f_scale,'color',colors(3,:))      
+    hold(ax2,'off')
+    %irf_plot(ax2,fluxModel180/f_scale,'color',colors(2,:))      
+    set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required
+    set(ax2,'YAxisLocation','right');
+    set(ax2,'Color','none','box','off'); % color of axis      
+    set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+    set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+    irf_timeaxis(ax2,'nolabels')
+    
+    ax2.YLabel.String = {'j^{mod}',sprintf('(10^%g cm^{-2}s^{-1})',log10(f_scale))};
+    ax2.YLabel.Interpreter = 'tex';
+    ax1.YLabel.String = {'j^{EDI}',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
+    ax1.YLabel.Interpreter = 'tex';
+    irf_legend(hca,{'EDI','  model'},[0.08 0.98])
+    %irf_legend(hca,{'EDI: \theta = [168.75 180]^o','model: v = [-13600 -12900] km/s'},[0.08 0.98])
+    %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
+    ax1.YLim = [0 3.7];
+    ax2.YLim = [0 3.7];
+    h_all = [h_all,ax2];
+    ax2_flux = ax2;
+    ax1_flux = ax1;    
+  end
+  if 0 % 10^6 cm^{-2}s^{-1}, comparing model flux with flux measured by EDI, at 0
+    hca = h(isub); isub = isub + 1;
+    %%        
+    f_scale = 1e6;
+    colors = mms_colors('matlab');
+    %colors = colors([2 1],:)
+    %hca = subplot(1,1,1);
+    if 0
+      %irf_plot({fluxModel180,ts_edi_flux180},'comp')  
+    else
+      irf_plot(hca,ts_edi_flux0/f_scale,'color',colors(1,:));
+      ax1 = hca;
+      ax2 = axes('Position',get(ax1,'Position'));
+      irf_plot(ax2,fluxModel0/f_scale,'color',colors(2,:))      
+      set(ax2,'xtick',[],'xticklabel',[]); % remove 'xtick' if xticks required      
+      set(ax2,'YAxisLocation','right');
+      set(ax2,'Color','none','box','off'); % color of axis      
+      set(ax2,'XColor','k','YColor',colors(2,:)); % color of axis lines and numbers
+      set(ax1,'XColor','k','YColor',colors(1,:)); % color of axis lines and numbers
+      irf_timeaxis(ax2,'nolabels')
+    end
+    ax2.YLabel.String = {'flux 0^o, Model',sprintf('(10^%g cm^{-2}s^{-1})',log10(f_scale))};
+    ax2.YLabel.Interpreter = 'tex';
+    ax1.YLabel.String = {'flux 0^o, EDI',sprintf('(10^%g cm^{-2}s^{-1}sr^{-1})',log10(f_scale))};
+    ax1.YLabel.Interpreter = 'tex';
+    irf_legend(hca,{'EDI','model'},[0.02 0.98])
+    %text(hca,0.002,0.99*hca.YLim(2),'180^o','verticalalignment','top')    
+    ax1.YLim = [0 4];
+    ax2.YLim = [0 4];
+    h_all = [h_all,ax2];
+  end
+
+  if 0 % sum FVdv, bulk velocity
+    hca = h(isub); isub = isub + 1;
+    plot(hca,x_vec,sumFVdv./sumFdv*1e-3);  
+    hca.YLabel.String = {'v','(km/s)'};
+  end   
+    
+  irf_plot_axis_align(h)
+  
+  %h(3).YLabel.String = {'v_{||}','(10^3 km/s)'};
+%  h(3).YLabel.Interpreter = 'tex';
+  
+  iref = 1;
+  ijmp = 1;
+  %h_all(iref+4+ijmp).Position = h_all(iref+4).Position;  
+  
+  
+  %h_all(iref+7).Position = h_all(iref+5).Position;
+  
+  %irf_zoom(h_all,'x',[tint_phi(1) ts_edi_flux180.time(end)])  % tint_phi
+  %irf_zoom(h_all,'x',[tint_model(1) tint_model(end)])  % tint_phi
+  irf_zoom(h_all,'x',tint_figure)  % tint_phi
+  
+  h_all(iref+4+ijmp).XLabel = [];
+  
+  %h(1).YLim = [-70 70];
+  %h(4).YLim = [-0.9 1.7];
+  
+  ax2_flux.Position = ax1_flux.Position;
+  ax2_dn.Position = ax1_dn.Position;
+  ax2_dn.YTick = ax1_dn.YTick/1e-3/n0;
+  ax2_dn.YLim = ax1_dn.YLim/1e-3/n0;
+  ax2_dn.XLabel.String = [];
+
+  
+  %h(3).YLabel.Position(1) = h(1).YLabel.Position(1);
+  
+  %h_all(iref+7).XLabel = [];
+  %h_all(end-2).YAxisLocation = 'right';
+  %h_all(end-3).YAxisLocation = 'right';
+  legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)'};
+  legends_color = {'k','k','k','k','k','k','k','k','k','k','k','k'};
+  for ipanel = 1:npanels
+    irf_legend(h(ipanel),legends{ipanel},[0.01 0.99],'fontsize',14,'color',legends_color{ipanel});
+  end
+  c_eval('h_all(?).XGrid = ''on''; h_all(?).YGrid = ''on'';',1:numel(h_all))
+  
+  % annotation
+  %h(3).YLim = vlim_f;
+  %hca = irf_panel('fmodel map');
+  %annotation('textarrow',[0.685 0.685],[0.47 0.495],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
+  %annotation('textarrow',[0.76 0.76],[0.550 0.500]+0.02,'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
+  %annotation('textarrow',[0.30 0.325],[0.550 0.510]+0.02,'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
+  
 end
 
 %% Find f at center of EH.
