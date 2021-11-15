@@ -1,0 +1,19 @@
+% isosurface
+
+[y,x,z] = ndgrid(linspace(-.75,.75,100),linspace(-.1,2.1,100),linspace(-.2,.2,100));
+f = (x.*(x-1).^2.*(x-2) + y.^2).^2 + z.^2;
+cla
+isosurface(x,y,z,f,.01);
+view(3);
+camlight
+axis equal
+
+%% isosurface
+
+[y,x,z] = ndgrid(linspace(-.75,.75,100),linspace(-.1,2.1,100),linspace(-.2,.2,100));
+f = exp(-(x.*(x-1).^2.*(x-2) + y.^2).^2 + z.^2;
+cla
+isosurface(x,y,z,f,.01);
+view(3);
+camlight
+axis equal

@@ -18,15 +18,15 @@ function out = eh_costfunction_finite_tilt(params,x,y,z,Ex_data,Ey_data,Ez_data,
 % Alternatively, we can also pass xdata,ydata,zdata into mf_Ex,y,z...
 
 
-phi0 = params(1);
 lx = params(2);
 ly = params(3);
 lz = params(4);
-angle = params(5);
-x0 = params(6);
-y0 = params(7);
-z0 = params(8);
+x0 = params(5);
+y0 = params(6);
+z0 = params(7);
+angle = params(8);
 polar = params(9);
+phi0 = params(1);
 
 % Evaluate value at xyz-location
 % For each search step, this evaluation is done for different phi0,lx0,
@@ -40,7 +40,7 @@ end
 % This should work for arrays to
 weight_x = 1;
 weight_y = 1;
-weight_z = 1;
+weight_z = 1.0;
 colors = mms_colors('1234');
 
 if 0 % plot
@@ -83,7 +83,7 @@ if 0 % plot
            z(:,4),Ez_data(:,4))
   hold(hca,'off')
   1;%pause
-elseif 0
+elseif 1
   hca = subplot(3,1,1);
   plot(hca,ex)
   hold(hca,'on')

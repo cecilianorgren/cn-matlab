@@ -549,40 +549,166 @@ fontsize = 12;
 c_eval('h(?).FontSize = fontsize;',1:numel(h))
 disp('Done.')
 
-%% Apply to MMS data, at z = 0, i.e. do not fit Epar, take into account epar also
+%% Apply to MMS data, at z = zvec, take into account epar also
 ieh = 10; % Define which EH to use
 
 % Use symbolic expressions to get derivative of phi = E
-syms x y z phi0 lx ly lz angle x0 y0 z0 polar r
-R = [x y z];
-% Triple Gaussian potential structure
-% need to take into account pitch angle
-% something wrong here.
-xp = (x-x0)*cosd(angle)*sind(polar)+(y-y0)*sind(angle)*sind(polar);
-yp = (x-x0)*sind(angle)*sind(polar)+(y-y0)*cosd(angle)*sind(polar);
-zp = (z-z0)*cosd(polar);
+syms x y z phi0 lx ly lz azim x0 y0 z0 polar r
+syms phi(x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0)
+syms E(x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0)
+syms Ex(x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0)
+syms Ey(x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0)
+syms Ez(x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0)
+inp = [x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0];
+% [x,y,x,lx,ly,lz,azim,polar,phi0]
 
-xp = (x-x0)*cosd(angle)+(y-y0)*sind(angle);
-yp = (x-x0)*sind(angle)+(y-y0)*cosd(angle)*sind(polar);
-zp = (z-z0)*cosd(polar);
-phi = phi0*exp(...
+R = [x y z];
+%Rp = [x y z];
+
+% Triple Gaussian potential structure. The ESWs can be aligned and travel
+% with and angle with respect to the magnetic field. This means we can have
+% bipolar filed variations in the components perpendicular to B.
+
+% Rotation matrix for azimuthal rotation 'angle' and polar 'polar'
+% rotR = [sin(polar)*cos(azim) sin(polar)*sin(azim)  cos(polar);...
+%         cos(polar)*cos(azim) cos(polar)*sin(azim) -sin(polar);...
+%           -sin(azim)             cos(azim)               0];
+% frotR = symfun(rotR,[azim,polar]);    
+% rotR = [1 0 0; 0 1 0; 0 0 1];
+rotR = [cos(polar)*cos(azim) cos(polar)*sin(azim) -sin(polar);...
+          -sin(azim)             cos(azim)               0;...
+        sin(polar)*cos(azim) sin(polar)*sin(azim)  cos(polar)]; 
+frotR = symfun(rotR,[azim,polar]);
+R0 = [x0 y0 z0];
+L = [lx ly lz];
+% Rp = rotR*((R-1*R0))';
+%Rp = rotR*R';
+Rp = rotR*R';
+%R = transpose(rotR)*rotR;
+%Rp = transpose(rotR)*R';
+% So in which coordinate system do I need to define the ESW properties?
+
+% xp = (x-x0)*cosd(angle)*sind(polar)+(y-y0)*sind(angle)*sind(polar);
+% yp = -(x-x0)*sind(angle)*sind(polar)+(y-y0)*cosd(angle)*sind(polar);
+% zp = (z-z0)*cosd(polar);
+% 
+% % Think this rotation around z worked
+% xp1 =  (x-x0)*cosd(angle)+(y-y0)*sind(angle);
+% yp1 = -(x-x0)*sind(angle)+(y-y0)*cosd(angle);
+% zp1 =  (z-z0);
+% 
+% % Rotate round x
+% xp2 =  xp1;
+% yp2 =  (yp1)*cosd(polar)+(zp1)*sind(polar);
+% zp2 = -(yp1)*sind(polar)+(zp1)*cosd(polar);
+% 
+% xp = xp2;
+% yp = yp2;
+% zp = zp2;
+
+xp = Rp(1);
+yp = Rp(2);
+zp = Rp(3);
+
+mf_xp = matlabFunction(xp,'Vars',[x y z azim x0 y0 z0 polar]); % 
+mf_yp = matlabFunction(yp,'Vars',[x y z azim x0 y0 z0 polar]); %
+mf_zp = matlabFunction(zp,'Vars',[x y z azim x0 y0 z0 polar]); %
+
+phi_var = [x,y,z,lx,ly,lz,azim,polar,phi0];
+phi(x,y,z,lx,ly,lz,x0,y0,z0,azim,polar,phi0) = ...
+  phi0*exp(...
   -0.5*(xp/lx).^2 ...
   -0.5*(yp/ly).^2 ...
   -0.5*(zp/lz).^2 ...
   );
+fphi = symfun(phi,phi_var);
+
 
 % Electric field from potential
-E = -gradient(phi,R);
-
-mf_xp = matlabFunction(xp,'Vars',[x y z angle x0 y0 z0 polar]); % 
-mf_yp = matlabFunction(yp,'Vars',[x y z angle x0 y0 z0 polar]); % V
-mf_zp = matlabFunction(zp,'Vars',[x y z angle x0 y0 z0 polar]); % V
+Ex = -gradient(phi,x);
+Ey = -gradient(phi,y);
+Ez = -gradient(phi,z);
 
 % Order of the inputs defined by argument 'Vars'
-mf_phi = matlabFunction(phi,'Vars',[x y z phi0 lx ly lz angle x0 y0 z0 polar]); % V
-mf_Ex = matlabFunction(E(1),'Vars',[x y z phi0 lx ly lz angle x0 y0 z0 polar]); % mV/m (V/km)
-mf_Ey = matlabFunction(E(2),'Vars',[x y z phi0 lx ly lz angle x0 y0 z0 polar]); % mV/m (V/km)
-mf_Ez = matlabFunction(E(3),'Vars',[x y z phi0 lx ly lz angle x0 y0 z0 polar]); % mV/m (V/km)
+% inp = [x y z phi0 lx ly lz azim x0 y0 z0 polar];
+mf_phi = matlabFunction(phi,'Vars',inp); % V
+mf_Ex = matlabFunction(Ex,'Vars',inp); % mV/m (V/km)
+mf_Ey = matlabFunction(Ey,'Vars',inp); % mV/m (V/km)
+mf_Ez = matlabFunction(Ez,'Vars',inp); % mV/m (V/km)
+
+%zz = linspace(-20,20,100);
+%plotyy(zz,phi(0,0,zz,15,10,3,0,0,0,0,0,100),zz,Ez(0,0,zz,15,10,3,0,0,0,0,0,100))
+%grid on
+%
+% Plot coordinate system.
+% @(x,y,z,angle,x0,y0,z0,polar)
+if 0
+  % Define coordinate rotation
+  polar_ = 10*(pi/180);
+  azim_ = 0*(pi/180);
+  lx_ = 15;
+  ly_ = 10;
+  lz_ = 5;
+  x0_ = 0;
+  y0_ = 0;
+  z0_ = 0;
+  x_ = 0;
+  y_ = 0;
+  phi0_ = 100;
+  zvec_ = 5*linspace(-lz_,lz_,49);  
+  xvec = 5*linspace(-lx_,lx_,50); % km 
+  yvec = 5*linspace(-ly_,ly_,51); % km
+  % define parallel length scale from electric field time series
+  zvec = zvec_;
+  %zvec = 2*linspace(-params(4),params(4),33); % km, z should be 0
+  iz0 = ceil(numel(zvec)/2);
+  [X,Y,Z] = meshgrid(xvec,yvec,zvec);
+  
+  hca = subplot(2,1,1);
+  X0 = 0.*[1 1 1];
+  Y0 = [0 0 0];
+  Z0 = [0 0 0];
+  Xunit = [1 0 0];
+  Yunit = [0 1 0];
+  Zunit = [0 0 1];  
+  XP = mf_xp(Xunit,Yunit,Zunit,azim_,X0,Y0,Z0,polar_);
+  YP = mf_yp(Xunit,Yunit,Zunit,azim_,X0,Y0,Z0,polar_);
+  ZP = mf_zp(Xunit,Yunit,Zunit,azim_,X0,Y0,Z0,polar_);
+  % (x,y,z,phi0,lx,ly,lz,azim,x0,y0,z0,polar)
+  %PHI = mf_phi(X,Y,Z,lx_,ly_,lz_,phi0_,azim_,X0(1),Y0(1),Z0(1),theta_);
+  %tic
+  PHI = mf_phi(X,Y,Z,lx_,ly_,lz_,X0(1),Y0(1),Z0(1),azim_,polar_,phi0_);
+  %toc
+  quiver3(hca,X0,Y0,Z0,Xunit*qscale,Yunit*qscale,Zunit*qscale,'linewidth',2)
+  hold(hca,'on')
+  qscale = 20;
+  quiver3(hca,X0,Y0,Z0,XP*qscale,YP*qscale,ZP*qscale,'linewidth',2)  
+  hold(hca,'off')
+  hold(hca,'on')
+  hiso = patch(hca,isosurface(X,Y,Z,PHI,phi0_*0.5));
+  hiso.FaceAlpha = 0.3;
+  hiso.FaceColor = [0.5 0 0];
+  %shading(hca,'flat')
+  hold(hca,'off')
+  hca.XLim = 1.1*[-1 1];
+  hca.YLim = 1.1*[-1 1];
+  hca.ZLim = 1.1*[-1 1];
+  hca.XLabel.String = 'x';
+  hca.YLabel.String = 'y';
+  hca.ZLabel.String = 'z';
+  legend(hca,{'R','RP'})
+  axis(hca,'equal')
+  
+  hca = subplot(2,1,2);
+  % mf_Ex = @(x,y,z,phi0,lx,ly,lz,angle,x0,y0,z0,polar) ...
+  plot(hca,...
+       zvec_,mf_Ex(x_,y_,zvec_,phi0_,lx_,ly_,lz_,azim_,x0_,y0_,z0_,polar_),...
+       zvec_,mf_Ey(x_,y_,zvec_,phi0_,lx_,ly_,lz_,azim_,x0_,y0_,z0_,polar_),...
+       zvec_,mf_Ez(x_,y_,zvec_,phi0_,lx_,ly_,lz_,azim_,x0_,y0_,z0_,polar_));
+  legend(hca,{'x','y','z'})
+  hca.YLim = [-10 10];
+end
+%
 
 % We have lz from oservations, peak-to-peak length
 % We will do the fit at z = 0 and z0 = 0 by time-shifting the timeseries
@@ -591,13 +717,13 @@ mf_Ez = matlabFunction(E(3),'Vars',[x y z phi0 lx ly lz angle x0 y0 z0 polar]); 
 % optimization function fminsearch.
 x0 = 0; % km
 y0 = 0; % km
-z0 = -2; % km
-lx0 = 15; % km
-ly0 = 15; % km
+z0 = 0; % km 
+lx0 = 25; % km
+ly0 = 25; % km
 lz0 = 4; % km, from observations later
-phi0 = 400; % V
-angle = 0;
-polar = manual(ieh).pitchangle;
+phi0 = 300; % V
+azim = 0;
+polar = 13*pi/180;manual(ieh).pitchangle;
 
 philev = 0:50:phi0; % For plotting purposes
 
@@ -621,6 +747,9 @@ gsev = manual(ieh).v;
 gseB = manual(ieh).gseBav;
 pitchangle = manual(ieh).pitchangle;
 v = gsev*lmn';
+bvec =  (gseB/norm(gseB))*lmn'; % magnetic field unit vector in new csys
+gse = [1 0 0; 0 1 0; 0 0 1];
+gsevec = gse*lmn'; % gse uit vectros in new coordinate system
 lpp = manual(ieh).lpp;
 
 % Time at the center of the ESWs for each spacecraft
@@ -629,8 +758,15 @@ c_eval('t? = tref + dt(?);',1:4)
 % Coordinate system: perp1, perp2, par 
 lmn = [manual(ieh).perp1; manual(ieh).perp2; manual(ieh).par]; 
 
-ffilt = 30; % for highpass filtering
+% make new lmn coordinates which are in the wave system
+par = -manual(ieh).v/norm(manual(ieh).v);
+perp1 = cross(par,cross([0 1 0],par)); perp1 = perp1/norm(perp1);
+perp2 = cross(par,perp1);
+lmn = [perp1; perp2; par];
+
+ffilt = 10; % for highpass filtering
 c_eval('gseE?filt = gseE?.filt(ffilt,0,[],5);',1:4) % use same time interval for all
+%ffilt = 0;
 %c_eval('gseE?filt = gseE?;',1:4) % use same time interval for all
 
 % Try instead subtracting the lowpass value
@@ -657,7 +793,7 @@ c_eval('r? = gseR?rel.data*lmn'';',1:4) % km
 c_eval('r? = repmat(r?,nt,1);',1:4) % km
 c_eval('r?(:,3) = zline;',1:4) % put z = zline, because we resampled to the ESW center time
 
-params0 = double([phi0; lx0; ly0; lz0; angle; x0; y0; z0; polar]);
+params0 = double([lx0; ly0; lz0; x0; y0; z0; azim; polar; phi0]);
 % I need to create a cost function, which is to be evaluated. For example
 % ediffx = mf_Ex(vars) - Ex_obs
 % ediffy = mf_Ey(vars) - Ey_obs
@@ -682,8 +818,10 @@ params = fminsearch(cost_function,params0);
 
 philev = linspace(0,100*round(params(1)/100),11); % For plotting purposes
 
-xvec = 2*linspace(-params(2),params(2),29); % km 
-yvec = 2*linspace(-params(3),params(3),31); % km
+xmax = params(1)*cos(params(7)) + params(2)*sin(params(8));
+ymax = -params(1)*sin(params(7)) + params(2)*cos(params(8));
+xvec = 2*linspace(-xmax,xmax,29); % km 
+yvec = 2*linspace(-xmax,xmax,31); % km
 % define parallel length scale from electric field time series
 zvec = -timeline*vpar;
 %zvec = 2*linspace(-params(4),params(4),33); % km, z should be 0
@@ -704,9 +842,9 @@ c_eval('EZ?_best = mf_Ez_best(r?(1,1),r?(1,2),zvec);',1:4)
 % c_eval('Ez?_best = mf_Ez_best(r?(1),r?(2),r?(3));',1:4)
 
 c_eval('E?fit = E?.clone(E?.time,[EX?_best,EY?_best,EZ?_best]);',1:4)
-Ex_data_best = [Ex1_best,Ex2_best,Ex3_best,Ex4_best];
-Ey_data_best = [Ey1_best,Ey2_best,Ey3_best,Ey4_best];
-Ez_data_best = [Ez1_best,Ez2_best,Ez3_best,Ez4_best];
+Ex_data_best = [EX1_best,EX2_best,EX3_best,EX4_best];
+Ey_data_best = [EY1_best,EY2_best,EY3_best,EY4_best];
+Ez_data_best = [EZ1_best,EZ2_best,EZ3_best,EZ4_best];
 
 
 
@@ -725,13 +863,13 @@ colors = mms_colors('1234');
 % nrows = 2;
 % ncols = 1;
 % h = setup_subplots(nrows,ncols);
-
+%%
 figure(100)
 nTimePanels = 3;
 nrows = 2;
-ncols = 1;
+ncols = 2;
 
-[h1,h2] = initialize_combined_plot(nTimePanels,nrows,ncols,0.5,'vertical');
+[h1,h2] = initialize_combined_plot(nTimePanels,nrows,ncols,0.3,'vertical');
 isub = 1;
 
 if 1 % timeseries of data
@@ -793,15 +931,32 @@ if 0 % original data, only when using synthetic data
   c_eval('plot(hca,r?(1),r?(2),''o'',''color'',colors(?,:))',1:4)
   hold(hca,'off')
 end
-if 1 % fit
+if 1 % fit in perpendicular plane at z = 0
   hca = h2(isub); isub = isub + 1;
   contour(hca,X(:,:,iz0),Y(:,:,iz0),PHI_best(:,:,iz0))
   if not(abs(params(2)) > 30 || abs(params(3)) > 30), axis(hca,'equal'); end
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hold(hca,'on')
-  c_eval('quiver(hca,r?(1,1),r?(1,2),Ex?_best,Ey?_best,''linewidth'',1,''color'',colors(?,:))',1:4)
-  c_eval('plot(hca,r?(1,1),r?(1,2),''o'',''color'',colors(?,:))',1:4)
+  c_eval('quiver(hca,r?(iz0,1),r?(iz0,2),EX?_best(iz0,:),EY?_best(iz0,:),''linewidth'',1,''color'',colors(?,:))',1:4)
+  c_eval('plot(hca,r?(iz0,1),r?(iz0,2),''o'',''color'',colors(?,:))',1:4)
+  hold(hca,'off')
+  hca.XLabel.String = 'perp 1 (km)';
+  hca.YLabel.String = 'perp 2 (km)';
+end
+if 1 % isosurface in 3D space
+  hca = h2(isub); isub = isub + 1;
+  hiso = patch(hca,isosurface(X,Y,Z,PHI_best));
+  hiso.FaceAlpha = 0.2;
+  %if not(abs(params(2)) > 30 || abs(params(3)) > 30), axis(hca,'equal'); end
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hold(hca,'on')
+  qscale = 10;
+  c_eval('quiver3(hca,0,0,0,bvec(1),bvec(2),bvec(3),''linewidth'',1,''color'',colors(?,:))',1:4)
+  %c_eval('quiver(hca,r?(iz0,1),r?(iz0,2),EX?_best(iz0,:),EY?_best(iz0,:),''linewidth'',1,''color'',colors(?,:))',1:4)
+  %c_eval('plot(hca,r?(iz0,1),r?(iz0,2),''o'',''color'',colors(?,:))',1:4)
+  
   hold(hca,'off')
   hca.XLabel.String = 'perp 1 (km)';
   hca.YLabel.String = 'perp 2 (km)';
@@ -828,14 +983,14 @@ if 1 % information
 %     [0.02 0.02],'color',[0 0 0])
   
   hleg = irf_legend(hca,{...
-    sprintf('fitting parameters: \nphi0 = %.0f V \nlperp1 = %.1f km, lperp2 = %.1f km, lpar = %.1f km',params(1),params(2),params(3),params(4)),...    
-    sprintf('angle = %.0f deg',params(5)),...
-    sprintf('x0 (perp1) = %.0f km',params(6)),...
-    sprintf('y0 (perp2) = %.0f km',params(7)),...
-    sprintf('z0 (par) = %.0f km',params(8)),...  
-    sprintf('polar = %.0f deg',params(9))}',...  
+    'fitting parameters:',...
+    sprintf('lperp1 = %.1f km, lperp2 = %.1f km, lpar = %.1f km',params(1),params(2),params(3)),...        
+    sprintf('x0 (perp1) = %.0f km, y0 (perp2) = %.0f km, z0 (perp2) = %.0f km',params(4),params(5),params(6)),...     
+    sprintf('azim = %.0f deg',params(7)*180/pi),...
+    sprintf('polar = %.0f deg',params(8)*180/pi),...
+    sprintf('phi0 = %.0f V ',params(9))}',...  
     [0.0 0.00],'color',[0 0 0]);
-  hleg(1).VerticalAlignment = 'bottom';
+  %hleg(1).VerticalAlignment = 'bottom';
 end
 
 h = findobj(gcf,'type','axes'); h = h(end:-1:1);

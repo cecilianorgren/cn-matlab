@@ -18,23 +18,25 @@ function out = eh_costfunction_finite_tilt(params,x,y,z,Ex_data,Ey_data,Ez_data,
 % Alternatively, we can also pass xdata,ydata,zdata into mf_Ex,y,z...
 
 
-phi0 = params(1);
-lx = params(2);
-ly = params(3);
-lz = params(4);
-angle = params(5);
-x0 = params(6);
-y0 = params(7);
-z0 = params(8);
-polar = params(9);
+lx = params(1);
+ly = params(2);
+lz = params(3);
+x0 = params(4);
+y0 = params(5);
+z0 = params(6);
+angle = params(7);
+polar = params(8);
+phi0 = params(9);
+
+%disp(sprintf('lx = %.1f, ly = %.1f, lz = %.1f, x0 = %.1f, y0 = %.1f, z0 = %.1f, azim = %.0f, polar = %.1f, phi0 = %.1f, ',lx,ly,lz,x0,y0,z0,angle*180/pi,polar*180/pi,phi0))
 
 % Evaluate value at xyz-location
 % For each search step, this evaluation is done for different phi0,lx0,
 % etc.
 for ic = 1:4
-  ex(:,ic) = mf_Ex(x(:,ic),y(:,ic),z(:,ic),phi0,lx,ly,lz,angle,x0,y0,z0,polar);
-  ey(:,ic) = mf_Ey(x(:,ic),y(:,ic),z(:,ic),phi0,lx,ly,lz,angle,x0,y0,z0,polar);
-  ez(:,ic) = mf_Ez(x(:,ic),y(:,ic),z(:,ic),phi0,lx,ly,lz,angle,x0,y0,z0,polar);
+  ex(:,ic) = mf_Ex(x(:,ic),y(:,ic),z(:,ic),lx,ly,lz,x0,y0,z0,angle,polar,phi0);
+  ey(:,ic) = mf_Ey(x(:,ic),y(:,ic),z(:,ic),lx,ly,lz,x0,y0,z0,angle,polar,phi0);
+  ez(:,ic) = mf_Ez(x(:,ic),y(:,ic),z(:,ic),lx,ly,lz,x0,y0,z0,angle,polar,phi0);
 end
 
 % This should work for arrays to
