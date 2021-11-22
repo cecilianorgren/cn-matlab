@@ -6,6 +6,19 @@ function manual = edi_event_manual_dt()
 % the potential. It's not altogether clear where these ponits should be
 % tp1, tp2, approximate times of first and second peak.
 ieh = 1;
+manual(ieh).t_ref = '2017-07-06T13:54:05.530316406Z';
+manual(ieh).tminus = '2017-07-06T13:54:05.528300292Z';
+manual(ieh).tplus = '2017-07-06T13:54:05.532156982Z';
+manual(ieh).tp1 = [-0.0004567   -0.0005459   -0.0006052   -0.0005161];
+manual(ieh).tp2 = [0.0004766    0.0006245    0.0006841    0.0005950];
+manual(ieh).gseBav = [-22.7855    1.6503   -1.2751];
+manual(ieh).perp1 = [0.0720    0.9974    0.0040];
+manual(ieh).perp2 = [0.0559         0   -0.9984];
+manual(ieh).par   = [-0.9958    0.0721   -0.0557]; 
+manual(ieh).dt  = [0.0000   -0.0012   -0.00135   -0.0014]; 
+manual(ieh).v  = 7.5e+03*[0.98 -0.10 -0.16];
+
+ieh = ieh + 1;
 manual(ieh).t_ref = '2017-07-06T13:54:05.533947021Z';
 manual(ieh).tminus = '2017-07-06T13:54:05.532483886Z'; 
 manual(ieh).tplus = '2017-07-06T13:54:05.535222412Z'; 

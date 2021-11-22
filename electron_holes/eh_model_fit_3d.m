@@ -529,7 +529,7 @@ ehprop_new.manual = manual;
 
 %% Go through all EHs to get their time delay manually.
 % This is done and saved in structure array manual() above.
-for ieh = 13;[1 6:13];%1:numel(ehprop)
+for ieh = 1%13;[1 6:13];%1:numel(ehprop)
   %% Get approximate times
   % Get data from old data (which are somewhat wrong)  
   lpp = ehprop(ieh).Lpp; % km
@@ -572,7 +572,7 @@ data = [];
 colors = mms_colors('1234');
 % Run through to estimate peak-to-peak length scales, and possible
 % potentials
-for ieh = 1:numel(manual)
+for ieh = 1%:numel(manual)
   T = 0.006;
   tref = EpochTT(manual(ieh).t_ref);
   dt = manual(ieh).dt;

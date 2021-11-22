@@ -550,7 +550,7 @@ c_eval('h(?).FontSize = fontsize;',1:numel(h))
 disp('Done.')
 
 %% Apply to MMS data, at z = zvec, take into account epar also
-ieh = 10; % Define which EH to use
+for ieh = 12:numel(manual) % Define which EH to use
 
 % Use symbolic expressions to get derivative of phi = E
 syms x y z phi0 lx ly lz azim x0 y0 z0 polar r
@@ -583,7 +583,7 @@ R0 = [x0 y0 z0];
 L = [lx ly lz];
 % Rp = rotR*((R-1*R0))';
 %Rp = rotR*R';
-Rp = rotR*R';
+Rp = rotR*(R-R0)';
 %R = transpose(rotR)*rotR;
 %Rp = transpose(rotR)*R';
 % So in which coordinate system do I need to define the ESW properties?
@@ -716,11 +716,11 @@ end
 % These values listed below are the starting guessing values for the 
 % optimization function fminsearch.
 x0 = 0; % km
-y0 = 0; % km
+y0 = -5; % km
 z0 = 0; % km 
-lx0 = 25; % km
-ly0 = 25; % km
-lz0 = 4; % km, from observations later
+lx0 = 15; % km
+ly0 = 10; % km
+lz0 = 3; % km, from observations later
 phi0 = 300; % V
 azim = 0;
 polar = -13*pi/180;manual(ieh).pitchangle;
@@ -737,11 +737,11 @@ tminus = EpochTT(manual(ieh).tminus);
 T =  tplus - tminus;
 
 tint_eh = tref + abs([min(dt) max(dt)]) + 0.5*T*[-1 1];
-tint_eh = tref + abs(min(dt))*[-1 1] + 0.5*T*[-1 1];
+tint_eh = tref + abs(min(dt))*[-1 1] + 0.3*T*[-1 1];
 
 % The time fitting interval is different for each spacecraft, but should
 % extend the same time if we align the reference times
-c_eval('tint_fit_mms? = [tminus tplus] + dt(?);',1:4)
+c_eval('tint_fit_mms? = [tminus tplus] + dt(?) + 0.2*T*[-1 1];',1:4)
 
 gsev = manual(ieh).v;
 gseB = manual(ieh).gseBav;
@@ -764,7 +764,7 @@ perp1 = cross(par,cross([0 1 0],par)); perp1 = perp1/norm(perp1);
 perp2 = cross(par,perp1);
 lmn = [perp1; perp2; par];
 
-ffilt = 10; % for highpass filtering
+ffilt = 100; % for highpass filtering
 c_eval('gseE?filt = gseE?.filt(ffilt,0,[],5);',1:4) % use same time interval for all
 %ffilt = 0;
 %c_eval('gseE?filt = gseE?;',1:4) % use same time interval for all
@@ -778,6 +778,11 @@ c_eval('gseE?filt = gseE?.filt(ffilt,0,[],5);',1:4) % use same time interval for
 % Electric field, for plotting
 %c_eval('E? = gseE?filt.tlim(tint_eh)*lmn'';',1:4) % use same time interval for all
 c_eval('E? = gseE?filt.resample(gseE1).tlim(tint_fit_mms?)*lmn'';',1:4) % use same time interval for all
+% Due to the different time intervals, it might happen that one point more
+% or less falls within the interval.
+minlength = min([E1.length,E2.length,E3.length,E4.length]);
+c_eval('if not(E?.length == minlength), E? = E?(1:minlength); end',1:4)
+  
 timeline = E1.time - tref;
 zline = -timeline*v(3); % km/s
 
@@ -820,8 +825,8 @@ philev = linspace(0,100*round(params(1)/100),11); % For plotting purposes
 
 xmax = params(1)*cos(params(7)) + params(2)*sin(params(8));
 ymax = -params(1)*sin(params(7)) + params(2)*cos(params(8));
-xvec = 2*linspace(-xmax,xmax,29); % km 
-yvec = 2*linspace(-xmax,xmax,31); % km
+xvec = 3*linspace(-xmax,xmax,59); % km 
+yvec = 3*linspace(-xmax,xmax,61); % km
 % define parallel length scale from electric field time series
 zvec = -timeline*vpar;
 %zvec = 2*linspace(-params(4),params(4),33); % km, z should be 0
@@ -859,7 +864,7 @@ Ez_data_best = [EZ1_best,EZ2_best,EZ3_best,EZ4_best];
 %
 colors = pic_colors('matlab');
 colors = mms_colors('1234');
-
+matlab_colors = pic_colors('matlab');
 % nrows = 2;
 % ncols = 1;
 % h = setup_subplots(nrows,ncols);
@@ -867,9 +872,9 @@ colors = mms_colors('1234');
 figure(100)
 nTimePanels = 3;
 nrows = 2;
-ncols = 2;
+ncols = 1;
 
-[h1,h2] = initialize_combined_plot(nTimePanels,nrows,ncols,0.3,'vertical');
+[h1,h2] = initialize_combined_plot(nTimePanels,nrows,ncols,0.6,'vertical');
 isub = 1;
 
 if 1 % timeseries of data
@@ -912,16 +917,23 @@ if 1 % timeseries of data
   hca.YLabel.String = 'E_{||} (mV/m)';
   irf_legend(hca,sprintf('e_{||} = [%4.2f,%4.2f,%4.2f]',lmn(icomp,1),lmn(icomp,2),lmn(icomp,3)),[0.02 0.98])
   hca.XGrid = 'on';
-  hca.YGrid = 'on';
+  hca.YGrid = 'on';  
+  irf_legend(hca,{'MMS1','MMS2','MMS3','MMS4'}',[0.98 0.02])
 end
 
+
 h1(1).Title.String = sprintf('id = %g, f highpass = %.0f',ieh,ffilt);
-irf_pl_mark(h1,tref,[0 0 0])
+%h_tref = irf_pl_mark(h1,tref,matlab_colors(4,:));
+%c_eval('h_tref(?).LineStyle = ''-.'';',1:numel(h_tref))
+hpl_z0 = irf_pl_mark(h1,E1(iz0).time,matlab_colors(7,:));
+c_eval('hpl_z0(?).LineStyle = ''-.'';',1:numel(hpl_z0))
 irf_zoom(h1,'x',tint_eh)
+legend([hpl_z0(1)],{'z = 0'})
 
 if 0 % original data, only when using synthetic data
   hca = h(isub); isub = isub + 1;
-  contour(hca,X(:,:,iz0),Y(:,:,iz0),PHI(:,:,iz0))
+  [Ccont,Hcont] = contour(hca,X(:,:,iz0),Y(:,:,iz0),PHI(:,:,iz0));
+  clabel(Ccont,Hcont);
   axis(hca,'equal')
   hca.XGrid = 'on';
   hca.YGrid = 'on';
@@ -938,30 +950,40 @@ if 1 % fit in perpendicular plane at z = 0
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hold(hca,'on')
-  c_eval('quiver(hca,r?(iz0,1),r?(iz0,2),EX?_best(iz0,:),EY?_best(iz0,:),''linewidth'',1,''color'',colors(?,:))',1:4)
+  % Observed field
+  c_eval('hq_data = quiver(hca,r?(iz0,1),r?(iz0,2),ex?(iz0,:),ey?(iz0,:),''linewidth'',2,''color'',colors(?,:));',1:4)
+  % Fit field
+  c_eval('hf_fit = quiver(hca,r?(iz0,1),r?(iz0,2),EX?_best(iz0,:),EY?_best(iz0,:),''linewidth'',1,''color'',colors(?,:));',1:4)
   c_eval('plot(hca,r?(iz0,1),r?(iz0,2),''o'',''color'',colors(?,:))',1:4)
-  hold(hca,'off')
-  hca.XLabel.String = 'perp 1 (km)';
-  hca.YLabel.String = 'perp 2 (km)';
+  hold(hca,'off')  
+  legend([hq_data,hf_fit],{'MMS','fit'},'location','best','box','on')
+  hca.XLabel.String = 'x, perp 1 (km)';
+  hca.YLabel.String = 'y, perp 2 (km)';
+  hca.XLabel.String = 'e_{perp,1} (km)';
+  hca.YLabel.String = 'e_{perp,2} (km)';
+  hca.Title.String = 'z = 0';
 end
-if 1 % isosurface in 3D space
+if 0 % isosurface in 3D space, view 1
   hca = h2(isub); isub = isub + 1;
-  hiso = patch(hca,isosurface(X,Y,Z,PHI_best));
+  surf_level = 0.5*params(end); % half of max
+  hiso = patch(hca,isosurface(X,Y,Z,PHI_best,surf_level));
   hiso.FaceAlpha = 0.2;
+  hiso.FaceColor = mms_colors('4');
   %if not(abs(params(2)) > 30 || abs(params(3)) > 30), axis(hca,'equal'); end
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hold(hca,'on')
   qscale = params(3)*2;
-  quiver3(hca,0,0,0,qscale*bvec(1),qscale*bvec(2),qscale*bvec(3),0,'linewidth',1,'color',[0 0 0])
+  hq_b = quiver3(hca,0,0,0,qscale*bvec(1),qscale*bvec(2),qscale*bvec(3),0,'linewidth',1,'color',[0 0 0]);
   %c_eval('quiver(hca,r?(iz0,1),r?(iz0,2),EX?_best(iz0,:),EY?_best(iz0,:),''linewidth'',1,''color'',colors(?,:))',1:4)
   %c_eval('plot(hca,r?(iz0,1),r?(iz0,2),''o'',''color'',colors(?,:))',1:4)
-  
+  legend([hq_b,hiso],{'B','phi = phi_0/2'},'location','best','box','off')
   hold(hca,'off')
   hca.XLabel.String = 'x, perp 1 (km)';
   hca.YLabel.String = 'y, perp 2 (km)';
   hca.ZLabel.String = 'z, par (km)';
-  %axis(hca,'equal')
+  axis(hca,'equal')
+  view(hca,[0 1 0])
 end
 if 1 % information
   hca = h2(isub); isub = isub + 1;
@@ -971,9 +993,9 @@ if 1 % information
     sprintf('dt = [%4.1f,%4.1f,%4.1f,%4.1f] ms',dt(1)*1e3,dt(2)*1e3,dt(3)*1e3,dt(4)*1e3),...
     sprintf('v(perp1,perp2,par) = %.0f x [%5.2f,%5.2f,%5.2f] km/s',norm(v),v(1)/norm(v),v(2)/norm(v),v(3)/norm(v)),...
     sprintf('pitchangle = %.0f deg ',pitchangle),...
-    sprintf('2l_{||} = L_{pp} = dt*v_{||} = [%4.1f,%4.1f,%4.1f,%4.1f] ms',abs(lpp(1)),abs(lpp(2)),abs(lpp(3)),abs(lpp(4))),...
+    sprintf('2l_{||} = L_{pp} = dt*v_{||} = [%4.1f,%4.1f,%4.1f,%4.1f] km',abs(lpp(1)),abs(lpp(2)),abs(lpp(3)),abs(lpp(4))),...
     }',...    
-    [0.0 0.999],'color',[0 0 0])
+    [-0.0 0.999],'color',[0 0 0])%,'horizontalalignment','left')
 %   irf_legend(hca,{...
 %     sprintf('phi0 = %.0f',params(1)),...
 %     sprintf('lperp1 = %.1f km',params(2)),...
@@ -991,15 +1013,37 @@ if 1 % information
     sprintf('azim = %.0f deg',params(7)*180/pi),...
     sprintf('polar = %.0f deg',params(8)*180/pi),...
     sprintf('phi0 = %.0f V ',params(9))}',...  
-    [0.0 0.00],'color',[0 0 0]);
+    [-0.0 0.00],'color',[0 0 0])%,'horizontalalignment','left');
   %hleg(1).VerticalAlignment = 'bottom';
+end
+if 0 % isosurface in 3D space, view 2
+  hca = h2(isub); isub = isub + 1;
+  hiso = patch(hca,isosurface(X,Y,Z,PHI_best));
+  hiso.FaceAlpha = 0.2;
+  hiso.FaceColor = mms_colors('4');
+  %if not(abs(params(2)) > 30 || abs(params(3)) > 30), axis(hca,'equal'); end
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hold(hca,'on')
+  qscale = params(3)*2;
+  hq_b = quiver3(hca,0,0,0,qscale*bvec(1),qscale*bvec(2),qscale*bvec(3),0,'linewidth',1,'color',[0 0 0]);
+  %c_eval('quiver(hca,r?(iz0,1),r?(iz0,2),EX?_best(iz0,:),EY?_best(iz0,:),''linewidth'',1,''color'',colors(?,:))',1:4)
+  %c_eval('plot(hca,r?(iz0,1),r?(iz0,2),''o'',''color'',colors(?,:))',1:4)
+  %legend([hq_b],{'B'},'location','best','box','off')
+  hold(hca,'off')
+  hca.XLabel.String = 'x, perp 1 (km)';
+  hca.YLabel.String = 'y, perp 2 (km)';
+  hca.ZLabel.String = 'z, par (km)';
+  axis(hca,'equal')
+  view(hca,[1 0 0])
 end
 
 h = findobj(gcf,'type','axes'); h = h(end:-1:1);
 fontsize = 12;
 c_eval('h(?).FontSize = fontsize;',1:numel(h))
 disp('Done.')
-
+cn.print(sprintf('3d_fit_ieh=%g_ffilt=%g',ieh,ffilt))
+end
 
 %% Apply to MMS data
 % We need to time shift the series and pick Eperp from the time where the

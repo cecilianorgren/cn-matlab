@@ -281,6 +281,7 @@ end
 
 %% Only vph new and old, for reviwers.
 colors = mms_colors('1234');
+matlab_colors = pic_colors('matlab');
 h = setup_subplots(1,1);
 isub = 1;
 
@@ -299,9 +300,14 @@ if 1 % vph for all ESWs, new and old, for comparison
   %hlines_old = plot(hca,tref_old,[ehprop.vel],'o');
   %c_eval('hlines(?).Color = colors(?,:);',ic)
   
-  hca.XLabel.String = 't_{ref} (s)';
+  hca.XLabel.String = sprintf('time since %s (s)',irf_time(tint_figure(1).utc,'utc>utc_HH:MM:SS.mmm'));
   hca.YLabel.String = 'v_{||} (km/s)';  
   legend(hca,{'new','old'},'location','northeast')
   hca.XLim = xlim;
-  irf_legend(hca,'average values',[0.9 0.68],[0 0 0])
+  %irf_legend(hca,'average values',[0.9 0.68],[0 0 0])
+  irf_legend(hca,sprintf('average: %.0f km/s',round(mean([manual.vpar])/100)*100),[0.9 0.68],'color',matlab_colors(1,:))
+  irf_legend(hca,sprintf('average: %.0f km/s',round(mean([ehprop.vel])/100)*100),[0.9 0.44],'color',matlab_colors(2,:))
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.Position(2) = 0.15;
 end

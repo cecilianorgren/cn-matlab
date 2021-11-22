@@ -54,7 +54,7 @@ c_eval('jedi_apar = ePitch?_flux_edi.palim([168.75 180]);',ic)
 c_eval('jedi_par = ePitch?_flux_edi.palim([0 11.25]);',ic)
 
 % Load f0 from external function
-iff = 20; %iff = 20; used in first submission to PoP
+iff = 23; %iff = 20; used in first submission to PoP
 [f0,params] = mms_20170706_135303.get_f0(iff);
 n = params.n; % m^(-3)
 ntot = sum(n);

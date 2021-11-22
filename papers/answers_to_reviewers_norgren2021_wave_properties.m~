@@ -153,10 +153,11 @@ for ieh = 1:numel(manual)
 end
 irf_log ON
 
-%% Widt-amplitude expression
+%% Width-amplitude expression
 % Turikov 1984
 LDe  = 1; % km
-delta = @(phi0,rs) sqrt((4*log(2)-1)./(sqrt(pi).*exp(phi0).*(1-erf(sqrt(phi0))./2./sqrt(phi0)-2.404/rs.^2)));
+%delta = @(phi0,rs) sqrt((4*log(2)-1)./(sqrt(pi).*exp(phi0).*(1-erf(sqrt(phi0))./2./sqrt(phi0)-2.404/rs.^2)));
+deltaz = @(phi0,rs) sqrt((4*log(2)-1)./(sqrt(pi).*exp(phi0).*(1-erf(sqrt(phi0))./2./sqrt(phi0)-2.404/rs.^2)));
 
 % Plot ESW properties
 
@@ -280,6 +281,7 @@ end
 
 %% Only vph new and old, for reviwers.
 colors = mms_colors('1234');
+matlab_colors = pic_colors('matlab');
 h = setup_subplots(1,1);
 isub = 1;
 
@@ -298,9 +300,9 @@ if 1 % vph for all ESWs, new and old, for comparison
   %hlines_old = plot(hca,tref_old,[ehprop.vel],'o');
   %c_eval('hlines(?).Color = colors(?,:);',ic)
   
-  hca.XLabel.String = 't_{ref} (s)';
+  hca.XLabel.String = sprintf('time since %s (s)',irf_time(tint_figure(1).utc,'utc>utc_HH:MM:SS.mmm'));
   hca.YLabel.String = 'v_{||} (km/s)';  
   legend(hca,{'new','old'},'location','northeast')
   hca.XLim = xlim;
-  irf_legend(hca,'average values',[0.9 0.68],[0 0 0])
+  irf_legend(hca,'average ',[0.9 0.68],[0 0 0])
 end

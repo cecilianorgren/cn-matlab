@@ -316,10 +316,14 @@ lx = 14*1e3;
 ly = 11*1e3;
 lz = 3*1e3;
 
+lx = 7.4e3;
+ly = 12.6e3;
+lz = 4.3e3;
 
-phi0 = 300;
+
+phi0 = 237;
 B0 = 20e-9;
-syms x y z
+syms x y z phi rho E
 R = [x,y,z];
 
 r = sqrt(x^2 + y^2); % r = r/rs
@@ -334,15 +338,16 @@ phi_par = phi0.*exp(-0.5*(z./lz).^2);
 
 % Total potential profile
 phi = phi_par*J0; % Chen 2002
-%phi = phi_par*exp(-0.5*(x./lx).^2)*exp(-0.5*(y./ly).^2);  % Gaussian
+phi = phi_par*exp(-0.5*(x./lx).^2)*exp(-0.5*(y./ly).^2);  % Gaussian
 mf_phi = matlabFunction(phi);
 
+
+% Electric field
+E = -gradient(phi,R);
 
 rho = divergence(E,R)*units.mu0;
 mf_rho = matlabFunction(rho,'vars',R);
 
-% Electric field
-E = -gradient(phi,R);
 
 mf_Ex = matlabFunction(E(1));
 mf_Ey = matlabFunction(E(2));
@@ -423,7 +428,7 @@ if 1 % r
   hca = h(isub); isub = isub + 1;
   plot(hca,t,r_sol*1e-3,t,r_center*1e-3)
   hca.YLim(1) = 0;
-  hca.YLabel.String = 'r/l_r';
+  hca.YLabel.String = 'r (km)';
 end
 if 1 % U = Ek + Ep
   hca = h(isub); isub = isub + 1;
@@ -482,4 +487,3 @@ function  x_res = eom(t,x_vect,inpEx,inpEy,inpEz,inpBx,inpBy,inpBz,m,q)
   x_res(6) = (q/m)*(Ez + vx_*By - vy_*Bx);                                              
 
 end      
-      
