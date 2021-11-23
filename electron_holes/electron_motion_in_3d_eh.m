@@ -18,8 +18,8 @@ phi0 = 237;  % V
 B0 = 20e-9;  % T
 
 % Average properties and assumed perpendicular lengths
-lx = 10.5e3;  % m
-ly = 10.5e3; % m
+lx = 10.5e3/sqrt(2);  % m
+ly = 10.5e3/sqrt(2); % m
 lr = sqrt(lx.^2 + ly.^2); % m
 lz = 3.5e3;  % m
 phi0 = 237;  % V
@@ -27,9 +27,9 @@ B0 = 20e-9;  % T
 
 % Properties of electrons
 T0 = [100 200 400 700]; % eV, perpendicular energy
-T0 = [200]; % eV, perpendicular energy
+T0 = 200;[50 100 200]; % eV, perpendicular energy
 vt = sqrt(T0*units.eV*2/units.me); % m/s
-Ek0 = [10]; % eV, parallel energy, defines U
+Ek0 = 1;[10 50 100 200]; % eV, parallel energy, defines U
 vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 
 % for visibility, have different groups start in different positions
@@ -40,9 +40,9 @@ vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 % starting points
 x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
-x0 = [0]*lx; % m
-y0 = [1.5]*ly; % m
-z0 = 30e3; % m
+x0 = [0:0.2:2]*lx; % m
+y0 = [0]*ly; % m
+z0 = 15e3; % m
 [VT,VK,X0,Y0] = ndgrid(vt,vk,x0,y0); 
 
 % Symbolic expression of potential structure and electric fields
@@ -89,16 +89,16 @@ mf_Bz = matlabFunction(B(3),'vars',R);
 
 % Set up grid
 xmax = 3*lx;
-ymax = 3*ymax;
-zmax = 3*max([xmax ymax]);
+ymax = 3*xmax;
+zmax = 1*max([xmax ymax]);
 xvec = linspace(-xmax,xmax,11);
 yvec = linspace(-ymax,ymax,11);
-zvec = linspace(-zmax,zmax,21);
+zvec = linspace(-zmax,zmax,1001);
 [X,Y,Z] = meshgrid(xvec,yvec,zvec);
 %xvec2 = linspace(-xmax,xmax,101);
 
 % Prepare for integration
-inpEx = @(x,y,z) mf_Ex(x,y,z);
+inpEx = @(x,y,z) mf_Ex(x,y,z);egr
 inpEy = @(x,y,z) mf_Ey(x,y,z);
 inpEz = @(x,y,z) mf_Ez(x,y,z);
 inpBx = @(x,y,z) mf_Bx(x,y,z);
@@ -106,7 +106,7 @@ inpBy = @(x,y,z) mf_By(x,y,z);
 inpBz = @(x,y,z) mf_Bz(x,y,z);
 
 EoM = @(t,xyz) eom(t,xyz,inpEx,inpEy,inpEz,inpBx,inpBy,inpBz,m,q); 
-boxedge = [-31 31]*1e3; % terminate integration when electron exits this region in z.
+boxedge = 1.0001*[-z0 z0]; % terminate integration when electron exits this region in z.
 options = odeset('AbsTol',1e-7,'AbsTol',1e-9,'Events',@(tt,xx) myEventBoxEdge(tt,xx,boxedge));
 %options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,obj.xi(([1 end]))));
 %options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,[190 210]));
@@ -116,8 +116,8 @@ options = odeset('AbsTol',1e-7,'AbsTol',1e-9,'Events',@(tt,xx) myEventBoxEdge(tt
 doPlot = 1;
 if doPlot
   colors = pic_colors('matlab');
-  nrows = 2;
-  ncols = 2;
+  nrows = 5;
+  ncols = 1;
   npanels = nrows*ncols;
   h = setup_subplots(nrows,ncols);
   c_eval('plot(h(?),nan,nan);',1:npanels)
@@ -132,7 +132,7 @@ for ie = 1:numel(X0)
   % Initial conditions
   % Start gyromotion radially outwards, such that R0 defines the center of
   % the gyromotion
-  az0 = atan2(Y0(ie),X0(ie));
+  AZ0 = atan2(Y0(ie),X0(ie));
   vx0 = VT(ie)*cos(AZ0);
   vy0 = VT(ie)*sin(AZ0);
   x_init = [X0(ie),Y0(ie),z0,vx0,vy0,-VK(ie)]; % m, m/s
@@ -178,6 +178,9 @@ for ie = 1:numel(X0)
   S(ie).Ep = Ep;
   S(ie).Ek = Ek;
   S(ie).U = Ek + Ep;
+  S(ie).Ex = mf_Ex(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+  S(ie).Ey = mf_Ey(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+  S(ie).Ez = mf_Ez(x_sol(:,1),x_sol(:,2),x_sol(:,3));
   
   S(ie).tstart = t(1);
   S(ie).tstop = t(end);  
@@ -210,7 +213,7 @@ for ie = 1:numel(X0)
       hca.XLabel.String = 'x (km)';
       hca.YLabel.String = 'y (km)';
     end
-    if 1 % trajectory in x,y,z plane
+    if 0 % trajectory in x,y,z plane
       hca = h(isub); isub = isub + 1;   
       plot3(hca,x_sol(:,1)*1e-3,x_sol(:,2)*1e-3,x_sol(:,3)*1e-3)
       hca.XLabel.String = 'x (km)';
@@ -224,6 +227,34 @@ for ie = 1:numel(X0)
       hca.YLabel.String = 'z_{stop} (km)';
     end
       
+    if 1 % Ezdz
+      hca = h(isub); isub = isub + 1;   
+      Ezdz = cumtrapz(S(ie).z,S(ie).Ez);
+      plot(hca,S(ie).z*1e-3,Ezdz)
+      hca.XLabel.String = 'z (km)';
+      hca.YLabel.String = 'Ezdz (V)';
+    end
+    if 1 % Exdx+Eydy
+      hca = h(isub); isub = isub + 1;   
+      Exdx = cumtrapz(S(ie).x,S(ie).Ex);
+      Eydy = cumtrapz(S(ie).y,S(ie).Ey);
+      %Ezdz = cumtrapz(S(ie).z,S(ie).Ez);
+      plot(hca,S(ie).z*1e-3,Exdx+Eydy)
+      hca.XLabel.String = 'z (km)';
+      hca.YLabel.String = 'Exdx+Eydy (V)';
+    end
+    if 1 % Exdx+Eydy vs Ezdz
+      hca = h(isub); isub = isub + 1;   
+      Exdx = cumtrapz(S(ie).x,S(ie).Ex);
+      Eydy = cumtrapz(S(ie).y,S(ie).Ey);
+      Ezdz = cumtrapz(S(ie).z,S(ie).Ez);
+      %Ezdz = cumtrapz(S(ie).z,S(ie).Ez);
+      plot(hca,Exdx+Eydy,Ezdz)
+      hca.YLabel.String = 'Ezdz (V)';
+      hca.XLabel.String = 'Exdx+Eydy (V)';
+      axis(hca,'equal')
+    end
+    
     
     if 0 % dEkpar(T0,Ekpar0)
       hca = h(isub); isub = isub + 1;   
@@ -269,7 +300,7 @@ for ie = 1:numel(X0)
       hca.YLabel.String = 'v_{\perp}(t_{stop})-v_{\perp}(t_{start}) (km/s)';
     end
     
-    if 1 %  pitch angle
+    if 0 %  pitch angle
       hca = h(isub); isub = isub + 1;         
       plot(hca,S(ie).z,abs(S(ie).pitchangle_abs))
       hca.XLabel.String = 'z (km)';
