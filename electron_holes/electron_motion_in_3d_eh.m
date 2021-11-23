@@ -9,6 +9,9 @@ units = irf_units;
 m = units.me;
 q =- units.e;
 
+cmap = colormap('jet');
+
+
 % From data fit
 lx = 7.4e3;  % m
 ly = 12.6e3; % m
@@ -20,16 +23,18 @@ B0 = 20e-9;  % T
 % Average properties and assumed perpendicular lengths
 lx = 10.5e3/sqrt(2);  % m
 ly = 10.5e3/sqrt(2); % m
+lx = 10.5e3/sqrt(2);  % m
+ly = 10.5e3/sqrt(2); % m
 lr = sqrt(lx.^2 + ly.^2); % m
 lz = 3.5e3;  % m
-phi0 = 237;  % V
+phi0 = 240;  % V
 B0 = 20e-9;  % T
 
 % Properties of electrons
 T0 = [100 200 400 700]; % eV, perpendicular energy
-T0 = 200;[50 100 200]; % eV, perpendicular energy
+T0 = [1 10 20 50 100 200]; % eV, perpendicular energy
 vt = sqrt(T0*units.eV*2/units.me); % m/s
-Ek0 = 1;[10 50 100 200]; % eV, parallel energy, defines U
+Ek0 = [10 20 50 100]; % eV, parallel energy, defines U
 vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 
 % for visibility, have different groups start in different positions
@@ -40,10 +45,12 @@ vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 % starting points
 x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
-x0 = [0:0.2:2]*lx; % m
+x0 = [0 0.25 0.5 0.75 1.00 1.25 1.50]*lx; % m
 y0 = [0]*ly; % m
 z0 = 15e3; % m
 [VT,VK,X0,Y0] = ndgrid(vt,vk,x0,y0); 
+
+colors = interp1(linspace(1,numel(x0),size(cmap,1)),cmap,1:numel(x0));
 
 % Symbolic expression of potential structure and electric fields
 syms x y z phi rho E
@@ -98,7 +105,7 @@ zvec = linspace(-zmax,zmax,1001);
 %xvec2 = linspace(-xmax,xmax,101);
 
 % Prepare for integration
-inpEx = @(x,y,z) mf_Ex(x,y,z);egr
+inpEx = @(x,y,z) mf_Ex(x,y,z);
 inpEy = @(x,y,z) mf_Ey(x,y,z);
 inpEz = @(x,y,z) mf_Ez(x,y,z);
 inpBx = @(x,y,z) mf_Bx(x,y,z);
@@ -116,8 +123,8 @@ options = odeset('AbsTol',1e-7,'AbsTol',1e-9,'Events',@(tt,xx) myEventBoxEdge(tt
 doPlot = 1;
 if doPlot
   colors = pic_colors('matlab');
-  nrows = 5;
-  ncols = 1;
+  nrows = 3;
+  ncols = 2;
   npanels = nrows*ncols;
   h = setup_subplots(nrows,ncols);
   c_eval('plot(h(?),nan,nan);',1:npanels)
@@ -133,6 +140,7 @@ for ie = 1:numel(X0)
   % Start gyromotion radially outwards, such that R0 defines the center of
   % the gyromotion
   AZ0 = atan2(Y0(ie),X0(ie));
+  %AZ0 = pi;
   vx0 = VT(ie)*cos(AZ0);
   vy0 = VT(ie)*sin(AZ0);
   x_init = [X0(ie),Y0(ie),z0,vx0,vy0,-VK(ie)]; % m, m/s
@@ -169,8 +177,7 @@ for ie = 1:numel(X0)
   S(ie).vz = x_sol(:,6);
   S(ie).vperp = sqrt(x_sol(:,4).^2 + x_sol(:,5).^2);
   S(ie).vpar = x_sol(:,6);
-  S(ie).pitchangle = atand(S(ie).vperp./S(ie).vpar);  
-  S(ie).pitchangle_abs = atand(S(ie).vperp./abs(S(ie).vpar));  
+  S(ie).pitchangle = atan2d(S(ie).vperp,S(ie).vpar);    
   S(ie).r = r_sol;
   S(ie).r_gc = r_center;
   S(ie).Ekperp = units.me*S(ie).vperp.^2/2/units.eV;
@@ -190,8 +197,8 @@ for ie = 1:numel(X0)
   S(ie).Ekpar_stop = S(ie).Ekpar(end);
   S(ie).Ekperp_start = S(ie).Ekperp(1);
   S(ie).Ekperp_stop = S(ie).Ekperp(end);
-  S(ie).pitchangle_abs_start = S(ie).pitchangle_abs(1);
-  S(ie).pitchangle_abs_stop = S(ie).pitchangle_abs(end);
+  S(ie).pitchangle_start = S(ie).pitchangle(1);
+  S(ie).pitchangle_stop = S(ie).pitchangle(end);
   
   nRef = numel(find([S.zstop]>0));
   
@@ -212,6 +219,7 @@ for ie = 1:numel(X0)
       plot(hca,x_sol(:,1)*1e-3,x_sol(:,2)*1e-3)
       hca.XLabel.String = 'x (km)';
       hca.YLabel.String = 'y (km)';
+      axis(hca,'equal')
     end
     if 0 % trajectory in x,y,z plane
       hca = h(isub); isub = isub + 1;   
@@ -300,11 +308,11 @@ for ie = 1:numel(X0)
       hca.YLabel.String = 'v_{\perp}(t_{stop})-v_{\perp}(t_{start}) (km/s)';
     end
     
-    if 0 %  pitch angle
+    if 1 % pitch angle
       hca = h(isub); isub = isub + 1;         
-      plot(hca,S(ie).z,abs(S(ie).pitchangle_abs))
+      plot(hca,S(ie).z*1e-3,abs(S(ie).pitchangle))
       hca.XLabel.String = 'z (km)';
-      hca.YLabel.String = '|\theta| (deg)';
+      hca.YLabel.String = '\theta (deg)';
     end
     if 0 % delta pitch angle
       hca = h(isub); isub = isub + 1;   
@@ -404,6 +412,7 @@ if doPlot*0
 end
 
 %% Many test particles, based on observed distribution
+
 %% Electron test particles
 % To see how the electrons move through the structure, I pass them through
 % a defined potential.

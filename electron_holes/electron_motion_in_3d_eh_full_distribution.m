@@ -16,8 +16,8 @@ tint_figure = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.620Z');
 
 % Set up database
 localuser = datastore('local','user');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
-%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 % Load data
@@ -41,7 +41,7 @@ ePerp2 = ePara.cross(ePerp1).norm;
 
 orient = [ePara.data; ePerp1.data; ePerp2.data];
 lowerelim = 40;
-nMC = 100e;
+nMC = 100e0;
 
 ePDistCart = eDist.elim([40 inf]).rebin('cart',{vg,vg,vg},orient);
 %% Electron test particles
@@ -86,8 +86,8 @@ vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 % starting points
 x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
-x0 = [0]*lx; % m
-y0 = [1.5]*ly; % m
+x0 = [1]*lx; % m
+y0 = [0]*ly; % m
 z0 = 30e3; % m
 [VT,VK,X0,Y0] = ndgrid(vt,vk,x0,y0); 
 
@@ -178,9 +178,9 @@ for ie = 1:numel(X0)
   % Initial conditions
   % Start gyromotion radially outwards, such that R0 defines the center of
   % the gyromotion
-  az0 = atan2(Y0(ie),X0(ie));
-  vx0 = VT(ie)*cos(AZ0);
-  vy0 = VT(ie)*sin(AZ0);
+  %az0 = atan2(Y0(ie),X0(ie));
+  %vx0 = VT(ie)*cos(AZ0);
+  %vy0 = VT(ie)*sin(AZ0);
   x_init = [X0(ie),Y0(ie),z0,vx0,vy0,-VK(ie)]; % m, m/s
   x_init;
   T = [0 0.2];
@@ -215,8 +215,7 @@ for ie = 1:numel(X0)
   S(ie).vz = x_sol(:,6);
   S(ie).vperp = sqrt(x_sol(:,4).^2 + x_sol(:,5).^2);
   S(ie).vpar = x_sol(:,6);
-  S(ie).pitchangle = atand(S(ie).vperp./S(ie).vpar);  
-  S(ie).pitchangle_abs = atand(S(ie).vperp./abs(S(ie).vpar));  
+  S(ie).pitchangle = atan2d(S(ie).vperp,S(ie).vpar);    
   S(ie).r = r_sol;
   S(ie).r_gc = r_center;
   S(ie).Ekperp = units.me*S(ie).vperp.^2/2/units.eV;
@@ -224,6 +223,9 @@ for ie = 1:numel(X0)
   S(ie).Ep = Ep;
   S(ie).Ek = Ek;
   S(ie).U = Ek + Ep;
+  S(ie).Ex = mf_Ex(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+  S(ie).Ey = mf_Ey(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+  S(ie).Ez = mf_Ez(x_sol(:,1),x_sol(:,2),x_sol(:,3));
   
   S(ie).tstart = t(1);
   S(ie).tstop = t(end);  
@@ -233,8 +235,8 @@ for ie = 1:numel(X0)
   S(ie).Ekpar_stop = S(ie).Ekpar(end);
   S(ie).Ekperp_start = S(ie).Ekperp(1);
   S(ie).Ekperp_stop = S(ie).Ekperp(end);
-  S(ie).pitchangle_abs_start = S(ie).pitchangle_abs(1);
-  S(ie).pitchangle_abs_stop = S(ie).pitchangle_abs(end);
+  S(ie).pitchangle_start = S(ie).pitchangle(1);
+  S(ie).pitchangle_stop = S(ie).pitchangle(end);
   
   nRef = numel(find([S.zstop]>0));
   

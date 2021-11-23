@@ -1,7 +1,7 @@
 %% Set up database
 localuser = datastore('local','user');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
-%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
+mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Time interval of event
