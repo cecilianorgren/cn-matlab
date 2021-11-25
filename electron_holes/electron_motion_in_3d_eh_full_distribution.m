@@ -113,7 +113,7 @@ particles = eDist.macroparticles('ntot',1,'skipzero','scpot',scpot);
 % starting points
 x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
-x0 = [0.2]*lx; % m
+x0 = [0.0]*lx; % m
 y0 = [0]*ly; % m
 z0 = 30e3; % m
 %[VX0,VY0,VZ0,X0,Y0] = ndgrid(vt,vk,x0,y0); 
@@ -409,6 +409,8 @@ for ie = 1:numel(X0)
       hca.YLabel.String = '\Delta \theta (deg)';
       if ie == 1
         plot(hca,-v_gyrores*[1 1],[-30 30],'k','linewidth',1)
+        plot(hca,-2*v_gyrores*[1 1],[-30 30],'k','linewidth',1)
+        plot(hca,-3*v_gyrores*[1 1],[-30 30],'k','linewidth',1)
       end
       
     end
