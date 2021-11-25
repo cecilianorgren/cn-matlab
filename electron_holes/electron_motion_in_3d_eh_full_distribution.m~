@@ -76,11 +76,9 @@ lz = 3.5e3;  % m
 phi0 = 240;  % V
 B0 = 20e-9;  % T
 
-wce = units.e*B0/units.me;
-fce = wce/2/pi;
+wce = units.e*B/units.me;
+f = wce/2/pi;
 
-d_pass_est = 2*lz*1e-3; % km
-v_gyrores = d_pass_est*1e-3*fce; % km/s
 
 % Get particle velocities from distribution
 particles = eDist(1).macroparticles('ntot',1,'skipzero','scpot',scpot);
@@ -274,8 +272,6 @@ for ie = 1:numel(X0)
   S(ie).tstop = t(end);  
   S(ie).zstart = x_sol(1,3);
   S(ie).zstop = x_sol(end,3);  
-  S(ie).vzstart = x_sol(1,6);
-  S(ie).vzstop = x_sol(end,6);  
   S(ie).Ekpar_start = S(ie).Ekpar(1);
   S(ie).Ekpar_stop = S(ie).Ekpar(end);
   S(ie).Ekperp_start = S(ie).Ekperp(1);
@@ -397,19 +393,18 @@ for ie = 1:numel(X0)
       hca.YLabel.String = '\theta stop (deg)';
     end
     
-    if 1 % delta pitchangle vs gyroresonance
+    if 1 % gyroresonance
       hca = h(isub); isub = isub + 1;  
 %       if ie == 1
 %         plot(hca,[90 180],[90 180],'k-')
-%       end     
-     % v_rel = S(ie).vz(1)*1e-3; % km/s            
+%       end
+     
+      v_rel = S(ie).vz(1);
+      d_pass_est = 2*lz;
       
-      plot(hca,S(ie).vzstart*1e-6,S(ie).pitchangle(end)-S(ie).pitchangle(1),'.')
-      hca.XLabel.String = 'v-v_{ph} (10^3 km/s)';
-      hca.YLabel.String = '\Delta \theta (deg)';
-      if ie == 1
-        plot(hca,-v_gyrores*[1 1],[-30 30],'k','linewidth',1)
-      end
+      plot(hca,v_rel,S(ie).pitchangle(end),'.')
+      hca.XLabel.String = '\theta start(deg)';
+      hca.YLabel.String = '\theta stop (deg)';
       
     end
     
