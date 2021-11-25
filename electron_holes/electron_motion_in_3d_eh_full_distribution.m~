@@ -64,13 +64,11 @@ ly = 12.6e3; % m
 lr = sqrt(lx.^2 + ly.^2); % m
 lz = 4.3e3;  % m
 phi0 = 237;  % V
-B0 = 30e-9;  % T
+B0 = 20e-9;  % T
 
 % Average properties and assumed perpendicular lengths
-lx = 12.5e3;  % m
-ly = 12.5e3; % m
-ly = 7.4e3;  % m
-lx = 12.6e3; % m
+lx = 10.5e3;  % m
+ly = 10.5e3; % m
 lr = sqrt(lx.^2 + ly.^2); % m
 lz = 3.5e3;  % m
 phi0 = 237;  % V
@@ -107,7 +105,7 @@ particles = eDist.macroparticles('ntot',1,'skipzero','scpot',scpot);
 % starting points
 x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
-x0 = [0.2]*lx; % m
+x0 = [0.5]*lx; % m
 y0 = [0]*ly; % m
 z0 = 30e3; % m
 %[VX0,VY0,VZ0,X0,Y0] = ndgrid(vt,vk,x0,y0); 
@@ -135,7 +133,6 @@ phi_perp = exp(-0.5*(x./lx).^2)*exp(-0.5*(y./ly).^2); % Gaussian
 
 % Total potential profile
 phi = phi_par*phi_perp;
-sphi = symfun(phi,[x,y,z]);
 mf_phi = matlabFunction(phi);
 
 % Electric field
@@ -206,7 +203,7 @@ for ie = 1:numel(X0)
   %az0 = atan2(Y0(ie),X0(ie));
   %vx0 = VT(ie)*cos(AZ0);
   %vy0 = VT(ie)*sin(AZ0);
-  x_init = [X0(ie),Y0(ie),z0,VX0(ie),VY0(ie),VZ0(ie)]; % m, m/s
+  x_init = [X0(ie),Y0(ie),z0,VX0(ie),VX0(ie),VZ0(ie)]; % m, m/s
   x_init;
   T = [0 0.2];
 
@@ -216,12 +213,8 @@ for ie = 1:numel(X0)
   % Calculate gyrocenter of particle
   r_sol = sqrt(x_sol(:,1).^2 + x_sol(:,2).^2);
   [PKS,LOCS]= findpeaks(r_sol); 
-  if numel(LOCS)>1
-    mean_peak_distance = diff(LOCS);
-    r_center = movmean(r_sol,fix(mean(mean_peak_distance)));
-  else
-    r_center = r_sol*NaN;    
-  end
+  mean_peak_distance = diff(LOCS);
+  r_center = movmean(r_sol,fix(mean(mean_peak_distance)));
 
   % Calculate total energy U = Ek + Ep
   Ep = -units.e*mf_phi(x_sol(:,1),x_sol(:,2),x_sol(:,3));
@@ -269,37 +262,30 @@ for ie = 1:numel(X0)
   
   nRef = numel(find([S.zstop]>0));
   
-  if doPlot %&& S(ie).z(end)>20e3 %S(ie).z(end)<-20e3
-    
+  if doPlot
     [it0,iv0,ix0,iy0] = ind2sub(size(X0),ie);
     % Work done on particles
     Exdx = cumtrapz(S(ie).x,S(ie).Ex);
     Eydy = cumtrapz(S(ie).y,S(ie).Ey);
     Ezdz = cumtrapz(S(ie).z,S(ie).Ez);
     
-    phi1D = mf_phi(S(ie).x(1),S(ie).y(1),S(ie).z);
-    
     isub = 1;
     
     if 1 % (z,vz)
       hca = h(isub); isub = isub + 1;   
-      plot(hca,x_sol(:,3)*1e-3,x_sol(:,6)*1e-3*1e-3)
+      plot(hca,x_sol(:,3)*1e-3,x_sol(:,6)*1e-3)
       hca.XLabel.String = 'z (km)';
-      hca.YLabel.String = 'v_z-v_{ph} (10^3 km/s)';
+      hca.YLabel.String = 'v_z (km/s)';
       hca.Title.String = sprintf('reflected = %g/%g',nRef,ie);
-      hca.XLim = [-30 30];
-      hca.YLim = [-25 10];
     end
     
-    if 0 % trajectory in x,y plane
+    if 1 % trajectory in x,y plane
       hca = h(isub); isub = isub + 1;   
       plot(hca,x_sol(:,1)*1e-3,x_sol(:,2)*1e-3)
       hca.XLabel.String = 'x (km)';
       hca.YLabel.String = 'y (km)';
-      hca.XLim = [-35 35];
-      hca.YLim = [-35 35];
     end
-    if 1 % trajectory in x,y,z plane
+    if 0 % trajectory in x,y,z plane
       hca = h(isub); isub = isub + 1;   
       plot3(hca,x_sol(:,1)*1e-3,x_sol(:,2)*1e-3,x_sol(:,3)*1e-3)
       hca.XLabel.String = 'x (km)';
@@ -360,18 +346,15 @@ for ie = 1:numel(X0)
     
     if 1 %  pitch angle
       hca = h(isub); isub = isub + 1;         
-      plot(hca,S(ie).z*1e-3,abs(S(ie).pitchangle))
+      plot(hca,S(ie).z,abs(S(ie).pitchangle))
       hca.XLabel.String = 'z (km)';
       hca.YLabel.String = '|\theta| (deg)';
-      hca.XLim = [-30 30];
-      hca.YLim = [0 180];
     end
-    if 1 %  Ezdz vs Exdx+Eydy
+    if 1 %  Exdx+Eydy vs Ezdz
       hca = h(isub); isub = isub + 1;            
       plot(hca,Exdx+Eydy,Ezdz)
       hca.XLabel.String = 'Exdx+Eydy (V)';
       hca.YLabel.String = 'Ezdz (V)';
-      axis(hca,'equal')
     end
     if 0 %  Ezdz
       hca = h(isub); isub = isub + 1;            
@@ -381,19 +364,10 @@ for ie = 1:numel(X0)
     end
     if 0 %  Exdx
       hca = h(isub); isub = isub + 1;            
-      plot(hca,S(ie).z*1e-3,Exdx+Eydy)
+      plot(hca,S(ie).z,Exdx+Eydy)
       hca.XLabel.String = 'z (km)';
       hca.YLabel.String = 'Exdx + Eydy (V)';
     end
-    if 0 %  Ezdz-phi(z) , deviation from 1-D trajectory
-      hca = h(isub); isub = isub + 1;            
-      plot(hca,S(ie).z*1e-3,Ezdz+phi1D)
-      hca.XLabel.String = 'z (km)';
-      hca.YLabel.String = 'Ezdz-phi(x0,y0,z) (V)';
-      hca.XLim = [-30 30];
-      hca.YLim = [-250 250];
-    end
-    
     if 0 % delta pitch angle
       hca = h(isub); isub = isub + 1;   
       plot(hca,S(ie).T0,S(ie).pitchangle(end)-S(ie).pitchangle(1),'.')
