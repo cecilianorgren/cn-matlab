@@ -32,10 +32,10 @@ eint = [000 40000];
 vint = [-Inf Inf];
 vg = (-30:1:30)*1e3;
 
-c_eval('eDist = ePDist?.tlim(tint_figure(1)+[-0.015 +0.015]);',ic)
+c_eval('eDist = ePDist?.tlim(tint_figure(1)++0.03+2*[-0.015 +0.015]);',ic)
            
 scpot = scPot1.resample(eDist);
-ePara = dmpaB1.resample(eDist).norm;
+ePara = dmpaB1.resample(eDist(1)).norm;
 ePerp1 = ePara.cross(irf.ts_vec_xyz(ePara.time,repmat([1 0 0],ePara.length,1))).norm;
 ePerp2 = ePara.cross(ePerp1).norm;
 %lmn = [ePara.data; ePerp1.data; ePerp2.data];
