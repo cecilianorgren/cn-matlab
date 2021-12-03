@@ -27,7 +27,7 @@ lowerelim = scpot*0 + 00;
 tic; ef1D = eDist_nobg1.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
 
 
-vph = -9000e3;
+vph = -8500e3;
 c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
 
 % Prepare flux in closest FPI energy channel.
@@ -45,7 +45,7 @@ if 0 % Make the data stepfunction-like, so that it shows the accumulation time
   c_eval('ePitch?_flux_fpi2_apar500 = ePitch?_flux_fpi2.elim(500).palim(180);',1:4);  
   % Make the data stepfunction-like, so that it shows the accumulation time
   dt = 0.015;
-  for iic = 1:4        
+  for iic = 1:4
     c_eval('pitch_tmp = ePitch?_flux_edi_apar;',iic)
     newtime = [pitch_tmp.time+-dt pitch_tmp.time+dt];
     [newtime,sortind] = newtime.sort;
@@ -1699,19 +1699,21 @@ tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if sh
 tint_zoom = phi1.time([1 end]);
 
 % load eh data
-data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
-obs_eh_properties = data_tmp.EH_properties;
-obs_lpp = obs_eh_properties.Lpp; % peak to peak length
-obs_potential = obs_eh_properties.potential;
-obs_vtrap = sqrt(2*units.e*obs_potential/units.me)*1e-3; % km/s
-obs_potential_max = obs_eh_properties.max_potential;
-obs_velocity = obs_eh_properties.vel;
-obs_neh = numel(obs_velocity);
-c_eval('obs_t0_epoch_mms? = obs_eh_properties.time_mms?;')
-c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
-c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
-c_eval('obs_vtrap? = irf.ts_scalar(obs_t0_epoch_mms?,obs_vtrap(:,?));')
-c_eval('obs_vph?.data(isnan(obs_potential(:,?))) = NaN;')
+manual = edi_event_manual_dt;
+
+% data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
+% obs_eh_properties = data_tmp.EH_properties;
+% obs_lpp = obs_eh_properties.Lpp; % peak to peak length
+% obs_potential = obs_eh_properties.potential;
+% obs_vtrap = sqrt(2*units.e*obs_potential/units.me)*1e-3; % km/s
+% obs_potential_max = obs_eh_properties.max_potential;
+% obs_velocity = obs_eh_properties.vel;
+% obs_neh = numel(obs_velocity);
+% c_eval('obs_t0_epoch_mms? = obs_eh_properties.time_mms?;')
+% c_eval('obs_phi? = irf.ts_scalar(obs_t0_epoch_mms?,obs_potential(:,?));')
+% c_eval('obs_vph? = irf.ts_scalar(obs_t0_epoch_mms?,obs_velocity);')
+% c_eval('obs_vtrap? = irf.ts_scalar(obs_t0_epoch_mms?,obs_vtrap(:,?));')
+% c_eval('obs_vph?.data(isnan(obs_potential(:,?))) = NaN;')
 
 
 % common time shifts
