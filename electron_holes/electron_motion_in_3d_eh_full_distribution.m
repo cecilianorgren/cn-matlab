@@ -83,7 +83,8 @@ d_pass_est = 2*lz*1e-3; % km
 v_gyrores = d_pass_est*1e-3*fce; % km/s
 
 % Get particle velocities from distribution
-particles = eDist(1).macroparticles('ntot',5e3,'skipzero','scpot',scpot);
+particles = eDist(1).macroparticles('ntot',2e3,'skipzero',1,'scpot',scpot);
+% Rotate
 vx = [tocolumn(particles.vx) tocolumn(particles.vy) tocolumn(particles.vz)]*orient(1,:)'*1e3; % m/s
 vy = [tocolumn(particles.vx) tocolumn(particles.vy) tocolumn(particles.vz)]*orient(2,:)'*1e3; % m/s
 vz = [tocolumn(particles.vx) tocolumn(particles.vy) tocolumn(particles.vz)]*orient(3,:)'*1e3; % m/s
@@ -114,7 +115,7 @@ vph = -8500e3; % m/s
 % starting points
 x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
-x0 = [0:0.25:1.5]*lx; % m
+x0 = [0:0.25:1]*lx; % m
 y0 = [0]*ly; % m
 z0 = 30e3; % m
 %[VX0,VY0,VZ0,X0,Y0] = ndgrid(vt,vk,x0,y0); 
@@ -189,6 +190,7 @@ inpBz = @(x,y,z) mf_Bz(x,y,z);
 
 EoM = @(t,xyz) eom(t,xyz,inpEx,inpEy,inpEz,inpBx,inpBy,inpBz,m,q); 
 boxedge = [-31 31]*1e3; % terminate integration when electron exits this region in z.
+
 options = odeset('AbsTol',1e-7,'AbsTol',1e-9,'Events',@(tt,xx) myEventBoxEdge(tt,xx,boxedge));
 T = [0 0.3];
 %options = odeset('Events',@exitBox,varargin{:},'Events', @(tt,xx) myEventBoxEdge(tt,xx,obj.xi(([1 end]))));
@@ -199,7 +201,7 @@ T = [0 0.3];
 doPlot = 0;
 if doPlot
   colors = pic_colors('matlab');
-  nrows = 3;
+  nrows = 4;
   ncols = 2;
   npanels = nrows*ncols;
   h = setup_subplots(nrows,ncols);
@@ -216,7 +218,11 @@ x_init = [0,0,z0,0,0,-2.1e+05]; % small parallel speed
 x_init = [0,0,-z0,0,0,+2.1e+05]; % small parallel speed
 [t_ref_2,x_sol_ref_2] = ode45(EoM,T*3,x_init,options);
 
-% Run through particles
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% Run through particles %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear S
 S(numel(x0),numel(y0),numel(particles.vx)) = struct;
 tic
@@ -284,11 +290,11 @@ for ix = 1:numel(x0)
       % Collect output
     %  S(ie).vt0 = VT(ie);
     %  S(ie).T0 = units.me*VT(ie)^2/2/units.eV; % sqrt(t*units.eV*2/units.me)
-      if 1 % only save starting and stop values, and some other stuff
+      if 0 % only save starting and stop values, and some other stuff
         
       else % also save entire trajectories
-        S(ix,iy,ie).t = S(ix,iy,ie).t;
-        S(ix,iy,ie).nt = numel(S(ix,iy,ie).t)
+        S(ix,iy,ie).t = t;
+        S(ix,iy,ie).nt = numel(S(ix,iy,ie).t);
         S(ix,iy,ie).dn = particles.dn(ie);
         S(ix,iy,ie).x = x_sol(:,1);
         S(ix,iy,ie).y = x_sol(:,2);
@@ -309,6 +315,7 @@ for ix = 1:numel(x0)
         S(ix,iy,ie).Ex = mf_Ex(x_sol(:,1),x_sol(:,2),x_sol(:,3));
         S(ix,iy,ie).Ey = mf_Ey(x_sol(:,1),x_sol(:,2),x_sol(:,3));
         S(ix,iy,ie).Ez = mf_Ez(x_sol(:,1),x_sol(:,2),x_sol(:,3));
+        S(ix,iy,ie).phi = mf_phi(x_sol(:,1),x_sol(:,2),x_sol(:,3));
       
         % Start and stop values, for easy access
         S(ix,iy,ie).tstart = t(1);
@@ -334,11 +341,11 @@ for ix = 1:numel(x0)
 
         [it0,iv0,ix0,iy0] = ind2sub(size(X0),ie);
         % Work done on particles
-        Exdx = cumtrapz(S(ie).x,S(ie).Ex);
-        Eydy = cumtrapz(S(ie).y,S(ie).Ey);
-        Ezdz = cumtrapz(S(ie).z,S(ie).Ez);
+        Exdx = cumtrapz(S(ix,iy,ie).x,S(ix,iy,ie).Ex);
+        Eydy = cumtrapz(S(ix,iy,ie).y,S(ix,iy,ie).Ey);
+        Ezdz = cumtrapz(S(ix,iy,ie).z,S(ix,iy,ie).Ez);
 
-        phi1D = mf_phi(S(ie).x(1),S(ie).y(1),S(ie).z);
+        phi1D = mf_phi(S(ix,iy,ie).x(1),S(ix,iy,ie).y(1),S(ix,iy,ie).z);
 
         isub = 1;
 
@@ -381,7 +388,7 @@ for ix = 1:numel(x0)
 
         if 0 % dEkpar(T0,Ekpar0)
           hca = h(isub); isub = isub + 1;   
-          scatter(hca,S(ie).T0,S(ie).Ekpar(1),S(ie).Ekperp(end),S(ie).Ekperp(end)-S(ie).Ekperp(1))
+          scatter(hca,S(ix,iy,ie).T0,S(ix,iy,ie).Ekpar(1),S(ix,iy,ie).Ekperp(end),S(ix,iy,ie).Ekperp(end)-S(ix,iy,ie).Ekperp(1))
           hcb = colorbar('peer',hca);
           hcb.YLabel.String = '\Delta E_{k,\perp}';
           hca.XLabel.String = 'T_0 (eV)';
@@ -389,7 +396,7 @@ for ix = 1:numel(x0)
         end
         if 0 % dvpar(T0,Ekpar0)
           hca = h(isub); isub = isub + 1;   
-          scatter(hca,S(ie).T0,S(ie).Ekpar(1),abs(abs(S(ie).vpar(end))-abs(S(ie).vpar(1)))*1e-3,abs(abs(S(ie).vpar(end))-abs(S(ie).vpar(1)))*1e-3)
+          scatter(hca,S(ix,iy,ie).T0,S(ix,iy,ie).Ekpar(1),abs(abs(S(ix,iy,ie).vpar(end))-abs(S(ix,iy,ie).vpar(1)))*1e-3,abs(abs(S(ix,iy,ie).vpar(end))-abs(S(ix,iy,ie).vpar(1)))*1e-3)
           hcb = colorbar('peer',hca);
           hcb.YLabel.String = '\Delta |v_{par}| (km/s)';
           hca.XLabel.String = 'T_0 (eV)';
@@ -397,7 +404,7 @@ for ix = 1:numel(x0)
         end
         if 0 % dvpar(T0,Ekpar0)
           hca = h(isub); isub = isub + 1;   
-          scatter(hca,S(ie).T0,S(ie).Ekpar(1),abs(abs(S(ie).vpar(end))-abs(S(ie).vpar(1)))*1e-3,S(ie).r(1)*1e-3)
+          scatter(hca,S(ix,iy,ie).T0,S(ix,iy,ie).Ekpar(1),abs(abs(S(ix,iy,ie).vpar(end))-abs(S(ix,iy,ie).vpar(1)))*1e-3,S(ix,iy,ie).r(1)*1e-3)
           hcb = colorbar('peer',hca);
           hcb.YLabel.String = 'r_{start} (km)';
           hca.XLabel.String = 'T_0 (eV)';
@@ -412,20 +419,20 @@ for ix = 1:numel(x0)
         end
         if 0 % vz_stop -vz_start vs T0
           hca = h(isub); isub = isub + 1;   
-          plot(hca,S(ie).T0,(x_sol(1,6)-x_sol(end,6))*1e-3,'.')
+          plot(hca,S(ix,iy,ie).T0,(x_sol(1,6)-x_sol(end,6))*1e-3,'.')
           hca.XLabel.String = 'T_0 (eV)';
           hca.YLabel.String = 'v_z(t_{stop})-v_z(t_{start}) (km/s)';
         end
         if 0 % vperp_stop - vperp_start vs T0
           hca = h(isub); isub = isub + 1;   
-          plot(hca,S(ie).T0,S(ie).vperp(end)-S(ie).vperp(1),'.','color',colors(ix0,:))
+          plot(hca,S(ix,iy,ie).T0,S(ix,iy,ie).vperp(end)-S(ix,iy,ie).vperp(1),'.','color',colors(ix0,:))
           hca.XLabel.String = 'T_0 (eV)';
           hca.YLabel.String = 'v_{\perp}(t_{stop})-v_{\perp}(t_{start}) (km/s)';
         end
 
         if 1 %  pitch angle
           hca = h(isub); isub = isub + 1;         
-          plot(hca,S(ie).z*1e-3,abs(S(ie).pitchangle))
+          plot(hca,S(ix,iy,ie).z*1e-3,abs(S(ix,iy,ie).pitchangle))
           hca.XLabel.String = 'z (km)';
           hca.YLabel.String = '|\theta| (deg)';
           hca.XLim = [-30 30];
@@ -437,7 +444,7 @@ for ix = 1:numel(x0)
             plot(hca,[90 180],[90 180],'k-')
           end
 
-          plot(hca,S(ie).pitchangle(1),S(ie).pitchangle(end),'.')
+          plot(hca,S(ix,iy,ie).pitchangle(1),S(ix,iy,ie).pitchangle(end),'.')
           hca.XLabel.String = '\theta start(deg)';
           hca.YLabel.String = '\theta stop (deg)';
         end
@@ -447,9 +454,9 @@ for ix = 1:numel(x0)
     %       if ie == 1
     %         plot(hca,[90 180],[90 180],'k-')
     %       end     
-         % v_rel = S(ie).vz(1)*1e-3; % km/s            
+         % v_rel = S(ix,iy,ie).vz(1)*1e-3; % km/s            
 
-          plot(hca,S(ie).vzstart*1e-6,S(ie).pitchangle(end)-S(ie).pitchangle(1),'.')
+          plot(hca,S(ix,iy,ie).vzstart*1e-6,S(ix,iy,ie).pitchangle(end)-S(ix,iy,ie).pitchangle(1),'.')
           hca.XLabel.String = 'v-v_{ph} (10^3 km/s)';
           hca.YLabel.String = '\Delta \theta (deg)';
           if ie == 1
@@ -471,19 +478,19 @@ for ix = 1:numel(x0)
         end
         if 0 %  Ezdz
           hca = h(isub); isub = isub + 1;            
-          plot(hca,S(ie).z,Ezdz)
+          plot(hca,S(ix,iy,ie).z,Ezdz)
           hca.XLabel.String = 'z (km)';
           hca.YLabel.String = 'Ezdz (V)';
         end
         if 0 %  Exdx
           hca = h(isub); isub = isub + 1;            
-          plot(hca,S(ie).z*1e-3,Exdx+Eydy)
+          plot(hca,S(ix,iy,ie).z*1e-3,Exdx+Eydy)
           hca.XLabel.String = 'z (km)';
           hca.YLabel.String = 'Exdx + Eydy (V)';
         end
         if 0 %  Ezdz-phi(z) , deviation from 1-D trajectory
           hca = h(isub); isub = isub + 1;            
-          plot(hca,S(ie).z*1e-3,Ezdz+phi1D)
+          plot(hca,S(ix,iy,ie).z*1e-3,Ezdz+phi1D)
           hca.XLabel.String = 'z (km)';
           hca.YLabel.String = 'Ezdz-phi(x0,y0,z) (V)';
           hca.XLim = [-30 30];
@@ -491,16 +498,32 @@ for ix = 1:numel(x0)
         end
 
 
+        if 1 % vperp
+          hca = h(isub); isub = isub + 1;   
+          %Ezdz = cumtrapz(S(ix,iy,ie).z,S(ix,iy,ie).perp);
+          plot(hca,S(ix,iy,ie).z*1e-3,S(ix,iy,ie).vperp*1e-3)
+          hca.XLabel.String = 'z (km)';
+          hca.YLabel.String = 'v_{\perp} (km/s)';
+        end
+        if 1 % 3d trapping condition
+          hca = h(isub); isub = isub + 1;   
+          %Ezdz = cumtrapz(S(ix,iy,ie).z,S(ix,iy,ie).perp);
+          plot(hca,S(ix,iy,ie).Ekpar-S(ix,iy,ie).phi,-S(ix,iy,ie).Ekperp)
+          hca.XLabel.String = 'E_{k,||} - e\phi (eV)';
+          hca.YLabel.String = 'E_{k,\perp} (eV)';
+          hca.YLabel.Interpreter = 'tex';
+        end
+        
         if 0 % delta Ek, zero, so energy is conserved
           hca = h(isub); isub = isub + 1;   
-          plot(hca,S(ie).T0,(Ek(end)-Ek(1))/units.eV)
+          plot(hca,S(ix,iy,ie).T0,(Ek(end)-Ek(1))/units.eV)
           hca.XLabel.String = 'z (km)';
           hca.YLabel.String = '\Delta E_k (eV)';
         end
 
         if 0 % delta Ek, zero, so energy is conserved
           hca = h(isub); isub = isub + 1;   
-          plot(hca,S(ie).T0,(Ek(end)-Ek(1))/units.eV)
+          plot(hca,S(ix,iy,ie).T0,(Ek(end)-Ek(1))/units.eV)
           hca.XLabel.String = 'z (km)';
           hca.YLabel.String = '\Delta E_k (eV)';
         end
@@ -621,10 +644,10 @@ if 0 % another plot
 end
 if 1 % another plot, with new S(ix,iy,ie)
   %%
-  for iS = 1 %1:7
-  for iSrange = 1:7
-    %iS = 1:7;
-  nrows = 4;
+  for iS = 1:5 % x0
+  for iSrange = 1:5
+  %iS = 1:5;
+  nrows = 6;
   ncols = 1;
   h = setup_subplots(nrows,ncols); 
   isub = 1;
@@ -708,6 +731,7 @@ if 1 % another plot, with new S(ix,iy,ie)
     yy = cat(1,Stmp.vz)*1e-3; % km
     %cc = cat(1,Stmp.dn); % #
     cc = repelem(cat(1,Stmp.dn),cat(1,Stmp.nt));
+    cc2 = abs(repelem(cat(1,Stmp.vzstart),cat(1,Stmp.nt)));
     dx = diff(x0);
     yy_edges = linspace(-15000,15000,40); % km/s
     dy = diff(yy_edges);
@@ -736,9 +760,10 @@ if 1 % another plot, with new S(ix,iy,ie)
       hold(hca,'on')
       xlim_ = hca.XLim;
       for iS_ = iS      
-        xx_ = S(iS_).xstart;
-        yy_ = S(iS_).ystart;
-        zz_ = S(iS_).z;
+        xx_ = Stmp(iS_).xstart;
+        yy_ = Stmp(iS_).ystart;
+        %zz_ = S(iS_).z;
+        zz_ = xx_edges*1e3;
         plot(hca,zz_*1e-3,mf_vtrap(xx_,yy_,zz_)*1e-6,'k')
         %plot(hca,Sref(iS_).z2*1e-3,Sref(iS_).vz2*1e-6,'k')
       end
@@ -795,7 +820,116 @@ if 1 % another plot, with new S(ix,iy,ie)
       for iS_ = iSrange      
         xx_ = S(iS_).xstart;
         yy_ = S(iS_).ystart;
+        %zz_ = S(iS_).z;
+        zz_ = yy_edges*1e3;
+        plot(hca,zz_*1e-3,mf_vtrap(xx_,yy_,zz_)*1e-6,'k')
+        %plot(hca,Sref(iS_).z2*1e-3,Sref(iS_).vz2*1e-6,'k')
+      end
+      hca.XLim = xlim_;
+      hold(hca,'off')
+    end
+    irf_legend(hca,sprintf('%.2f<r/lx<%.2f',xx_edges(iSrange)*1e3/lx,xx_edges(iSrange+1)*1e3/lx),[0.02 1.05],'k');
+  end
+  if 1 % vr,z
+    holdon = 0;
+    Stmp = S(iS,:,:);
+    hca = h(isub); isub = isub + 1;   
+    xx = cat(1,Stmp.z)*1e-3; % km/s
+    yy = cat(1,Stmp.vperp)*1e-3; % km
+    %cc = cat(1,Stmp.dn); % #
+    cc = repelem(cat(1,Stmp.dn),cat(1,Stmp.nt));
+    cc2 = abs(repelem(cat(1,Stmp.vzstart),cat(1,Stmp.nt)));
+    dx = diff(x0);
+    yy_edges = linspace(0,15000,21); % km/s
+    dy = diff(yy_edges);
+    yy_centers = yy_edges(1:end-1)+0.5*dy;    
+    
+    xx_edges = -20:0.5:20;%linspace(-40,40,101); % km
+    dx = diff(xx_edges);
+    xx_centers = xx_edges(1:end-1)+0.5*dx;
+    
+    zz = zeros(numel(xx_edges),numel(yy_edges));
+    
+    
+    %[N edges mid loc] = histcn([xx(:) yy(:)], xx_edges, yy_edges, 'AccumData', cc(:));
+    [N edges mid loc] = histcn([xx(:) yy(:)], xx_edges, yy_edges, 'AccumData', cc(:));
+    N(N==0) = NaN;
+    
+    %plot(hca,yy_centers,N')
+    surf(hca,xx_edges,yy_edges*1e-3,zz',(N)')
+    shading(hca,'flat')
+    view(hca,[0 0 1])
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'z (km)';
+    hca.YLabel.String = 'v_{\perp} (10^3 km/s)';
+    %if holdon, hold(hca,'off'); end
+    if 1 % add U = 0
+      hold(hca,'on')
+      xlim_ = hca.XLim;
+      for iS_ = iS      
+        xx_ = S(iS_).xstart;
+        yy_ = S(iS_).ystart;
         zz_ = S(iS_).z;
+        zz_ = xx_edges*1e3;
+        plot(hca,zz_*1e-3,mf_vtrap(xx_,yy_,zz_)*1e-6,'k')       
+        mf_vtrap(xx_,yy_,zz_)
+        %plot(hca,Sref(iS_).z2*1e-3,Sref(iS_).vz2*1e-6,'k')
+      end
+      hca.XLim = xlim_;
+      hca.YLim = yy_edges([1 end])*1e-3;
+      hold(hca,'off')
+    end
+  end
+  if 1 % vz,z in given x,y-range    
+    Stmp = S(iS,:,:);
+    hca = h(isub); isub = isub + 1;   
+     
+    % radial position of particle
+    xx = cat(1,Stmp.r)*1e-3; % km 
+    xx_centers = x0;
+    dx = diff(xx_centers);    
+    xx_edges = [xx_centers(1:end-1)-0.5*dx xx_centers(end-1:end)+0.5*dx(end-1:end)]*1e-3; %     km
+    xx_centers(xx_centers<0) = 0;
+    xx_edges(xx_edges<0) = 0;
+     
+    % parallel position of particle
+    yy = cat(1,Stmp.z)*1e-3; % km/s
+    yy_edges = -20:0.5:20;
+    dy = diff(yy_edges);
+    yy_centers = yy_edges(1:end-1)+0.5*dy;
+   
+    % parallel speed of particle
+    zz = cat(1,Stmp.vperp)*1e-3; % km/s
+    zz_edges = (0:1:20)*1e3; % km/s
+    dz = diff(zz_edges);
+    zz_centers = zz_edges(1:end-1)+0.5*dz;  
+    
+    qq = zeros(numel(yy_edges),numel(zz_edges));
+    
+    % partial density of particle
+    cc = repelem(cat(1,Stmp.dn),cat(1,Stmp.nt));
+           
+    %[N edges mid loc] = histcn([xx(:) yy(:)], xx_edges, yy_edges, 'AccumData', cc(:));
+    [N edges mid loc] = histcn([xx(:) yy(:) zz(:)], xx_edges, yy_edges, zz_edges, 'AccumData', cc(:));
+    N(N==0) = NaN;
+    N = squeeze(N(iSrange,:,:,:,:));
+    
+    %plot(hca,yy_centers,N')
+    surf(hca,yy_edges,zz_edges*1e-3,qq',(N)')
+    shading(hca,'flat')
+    view(hca,[0 0 1])
+    hcb = colorbar('peer',hca);
+    hca.XLabel.String = 'z (km)';
+    hca.YLabel.String = 'v_{\perp} (10^3 km/s)';
+    %if holdon, hold(hca,'off'); end
+    if 1 % add U = 0
+      hold(hca,'on')
+      xlim_ = hca.XLim;
+      for iS_ = iSrange      
+        xx_ = S(iS_).xstart;
+        yy_ = S(iS_).ystart;
+        %zz_ = S(iS_).z;
+        zz_ = yy_edges*1e3;
         plot(hca,zz_*1e-3,mf_vtrap(xx_,yy_,zz_)*1e-6,'k')
         %plot(hca,Sref(iS_).z2*1e-3,Sref(iS_).vz2*1e-6,'k')
       end

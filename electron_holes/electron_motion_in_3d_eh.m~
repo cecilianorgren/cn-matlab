@@ -28,13 +28,13 @@ ly = 10.5e3/sqrt(2); % m
 lr = sqrt(lx.^2 + ly.^2); % m
 lz = 3.5e3;  % m
 phi0 = 240;  % V
-B0 = 10e-9;  % T
+B0 = 20e-9;  % T
 
 % Properties of electrons
 T0 = [100 200 400 700]; % eV, perpendicular energy
 T0 = 100;[1 10 20 50 100 200]; % eV, perpendicular energy
 vt = sqrt(T0*units.eV*2/units.me); % m/s
-Ek0 = [5 15];%[10 20 50 100]; % eV, parallel energy, defines U
+Ek0 = [10 20];%[10 20 50 100]; % eV, parallel energy, defines U
 vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 
 % for visibility, have different groups start in different positions
@@ -173,8 +173,6 @@ for ie = 1:numel(X0)
   Ay = mf_Ay(x_sol(:,1),x_sol(:,2),x_sol(:,3));
   
   % Collect output
-  
-  S(ie).phi0 = phi0;
   S(ie).t = t;
   S(ie).vt0 = VT(ie);
   S(ie).T0 = units.me*VT(ie)^2/2/units.eV; % sqrt(t*units.eV*2/units.me)
