@@ -1153,7 +1153,7 @@ vph = esw_data{9}(iesw);
 c_eval('phi(?) = esw_data{9+?}(iesw);',1:4)
 vtrap = sqrt(2*units.e*phi/units.me)*1e-3; % km/s
 vtrap = max(vtrap);
-time = EpochTT(esw_data{5}{iesw})
+time = EpochTT(esw_data{5}{iesw});
 
 tindPitch = find(abs(ePitch1.time-time) == min(abs(ePitch1.time-time)))
 tindF1D =   find(abs(ef1D.time   -time) == min(abs(ef1D.time   -time)))

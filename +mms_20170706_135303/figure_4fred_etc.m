@@ -11,15 +11,30 @@ c_eval('eDist = ePDist?;',mms_id)
 c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint);',mms_id)
 
 % Load EH properties
-% observed/measured properties (konrad)
-data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
-obs_eh_properties = data_tmp.EH_properties;
-obs_lpp = obs_eh_properties.Lpp; % peak to peak length
-obs_potential = obs_eh_properties.potential;
-obs_vtrap_all = sqrt(2*units.e*obs_potential/units.me);
-obs_potential_max = obs_eh_properties.max_potential;
-obs_velocity = obs_eh_properties.vel;
-obs_neh = numel(obs_velocity);
+if 0 % observed/measured properties (konrad)
+  %%
+  data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));
+  obs_eh_properties = data_tmp.EH_properties;
+  obs_lpp = obs_eh_properties.Lpp; % peak to peak length
+  obs_potential = obs_eh_properties.potential;
+  obs_vtrap_all = sqrt(2*units.e*obs_potential/units.me);
+  obs_potential_max = obs_eh_properties.max_potential;
+  obs_velocity = obs_eh_properties.vel;
+  obs_neh = numel(obs_velocity);
+else % from manual timing
+  %%
+  manual = edi_event_manual_dt; 
+  % add minus because lpp<0 since vph<0
+  obs_lpp = -abs(cat(2,manual.lpp))'; % peak to peak length  
+  obs_velocity = [manual.vpar];
+  % potential not saved, need to run thrpugh data to obtain,
+  data = edi_event_manual_dt_phi;  
+  % see ansers_to_reviwers_norgren2021
+  obs_potential = -cat(1,data.phimean);
+  obs_vtrap_all = sqrt(2*units.e*obs_potential/units.me);
+  obs_potential_max = max(obs_potential,[],2);
+  obs_neh = numel(obs_velocity);  
+end
 
 % EDI parameters
 E_edi = 500; % eV
@@ -37,7 +52,7 @@ dv_edi = dv_edi_plus - dv_edi_minus; % m/s
 
 % Remove background electrons
 nPhoto = 00;
-nSecond = 20;
+nSecond = 5;
 if 0
 [eDist_bgremoved, eDist_bg, ephoto_scale] = ...
              mms.remove_edist_background(eDist, 'tint', tint, ...
@@ -258,7 +273,7 @@ if 1 % <f> model
   hold(hca,'on')
   v_scale = 1e-3;
   %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
-  hlines = plot(hca,v_vec*v_scale*1e-3,mean(Fabel_obs,1),'-','color',colors(2,:));
+  hlines = plot(hca,v_vec*v_scale*1e-3,mean(Fabel_tot,1),'-','color',colors(2,:));
   hca.YLabel.String = {'f_e (s/m^4)'};
   hca.XLabel.String = {'v_{||} (10^3 km/s)'};  
       %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
@@ -326,8 +341,8 @@ end
 if 1 % vtrap patch
   hold(hca,'on')
   obs_vtrap = obs_vtrap_all(:,mms_id);
-  vtrap_plus = obs_velocity + obs_vtrap*1e-3;
-  vtrap_minus = obs_velocity - obs_vtrap*1e-3;
+  vtrap_plus = tocolumn(obs_velocity) + tocolumn(obs_vtrap)*1e-3;
+  vtrap_minus = tocolumn(obs_velocity) - tocolumn(obs_vtrap)*1e-3;
   plot_vtrap_plus = [nanmean(vtrap_plus)-std(vtrap_plus,'omitnan');...
                      nanmean(vtrap_plus);...
                      nanmean(vtrap_plus)+std(vtrap_plus,'omitnan')]*[1 1]; 
@@ -668,6 +683,9 @@ set(hca,'children',flipud(get(hca,'children')))
 end
 if 0 % updated version for updated paper, different annotation
   %%
+  f_mod = mean(tsFabel.tlim(tint_figure).data,1);
+  %iff = 21;
+  fscale = 1e0;
 colors = mms_colors('matlab');
 v_fpi = mean(ef1D_bgremoved.depend{1},1);
 ind0 = find(v_fpi==0);
@@ -725,8 +743,8 @@ if 1 % f fpi, rem bg
   hca = h(isub); isub = isub + 1;
   v_scale = 1e-3;
   %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
-  hlines = plot(hca,v_fpi*v_scale,f_fpi_bgrem,'-');
-  hca.YLabel.String = {'f (s/m^4)'};
+  hlines = plot(hca,v_fpi*v_scale,f_fpi_bgrem/fscale,'-');
+  hca.YLabel.String = {sprintf('f (10^{%g} s/m^4)',log10(fscale))};
   hca.XLabel.String = {'v (10^3 km/s)'};  
   
   if 0
@@ -748,13 +766,14 @@ if 1 % f fpi, rem bg
   end
   %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
   hca.XLim = 1.7*[-30 30];
-  hca.YLim = [0 3.5]*1e-3;
+  %hca.YLim = [0 3.5]*1e-3;
+  hca.YLim = [0 2.6e-3]/fscale;
 end
 if 1 % <f> model
   hold(hca,'on')
   v_scale = 1e-3;
   %hlines = plot(hca,v_fpi*v_scale,f_fpi,'-',v_fpi*v_scale,f_fpi_bgrem,'--');
-  hlines = plot(hca,v_vec*v_scale*1e-3,mean(Fabel_obs,1),'-','color',colors(2,:));
+  hlines = plot(hca,v_vec*v_scale*1e-3,f_mod/fscale,'-','color',colors(2,:));
   hca.YLabel.String = {'f_e (s/m^4)'};
   hca.XLabel.String = {'v_{||} (10^3 km/s)'};  
       %irf_legend(hca,{sprintf('E_{low}=%g eV',unique(lowerelim.data))},[0.02 0.99])
@@ -765,8 +784,8 @@ end
 if 1 % f0
     hold(hca,'on')
     v_plot = vg(1):500:vg(end);
-    [f0,params_0] = mms_20170706_135303.get_f0(19);
-    plot(hca,v_plot*v_scale,f0(v_plot*1e3,params_0.n,params_0.vd,params_0.vt),'color',colors(3,:))
+    [f0,params_0] = mms_20170706_135303.get_f0;
+    plot(hca,v_plot*v_scale,f0(v_plot*1e3,params_0.n,params_0.vd,params_0.vt)/fscale,'color',colors(3,:))
     if 0 % write f0 parmeters in figure
       if 1 % write f0 parmeters in figure
         str_info = {'f_0 input parameters:'
@@ -825,8 +844,8 @@ end
 if 1 % vtrap patch
   hold(hca,'on')
   obs_vtrap = obs_vtrap_all(:,mms_id);
-  vtrap_plus = obs_velocity + obs_vtrap*1e-3;
-  vtrap_minus = obs_velocity - obs_vtrap*1e-3;
+  vtrap_plus = tocolumn(obs_velocity) + tocolumn(obs_vtrap)*1e-3;
+  vtrap_minus = tocolumn(obs_velocity) - tocolumn(obs_vtrap)*1e-3;
   plot_vtrap_plus = [nanmean(vtrap_plus)-std(vtrap_plus,'omitnan');...
                      nanmean(vtrap_plus);...
                      nanmean(vtrap_plus)+std(vtrap_plus,'omitnan')]*[1 1]; 
@@ -905,23 +924,25 @@ if 0 % f instability
     hleg = irf_legend(hca,str_info,[0.99,0.8]);
     hold(hca,'off')
 end
+
 hca.XLim = [-35 35];
 h_lines = findobj(hca,'Type','line');
 c_eval('h_lines(?).LineWidth = 1.5;',1:numel(h_lines))
-hca.YLim = [0 2.6e-3];
+hca.YLim = [0 2.6e-3]/fscale;
 set(hca,'ColorOrder',colors)
 %irf_legend(hca,{'f_{FPI}';'f^{mod}';'f_0'},[0.02 0.99])
 h_lines = findobj(hca,'type','line');
 h_patches = findobj(hca,'type','patch');
-legend([h_lines(end:-1:5); h_patches(end:-1:2); h_edi(1)],{'<f_e^{FPI}>';'<f_e^{mod}>';'f_0';'v_{ph}';'v_{trap}';'v_{EDI}'},...
-    'location','northeast','box','off')
+hleg = legend([h_lines(end:-1:5); h_patches(end:-1:2); h_edi(1)],{'<f_e^{FPI}>';'<f_e^{mod}>';'f_0';'v_{ph}';'v_{trap}';'v_{EDI}'},...
+    'location','northeast','box','on');
+hleg.EdgeColor = [1 1 1];
 c_eval('h_edi(?).LineWidth = 1.0;',1:4)
 hca.FontSize = 12;
 
 set(hca,'children',flipud(get(hca,'children')))  
 
-hca.Title.String = ['FPI time interval:' fpi_utc];
+hca.Title.String = ['FPI time interval: ' fpi_utc];
 hca.Title.FontWeight = 'normal';
 hca.XLim = [-25 25];
-
+hca.XLim = [-25 20];
 end

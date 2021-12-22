@@ -24,7 +24,7 @@ mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load data
-doLoad = 1;
+doLoad = 0;
 units = irf_units;
 
 % Load MMS data
@@ -53,9 +53,11 @@ c_eval('Epar = gseE?par.tlim(tint_model);',ic)
 c_eval('jedi_apar = ePitch?_flux_edi.palim([168.75 180]);',ic)
 c_eval('jedi_par = ePitch?_flux_edi.palim([0 11.25]);',ic)
 
-% Load f0 from external function
-iff = 23; %iff = 20; used in first submission to PoP
-[f0,params] = mms_20170706_135303.get_f0(iff);
+%% Load f0 from external function
+%iff = 21; %iff = 20; used in first submission to PoP
+%[f0,params] = mms_20170706_135303.get_f0(iff);
+[f0,params] = mms_20170706_135303.get_f0;
+iff = params.inp;
 n = params.n; % m^(-3)
 ntot = sum(n);
 %R = n(1)/ntot;
@@ -70,7 +72,7 @@ str_info = {'unperturbed f:';...
             ['n_{in}= [' sprintf('%g  ',n*1e-6) '] cc'];...
             ['v_{d,in}= [' sprintf('%g  ',vd*1e-3) '] km/s'];...            
             };        
-          
+%%          
 % EDI energy and corresponding velocity
 % The positive spacecraft potential pulls in electrons. So if an electron
 % comes in with an energy of 100 eV, it actually only had 100-scPot eV
@@ -165,7 +167,7 @@ vmin = 110000e3; % m/s
 vmax = 110000e3; % m/s
 % The number of v-points has impact on how accurate the modelling is.
 nv = 3000;
-v_vec = linspace(-vmin,vmax,nv);
+v_vec = linspace(-vmin,vmax,nv); % m/s
 dv = v_vec(2) - v_vec(1);
 [X_obs,V_obs] = ndgrid(x_obs,v_vec); 
 
@@ -234,6 +236,11 @@ FVabel_tot = Fabel_tot.*V_obs;
 % Make TSeries of modeled free and trapped density
 tsFabel_nfree = irf.ts_scalar(phi.time,n_abel_free);
 tsFabel_ntrap = irf.ts_scalar(phi.time,n_abel_trap);
+
+% Make TSeries of phase space distribution
+% One can then use tlim on it directly:
+% f_mod_av = mean(tsFabel.tlim(tint_figure).data,1);
+tsFabel = PDist(phi.time,Fabel_tot,'1Dcart',v_vec*1e-3);
 
 % Set up specrec for plotting
 Fspecrec.t = phi.time.epochUnix;  
@@ -1386,6 +1393,10 @@ if 1 % 1 % plot, timeseries, for paper
   h(3).YLabel.String = {'v_{||}','(10^3 km/s)'};
   h(3).YLabel.Interpreter = 'tex';
   
+  h(2).YLabel.String = {'\phi','(V)'};  
+  h(2).YLabel.Interpreter = 'tex';
+  h(2).YLabel.Position = h(1).YLabel.Position;
+  
   iref = 1;
   ijmp = 1;
   %h_all(iref+4+ijmp).Position = h_all(iref+4).Position;  
@@ -1409,7 +1420,13 @@ if 1 % 1 % plot, timeseries, for paper
 
   
   h(3).YLabel.Position(1) = h(1).YLabel.Position(1);
-  
+  hold(h(1),'on')
+  plot(h(1),h(1).XLim,[0 0],'color',[0.8 0.8 0.8])
+  hold(h(1),'off')
+  hold(h(3),'on')
+  plot(h(3),h(3).XLim,[0 0],'color',[0.6 0.6 0.6])
+  hold(h(3),'off')
+
   %h_all(iref+7).XLabel = [];
   %h_all(end-2).YAxisLocation = 'right';
   %h_all(end-3).YAxisLocation = 'right';
@@ -1420,11 +1437,18 @@ if 1 % 1 % plot, timeseries, for paper
   end
   c_eval('h_all(?).XGrid = ''off''; h_all(?).YGrid = ''off'';',1:numel(h_all))
   
+  h(3).YLim = [-27 15];
+  
   % annotation
   h(3).YLim = vlim_f;
-  annotation('textarrow',[0.685 0.685],[0.47 0.495],'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
-  annotation('textarrow',[0.76 0.76],[0.550 0.500]+0.02,'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
-  annotation('textarrow',[0.30 0.325],[0.550 0.510]+0.02,'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
+  irf_zoom(h,'x',tint_figure)
+  h(3).CLim = [0 2.5]*1e-3;
+  h(3).YLim = [-27 15];
+  
+  legend(h(3).Children([3 4]),{'v_{ph}','v_{ph,av}'},'box','off','Orientation','Horizontal')
+  annotation('textarrow',[0.685 0.685]-0.025,[0.47 0.495]+0.00,'string',{'EDI range'},'fontsize',12,'horizontalalignment','center');
+  %annotation('textarrow',[0.76 0.76]-0.015,[0.550 0.500]+0.02,'string',{'v_{ph,av}'},'fontsize',12,'horizontalalignment','center');
+  %annotation('textarrow',[0.30 0.325]+0.015,[0.550 0.510]+0.02,'string',{'v_{ph,ind}'},'fontsize',12,'horizontalalignment','center');
   
 end
 if 0 % 0 % plot, timeseries and averaged, for diagnostics
@@ -1694,12 +1718,14 @@ if 0 % 0 % plot, time-averaged distributions, for paper
   h = subplot(1,1,1);   
   isub = 1;
   
-  mod_f_average = mean(Fabel_obs,1);
+  mod_f_average = mean(Fabel_tot,1);
   mod_f0 = f0(v_vec,n,vd,vt);
   %edist = ePDist1.tlim(tint_phi);
-  edist = eDist_bgremoved.tlim(tint_phi);
+  %edist = eDist_bgremoved.tlim(tint_phi);
+  edist = eDist_bgremoved.tlim(tint_figure);
   
   vg = -40e3:1000:40e3; % km/s
+  %vg = (-100:2:100)*1e3;
   lowerelim = 50;
   ef1D = edist.reduce('1D',dmpaB1,'vg',vg,'nMC',1000,'lowerelim',lowerelim);
   v_fpi = ef1D.depend{1}(1,:);
@@ -1726,7 +1752,7 @@ if 0 % 0 % plot, time-averaged distributions, for paper
       };
     set(hca,'ColorOrder',zeros(10,3))
     irf_legend(hca,str_info,[0.01 0.99],[0 0 0]);   
-    if 1 % EDI velocities                
+    if 1 % EDI velocities
       hold(hca,'on')
       all_edi_plusminus = [v_edi_minus;  v_edi_plus;...
                  -v_edi_minus; -v_edi_plus]*[1 1];
@@ -1769,7 +1795,7 @@ if 1 % 1 % plot, timeseries, investigate effect of changing various parameters
     %hca = h(isub); isub = isub + 1;
     hca = irf_panel('phi');
     irf_plot(hca,phi);  
-    irf_legend(hca,{sprintf('v_{ph,av}= %g km/s',vph*1e-3)},[0.08 0.99],'color',[0 0 0]);
+    irf_legend(hca,{sprintf('v_{ph,av}= %g km/s',vph*1e-3)},[0.12 0.99],'color',[0 0 0]);
     hca.YLabel.String = {'\phi','(V)'};  
     hca.YLabel.Interpreter = 'tex';
     if 1 % add locations where dphi/dntrap is recalculated every time
@@ -1994,6 +2020,9 @@ if 1 % 1 % plot, timeseries, investigate effect of changing various parameters
   end
   c_eval('h_all(?).XGrid = ''on''; h_all(?).YGrid = ''on'';',1:numel(h_all))
   
+  irf_zoom(h,'x',tint_figure)
+  h(3).CLim = [0 2.5]*1e-3;
+  h(3).YLim = [-27 15];
   % annotation
   %h(3).YLim = vlim_f;
   %hca = irf_panel('fmodel map');

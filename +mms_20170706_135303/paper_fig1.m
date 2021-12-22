@@ -1250,6 +1250,7 @@ irf_plot_axis_align
 hcl = findobj(gcf,'type','line');
 c_eval('hcl(?).LineWidth = 0.5;',1:numel(hcl))
 hh(1).Children(3).LineWidth = 2;
+
 %% Plot, overview only
 ic = 1;
 npanels = 5;
@@ -1257,14 +1258,14 @@ h = irf_plot(npanels);
 isub = 0;
 zoomy = [];
 
-v_for_density_scaling = 9000e3; % m/s
-
+v_for_density_scaling = 8500e3; % m/s
+h
 tint = irf.tint('2017-07-06T13:53:40.00Z/2017-07-06T13:54:15.00Z');
 tint_zoom = irf.tint('2017-07-06T13:54:05.30Z/2017-07-06T13:54:05.80Z');
 tint_zoom = irf.tint('2017-07-06T13:54:05.40Z/2017-07-06T13:54:06.80Z');
 tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
-tint_zoom = phi1.time([1 end]);
-tint_zoom_epar = irf.tint('2017-07-06T13:54:05.00Z/2017-07-06T13:54:06.00Z'); % if showing 4 sc epar
+%tint_zoom = phi1.time([1 end]);
+%tint_zoom_epar = irf.tint('2017-07-06T13:54:05.00Z/2017-07-06T13:54:06.00Z'); % if showing 4 sc epar
 
 % load eh data
 data_tmp = load(sprintf('/Users/%s/GoogleDrive/Data/Events/2017-07-06_081603/EH_properties.mat',localuser));

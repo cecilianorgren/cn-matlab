@@ -103,38 +103,30 @@ if 1 % Make the data stepfunction-like, so that it shows the accumulation time
   end
 end
 
-
-
-
-%% Prepare data
+%% Prepare data, potential
 % First run
 % mms_20170706_135303.load_data
 % mms_20170706_135303.prepare_data_single_sc
 % mms_20170706_135303.prepare_data_multi_sc
 tint = irf.tint('2017-07-06T13:53:40.00Z/2017-07-06T13:54:15.00Z');
 tint_zoom = irf.tint('2017-07-06T13:54:05.50Z/2017-07-06T13:54:05.65Z'); % if showing 4 sc epar
-
-eDist = ePDist1.tlim(tint);
-
-% remove background
-nSecondary = [5];
-nPhoto = 0;
-%[eDist_nobg] = mms.remove_edist_background(eDist_orig);
-c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''Nphotoe_art'',nPhoto,''ZeroNaN'',0);',1:numel(nSecondary))
-
-
 ne1_mean = mean(ne1.tlim(tint_zoom).data);
 n0 = 0.04;
+if 0 % dont need reduced distribution for this plot
+  eDist = ePDist1.tlim(tint);
+  % remove background
+  nSecondary = [5];
+  nPhoto = 0;
+  %[eDist_nobg] = mms.remove_edist_background(eDist_orig);
+  c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''Nphotoe_art'',nPhoto,''ZeroNaN'',0);',1:numel(nSecondary))
 
-eint = [000 40000];
-vint = [-Inf Inf];
-scpot = scPot1.resample(eDist);
-lowerelim = scpot*0 + 00;
-
-%tic; ef1D = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
-tic; ef1D = eDist_nobg1.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
-
-
+  eint = [000 40000];
+  vint = [-Inf Inf];
+  scpot = scPot1.resample(eDist);
+  lowerelim = scpot*0 + 00;
+  %tic; ef1D = eDist.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim); toc % reduced distribution along B
+  tic; ef1D = eDist_nobg1.reduce('1D',dmpaB1.resample(eDist).norm,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'nMC',500); toc % reduced distribution along B
+end
 vph = -8500e3;
 c_eval('[phi?,phi_progressive?,phi_ancillary?] = get_phi(gseE?par,vph,tint_zoom,tint_zoom);',1:4)
 
@@ -191,7 +183,7 @@ end
 
 %% Plot, zoom only
 ic = 1;
-npanels = 10;
+npanels = 7;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -281,7 +273,7 @@ if 1 % Phi
   %set(hca,'ColorOrder',mms_colors('1234'))
   %irf_legend(hca,{'mms1','mms2','mms3','mms4'},[0.98 0.9],'fontsize',12);
 end
-if 1 % ExB energy
+if 0 % ExB energy
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('wExB');
@@ -290,7 +282,7 @@ if 1 % ExB energy
   hca.YLabel.String = {'W_{ExB}','(eV)'};  
   ylabel(hca,hca.YLabel.String,'interpreter','tex')  
 end
-if 1 % vtrap
+if 0 % vtrap
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('vtrap');
@@ -299,7 +291,7 @@ if 1 % vtrap
   set(hca,'ColorOrder',mms_colors('12341'))    
   hca.YLabel.String = {'v_{trap}','(km/s)'};  
 end
-if 1 % |vExB|
+if 0 % |vExB|
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('v ExB abs');

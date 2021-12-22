@@ -1,8 +1,11 @@
 % paper_fig_2d_vdfs
+% Not completely selfcontained yet?
 time = irf.tint('2017-07-06T13:54:05.30Z/2017-07-06T13:54:05.80Z');
 time = irf_time('2017-07-06T13:54:05.50Z','utc>EpochTT');
-tint = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
+tint = irf.tint('2017-07-06T13:53:40.00Z/2017-07-06T13:54:15.00Z');
+tint_psbl = irf.tint('2017-07-06T13:54:05.520Z/2017-07-06T13:54:05.640Z');
 tint_cold = irf.tint('2017-07-06T13:54:13.000Z/2017-07-06T13:54:13.040Z')+0;
+
 mms_id = 1;
 
 %% Make reduced distribution, EH range
@@ -10,11 +13,18 @@ strTint = [irf_time(tint(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tint(2),
 eint = [000 40000];
 vint = [-Inf Inf];
 vg = (-100:2:100)*1e3;
-c_eval('eDist = ePDist?.tlim(tint);',mms_id)
-c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint);',mms_id)
+c_eval('eDist = ePDist?.tlim(tint_psbl);',mms_id)
+
+% remove background
+nSecondary = [5];
+nPhoto = 0;
+%[eDist_nobg] = mms.remove_edist_background(eDist_orig);
+c_eval('[eDist_nobg?] = mms.remove_edist_background(eDist,''nSecondary'',nSecondary(?),''Nphotoe_art'',nPhoto,''ZeroNaN'',0);',1:numel(nSecondary))
+
+c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint_psbl);',mms_id)
 
 vgi = [-800:50:800];
-c_eval('iDist = iPDist?.tlim(tint+[-0.05 +0.05]);',mms_id)
+%c_eval('iDist = iPDist?.tlim(tint+[-0.05 +0.05]);',mms_id)
 
 scpot = scPot1.resample(eDist);
 ePara = dmpaB1.resample(eDist).norm;
@@ -24,25 +34,24 @@ ePerp2 = ePara.cross(ePerp1).norm;
 
 lowerelim = 40;
 nMC = 500;
-tic; ef1D_ = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
-tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
-tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
-tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+%tic; ef1D_ = eDist.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
+%tic; ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
+%tic; ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
+%tic; ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 
 tic; ef1D_bgremoved = eDist_bgremoved.reduce('1D',ePara,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); toc % reduced distribution along B
 tic; ef2D_parperp1_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc 
 tic; ef2D_parperp2_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 tic; ef2D_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 
-tic; if1D_ = iDist.reduce('1D',ePara,'vint',vint,'nMC',nMC); toc % reduced distribution along B
-tic; if2D_parperp1 = iDist.reduce('2D',ePara,ePerp1,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc 
-tic; if2D_parperp2 = iDist.reduce('2D',ePara,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
-tic; if2D_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
-
+% tic; if1D_ = iDist.reduce('1D',ePara,'vint',vint,'nMC',nMC); toc % reduced distribution along B
+% tic; if2D_parperp1 = iDist.reduce('2D',ePara,ePerp1,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc 
+% tic; if2D_parperp2 = iDist.reduce('2D',ePara,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+% tic; if2D_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
 
 % Make pitch angle spectrograms
-ePitch = eDist.pitchangles(dmpaB1.resample(eDist),12);
-ePitch_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
+%ePitch = eDist.pitchangles(dmpaB1.resample(eDist),12);
+%ePitch_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
 
 %% Make reduced distribution, lobe/cold range
 strTint_cold = [irf_time(tint_cold(1),'epochtt>utc_yyyymmdd_HHMMSS') '_' irf_time(tint_cold(2),'epochtt>utc_HHMMSS')];
@@ -53,7 +62,7 @@ c_eval('eDist = ePDist?.tlim(tint_cold);',mms_id)
 c_eval('eDist_bgremoved = eDist_nobg?.tlim(tint_cold);',mms_id)
 
 vgi = [-800:50:800];
-c_eval('iDist = iPDist?.tlim(tint_cold+[-0.05 +0.05]);',mms_id)
+%c_eval('iDist = iPDist?.tlim(tint_cold+[-0.05 +0.05]);',mms_id)
 
 scpot = scPot1.resample(eDist);
 ePara = dmpaB1.resample(eDist).norm;
@@ -73,15 +82,15 @@ tic; ef2D_cold_parperp1_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp1,'vi
 tic; ef2D_cold_parperp2_bgremoved = eDist_bgremoved.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 tic; ef2D_cold_perp1perp2_bgremoved = eDist_bgremoved.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC); toc
 
-tic; if1D_cold_ = iDist.reduce('1D',ePara,'vint',vint,'nMC',nMC); toc % reduced distribution along B
-tic; if2D_cold_parperp1 = iDist.reduce('2D',ePara,ePerp1,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc 
-tic; if2D_cold_parperp2 = iDist.reduce('2D',ePara,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
-tic; if2D_cold_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+% tic; if1D_cold_ = iDist.reduce('1D',ePara,'vint',vint,'nMC',nMC); toc % reduced distribution along B
+% tic; if2D_cold_parperp1 = iDist.reduce('2D',ePara,ePerp1,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc 
+% tic; if2D_cold_parperp2 = iDist.reduce('2D',ePara,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
+% tic; if2D_cold_perp1perp2 = iDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'vg',vgi,'base','cart','nMC',nMC); toc
 
 
 % Make pitch angle spectrograms
-ePitch_cold = eDist.pitchangles(dmpaB1.resample(eDist),12);
-ePitch_cold_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
+%ePitch_cold = eDist.pitchangles(dmpaB1.resample(eDist),12);
+%ePitch_cold_bgremoved = eDist.pitchangles(dmpaB1.resample(eDist_bgremoved),12); 
 
 %%
 it = 2;
@@ -147,8 +156,10 @@ vlim = [-70 70];
 flim_2D = [-14.5 -9.5]; % log
 flim_1D = [0 1.7]*1e-3;
 flim_1D = [0 3.2]*1e-3;
+manual = edi_event_manual_dt;
+vph = [manual.vpar];
 %vphmark = -9000; % vpar
-vphmark = [-11400 -7000]*1e-3;
+vphmark = [min(vph),max(vph)]*1e-3;
 
 
 % EDI parameters

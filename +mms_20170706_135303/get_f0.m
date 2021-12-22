@@ -1,5 +1,8 @@
 function [f0,params] = get_f0(inp)
-
+% 20 used for first submission to PoP
+if nargin == 0
+  inp = 24;
+end
 switch inp 
   case 1
     f0 = 2;
@@ -359,10 +362,25 @@ switch inp
     n = n;
     vd = [vd1 vd2 vd3];
     T = [T1 T2 T3];
+  case 24 % new 2021-12-14
+    ntot = 0.04*1e6;
+    R = [0.4 0.25 0.35]; 
+    n = ntot.*R;        
+    
+    T1 = 50;
+    T2 = 100;
+    T3 = 1500;
+    vd1 = -10000*1e3;
+    vd2 = -1000*1e3;
+    vd3 = 6000*1e3;  
+    
+    n = n;
+    vd = [vd1 vd2 vd3];
+    T = [T1 T2 T3];
 end
 
 
-units =irf_units;
+units = irf_units;
 vt = sqrt(2*units.e*T./units.me); % m/s
 
 nPop = numel(n);
@@ -380,3 +398,4 @@ params.vd = vd;
 params.T = T;
 params.vt = vt;
 params.R = R;
+params.inp = inp;

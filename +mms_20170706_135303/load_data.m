@@ -6,7 +6,7 @@ localuser = datastore('local','user');
 
 %% Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
-mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load defatt, for coordinate tranformation

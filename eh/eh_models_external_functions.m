@@ -83,7 +83,8 @@ switch phi_input
     lx = obs_lpp(ih)/2*1e3;
     nx = 10001;
     
-    vph = obs_velocity(ih)*1e3;        
+    vph = obs_velocity(ih)*1e3; 
+    %vph = -10000*1e3;
     c_eval('tint = obs_t0_epoch_mms?(ih) + 5*lx/abs(vph)*[-1 1];',mms_id)
     t0 = tint(1);
     tcenter = mean(tint-tint(1));

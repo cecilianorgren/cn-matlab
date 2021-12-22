@@ -28,13 +28,13 @@ ly = 10.5e3/sqrt(2); % m
 lr = sqrt(lx.^2 + ly.^2); % m
 lz = 3.5e3;  % m
 phi0 = 240;  % V
-B0 = 10e-9;  % T
+B0 = 00e-9;  % T
 
 % Properties of electrons
 T0 = [100 200 400 700]; % eV, perpendicular energy
-T0 = 100;[1 10 20 50 100 200]; % eV, perpendicular energy
+T0 = 00;[1 10 20 50 100 200]; % eV, perpendicular energy
 vt = sqrt(T0*units.eV*2/units.me); % m/s
-Ek0 = [5 15];%[10 20 50 100]; % eV, parallel energy, defines U
+Ek0 = [1 5];%[10 20 50 100]; % eV, parallel energy, defines U
 vk = sqrt(Ek0*units.eV*2/units.me); % m/s
 
 % for visibility, have different groups start in different positions
@@ -47,7 +47,7 @@ x0 = [0 0.25 0.5 0.75 1.0 1.25]*lx; % m
 y0 = [0 0.25 0.5 0.75 1.0 1.25]*ly; % m
 x0 = [0 0.25 0.5 0.75 1.00 1.25 1.50]*lx; % m
 y0 = [0]*ly; % m
-z0 = 0e3; % m
+z0 = 20e3; % m
 [VT,VK,X0,Y0] = ndgrid(vt,vk,x0,y0); 
 
 colors = interp1(linspace(1,numel(x0),size(cmap,1)),cmap,1:numel(x0));
@@ -238,7 +238,7 @@ for ie = 1:numel(X0)
       hca.YLabel.String = 'v_{\perp} (km/s)';
       hca.Title.String = sprintf('reflected = %g/%g',nRef,ie);
     end
-    if 1 % atan2(vpar,vperp)
+    if 0 % atan2(vpar,vperp)
       hca = h(isub); isub = isub + 1;
       phase = atan2(S(ie).vpar,S(ie).vperp);
       plot(hca,S(ie).z*1e-3,phase)
@@ -246,7 +246,7 @@ for ie = 1:numel(X0)
       hca.YLabel.String = 'phase ()';
       hca.Title.String = sprintf('reflected = %g/%g',nRef,ie);
     end
-    if 1 % atan2(vpar,vperp)
+    if 0 % atan2(vpar,vperp)
       hca = h(isub); isub = isub + 1;
       phase = atan2(S(ie).vpar,S(ie).vperp);
       dphasedt = gradient(phase,t);
@@ -256,7 +256,7 @@ for ie = 1:numel(X0)
       hca.Title.String = sprintf('reflected = %g/%g',nRef,ie);
     end
     
-    if 0 % trajectory in x,y plane
+    if 1 % trajectory in x,y plane
       hca = h(isub); isub = isub + 1;   
       plot(hca,x_sol(:,1)*1e-3,x_sol(:,2)*1e-3)
       hca.XLabel.String = 'x (km)';
@@ -293,7 +293,7 @@ for ie = 1:numel(X0)
       hca.XLabel.String = 'z (km)';
       hca.YLabel.String = 'Exdx+Eydy (V)';
     end
-    if 0 % Exdx+Eydy vs Ezdz
+    if 1 % Exdx+Eydy vs Ezdz
       hca = h(isub); isub = isub + 1;   
       Exdx = cumtrapz(S(ie).x,S(ie).Ex);
       Eydy = cumtrapz(S(ie).y,S(ie).Ey);

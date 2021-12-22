@@ -39,6 +39,9 @@ end
 % This should work for arrays to
 out = sum((ex-Ex_data).^2 + (ey-Ey_data).^2 + (ez-Ez_data).^2);
 
+if params(1) < 0 % will not allow negative density
+  out = inf;
+end
 % function sse = sseval(x,tdata,ydata)
 % These 'x' are the parameters I need to fit.
 %   B0 = x(1);
