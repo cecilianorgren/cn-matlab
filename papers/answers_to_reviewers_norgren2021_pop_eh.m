@@ -1,4 +1,4 @@
-h = irf_plot(7);
+h = irf_plot(6);
 ffilt = 100;
 
 hca = irf_panel('Epar');
@@ -24,7 +24,12 @@ hca.YLabel.String = 'V_{sc} (V)';
 hca.YLabel.Interpreter = 'tex';
 
 
-if 1
+hca = irf_panel('scpot filt / scpot');
+irf_plot(hca,scPot1.filt(ffilt,0,[],5)/scPot1)
+hca.YLabel.String = '\delta V_{sc}/V_{sc}';
+hca.YLabel.Interpreter = 'tex';
+
+if 0
   hca = irf_panel('n scpot');
   %ffilt = 100;
   irf_plot(hca,nescpot.filt(ffilt,0,[],5)*1e3)
@@ -32,7 +37,7 @@ if 1
   hca.YLabel.Interpreter = 'tex';
   irf_legend(hca,sprintf('f>%g Hz',ffilt),[0.1 0.98])
 end
-if 1
+if 0
   hca = irf_panel('n scpot norm');
   %ffilt = 100;
   irf_plot(hca,nescpot.filt(ffilt,0,[],5)/nescpot)

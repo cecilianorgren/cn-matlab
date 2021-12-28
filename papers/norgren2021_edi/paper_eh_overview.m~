@@ -15,14 +15,12 @@ c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); ',1:4);
 
-c_eval('gseR? = mms.get_data(''R_gse'',tint_brst,?); gseR? = gseR?.resample(tint_figure(1))',1:4)
-
-c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',1:4);
+c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
 
 %c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
 %c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
 
-c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',1:4)
+c_eval('elpPitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',1:4)
 
 c_eval('[ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+1));',1:4)
 c_eval('ePDist? = ePDist?.tlim(tint);',1:4)
@@ -185,7 +183,7 @@ end
 
 %% Plot, zoom only
 ic = 1;
-npanels = 8;
+npanels = 7;
 h = irf_plot(npanels); 
 isub = 0;
 zoomy = [];
@@ -333,17 +331,6 @@ if 1 % charge perturbation
     set(hca,'ColorOrder',mms_colors('b'))
     irf_legend(hca,{'4 sc'},[1.02 0.9],'fontsize',12);
   end
-end
-if 1 % charge perturbation
-  sub = isub + 1;
-  zoomy = [zoomy isub];  
-  hca = irf_panel('scpot filt');
-  %ffilt = 100;
-  set(hca,'ColorOrder',mms_colors('1234'))  
-  irf_plot(hca,{scPot1.filt(ffilt,0,[],5),scPot2.filt(ffilt,0,[],5),scPot3.filt(ffilt,0,[],5),scPot4.filt(ffilt,0,[],5)},'comp','dt',dt)
-  hca.YLabel.String = {'\delta V_{sc}','(V)'};
-  hca.YLabel.Interpreter = 'tex';
-  irf_legend(hca,sprintf('f>%g Hz',ffilt),[0.05 0.98])
 end
 if 1 % edi flux 180 4sc
   isub = isub + 1;

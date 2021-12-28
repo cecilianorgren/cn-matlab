@@ -10,7 +10,8 @@ tint_burst = tint_burst + [+5 -5]; % using the above edges causes problem with n
 
 % Time interval for figure
 tint_dist = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
-tint_dist = irf_time('2017-07-06T13:54:05.56Z','utc>EpochTT') + 0.5*T*[-1 1];
+tint_dist = irf_time('2017-07-06T13:54:05.56Z','utc>EpochTT') + 60*T*[-1 1];
+tint_dist = tint_burst;
 
 % Set up database
 localuser = datastore('local','user');
@@ -32,7 +33,7 @@ c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint_burst,?);',ic);
 %% Rebin distribution function into cartesian grid
 eint = [000 40000];
 vint = [-Inf Inf];
-vg = (-50:1:50)*1e3;
+vg = (-70:1:70)*1e3;
 
 c_eval('eDist = ePDist?.tlim(tint_dist);',ic)
            
@@ -63,9 +64,11 @@ ef1D_perp2 = eDist.reduce('1D',ePerp2.data,'vint',vint,'scpot',scpot,'lowerelim'
 % Get some values for initial guess of search function
 c_eval('n0 = ne?.resample(eDist);' ,ic)
 c_eval('v0 = gseVe?*orient''; v0 = v0.resample(eDist);' ,ic)
+c_eval('vpar = gseVe?*ePara.data''; vpar = vpar.resample(eDist);' ,ic)
 c_eval('T0 = mms.rotate_tensor(gseTe?,''rot'',orient(1,:),orient(2,:),orient(3,:)); T0 = T0.resample(eDist);',ic) % xx component is par
 
-%% Make fit, 1D
+%% Make fit, 1D, development part
+if 0
 nMax = 1; % how many Maxwellians to fit to
 %dv = (ePDistCart.depend{1}(2) - ePDistCart.depend{1}(1));
 %f_obs = squeeze(sum(sum(ePDistCart.data,4),3))*dv;
@@ -98,6 +101,50 @@ cost_function = @(params) costfunction_maxwellian(params,{v},f_obs,nPop,0);
 nPop = 3; params0 = [params params_obs];
 cost_function = @(params) costfunction_maxwellian(params,{v},f_obs,nPop,1);
 params = fminsearch(cost_function,params0,options);
+end
+%% Make fit, 1D, with funFitVDF()
+vdf = ef1D_par;
+nPop = 3;
+[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',1);
+
+%% Plot results from funFitVDF()
+h = irf_plot(6);
+hca = irf_panel('vdf_obs');
+irf_spectrogram(hca,vdf.specrec('velocity'),'log'); colormap(hca,irf_colormap('waterfall')) 
+hca.YLabel.String = 'v^{obs} (km/s)';
+hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('vdf_fit');
+irf_spectrogram(hca,ts.f.specrec('velocity'),'log'); colormap(hca,irf_colormap('waterfall'))
+hold(hca,'on'); irf_plot(hca,ts.vd); hold(hca,'off'); 
+hca.YLabel.String = 'v^{fit} (km/s)';
+hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('n_fit');
+irf_plot(hca,ts.n)
+hold(hca,'on'); hnobs = irf_plot(hca,n0); hold(hca,'off'); 
+irf_legend(hca,'obs',[0.98 0.98],'color',hnobs.Color)
+hca.YLabel.String = 'n (cm^{-3})';
+hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('vd_fit');
+irf_plot(hca,ts.vd)
+hold(hca,'on'); hvobs = irf_plot(hca,vpar); hold(hca,'off'); 
+irf_legend(hca,'obs',[0.98 0.98],'color',hvobs.Color)
+hca.YLabel.String = 'v (km/s)';
+
+hca = irf_panel('T_fit');
+irf_plot(hca,ts.T)
+hold(hca,'on'); hTobs = irf_plot(hca,T0.xx); hold(hca,'off'); 
+irf_legend(hca,'obs',[0.98 0.98],'color',hTobs.Color)
+hca.YLabel.String = 'T (eV)';
+
+hca = irf_panel('cf_fit');
+irf_plot(hca,ts.cf)
+
+irf_plot_axis_align(h)
+hlinks = linkprop([irf_panel('vdf_obs'),irf_panel('vdf_fit')],{'CLim','YLim'});
+irf_zoom(h,'x',tint_dist)
 
 %% Make fit, 2D
 nMax = 1; % how many Maxwellians to fit to
