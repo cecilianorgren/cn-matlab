@@ -340,6 +340,12 @@ if nargout == 2
       ts_vd = irf.ts_scalar(vdf.time,data_all(:,2:(2*nDim+1):end)); ts_vd.units = Xu_units{2}; ts_vd.name = 'vd';
       ts_T = irf.ts_scalar(vdf.time,data_all(:,3:(2*nDim+1):end)); ts_T.units = Xu_units{3}; ts_T.name = 'T'; 
       ts_f =  PDist(vdf.time,f_all,'1Dcart',v{1}*1e-3);
+      
+      % Apply limits to data, data outside of limits are put to NaN
+      ts_T.data(ts_T.data>30e4) = NaN; % 30000 eV
+      ts_n.data(ts_n.data>200) = NaN; % 200 cc
+      ts_vd.data(ts_vd.data>1e5) = NaN; % 100000 km/s
+      
       % Collect TSeries into structure
       ts.n = ts_n;
       ts.vd = ts_vd;
@@ -349,6 +355,7 @@ if nargout == 2
       ts.exitflag = ts_exitflag;
       ts.iter = ts_iter;
       ts.feval = ts_feval;
+      
       % Add to output
       varargout{2} = ts;      
     case 2 % not implemented

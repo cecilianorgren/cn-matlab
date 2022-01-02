@@ -1,0 +1,27 @@
+% Gyroresonance:
+% v-v_{ph}=n\omega_{ce}/k, \ \textup{where} \ n = 1,2,...
+units = irf_units;
+n = 1e-6; % m-3
+vt = 1000e3; % m/s
+vtpar = vt;
+vtperp = vt;
+vtx = vtperp;
+vty = vtperp;
+vtz = vtpar;
+vdx = 0; % m/s
+vdz = 0; % m/s
+vdy = 0; % m/s
+nv = 50;
+v = 3*vt*linspace(-1,1,nv);
+
+[VX,VY,VZ] = ndgrid(v,v,v);
+VTOT = sqrt(VX.^2 + VY.^2 + VZ.^2);
+B = 10e-9; % T
+L = 1000e3; % m/s
+F = fmax(VX,VY,VZ,n,vdx,vdy,vdz,vtx,vty,vtz);
+VPERP = sqrt(VX.^2 + VY.^2);
+PA = acosd(Vperp)
+
+oce = units.e*B/units.me;
+vph = 1e3; % m/s
+k = 2*pi/1000; % s/m

@@ -14,6 +14,9 @@ tint_dist = irf.tint('2017-07-06T13:54:05.52Z/2017-07-06T13:54:05.630Z');
 tint_dist = irf_time('2017-07-06T13:54:05.56Z','utc>EpochTT') + 60*T*[-1 1];
 %tint_dist = tint_burst;
 
+tint_burst = irf.tint('2017-07-06T00:54:05.00Z/2017-07-06T00:54:45.00Z');
+tint_dist = irf.tint('2017-07-06T00:54:12.00Z/2017-07-06T00:54:30.00Z');
+
 % Set up database
 localuser = datastore('local','user');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS'); 
@@ -53,14 +56,14 @@ nMC = 100e0;
 %ef3D_perp1perp2par = eDist.elim([40 inf]).rebin('cart',{vg,vg,vg},orient); % Rebins skymap into 3D cartesian grid
 
 % For 2D/1D fit (can further be reduced to 1D)
-ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC);
-ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC);
-ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC);
+% ef2D_parperp1 = eDist.reduce('2D',ePara,ePerp1,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC);
+% ef2D_parperp2 = eDist.reduce('2D',ePara,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC);
+% ef2D_perp1perp2 = eDist.reduce('2D',ePerp1,ePerp2,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'base','cart','nMC',nMC);
 
 % For 1D fit
 ef1D_par = eDist.reduce('1D',ePara.data,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); % reduced distribution along B
-ef1D_perp1 = eDist.reduce('1D',ePerp1.data,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); % reduced distribution along B
-ef1D_perp2 = eDist.reduce('1D',ePerp2.data,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); % reduced distribution along B
+% ef1D_perp1 = eDist.reduce('1D',ePerp1.data,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); % reduced distribution along B
+% ef1D_perp2 = eDist.reduce('1D',ePerp2.data,'vint',vint,'scpot',scpot,'lowerelim',lowerelim,'vg',vg,'nMC',nMC); % reduced distribution along B
 
 % Get some values for initial guess of search function
 c_eval('n0 = ne?.resample(eDist);' ,ic)
@@ -72,7 +75,7 @@ c_eval('T0 = mms.rotate_tensor(gseTe?,''rot'',orient(1,:),orient(2,:),orient(3,:
 vdf = ef1D_par;
 nPop = 2;
 tic
-[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0);
+[fitdata,ts] = funFitVDF(vdf(50:120),'nPop',nPop,'plot',0,'plot',0,'guessprevious',0);
 toc
 %% Plot results from funFitVDF()
 h = irf_plot(6);

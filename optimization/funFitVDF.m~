@@ -1,8 +1,8 @@
 function varargout = funFitVDF(vdf,varargin)
 % Fit Maxwellians to velocity distribution function.
-% Currently only fully implemented for 1D distributions.
-%   data = funFitVDF(f1D,nPop);
-%   [data,timeseries] = funFitVDF(f1D,nPop);
+% Currently only "fully" implemented for 1D distributions.
+%   data = funFitVDF(f1D);
+%   [data,timeseries] = funFitVDF(f1D);
 % 
 %   Input:
 %     vdf - PDist object of type 'line (reduced)', or '1DCart'
@@ -24,10 +24,13 @@ function varargout = funFitVDF(vdf,varargin)
 %                     arbitrarily switch between each other. Default is 2,
 %                     sort by first speed component.
 %     'X0',__ - Initial guess for fminsearch, must have nPop*(2*nDim+1) 
-%               number of elements.
+%               number of elements. Units are ,m-3 for density and m/s for
+%               speed and thermal speed, e.g.
+%               X0 = repmat([0.02e6 1000e3 10000e3],1,nPop);
 %     'guessprevious',0/1 - Use previous result as input. This speeds up
 %                           the process but might result in some population
-%                           loosing its way
+%                           "loosing its way", for example always having
+%                           zero density.
 %
 %   Output:
 %     data - structure array with vdf.length entries and field:
@@ -61,8 +64,14 @@ function varargout = funFitVDF(vdf,varargin)
 %        feval: number of function evaluations
 %
 %   Example:
+%     % Default options
+%     [fitdata,ts] = funFitVDF(vdf);
+%     
+%     % Some options given
+%     nPop = 2;
+%     X0 = repmat([0.02e6 1000e3 10000e3],1,nPop);
+%     [fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',1,'guessprevious',1);
 %
-%     [fitdata,ts] = funFitVDF(vdf,3);
 %
 %     h = irf_plot(5);
 %     hca = irf_panel('vdf_obs');
@@ -230,7 +239,7 @@ X = X0;
 for iTime = 1:nTimes
   if not(doGuessPrevious)    
     X = X0; % Comment/remove this to use previous results as initial guess
-            % for next step. 
+            % for next step.  
   end
   history = [];
   nRedo = 0;
@@ -331,6 +340,7 @@ if nargout == 2
       ts_vd = irf.ts_scalar(vdf.time,data_all(:,2:(2*nDim+1):end)); ts_vd.units = Xu_units{2}; ts_vd.name = 'vd';
       ts_T = irf.ts_scalar(vdf.time,data_all(:,3:(2*nDim+1):end)); ts_T.units = Xu_units{3}; ts_T.name = 'T'; 
       ts_f =  PDist(vdf.time,f_all,'1Dcart',v{1}*1e-3);
+      
       % Collect TSeries into structure
       ts.n = ts_n;
       ts.vd = ts_vd;
