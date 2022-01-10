@@ -24,7 +24,7 @@ mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 db_info = datastore('mms_db');   
 
 %% Load data
-doLoad = 0;
+doLoad = 1;
 units = irf_units;
 
 % Load MMS data

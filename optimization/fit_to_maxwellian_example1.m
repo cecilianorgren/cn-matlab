@@ -75,7 +75,7 @@ c_eval('T0 = mms.rotate_tensor(gseTe?,''rot'',orient(1,:),orient(2,:),orient(3,:
 vdf = ef1D_par;
 nPop = 2;
 tic
-[fitdata,ts] = funFitVDF(vdf(50:120),'nPop',nPop,'plot',0,'plot',0,'guessprevious',0);
+[fitdata,ts] = funFitVDF(vdf(50:120),'nPop',nPop,'plot',1,'guessprevious',0);
 toc
 %% Plot results from funFitVDF()
 h = irf_plot(6);
