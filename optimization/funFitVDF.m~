@@ -122,9 +122,9 @@ doSort = 0;
 iSortPop = 2; % sort output by this fit parameter, e.g. 2 = vd (1D) or vdx (2/3D)
               % this prevents data from jumping around between populations              
 nmin  = 0.0001e6; nmax  = 200e6; % min/max values for initial guess
-vdmin = -60000e3; vdmax = 60000e3;
-%if strcmp(vdf.species,'ions'); vtmin = 4000e3/1836;  vtmax = 100000e3/1836; else, vtmin = 4000e3;   vtmax = 100000e3; end
+if 
 vtmin = 4000e3;   vtmax = 100000e3;
+vdmin = -60000e3; vdmax = 60000e3;
 
 % % If we use fminbnd, we need to give upper (hi) and lower (lo) bound
 % % fminbnd only works for single variable functions. Options to make intial
