@@ -33,6 +33,7 @@ eventPath = ['/Users/' localuser '/Research/Events/mms_' fileId '/']; % for savi
 mkdir(eventPath)
 
 %% Load data
+c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',ic);
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
@@ -54,13 +55,15 @@ c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
 c_eval('facPi? = mms.rotate_tensor(gsePi?,''fac'',gseB?); facPi?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
 c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
 
+c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
+
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 %c_eval('[iPDist?,iPDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0]));',ic)
 %c_eval('[ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
 % Remove all one-count "noise"
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.1) = 0;',ic)
+c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.0) = 0;',ic)
 %c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 c_eval('gsmVExB? = cross(gsmE?.resample(gsmB?.time),gsmB?)/gsmB?.abs/gsmB?.abs*1e3; gsmVExB?.units = '''';',ic) % km/s
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
@@ -83,13 +86,19 @@ c_eval('mag_momi? = 0.5*units.me*vti?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom
 c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
 
+c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 disp('Done loading data.')
-
+%%
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 c_eval('if1Dx? = iPDist?.reduce(''1D'',[1 0 0],''vint'',vint);',ic)
 c_eval('if1Dy? = iPDist?.reduce(''1D'',[0 1 0],''vint'',vint);',ic)
 c_eval('if1Dz? = iPDist?.reduce(''1D'',[0 0 1],''vint'',vint);',ic)
+
+lowerelim = 50; % eV
+c_eval('vPara = dmpaB?.resample(ePDist?).norm;',ic)
+c_eval('ef1D?_par = ePDist?.reduce(''1D'',vPara,''vint'',vint,''scpot'',scPot?.resample(ePDist?));',ic)% reduced distribution along B
+
 disp('Done preparing reduced distributions.')
 
 %c_eval('gsmVe?.data(abs(gsmVe?.data)>20*1e3) = NaN;',ic)
@@ -207,7 +216,7 @@ if 0 % E gsm lowpass filt
   irf_legend(hca,{sprintf('f < %.0f',ffilt)},[0.1 0.9],'fontsize',12,'color',[0 0 0]);
   irf_zoom(hca,'y')
 end
-if 1 % Ve perp,par
+if 0 % Ve perp,par
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve perp par');
@@ -353,6 +362,20 @@ if 0 % E
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
+if 1 % Te/i par perp Ti/Tref
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('1234'))
+  refTi = 1;
+  c_eval('irf_plot(hca,{Te?par.tlim(tint),Te?perp,Ti?par.tlim(tint)/refTi,Ti?perp.tlim(tint)/refTi},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_{i,||}/' num2str(refTi,'%.0f')],['T_{i,\perp}/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [10 400];  
+  %irf_zoom(hca,'y')
+  hca.YLim = [0 1e4];
+end
 if 0 % e DEF omni
   isub = isub + 1;
   hca = irf_panel('e DEF omni');  
@@ -413,11 +436,11 @@ if 0 % Te par perp Ti/Tref
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Te');
-  set(hca,'ColorOrder',mms_colors('123'))
+  set(hca,'ColorOrder',mms_colors('1234'))
   refTi = 10;
   c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2,facTi?.trace/3/refTi},''comp'');',ic)
   hca.YLabel.String = {'T','(eV)'};
-  set(hca,'ColorOrder',mms_colors('123'))
+  set(hca,'ColorOrder',mms_colors('1234'))
   irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_i/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);  
   %hca.YLim = [10 400];  
   %irf_zoom(hca,'y')
