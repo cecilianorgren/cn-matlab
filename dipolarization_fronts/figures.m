@@ -21,7 +21,7 @@ fileId = '20170611173913';
 fileId = '20170725220853';
 %fileId = '20170726065803';
 %fileId = '20170728200013'; %two front with 2 density decrease
-
+ 
 iFile = find(cellfun(@(s) contains(s,fileId),{files.name}));
 tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
 
