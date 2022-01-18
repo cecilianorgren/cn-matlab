@@ -8,7 +8,7 @@ tint = tint_figure + [-5 5];
 localuser = datastore('local','user');
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 db_info = datastore('mms_db');   
 
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);

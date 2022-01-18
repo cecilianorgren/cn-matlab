@@ -1,0 +1,122 @@
+%% Specify time and spacecraft
+units = irf_units;
+irf.log('critical')
+ic = 2;
+
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+db_info = datastore('mms_db');   
+localuser = datastore('local','user');
+tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
+files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
+
+% Time from time interval
+%tint = irf.tint('2017-06-22T03:01:03.00Z/2017-06-22T03:01:43.00Z');
+
+% Time from file name
+fileId = '20170725220853';
+
+iFile = find(cellfun(@(s) contains(s,fileId),{files.name}));
+tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
+
+% Event path
+eventPath = ['/Users/' localuser '/Research/Events/mms_' fileId '/']; % for saving figures
+%matlabPath = ['/Users/' localuser '/MATLAB/cn-matlab/mms_' fileID '/'];
+mkdir(eventPath)
+
+%% Load data
+% OMNI data, %% get omni pressure data
+tint_omni = irf.tint('2017-07-25T20:00:00.00Z/2017-07-26T00:00:00.00Z');
+omni_solarwind = irf_get_data_omni(tint_omni,'n,v,P,Bz,Ms','omni_min'); % not working, dont know why
+omni_index = irf_get_data_omni(tint_omni,'ae,al,au,f10.7,dst,kp','omni_min'); % not working, dont know why
+
+% Magnetic field
+c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
+c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
+c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',1:4);
+% Electric field
+c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('gsmE? = c_coord_trans(''GSE'',''GSM'',gseE?);',ic)
+% Spacecraft potential
+c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+% Density
+c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
+c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
+% Velocity
+c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
+c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic);
+c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
+c_eval('gsmVi? = c_coord_trans(''GSE'',''GSM'',gseVi?);',ic)
+% Pressure
+c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic) 
+c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
+c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic) 
+c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic);
+% Pressure, FAC
+c_eval('facPe? = mms.rotate_tensor(gsePe?,''fac'',gseB?); facPe?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
+c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
+c_eval('facPi? = mms.rotate_tensor(gsePi?,''fac'',gseB?); facPi?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
+c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
+c_eval('Ti?perp = 0.5*(facTi?.yy+facTi?.zz);',ic)
+c_eval('Te?perp = 0.5*(facTe?.yy+facTe?.zz);',ic)
+c_eval('Ti?par = facTi?.xx;',ic)
+c_eval('Te?par = facTe?.xx;',ic)
+% Spacecraft position
+c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
+% Distributions, FPI
+c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+% Remove all one-count "noise"
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
+% Par/perp electric field
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+% vExB
+c_eval('gsmVExB? = cross(gsmE?.resample(gsmB?.time),gsmB?)/gsmB?.abs/gsmB?.abs*1e3; gsmVExB?.units = '''';',ic) % km/s
+c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
+% Magnetic field pressure
+c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
+% Dynamic pressure
+c_eval('PDi? = ne?.resample(gsmVi?)*1e6*0.5*units.mp*gsmVi?.x.^2*1e6*1e9; PDi?.name = ''Dynamic pressure''; PDi?.units =''nPa'';',ic)
+% Thermal speeds
+c_eval('vti?perp = units.s*(1-1/(Ti?perp*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3; ; vti?perp.units = ''km/s'';',ic)
+c_eval('vte?perp = units.s*(1-1/(Te?perp*units.e/(units.me*units.c^2)+1).^2).^0.5*1e-3; ; vte?perp.units = ''km/s'';',ic)
+c_eval('vti?par = units.s*(1-1/(Ti?par*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3; ; vti?par.units = ''km/s'';',ic)
+c_eval('vte?par = units.s*(1-1/(Te?par*units.e/(units.me*units.c^2)+1).^2).^0.5*1e-3; ; vte?par.units = ''km/s'';',ic)
+% Magnetic moment based on thermal speeds
+c_eval('mag_mome? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mome?.units = ''nAm^2''; mag_mome?.name = ''magnetic moment'';',ic)
+c_eval('mag_momi? = 0.5*units.me*vti?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_momi?.units = ''nAm^2''; mag_momi?.name = ''magnetic moment'';',ic)
+% Velocity, FAC
+c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
+c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
+% Currents from moments, use ne also for Ji 
+c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',ic);
+c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
+c_eval('gseJ? = (gseJe?+gseJi?);',ic);
+% Current from magnetic field
+c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
+[Jcurl,divBbrst,Bbrst,JxBbrst,divTshearbrst,divPbbrst] = c_4_j('gseR?brsttime','gseB?');
+gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
+gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
+gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
+
+
+disp('Done loading data.')
+
+%% Reduced distributions
+disp('Preparing reduced distributions.')
+vint = [-Inf Inf];
+c_eval('if1Dx? = iPDist?.reduce(''1D'',[1 0 0],''vint'',vint);',ic)
+c_eval('if1Dy? = iPDist?.reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+c_eval('if1Dz? = iPDist?.reduce(''1D'',[0 0 1],''vint'',vint);',ic)
+
+lowerelim = 50; % eV
+c_eval('vPara = dmpaB?.resample(ePDist?).norm;',ic)
+c_eval('ef1D?_par = ePDist?.reduce(''1D'',vPara,''vint'',vint,''scpot'',scPot?.resample(ePDist?));',ic)% reduced distribution along B
+
+disp('Done preparing reduced distributions.')
+
+%c_eval('gsmVe?.data(abs(gsmVe?.data)>20*1e3) = NaN;',ic)
+
+%c_eval('[fitdata?,ts?] = funFitVDF(if1Dx?,''nPop'',2,''plot'',0,''guessprevious'',0,''X0'',[0.5e6 0 100e3 0.5e6 0 100e3]);',ic)
+

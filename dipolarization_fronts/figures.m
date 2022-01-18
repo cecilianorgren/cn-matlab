@@ -63,7 +63,7 @@ c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some 
 %c_eval('[ePDist?,ePDistErr?] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0]));',ic)
 % Remove all one-count "noise"
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.0) = 0;',ic)
+c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
 %c_eval('ePDist?.data(ePDist?.data<ePDistErr?.data*1.1) = 0;',ic)
 c_eval('gsmVExB? = cross(gsmE?.resample(gsmB?.time),gsmB?)/gsmB?.abs/gsmB?.abs*1e3; gsmVExB?.units = '''';',ic) % km/s
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
@@ -88,7 +88,11 @@ c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name =
 
 c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 disp('Done loading data.')
+
+
 %%
+c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
+
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 c_eval('if1Dx? = iPDist?.reduce(''1D'',[1 0 0],''vint'',vint);',ic)
@@ -109,7 +113,7 @@ disp('Done preparing reduced distributions.')
 %% Figure 1, overview, fred
 ic = 2;
 
-npanels = 10;
+npanels = 11;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -498,6 +502,15 @@ if 1 % i psd z
     hold(hca,'off')
   end
   hca.YLabel.String = {'v_{iz}','(km/s)'};  
+  hca.YLabel.Interpreter = 'tex';
+end
+if 1 % iPitch
+  isub = isub + 1;
+  hca = irf_panel('iPitchj');
+  c_eval('iPitch = ePitch?.elim([5000 10000]);',ic)
+  irf_spectrogram(hca,iPitch.specrec('pitchangle'));  
+  hca.YLim = [0 180];
+  hca.YLabel.String = {'\theta','(deg)'};  
   hca.YLabel.Interpreter = 'tex';
 end
 if 0 % e DEF omni

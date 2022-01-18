@@ -213,11 +213,11 @@ end
 switch nDim
   case 1
     X_units = repmat({'m-6','m/s','m/s'},1,nPop);
-    funits = @(X) reshape([X(1:3:end)*1e-6; X(2:3:end)*1e-3; X(3:3:end).^2*units.me/2/units.eV],1,numel(X));
+    funits = @(X) reshape([X(1:3:end)*1e-6; X(2:3:end)*1e-3; X(3:3:end).^2*m/2/units.eV],1,numel(X));
     Xu_units = repmat({'cm-3','km/s','eV'},1,nPop);
   case 2
     X_units = repmat({'m-6','m/s','m/s','m/s','m/s'},1,nPop);
-    funits = @(X) reshape([X(1:5:end)*1e-6; X(2:5:end)*1e-3; X(3:5:end)*1e-3; X(4:5:end).^2*units.me/2/units.eV X(5:5:end).^2*units.me/2/units.eV],1,numel(X));
+    funits = @(X) reshape([X(1:5:end)*1e-6; X(2:5:end)*1e-3; X(3:5:end)*1e-3; X(4:5:end).^2*m/2/units.eV X(5:5:end).^2*m/2/units.eV],1,numel(X));
     Xu_units = repmat({'cm-3','km/s','km/s','eV','eV'},1,nPop);
   case 3 % not implemented
 end
@@ -237,7 +237,10 @@ options = optimset('OutputFcn', @myoutput,'MaxIter',maxIter,'MaxFunEvals',maxFun
 X = X0;
 
 % Step through all the distribution functions
+disp(sprintf('Fitting %g Maxwellians to distribution. Costfunction weight is [%g,%g,%g].',nPop,weight(1),weight(2),weight(3)))
+fprintf('iTime = %4.0f/%4.0f\n',0,nTimes) % display progress       
 for iTime = 1:nTimes
+  if mod(iTime,1) == 0, fprintf([repmat('\b', 1, 10) '%4.0f/%4.0f\n'],iTime,nTimes); end % display progress
   if not(doGuessPrevious)    
     X = X0; % Comment/remove this to use previous results as initial guess
             % for next step.  
@@ -260,7 +263,7 @@ for iTime = 1:nTimes
   % If the density is zero, or perhaps if the thermal spread is zero, the 
   % function has a hard time finding it's way back, so try to put it at
   % least so some small but finite value.
-  if 1 % Seems to be not working properly, or perhaps vtmax was wrong?
+  if 0 % Seems to be not working properly, or perhaps vtmax was wrong?
   switch nDim
     case 1
       % Adjust density to some minimal value
