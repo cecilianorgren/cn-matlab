@@ -584,15 +584,15 @@ c_eval('h1(?).YLim = [-14 14];',2:4)
 
 %% Figure, compare v to vExB
 dt_resample = 0.5;
-%timeline = tint(1):dt_resample:tint(2);
-timeline = gseVi2.time; dt_resample = timeline(2) - timeline(1);
+timeline = tint(1):dt_resample:tint(2);
+timeline = gseVi2.time; dt = timeline(2) - timeline(1);
 doResample = 1;
 
 
 npanels = 3;
 nrows = 3;
-ncols = 2;
-[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.6,'vertical');
+ncols = 1;
+[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.7,'vertical');
 
 ic = 2;
 if 1 % Vi, Ve, VExB
@@ -614,33 +614,29 @@ end
 irf_zoom(h1,'x',tint)
 %irf_zoom(h1(zoomy),'y')
 irf_plot_axis_align
-c_eval('irf_pl_mark(h1(?),tint_harris)',1:numel(h))
 
 isub = 1;
-for species = ['i','e']
-  for comp = ['x','y','z']
+for comp = ['x','y','z']   
     hca = h2(isub); isub = isub + 1;
     c_eval('xx = gseVExB?.tlim(tint_harris).(comp).resample(timeline).data;',ic)
-    c_eval(sprintf('yy = gseV%s?.tlim(tint_harris).(comp).resample(timeline).data;',species),ic)    
+    c_eval('yy = gseVe?.tlim(tint_harris).(comp).resample(timeline).data;',ic)    
     irem = find(xx == 0);
     xx(irem) = [];
     yy(irem) = [];
     p = polyfit(xx,yy,1);
-    J_edges1 = linspace(-900,900,41);
-    J_edges2 = linspace(-900,900,39);
+    J_edges1 = linspace(-1200,1200,41);
+    J_edges2 = linspace(-1200,1200,39);
     [N edges mid loc] = histcn([xx(:) yy(:)],J_edges1,J_edges2);
     N(N==0) = NaN;
     pcolor(hca,mid{:},log10(N)')
     shading(hca,'flat')
-    %hcb = colorbar('peer',hca);
-    %hcb.YLabel.String = 'log_{10}(counts)';
+    hcb = colorbar('peer',hca);
+    hcb.YLabel.String = 'log_{10}(counts)';
     colormap(pic_colors('candy4'))
     %plot(hca,xx,yy,'.')
     %histcn_plot(hca,xx,yy)
-    %hca.XLabel.String = ['v_{ExB ' comp '}'];
-    hca.XLabel.String = ['v_{ExB}'];
-    hca.YLabel.String = ['v_{' species ' ' comp '}'];
-    irf_legend(hca,{['v_{' species ' ' comp '}']},[0.02 0.98]);
+    hca.XLabel.String = sprintf('<v_{%s}^{FPI}>',species{1});
+    hca.YLabel.String = 'J_y^{curl}';
     hca.XGrid = 'on';
     hca.YGrid = 'on';
     hold(hca,'on')
@@ -655,7 +651,8 @@ for species = ['i','e']
     %hca.YLim = 40*[-1 1]; 
     hca.XGrid = 'on';
     hca.YGrid = 'on'; 
-    axis(hca,'square')  
-  end
+    axis(hca,'square')
+  end  
+
 end
-compact_panels(h2)
+

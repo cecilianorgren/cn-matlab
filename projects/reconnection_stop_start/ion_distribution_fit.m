@@ -42,6 +42,12 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic);
 c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
 c_eval('gsmVi? = c_coord_trans(''GSE'',''GSM'',gseVi?);',ic)
 
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+% Remove all one-count "noise"
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
+
+
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 % Cutting off the edge of the distribution allows the maxwellian to go 
