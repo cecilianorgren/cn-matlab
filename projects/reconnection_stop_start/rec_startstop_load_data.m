@@ -100,12 +100,13 @@ gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'G
 gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 
+
 gseJxB = gseJcurl.cross(Bbrst);
 gseEav = (gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/3; % gseE1 not there?
 neav = (ne1.resample(ne1) + ne2.resample(ne1) + ne3.resample(ne1) + ne4.resample(ne1))/4; % gseE1 not there?
-
 gseJxBne_mVm = (gseJxB*1e-9)/(neav.resample(gseJxB)*1e6)/units.e*1e3;
 
+c_eval('gseVixB? = gseVi?.cross(gseB?);',1:4)
 disp('Done loading data.')
 
 %% Reduced and pitchangle distributions
