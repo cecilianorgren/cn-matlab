@@ -245,6 +245,7 @@ for iTime = 1:nTimes
     X = X0; % Comment/remove this to use previous results as initial guess
             % for next step.  
   end
+  str_time = irf_time(vdf(iTime).time,'EpochTT>utc_yyyy-mm-dd HH:MM:SS:mmm');
   history = [];
   nRedo = 0;
   EXITFLAG = 0;
@@ -473,10 +474,10 @@ switch nDim
       % Make string to display parameters
       switch nPop
         case 1
-          str_param = sprintf('n = %g cc, vd = %g km/s, vt = %g km/s',X(1)*1e-6,X(2)*1e-3,X(3)*1e-3);  
+          str_param = sprintf('n = %g cc, vd = %6.0f km/s, vt = %6.0g km/s',X(1)*1e-6,X(2)*1e-3,X(3)*1e-3);  
         case 2
           %str_param = sprintf('n = [%g, %g] cc, vd = [%g, %g] km/s, vt = [%g, %g] km/s',X([1 4])*1e-6,X([2 5])*1e-3,X([3 6])*1e-3);
-          str_param = sprintf('n = [%g, %g] cc \nvd = [%g, %g] km/s \nvt = [%g, %g] km/s',X([1 4])*1e-6,X([2 5])*1e-3,X([3 6])*1e-3);
+          str_param = sprintf('n = [%g, %g] cc \nvd = [%6.0f, %6.0f] km/s \nvt = [%6.0f, %6.0f] km/s',X([1 4])*1e-6,X([2 5])*1e-3,X([3 6])*1e-3);
         case 3
           %str_param = sprintf('n = [%g, %g, %g] cc, vd = [%g, %g, %g] km/s, vt = [%g, %g, %g] km/s',X([1 4 7])*1e-6,X([2 5 8])*1e-3,X([3 6 9])*1e-3);
           str_param = sprintf('n = [%g, %g, %g] cc \nvd = [%g, %g, %g] km/s \nvt = [%g, %g, %g] km/s',X([1 4 7])*1e-6,X([2 5 8])*1e-3,X([3 6 9])*1e-3);
@@ -500,6 +501,7 @@ switch nDim
         sprintf('(f) CF0 = %g',out_mom0)
         };
       irf_legend(hca,str_param,[0.02 0.98],'color',[0 0 0])
+      irf_legend(hca,str_time,[0.98 0.98],'color',[0 0 0])
 %       hca.XLabel.String = vstr;
 %       hca.YLabel.String = 'f';
 %       hca.XLim = [min(v{:}) max(v{:})]*vscale;

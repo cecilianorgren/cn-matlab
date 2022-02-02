@@ -659,3 +659,136 @@ for species = ['i','e']
   end
 end
 compact_panels(h2)
+
+
+%% From simulation
+units = irf_units;
+if 0
+  %%
+  no02m = PIC('/Volumes/Fountain/Data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+  Bx_orig = no02m.twpelim(24000).Bx;
+  Jy_orig = no02m.twpelim(24000).Jy;
+  jiy_orig = no02m.twpelim(24000).jiy;
+  jey_orig = no02m.twpelim(24000).jey;
+end
+xlim = [72 93]; %xlim = [102.5 110]; %xlim = [no02m.xi(1) no02m.xi(end)];
+xlim = [72 133];
+xlim = [110 161];
+
+zlim = [-10 10];
+Bx = Bx_orig;
+Bx(or(no02m.xi<xlim(1),no02m.xi>xlim(2)),:) = [];
+Bx(:,or(no02m.zi<zlim(1),no02m.zi>zlim(2))) = [];
+
+Jy = Jy_orig; Jy(abs(Jy)<0.001) = NaN;
+Jy(or(no02m.xi<xlim(1),cno02m.xi>xlim(2)),:) = [];
+Jy(:,or(no02m.zi<zlim(1),no02m.zi>zlim(2))) = [];
+
+jiy = jiy_orig; 
+jiy(or(no02m.xi<xlim(1),no02m.xi>xlim(2)),:) = [];
+jiy(:,or(no02m.zi<zlim(1),no02m.zi>zlim(2))) = [];
+
+jey = jey_orig; 
+jey(or(no02m.xi<xlim(1),no02m.xi>xlim(2)),:) = [];
+jey(:,or(no02m.zi<zlim(1),no02m.zi>zlim(2))) = [];
+
+xi = no02m.xi;
+zi = no02m.zi;
+xi(or(no02m.xi<xlim(1),no02m.xi>xlim(2))) = [];
+zi(or(no02m.zi<zlim(1),no02m.zi>zlim(2))) = [];
+
+
+syms sz sz0 sL sB0
+sBx = sB0*tanh((sz-sz0)/sL);
+sJy = gradient(sBx,sz); % -(B0*(tanh((z - z0)/L)^2 - 1))/L
+
+mf_Bx = matlabFunction(sBx);
+mf_Jy = matlabFunction(sJy);
+
+
+jielim = 0.3*[-1 1];
+jlim = [-0.2 1];
+blim = max(Bx_orig(:))*[-1 1];
+
+h = setup_subplots(2,2,'vertical');
+isub = 1;
+
+if 1 % Bx
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,xi,zi,Bx')
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca); 
+  hcb.YLabel.String = 'B_x';
+  hcb.YLim = max(blim)*[-1 1];
+  hca.CLim = blim;
+  colormap(hca,pic_colors('blue_red'))
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 'z/d_i';
+end
+if 1 % Jy
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,xi,zi,Jy')
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca); 
+  hcb.YLabel.String = 'J_y';
+  hcb.YLim = jlim;
+  hca.CLim = max(jlim)*[-1 1];
+  colormap(hca,pic_colors('blue_gray_red'))
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 'z/d_i';
+end
+if 1 % (Bx^2,Jy)
+  hca = h(isub); isub = isub + 1;  
+  [N edges mid loc] = histcn([Bx(:).^2 Jy(:)],linspace(0,blim(2).^2,100),linspace(jlim(1),jlim(2),100));
+  N(N==0) = NaN;
+  pcolor(hca,mid{1:2},log10(N(:,:,ceil(end/2)))')
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'log_{10}(counts)';
+  colormap(hca,pic_colors('candy4'))
+  hca.XLabel.String = 'B_x^2';
+  hca.YLabel.String = 'J_y';
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';  
+
+  legs = {};
+  hl = gobjects(0);
+  hold(hca,'on');
+  B0 = 0.28; L = 1.6; z0 = 0; zvec = linspace(0,3*L,100); legs{end+1} = sprintf('B_0 = %g , L = %g',B0,L);  
+  hl(end+1) = plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0));
+  plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0),'k:');
+  
+ 
+  B0 = 0.35; L = 0.5; z0 = 0; zvec = linspace(0,3*L,100); legs{end+1} = sprintf('B_0 = %g , L = %g',B0,L);  
+  hl(end+1) = plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0));
+  plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0),'k:');
+  
+  B0 = 1.05; L = 2; z0 = 0; zvec = linspace(0,3*L,100); legs{end+1} = sprintf('B_0 = %g , L = %g',B0,L);  
+  hl(end+1) = plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0));
+  plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0),'k:');
+  
+  B0 = 0.50; L = 3; z0 = 0; zvec = linspace(0,3*L,100); legs{end+1} = sprintf('B_0 = %g , L = %g',B0,L);
+  hl(end+1) = plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0));
+  plot(hca,mf_Bx(B0,L,zvec,z0).^2,mf_Jy(B0,L,zvec,z0),'k:');
+  
+  hold(hca,'off');
+  
+  legend(hl,legs,'location','best','box','off')
+end
+if 1
+  hca = h(isub); isub = isub + 1;  
+  [N edges mid loc] = histcn([jiy(:) jey(:)],linspace(jielim(1),jielim(2),100),linspace(jielim(1),jielim(2),100));
+  N(N==0) = NaN;
+  pcolor(hca,mid{1:2},log10(N(:,:,ceil(end/2)))')
+  shading(hca,'flat')
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'log_{10}(counts)';
+  colormap(hca,pic_colors('candy4'))
+  hca.XLabel.String = 'j_{iy}';
+  hca.YLabel.String = 'j_{ey}';
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hold(hca,'on');
+  plot(hca,jielim,jielim,'k-',-jielim,jielim,'k-')
+  hold(hca,'off');
+end

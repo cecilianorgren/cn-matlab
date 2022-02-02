@@ -65,13 +65,13 @@ v = dbcsVi2.y;
 ne = ne2;
 ni = ni2;
 vdf = if1Dy2(501:520);
-vdf = if1Dy2(500:10:2000);
+vdf = if1Dy2(700:10:2000);
 % particlemoments = mms.psd_moments(vdf,scPot2,'energyrange',[0 34000]);
 X0 = [0.01e6 -100e3 100e3 0.01e6 1000e3 1000e3]; 
 nPop = 2;
 tic
 % fitdata_nobg = fitdata; ts_nobg = ts;
-[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0,'guessprevious',0,'X0',X0,'weight',[1 1 1]);
+[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',1,'guessprevious',0,'X0',X0,'weight',[1 1 1]);
 toc
 vfitmaxtot = irf.ts_scalar(ts.n.time,sum(ts.n.data.*ts.vd.data,2)./sum(ts.n.data,2));
 %% Plot results from funFitVDF()
