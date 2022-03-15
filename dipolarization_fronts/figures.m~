@@ -83,8 +83,7 @@ c_eval('vte?perp = units.s*(1-1/(Te?perp*units.e/(units.mp*units.c^2)+1).^2).^0.
 c_eval('mag_mome? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mome?.units = ''nAm^2''; mag_mome?.name = ''magnetic moment'';',ic)
 c_eval('mag_momi? = 0.5*units.me*vti?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_momi?.units = ''nAm^2''; mag_momi?.name = ''magnetic moment'';',ic)
 
-c_eval('[gsmVi?par,gsmVi?perp] = irf_dec_parperp(gsmB?,gsmVi?); gsmVi?par.name = ''Vi par''; gsmVi?perp.name = ''Vi perp'';',ic)
-c_eval('[gsmVe?par,gsmVe?perp] = irf_dec_parperp(gsmB?,gsmVe?); gsmVe?par.name = ''Ve par''; gsmVe?perp.name = ''Ve perp'';',ic)
+c_eval('[gsmVi?par,gsmVi?perp] = irf_dec_parperp(gsmB?,gsmVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
 
@@ -639,9 +638,9 @@ if 1 % vExB.x gsm, Vi resample
   zoomy = [zoomy isub];
   hca = irf_panel('V ExB Vi x');
   set(hca,'ColorOrder',mms_colors('12'))
-  c_eval('irf_plot(hca,{gsmVExB?.resample(gsmVi?).x,gsmVi?perp.x},''comp'');',ic)  
+  c_eval('irf_plot(hca,{gsmVExB?.resample(gsmVi?).x,gsmVi?.x},''comp'');',ic)  
   %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
-  hca.YLabel.String = {'v_{\perp,x}','(km/s)'};
+  hca.YLabel.String = {'v_{x}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'ExB','V_i'},[0.98 0.9],'fontsize',12);
   %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);
@@ -651,9 +650,9 @@ if 1 % vExB.x gsm, Vi resample
   zoomy = [zoomy isub];
   hca = irf_panel('V ExB Vi y');
   set(hca,'ColorOrder',mms_colors('12'))
-  c_eval('irf_plot(hca,{gsmVExB?.resample(gsmVi?).y,gsmVi?perp.y},''comp'');',ic)  
+  c_eval('irf_plot(hca,{gsmVExB?.resample(gsmVi?).y,gsmVi?.y},''comp'');',ic)  
   %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
-  hca.YLabel.String = {'v_{\perp,y}','(km/s)'};
+  hca.YLabel.String = {'v_{y}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'ExB','V_i'},[0.98 0.9],'fontsize',12);
   %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);
@@ -663,9 +662,9 @@ if 1 % vExB.x gsm, Vi resample
   zoomy = [zoomy isub];
   hca = irf_panel('V ExB Vi z');
   set(hca,'ColorOrder',mms_colors('12'))
-  c_eval('irf_plot(hca,{gsmVExB?.resample(gsmVi?).z,gsmVi?perp.z},''comp'');',ic)  
+  c_eval('irf_plot(hca,{gsmVExB?.resample(gsmVi?).z,gsmVi?.z},''comp'');',ic)  
   %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
-  hca.YLabel.String = {'v_{\perp,z}','(km/s)'};
+  hca.YLabel.String = {'v_{z}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('12'))
   irf_legend(hca,{'ExB','V_i'},[0.98 0.9],'fontsize',12);
   %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);

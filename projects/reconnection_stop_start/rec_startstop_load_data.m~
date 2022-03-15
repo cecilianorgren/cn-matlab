@@ -1,7 +1,7 @@
 %% Specify time and spacecraft
 units = irf_units;
 irf.log('critical')
-ic = 2;
+ic = 1:4;
 
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
@@ -30,7 +30,7 @@ tint_omni = irf.tint('2017-07-25T20:00:00.00Z/2017-07-26T00:00:00.00Z');
 omni_solarwind = irf_get_data_omni(tint_omni,'n,v,P,Bz,Ms','omni_min'); % not working, dont know why
 omni_index = irf_get_data_omni(tint_omni,'ae,al,au,f10.7,dst,kp','omni_min'); % not working, dont know why
 
-% Magnetic field
+%% Magnetic field
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',1:4);
@@ -42,7 +42,8 @@ c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_
 % Density
 c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
 c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',ic);
-% Velocity
+
+%% Velocity
 c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic);
 c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
@@ -93,17 +94,47 @@ c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name =
 c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
-% Current from magnetic field
+
+%% Current from magnetic field
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
-[Jcurl,divBbrst,Bbrst,JxBbrst,divTshearbrst,divPbbrst] = c_4_j('gseR?brsttime','gseB?');
+[Jcurl,divB,gseB,JxB,gseCurvB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
+
+
 gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
 gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 
+gseB.name = 'B'; gseDivB.units = 'nT';
+gseDivPb.name = 'div P_B'; gseDivB.units = '...';
+gseCurvB.name = 'curv B'; gseCurvB.units = '...';
 
+
+gseJxB = gseJcurl.cross(Bbrst); gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
+gseEav = (gseE1.resample(gseE2) + gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/4; gseEav.name = 'E1234'; % gseE1 not there?
+neav = (ne1.resample(ne1) + ne2.resample(ne1) + ne3.resample(ne1) + ne4.resample(ne1))/4; % gseE1 not there?
+gseJxBne_mVm = (gseJxB*1e-9*1e-9)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.name = 'JxB/ne';
+gseJxBne_mVm.data(neav.data<0.001,:) = NaN;
+gseJxBne_mVm.data(gseJxBne_mVm.data>500) = NaN;
+
+c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',1:4)
+gseVixBav = (gseVixB1.resample(gseVixB2) + gseVixB2.resample(gseVixB2) + gseVixB3.resample(gseVixB2) + gseVixB4.resample(gseVixB2))/4; gseVixBav.name = 'gseVixB1234'; % gseE1 not there?
+
+gseGradPe = divP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km'; gseGradPe.name = 'div Pe';
+gseGradPi = divP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
+gseGradTe = divP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';
+gseGradTi = divP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';
+gseGradNe = c_4_grad('gseR?','ne?','grad');
+gseGradNi = c_4_grad('gseR?','ni?','grad');
+
+gseGradPene = gseGradPe/neav.resample(gseGradPe.time)/units.e*1e-9*1e-6; gseGradPene.units = 'mV/m';.resample(gseGradPe.time)/units.e*1e-9*1e-6; gseGradPene.units = 'mV/m';
+gseGradPene = gseGradPe/avNe.resample(gseGradPe.time)/units.e*1e-9*1e-6; gseGradPene.units = 'mV/m';
+%c_eval('eis_omni? = mms.get_data(''Omnifluxiproton_epd_eis_brst_l2'',tint,?);',ic)
+%c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
 disp('Done loading data.')
 
-%% Reduced distributions
+%% Reduced and pitchangle distributions
+c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
+
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 c_eval('if1Dx? = iPDist?.reduce(''1D'',[1 0 0],''vint'',vint);',ic)
