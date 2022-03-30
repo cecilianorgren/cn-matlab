@@ -117,6 +117,7 @@ gseCurvB.name = 'curv B'; gseCurvB.units = '...';
 gseJxB = JxB; gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
 
 %gseJxB = gseJcurl.cross(Bbrst); gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
+gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
 
 gseEav = (gseE1.resample(gseE2) + gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/4; gseEav.name = 'E1234'; % gseE1 not there?
 neav = (ne1.resample(ne1) + ne2.resample(ne1) + ne3.resample(ne1) + ne4.resample(ne1))/4; % gseE1 not there?
@@ -143,6 +144,10 @@ gseGradPene = gseGradPe/neav.resample(gseGradPe.time)/units.e*1e-9*1e-6; gseGrad
 gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',ic)
 %c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
+
+c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J par''; gseJ?perp.name = ''J perp'';',ic)
+[gseJcurlpar,gseJcurlperp] = irf_dec_parperp(gseBav,gseJcurl); gseJcurlpar.name = 'J curl par'; gseJcurlperp.name = 'J curl perp';
+
 disp('Done loading data.')
 
 %% Reduced and pitchangle distributions

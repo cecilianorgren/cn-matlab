@@ -67,17 +67,8 @@ syms z z0 L B0
 Bx = B0*tanh((z-z0)/L);
 Jy = gradient(Bx,z)/units.mu0; % -(B0*(tanh((z - z0)/L)^2 - 1))/L
 
-% Jy = -(B0*(tanh((z - z0)/L)^2 - 1))/L 
-%    = -(B0*((Bx/B0)^2 - 1))/L
-%     
-% L  = -(B0*((Bx/B0)^2 - 1))/Jy
-mf_L = @(Bx,B0,Jy) -(B0*((Bx/B0)^2 - 1))/Jy;
-
 mf_Bx = matlabFunction(Bx);
 mf_Jy = matlabFunction(Jy);
-
-mf_L_B = solve(Bx,L)
-mf_L_J = solve(Jy,L)
 
 if 0 % Illustration of Harris sheet
   %%
@@ -675,9 +666,6 @@ timeline = gseBav.tlim(tint_harris).time;
 
 J_edges = linspace(-2,12,70);
 B_edges = linspace(0,24,71);
-%[BB,JJ] = 
-B0 = 21; % nT
-L = mf_L(B_edges,B0,J_edges);
 
 
 h = setup_subplots(3,1); isub = 1;
@@ -715,7 +703,6 @@ hcb.YLabel.String = sprintf('time since %s',timeline(1).utc);
 hca.XGrid = 'on';
 hca.YGrid = 'on';
 hca.YLim(2) = 20;
-
 
 
 %% From simulation

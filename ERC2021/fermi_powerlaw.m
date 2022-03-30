@@ -7,4 +7,4 @@
 % w(t) = exp(v^2t/tau)
 v = 1;
 N = 0:1:100;
-loglog(N,exp(v^2*N).*exp())
+loglog(N,exp(v^2*N))

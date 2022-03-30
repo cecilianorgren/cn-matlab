@@ -2,7 +2,7 @@ ic = 1;
 tint = irf.tint('2017-07-09T17:14:43.00Z/2017-07-09T17:16:33.00Z');
 
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Nexus/data');
+%mms.db_init('local_file_db','/Volumes/Nexus/data');
 db_info = datastore('mms_db');   
 
 %% Load defatt, for coordinate tranformation
