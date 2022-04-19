@@ -1,11 +1,11 @@
 %% Specify time and spacecraft
 units = irf_units;
 irf.log('critical')
-ic = 1;
+ic = 2:4;
 
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 db_info = datastore('mms_db');   
 localuser = datastore('local','user');
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
@@ -72,7 +72,7 @@ c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some 
 % Remove all one-count "noise"
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
-% Par/perp electric field
+%% Par/perp electric field
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 % vExB
 c_eval('gsmVExB? = cross(gsmE?.resample(gsmB?.time),gsmB?)/gsmB?.abs/gsmB?.abs*1e3; gsmVExB?.units = '''';',ic) % km/s
@@ -106,7 +106,7 @@ PBav = (PB1.resample(PB1) + PB2.resample(PB1) + PB3.resample(PB1) + PB4.resample
 %% Current from magnetic field
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
 [Jcurl,divB,gseB,JxB,gseCurvB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
-
+% [JxB] = T A/m2
 
 gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
 gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
@@ -115,15 +115,19 @@ gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 gseB.name = 'B'; gseDivB.units = 'nT';
 gseDivPb.name = 'div P_B'; gseDivB.units = '...';
 gseCurvB.name = 'curv B'; gseCurvB.units = '...';
-gseJxB = JxB; gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
+gseJxB = JxB; gseJxB.name = 'JxB'; gseJxB.data = gseJxB.data; gseJxB.units = 'Am^-2 T';
 
 %gseJxB = gseJcurl.cross(Bbrst); gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
 gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
+gseJav = (gseJ1.resample(gseJ2) + gseJ2.resample(gseJ2) + gseJ3.resample(gseJ2) + gseJ4.resample(gseJ2))/4; gseJav.name = 'J1234'; 
+gseJiav = (gseJi1 + gseJi2.resample(gseJi1) + gseJi3.resample(gseJi1) + gseJi4.resample(gseJi1))/4;
+gseJeav = (gseJe1 + gseJe2.resample(gseJe1) + gseJe3.resample(gseJe1) + gseJe4.resample(gseJe1))/4;
 
 gseEav = (gseE1.resample(gseE2) + gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/4; gseEav.name = 'E1234'; % gseE1 not there?
 neav = (ne1.resample(ne1) + ne2.resample(ne1) + ne3.resample(ne1) + ne4.resample(ne1))/4; % gseE1 not there?
-gseJxBne_mVm = (gseJxB*1e-9*1e-9)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.name = 'JxB/ne';
+gseJxBne_mVm = (gseJxB)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.name = 'JxB/ne';
 gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
+%gseJxBne_mVm.data(abs(neav.data)<0.02,:) = NaN;
 
 c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',1:4)
 c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.name = ''v_exB'';',1:4)
@@ -152,6 +156,7 @@ c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J
 disp('Done loading data.')
 
 %% Reduced and pitchangle distributions
+if 0
 c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
 
 disp('Preparing reduced distributions.')
@@ -169,4 +174,4 @@ disp('Done preparing reduced distributions.')
 %c_eval('gsmVe?.data(abs(gsmVe?.data)>20*1e3) = NaN;',ic)
 
 %c_eval('[fitdata?,ts?] = funFitVDF(if1Dx?,''nPop'',2,''plot'',0,''guessprevious'',0,''X0'',[0.5e6 0 100e3 0.5e6 0 100e3]);',ic)
-
+end

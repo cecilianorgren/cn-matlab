@@ -290,7 +290,7 @@ if 1 % Bx,Jiy
   ts_yy = gseJcurl; y_str = '<J_{y}^{curl}>';
   %ts_yy = gseJeav; y_str = '<J_{ey}^{FPI}>';
   %ts_yy = gseJav.resample(timeline); y_str = '<J_{y}^{FPI}>';
-  yy = ts_yy.tlim(tint_harris).y.data*1e18;  
+  yy = ts_yy.tlim(tint_harris).y.data;  
   xx = gseBav.resample(ts_yy).tlim(tint_harris).x.data;  
   
   %irem = find(xx == 0);
@@ -301,7 +301,7 @@ if 1 % Bx,Jiy
   B_edges = linspace(0,24,71);
   [N edges mid loc] = histcn([xx(:) yy(:)],B_edges,J_edges);
   N(N==0) = NaN;
-  pcolor(hca,mid{1}.^2,mid{2},(N)')
+  pcolor(hca,mid{1}.^2,mid{2},log10(N)')
   shading(hca,'flat')    
   hcb = colorbar('peer',hca);
   hcb.YLabel.String = 'log_{10}(counts)';
@@ -334,7 +334,7 @@ if 1 % Bx,Jiy
   hca.XLabel.String = 'B_x^2 (nT^2)';
   hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);
 end
-if 0 % Bx,JxBz, binned
+if 1 % Bx,JxBz,binned
   hca = h2(isub); isub = isub + 1;
   %plot(hca,abs(gseBav.resample(gseJi1).tlim(tint_harris).x.data),gseJi1.tlim(tint_harris).y.data,'.')
   %plot(hca,abs(gseBav.resample(gseJcurl).tlim(tint_harris).x.data),gseJcurl.tlim(tint_harris).y.data,'k.')
@@ -389,21 +389,31 @@ if 0 % Bx,JxBz, binned
 end
 if 1 % Bx,JxBz, scatter
   hca = h2(isub); isub = isub + 1;
-  
+  %plot(hca,abs(gseBav.resample(gseJi1).tlim(tint_harris).x.data),gseJi1.tlim(tint_harris).y.data,'.')
+  %plot(hca,abs(gseBav.resample(gseJcurl).tlim(tint_harris).x.data),gseJcurl.tlim(tint_harris).y.data,'k.')
+  %ts_yy = gseJiav; y_str = '<J_{iy}^{FPI}>';
+  %ts_yy = gseJcurl.resample(timeline); y_str = '<J_{y}^{curl}>';
   ts_yy = gseJxB; y_str = '-J_{y}xB_x';
   %ts_yy = gseJeav; y_str = '<J_{ey}^{FPI}>';
   %ts_yy = gseJav.resample(timeline); y_str = '<J_{y}^{FPI}>';
-  yy = ts_yy.tlim(tint_harris).y.data*1e18;  
+  yy = ts_yy.tlim(tint_harris).y.data;  
   xx = gseBav.resample(ts_yy).tlim(tint_harris).x.data;  
-  cc = ts_yy.tlim(tint_harris).time - ts_yy.tlim(tint_harris).time(1);
-  scatter(hca,xx.^2,yy,1,cc)
+  
+  %irem = find(xx == 0);
+  %xx(irem) = [];
+  %yy(irem) = [];
+  %p = polyfit(xx,yy,1);
+  JxB_edges = linspace(-2,12,70);
+  B_edges = linspace(0,24,71);
+  [N edges mid loc] = histcn([xx(:) yy(:)],B_edges,J_edges);
+  N(N==0) = NaN;
+  pcolor(hca,mid{1}.^2,mid{2},log10(N)')
   shading(hca,'flat')    
   hcb = colorbar('peer',hca);
-  hcb.YLabel.String = 'time since tt';
+  hcb.YLabel.String = 'log_{10}(counts)';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
     
-  if 0
   hold(hca,'on')
   % mf_Bx = @(B0,L,z,z0)B0.*tanh((z-z0)./L)
   % mf_Jy = @(B0,L,z,z0)-(B0.*(tanh((z-z0)./L).^2-1.0))./L
@@ -427,7 +437,6 @@ if 1 % Bx,JxBz, scatter
   hlegs.Position = [0.8521    0.3418    0.1180    0.1044];
   hlegs.Box = 'on';
   hold(hca,'off')
-  end
   hca.XLabel.String = 'B_x^2 (nT^2)';
   hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);
 end
