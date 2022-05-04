@@ -1,7 +1,7 @@
 %% Specify time and spacecraft
 units = irf_units;
 irf.log('critical')
-ic = 2:4;
+ic = 1;
 
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
@@ -157,7 +157,7 @@ disp('Done loading data.')
 
 %% Reduced and pitchangle distributions
 if 0
-c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
+%c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
 
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];

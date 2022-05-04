@@ -44,7 +44,7 @@ if all(ic == [1:4])
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
 [Jcurl,divBbrst,Bbrst,JxBbrst,divTshearbrst,divPbbrst] = c_4_j('gseR?brsttime','gseB?');
 gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
-gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
+gseJcurl.data = gseJcurl.data; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
 end
 % Currents from moments, use ne also for Ji 
@@ -137,8 +137,8 @@ ic = 2;
 
 npanels = 4;
 nrows = 2;
-ncols = 2;
-[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.4,'vertical');
+ncols = 1;
+[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.6,'vertical');
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
 dt_resample = 0.5;
@@ -290,7 +290,7 @@ if 1 % Bx,Jiy
   ts_yy = gseJcurl; y_str = '<J_{y}^{curl}>';
   %ts_yy = gseJeav; y_str = '<J_{ey}^{FPI}>';
   %ts_yy = gseJav.resample(timeline); y_str = '<J_{y}^{FPI}>';
-  yy = ts_yy.tlim(tint_harris).y.data*1e18;  
+  yy = ts_yy.tlim(tint_harris).y.data;  
   xx = gseBav.resample(ts_yy).tlim(tint_harris).x.data;  
   
   %irem = find(xx == 0);
@@ -307,7 +307,52 @@ if 1 % Bx,Jiy
   hcb.YLabel.String = 'log_{10}(counts)';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
-    
+   %% 
+  hold(hca,'on')
+  % mf_Bx = @(B0,L,z,z0)B0.*tanh((z-z0)./L)
+  % mf_Jy = @(B0,L,z,z0)-(B0.*(tanh((z-z0)./L).^2-1.0))./L
+  legs = {};
+  ileg = 0;
+  z0_ = 00e3;
+  for B0_ = [21]*1e-9
+    for L_ = [1500 2000 2500 4000]*1e3  
+      ileg = ileg + 1;
+      legs{ileg} = sprintf('B_0 = %g nT, L = %g km',B0_*1e9,L_*1e-3);
+      z_ = L_*linspace(0.0,3,20);      
+      hl(ileg) = plot(hca,(mf_Bx(B0_,L_,z_,z0_)*1e9).^2,mf_Jy(B0_,L_,z_,z0_)*1e9*(1+1/5),'linewidth',1);
+      plot(hca,(mf_Bx(B0_,L_,z_,z0_)*1e9).^2,mf_Jy(B0_,L_,z_,z0_)*1e9*(1+1/5),'k:');
+    end
+  end
+  hlegs = legend(hl,legs,'fontsize',10,'location','northeast','box','off');
+  %hca_pos = hca.Position;
+  %hlegs.Location = 'northoutside';
+  %hca.Position = hca_pos;
+  hlegs.Position(2) = hca.Position(2) + hca.Position(4);
+  hlegs.Position = [0.8521    0.3418    0.1180    0.1044];
+  hlegs.Box = 'on';
+  hold(hca,'off')
+  hca.XLabel.String = 'B_x^2 (nT^2)';
+  hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);
+end
+if 1 % Bx,Jiy, time
+  hca = h2(isub); isub = isub + 1;
+  %plot(hca,abs(gseBav.resample(gseJi1).tlim(tint_harris).x.data),gseJi1.tlim(tint_harris).y.data,'.')
+  %plot(hca,abs(gseBav.resample(gseJcurl).tlim(tint_harris).x.data),gseJcurl.tlim(tint_harris).y.data,'k.')
+  %ts_yy = gseJiav; y_str = '<J_{iy}^{FPI}>';
+  %ts_yy = gseJcurl.resample(timeline); y_str = '<J_{y}^{curl}>';
+  ts_yy = gseJcurl; y_str = '<J_{y}^{curl}>';
+  %ts_yy = gseJeav; y_str = '<J_{ey}^{FPI}>';
+  %ts_yy = gseJav.resample(timeline); y_str = '<J_{y}^{FPI}>';
+  yy = ts_yy.tlim(tint_harris).y.data;  
+  xx = gseBav.resample(ts_yy).tlim(tint_harris).x.data;  
+  tt = ts_yy.resample(ts_yy).tlim(tint_harris).time - ts_yy.resample(ts_yy).tlim(tint_harris).time(1);
+  
+  scatter(hca,xx.^2,yy,1,tt)  
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = sprintf('time since %s',ts_yy.resample(ts_yy).tlim(tint_harris).time(1).utc);
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+   %% 
   hold(hca,'on')
   % mf_Bx = @(B0,L,z,z0)B0.*tanh((z-z0)./L)
   % mf_Jy = @(B0,L,z,z0)-(B0.*(tanh((z-z0)./L).^2-1.0))./L
@@ -387,7 +432,7 @@ if 0 % Bx,JxBz, binned
   hca.XLabel.String = 'B_x^2 (nT^2)';
   hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);
 end
-if 1 % Bx,JxBz, scatter
+if 0 % Bx,JxBz, scatter
   hca = h2(isub); isub = isub + 1;
   
   ts_yy = gseJxB; y_str = '-J_{y}xB_x';

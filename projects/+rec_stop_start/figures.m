@@ -850,10 +850,12 @@ h(1).Title.String = irf_ssub('MMS ?',ic);
 %% Figure: momentum equation / ohms law
 ic = 2;
 
-npanels = 7;
+npanels = 6;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
+timeline = tint(1):0.5:tint(2);
+doResample = 1;
 
 isub = 0;
 zoomy = [];
@@ -906,7 +908,11 @@ if 1 % J curl
   zoomy = [zoomy isub];
   hca = irf_panel('J curl');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_plot(hca,{gseJcurl.x,gseJcurl.y,gseJcurl.z},'comp');  
+  if doResample
+    irf_plot(hca,{gseJcurl.x.resample(timeline),gseJcurl.y.resample(timeline),gseJcurl.z.resample(timeline)},'comp');  
+  else
+    irf_plot(hca,{gseJcurl.x,gseJcurl.y,gseJcurl.z},'comp');  
+  end
   hca.YLabel.String = {'J^{curl}','(nA/m^2)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
@@ -951,9 +957,22 @@ if 1 % ohm's law, 3 panels: x,y,z
     %comp = 'x';
     hca = irf_panel(['ele eom ', comp]);
     set(hca,'ColorOrder',pic_colors('matlab'))
-    to_plot_gseVixBav = gseVixBav;
+    if doResample
+      to_plot_gseVixBav = gseVixBav.resample(timeline);
+    else
+      to_plot_gseVixBav = gseVixBav;
+    end
     to_plot_gseVixBav.data(abs(to_plot_gseVixBav.data)>100) = NaN;
-    irf_plot(hca,{gseEav.(comp),to_plot_gseVixBav.(comp),-1*gseGradPene.(comp).resample(gseVi1),gseJxBne_mVm.(comp),+1*(gseEav.(comp).resample(to_plot_gseVixBav)+to_plot_gseVixBav.(comp))},'comp');  
+    if doResample
+      irf_plot(hca,{...
+        gseEav.(comp).resample(timeline),...
+        to_plot_gseVixBav.(comp).resample(timeline),...
+        -1*gseGradPene.(comp).resample(timeline),...
+        gseJxBne_mVm.(comp).resample(timeline),...
+        +1*(gseEav.(comp).resample(timeline)+to_plot_gseVixBav.(comp).resample(timeline))},'comp');  
+    else
+      irf_plot(hca,{gseEav.(comp),to_plot_gseVixBav.(comp),-1*gseGradPene.(comp).resample(gseVi1),gseJxBne_mVm.(comp),+1*(gseEav.(comp).resample(to_plot_gseVixBav)+to_plot_gseVixBav.(comp))},'comp');  
+    end
     hca.YLabel.String = {['E_' comp],'(mV/m)'};
     set(hca,'ColorOrder',pic_colors('matlab'))
     irf_legend(hca,{'E','v_ixB','-divPe/ne','JxB/ne','(E+v_ixB)'}',[1.01 0.9],'fontsize',12);  
@@ -1096,7 +1115,7 @@ if 0 % Vi par
   hca.YLabel.String = {'v_{i,||}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))  
 end
-if 1 % Ve gse
+if 0 % Ve gse
   hca = irf_panel('Ve');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
@@ -1190,17 +1209,17 @@ for ii = 1:npanels
   h(ii).FontSize = 12;
 end
 
-irf_zoom(h,'x',tint_action)
+irf_zoom(h,'x',tint)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
 %tmark_eis = tint(1):20:tint(2);
 
 %% Figure: V ExB
-ic = 2;
+ic = 1;
 
 Etop_fpi = iPDist2.ancillary.energy(1,end)+iPDist2.ancillary.delta_energy_plus(1,end);
 
-npanels = 8;
+npanels = 6;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -1464,7 +1483,7 @@ if 0 % Ve x B
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % i DEF EIS omni
+if 0 % i DEF EIS omni
   isub = isub + 1;
   hca = irf_panel('i DEF eis omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,eis_omni?.specrec(''energy''),''log'');',ic)  
@@ -1480,7 +1499,7 @@ if 1 % i DEF EIS omni
   hca.YLabel.String = {'E_i^{EIS}','(eV)'};   
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i DEF feeps omni
+if 0 % i DEF feeps omni
   isub = isub + 1;
   hca = irf_panel('i DEF feeps omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,feeps_ion_omni?.specrec(''energy''),''log'');',ic)  
