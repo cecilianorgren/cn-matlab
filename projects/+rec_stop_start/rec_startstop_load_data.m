@@ -4,8 +4,8 @@ irf.log('critical')
 ic = 1;
 
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 db_info = datastore('mms_db');   
 localuser = datastore('local','user');
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');

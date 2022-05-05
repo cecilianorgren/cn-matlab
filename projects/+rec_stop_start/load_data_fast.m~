@@ -1,0 +1,13 @@
+ic = 1;
+tint_fast = irf.tint('2017-07-25T20:00:00.00Z/2017-07-25T24:00:00.00Z');
+
+% Load datastore
+localuser = datastore('local','user');
+mms.db_init('local_file_db',['/Users/' localuser '/data']);
+db_info = datastore('mms_db');   
+
+%%
+
+c_eval('gseB?_srvy = mms.db_get_ts(''mms?_fgm_srvy_l2'',''mms?_fgm_b_gse_srvy_l2'',tint_fast);',ic);
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+PDe_fpi_fast_l2
