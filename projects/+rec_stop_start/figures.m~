@@ -2120,10 +2120,6 @@ if 1 % B lmn fast
   hca.YLabel.String = {'B_{LMN}','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N','|B|'},[0.98 0.9],'fontsize',12);  
-  irf_legend(hca,{'  [L; M; N] = ',...
-                  sprintf('[%5.2f, %5.2f, %5.2f]',R(1,1),R(1,2),R(1,3)),...
-                  sprintf('[%5.2f, %5.2f, %5.2f]',R(2,1),R(2,2),R(2,3)),...
-                  sprintf('[%5.2f, %5.2f, %5.2f]',R(3,1),R(3,2),R(3,3))}',[1.002 0.9],'fontsize',12,'color','k');  
 end
 if 1 % E gse fast
   isub = isub + 1;
@@ -2176,7 +2172,7 @@ if 1 % Vi lmn
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end
-if 0 % Ve gse
+if 1 % Ve gse
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve gse');
@@ -2186,35 +2182,15 @@ if 0 % Ve gse
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 0 % Ve lmn
+if 1 % Ve lmn
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('vplot = lmnVe?_fast;',ic)
-  vplot.data(vplot.abs.data>1e4,:) = NaN;
-  c_eval('irf_plot(hca,{vplot.x,vplot.y,vplot.z},''comp'');',ic)  
+  vplot
+  c_eval('irf_plot(hca,{lmnVe?_fast.x,lmnVe?_fast.y,lmnVe?_fast.z},''comp'');',ic)  
   hca.YLabel.String = {'v_e^{LMN}','(km/s)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
-end
-if 1 % Vi gse
-  isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('VExB gse');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{gseVExB?_srvy.x,gseVExB?_srvy.y,gseVExB?_srvy.z},''comp'');',ic)  
-  hca.YLabel.String = {'v_{ExB}^{GSE}','(km/s)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
-end
-if 1 % Vi lmn
-  isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('VExB LMN');
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{lmnVExB?_srvy.x,lmnVExB?_srvy.y,lmnVExB?_srvy.z},''comp'');',ic)  
-  hca.YLabel.String = {'v_{ExB}^{LMN}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end

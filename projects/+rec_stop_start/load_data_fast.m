@@ -9,14 +9,40 @@ db_info = datastore('mms_db');
 %%
 
 c_eval('gseB?_srvy = mms.db_get_ts(''mms?_fgm_srvy_l2'',''mms?_fgm_b_gse_srvy_l2'',tint_fast);',ic);
+c_eval('gsmB?_srvy = mms.db_get_ts(''mms?_fgm_srvy_l2'',''mms?_fgm_b_gsm_srvy_l2'',tint_fast);',ic);
 c_eval('iPDist?_fast = mms.get_data(''PDi_fpi_fast_l2'',tint_fast,?);',ic) % missing some ancillary data
 c_eval('gseVi?_fast = mms.get_data(''Vi_gse_fpi_fast_l2'',tint_fast,?);',ic);
-c_eval('gseE?_fast = mms.get_data(''E_gse_edp_fast_l2'',tint_fast);',ic);
+c_eval('gseVe?_fast = mms.get_data(''Ve_gse_fpi_fast_l2'',tint_fast,?);',ic);
+c_eval('gseE?_fast = mms.get_data(''E_gse_edp_fast_l2'',tint_fast,?);',ic);
 
-c_eval('gseVExB?_srvy = gseE?_srvy.resample(gseB?_srvy).cross(gseB?_srvy);',ic)
-c_eval('gseVExB?_srvy = cross(gseE?_srvy.resample(gseB?_srvy.time),gseB?)/gseB?_srvy.abs2*1e3; gseVExB?_srvy.units = '''';',ic) % km/s
+c_eval('gseVExB?_srvy = gseE?_fast.resample(gseB?_srvy).cross(gseB?_srvy);',ic)
+%c_eval('gseVExB?_srvy = cross(gseE?_fast.resample(gseB?_srvy.time),gseB?)/gseB?_srvy.abs2*1e3; gseVExB?_srvy.units = '''';',ic) % km/s
 
+c_eval('ne?_fast = mms.get_data(''Ne_fpi_fast_l2'',tint_fast,?);',ic);
+c_eval('ni?_fast = mms.get_data(''Ni_fpi_fast_l2'',tint_fast,?);',ic);
 c_eval('nOp?_srvy = mms.get_data(''Noplus_hpca_srvy_l2'',tint_fast,?);',ic);
 c_eval('nHp?_srvy = mms.get_data(''Nhplus_hpca_srvy_l2'',tint_fast,?);',ic);
 
 c_eval('iPDist?_Op_fast = mms.get_data(''Omnifluxoplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
+c_eval('iPDist?_Opp_fast = mms.get_data(''Omnifluxoplusplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
+
+c_eval('[gseVi?_fast_par,gseVi?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample(gseVi?_fast),gseVi?_fast); gseVi?_fast_par.name = ''Vi par''; gseVi?_fast_perp.name = ''Vi perp'';',ic)
+c_eval('[gseVe?_fast_par,gseVe?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample(gseVe?_fast),gseVe?_fast); gseVe?_fast_par.name = ''Ve par''; gseVe?_fast_perp.name = ''Ve perp'';',ic)
+
+%% Rotated coordinates
+tint_mva = irf.tint('2017-07-25T20:14:08.398745849Z/2017-07-25T21:57:25.093696533Z'); % early
+%tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later
+
+[out,l,v]=irf_minvar(gseB1_srvy.tlim(tint_mva));
+
+Radjust = [-1 0 0; 0 -1 0;0 0 1]; % early
+%Radjust = [-1 0 0; 0 1 0;0 0 -1]; % later
+%Radjust = [1 0 0; 0 1 0; 0 0 1];
+R = v*Radjust';
+
+
+c_eval('lmnB?_srvy = gseB?_srvy*R'';',ic)
+c_eval('lmnE?_fast = gseE?_fast*R'';',ic)
+c_eval('lmnVi?_fast = gseVi?_fast*R'';',ic)
+c_eval('lmnVe?_fast = gseVe?_fast*R'';',ic)
+c_eval('lmnVExB?_srvy = gseVExB?_srvy*R'';',ic)
