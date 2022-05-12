@@ -46,3 +46,5 @@ c_eval('lmnE?_fast = gseE?_fast*R'';',ic)
 c_eval('lmnVi?_fast = gseVi?_fast*R'';',ic)
 c_eval('lmnVe?_fast = gseVe?_fast*R'';',ic)
 c_eval('lmnVExB?_srvy = gseVExB?_srvy*R'';',ic)
+
+c_eval('lmnVi? = gseVi?*R'';',ic)

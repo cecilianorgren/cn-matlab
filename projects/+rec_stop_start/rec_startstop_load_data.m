@@ -30,8 +30,8 @@ mkdir(eventPath)
 %% Load data
 % OMNI data, %% get omni pressure data
 tint_omni = irf.tint('2017-07-25T20:00:00.00Z/2017-07-26T00:00:00.00Z');
-omni_solarwind = irf_get_data_omni(tint_omni,'n,v,P,Bz,Ms','omni_min'); % not working, dont know why
-omni_index = irf_get_data_omni(tint_omni,'ae,al,au,f10.7,dst,kp','omni_min'); % not working, dont know why
+omni_solarwind = irf_get_data_omni(tint_omni.epoch,'n,v,P,Bz,Ms','omni_min'); % not working, dont know why
+omni_index = irf_get_data_omni(tint_omni.epoch,'ae,al,au,f10.7,dst,kp','omni_min'); % not working, dont know why
 
 %% Magnetic field
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);

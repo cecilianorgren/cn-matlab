@@ -2281,3 +2281,252 @@ end
 irf_zoom(h,'x',tint_fast)
 irf_plot_axis_align
 
+%% Fields and scatter plots
+tint_scatter = tint_action;
+tint_fpr1 = irf.tint('2017-07-25T22:10:00.000Z/2017-07-25T22:10:22.000Z');
+tint_fpr2 = irf.tint('2017-07-25T22:10:25.000Z/2017-07-25T22:10:32.000Z');
+tint_scatter = irf.tint('2017-07-25T22:09:45.000Z/2017-07-25T22:10:40.000Z');
+%tint_scatter = tint_fpr2;
+
+cs = 'gse'; comps = 'xyz';
+cs = 'lmn'; comps = 'LMN';
+
+npanels = 4;
+nrows = 3;
+ncols = 2;
+[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.4,'vertical'); % horizontal
+
+% TSeries plots
+if 1 % B srvy
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['B ' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sB?_srvy.x,%sB?_srvy.y,%sB?_srvy.z,%sB?_srvy.abs},''comp'');',cs,cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('B^{%s}',cs),'(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3),'|B|'},[0.98 0.9],'fontsize',12);  
+end 
+if 1 % E fast
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['E ' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sE?_fast.x,%sE?_fast.y,%sE?_fast.z},''comp'');',cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('E^{%s}',cs),'(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.9],'fontsize',12);  
+end 
+if 1 % E +vixB fast+brst
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['E + vixB' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  ts_yy = eval(sprintf('%sE%g_fast.resample(%sVi%g) + %sVi%g.cross(%sB%g_srvy.resample(%sVi%g))*1e3*1e-9*1e3;',cs,ic,cs,ic,cs,ic,cs,ic,cs,ic));
+  irf_plot(hca,{ts_yy.x,ts_yy.y,ts_yy.z},'comp');
+  hca.YLabel.String = {sprintf('(E + v_ixB)^{%s}',cs),'(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.9],'fontsize',12);  
+end 
+if 1 % Vi fast
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['Vi ' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sVi?_fast.x,%sVi?_fast.y,%sVi?_fast.z},''comp'');',cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('v_{i}^{%s}',cs),'(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.9],'fontsize',12);  
+end 
+
+%irf_zoom(h1,'x',tint_fast)
+irf_zoom(h1,'x',tint_scatter + [-10 10])
+irf_zoom(h1,'y')
+irf_plot_axis_align
+
+hca = irf_panel(['E ' cs]); hca.YLim = [-25 49];
+
+drawnow
+
+% Scatter plots
+hb = gobjects(0);
+ihb = 1;
+isub = 1;
+
+if 1 % (Bx,By)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sB%g_srvy.tlim(tint_scatter).x;',cs,ic));
+  ts_yy = eval(sprintf('%sB%g_srvy.y;',cs,ic));
+  ts_yy = ts_yy.resample(ts_xx);
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,5,tt)
+  
+  hca.XLabel.String = sprintf('B_%s (nT)',comps(1));
+  hca.YLabel.String = sprintf('B_%s (nT)',comps(2));
+  
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = 30*[-1 1];
+  hca.XLim = 30*[-1 1];
+end
+if 1 % (By,Bz)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sB%g_srvy.tlim(tint_scatter).y;',cs,ic));
+  ts_yy = eval(sprintf('%sB%g_srvy.z;',cs,ic));
+  ts_yy = ts_yy.resample(ts_xx);
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,5,tt)
+  
+  hca.XLabel.String = sprintf('B_%s (nT)',comps(2));
+  hca.YLabel.String = sprintf('B_%s (nT)',comps(3));
+  
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = 30*[-1 1];
+  hca.XLim = 30*[-1 1];
+end
+if 1 % (Bx,Ez)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sB%g_srvy.tlim(tint_scatter).x;',cs,ic));
+  ts_yy = eval(sprintf('%sE%g_fast.z;',cs,ic));
+  ts_yy = ts_yy.resample(ts_xx);
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,5,tt)
+  
+  hca.XLabel.String = sprintf('B_%s (nT)',comps(1));
+  hca.YLabel.String = sprintf('E_%s (mV/m)',comps(3));
+  
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = 30*[-1 1];
+  hca.XLim = 30*[-1 1];
+end
+if 1 % (Bx,Ez+vixB)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sB%g_srvy.tlim(tint_scatter).x;',cs,ic));
+  ts_yy = eval(sprintf('%sE%g_fast.resample(%sVi%g) + %sVi%g.cross(%sB%g_srvy.resample(%sVi%g))*1e3*1e-9*1e3;',cs,ic,cs,ic,cs,ic,cs,ic,cs,ic));
+  ts_yy = ts_yy.resample(ts_xx).z;
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,5,tt)
+  
+  hca.XLabel.String = sprintf('B_%s (nT)',comps(1));
+  hca.YLabel.String = sprintf('(E+v_ixB)_%s (mV/m)',comps(3));
+  
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = 30*[-1 1];
+  hca.XLim = 30*[-1 1];
+end
+if 1 % (By,Ez)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sB%g_srvy.tlim(tint_scatter).y;',cs,ic));
+  ts_yy = eval(sprintf('%sE%g_fast.z;',cs,ic));
+  ts_yy = ts_yy.resample(ts_xx);
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,5,tt)
+  
+  hca.XLabel.String = sprintf('B_%s (nT)',comps(2));
+  hca.YLabel.String = sprintf('E_%s (mV/m)',comps(3));
+  
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = 30*[-1 1];
+  hca.XLim = 30*[-1 1];
+end
+if 1 % (Ey,Ez)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sE%g_fast.tlim(tint_scatter).y;',cs,ic));
+  ts_yy = eval(sprintf('%sE%g_fast.z;',cs,ic));
+  ts_yy = ts_yy.resample(ts_xx);
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,5,tt)
+  
+  hca.XLabel.String = sprintf('E_%s (mV/m)',comps(2));
+  hca.YLabel.String = sprintf('E_%s (mV/m)',comps(3));
+  
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.YLim = 30*[-1 1];
+  hca.XLim = 30*[-1 1];
+end
+
+
+% Add markings to time panels
+hmark = irf_pl_mark(h1(1),tint_scatter);
+drawnow
+
+% Clone colorbar for time and place on top of panel 1.
+hca = h1(1);
+h_pos = hca.Position;
+hb = colorbar('peer',hca,'location','northoutside');
+hb.YTick = [];
+colormap(hca,cmap_time)
+
+
+xlim = hca.XLim;
+xmark = [min(hmark.XData) max(hmark.XData)];
+x1_rel = xmark(1)/diff(xlim);
+x2_rel = xmark(2)/diff(xlim);
+
+hb.Position(1) = hca.Position(1) + hca.Position(3)*x1_rel;
+hb.Position(3) = hca.Position(3)*(x2_rel-x1_rel);
+drawnow
+hb.Position(2) = hca.Position(2) + hca.Position(4);
+
+%% B time-shift plots for fronts/islands
+
+

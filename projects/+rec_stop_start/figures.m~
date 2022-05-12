@@ -2120,6 +2120,10 @@ if 1 % B lmn fast
   hca.YLabel.String = {'B_{LMN}','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N','|B|'},[0.98 0.9],'fontsize',12);  
+  irf_legend(hca,{'  [L; M; N] = ',...
+                  sprintf('[%5.2f, %5.2f, %5.2f]',R(1,1),R(1,2),R(1,3)),...
+                  sprintf('[%5.2f, %5.2f, %5.2f]',R(2,1),R(2,2),R(2,3)),...
+                  sprintf('[%5.2f, %5.2f, %5.2f]',R(3,1),R(3,2),R(3,3))}',[1.002 0.9],'fontsize',12,'color','k');  
 end
 if 1 % E gse fast
   isub = isub + 1;
@@ -2172,7 +2176,7 @@ if 1 % Vi lmn
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end
-if 1 % Ve gse
+if 0 % Ve gse
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve gse');
@@ -2182,15 +2186,35 @@ if 1 % Ve gse
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
-if 1 % Ve lmn
+if 0 % Ve lmn
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Ve LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('vplot = lmnVe?_fast;',ic)
-  vplot
-  c_eval('irf_plot(hca,{lmnVe?_fast.x,lmnVe?_fast.y,lmnVe?_fast.z},''comp'');',ic)  
+  vplot.data(vplot.abs.data>1e4,:) = NaN;
+  c_eval('irf_plot(hca,{vplot.x,vplot.y,vplot.z},''comp'');',ic)  
   hca.YLabel.String = {'v_e^{LMN}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
+end
+if 1 % Vi gse
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('VExB gse');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVExB?_srvy.x,gseVExB?_srvy.y,gseVExB?_srvy.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{ExB}^{GSE}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+if 1 % Vi lmn
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('VExB LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{lmnVExB?_srvy.x,lmnVExB?_srvy.y,lmnVExB?_srvy.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_{ExB}^{LMN}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end
@@ -2256,4 +2280,79 @@ end
 
 irf_zoom(h,'x',tint_fast)
 irf_plot_axis_align
+
+%% Fields and scatter plots
+tint_scatter = tint_action;
+
+cs = 'gse'; comps = 'xyz';
+cs = 'lmn'; comps = 'LMN';
+
+npanels = 3;
+nrows = 2;
+ncols = 2;
+[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.6,'vertical'); % horizontal
+
+% TSeries plots
+if 1 % B srvy
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['B ' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sB?_srvy.x,%sB?_srvy.y,%sB?_srvy.z,%sB?_srvy.abs},''comp'');',cs,cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('B^{%s}',cs),'(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3),'|B|'},[0.98 0.9],'fontsize',12);  
+end 
+if 1 % E fast
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['E ' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sE?_fast.x,%sE?_fast.y,%sE?_fast.z},''comp'');',cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('E^{%s}',cs),'(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.9],'fontsize',12);  
+end 
+if 1 % Vi fast
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel(['Vi ' cs]);
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sVi?_fast.x,%sVi?_fast.y,%sVi?_fast.z},''comp'');',cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('v_{i}^{%s}',cs),'(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.9],'fontsize',12);  
+end 
+
+irf_zoom(h1,'x',tint_fast)
+irf_plot_axis_align
+
+% Scatter plots
+hb = gobjects(0);
+ihb = 1;
+isub = 1;
+
+if 1 % (Bx,Ez)
+  hca = h2(isub); isub = isub + 1;
+  
+  ts_xx = eval(sprintf('%sB%g_srvy.x;',cs,ic));
+  ts_yy = eval(sprintf('%sE%g_fast.z;',cs,ic));
+  ts_yy = ts_yy.resample(ts_xx);
+  
+  t0 = ts_xx.time(1);
+  tt = ts_xx.time - ts_xx.time(1);
+  xx = ts_xx.data;
+  yy = ts_yy.data;
+  
+  scatter(hca,xx,yy,1,tt)
+  hcb = colorbar('peer',hca);
+  hb(ihb) = hcb;
+  hca.XGrid = 'on';
+end
+
+
+
+
+
+
 
