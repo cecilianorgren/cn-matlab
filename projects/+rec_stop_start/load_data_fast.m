@@ -3,7 +3,8 @@ tint_fast = irf.tint('2017-07-25T20:00:00.00Z/2017-07-25T24:00:00.00Z');
 
 % Load datastore
 localuser = datastore('local','user');
-mms.db_init('local_file_db',['/Users/' localuser '/data']);
+%mms.db_init('local_file_db',['/Users/' localuser '/data']);
+mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 db_info = datastore('mms_db');   
 
 %%
@@ -23,6 +24,11 @@ c_eval('ni?_fast = mms.get_data(''Ni_fpi_fast_l2'',tint_fast,?);',ic);
 c_eval('nOp?_srvy = mms.get_data(''Noplus_hpca_srvy_l2'',tint_fast,?);',ic);
 c_eval('nHp?_srvy = mms.get_data(''Nhplus_hpca_srvy_l2'',tint_fast,?);',ic);
 
+c_eval('vOp?_srvy = mms.get_data(''Voplus_gsm_hpca_srvy_l2'',tint_fast,?);',ic);
+c_eval('vHp?_srvy = mms.get_data(''Vhplus_gsm_hpca_srvy_l2'',tint_fast,?);',ic);
+
+
+c_eval('iPDist?_Hp_fast = mms.get_data(''Omnifluxhplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
 c_eval('iPDist?_Op_fast = mms.get_data(''Omnifluxoplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
 c_eval('iPDist?_Opp_fast = mms.get_data(''Omnifluxoplusplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
 
@@ -31,7 +37,7 @@ c_eval('[gseVe?_fast_par,gseVe?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample
 
 %% Rotated coordinates
 tint_mva = irf.tint('2017-07-25T20:14:08.398745849Z/2017-07-25T21:57:25.093696533Z'); % early
-%tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later
+tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later
 
 [out,l,v]=irf_minvar(gseB1_srvy.tlim(tint_mva));
 

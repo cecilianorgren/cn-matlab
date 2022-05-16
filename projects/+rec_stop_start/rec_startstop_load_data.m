@@ -72,7 +72,7 @@ c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some 
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 % Remove all one-count "noise"
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
+%c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
 %% Par/perp electric field
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 % vExB
@@ -98,13 +98,15 @@ c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gse
 c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 
-% 4sc averages
-Peav = (gsePe1.trace.resample(gsePe1) + gsePe2.trace.resample(gseVe1) + gsePe3.trace.resample(gseVe1) + gsePe4.trace.resample(gseVe1))/4/3; gsePeav.name = 'Pe1234';
-Piav = (gsePi1.trace.resample(gsePi1) + gsePi2.trace.resample(gseVi1) + gsePi3.trace.resample(gseVi1) + gsePi4.trace.resample(gseVi1))/4/3; gsePiav.name = 'Pi1234';
-PDiav = (PDi1.resample(PDi1) + PDi2.resample(PDi1) + PDi3.resample(PDi1) + PDi4.resample(PDi1))/4; PDiav.name = 'Pdyn_x_i1234';
-PBav = (PB1.resample(PB1) + PB2.resample(PB1) + PB3.resample(PB1) + PB4.resample(PB1))/4; gsePiav.name = 'Pi1234';
+c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',ic)
+c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
 
-%% Current from magnetic field
+
+
+c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',ic)
+c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.name = ''v_exB'';',ic)
+
+% Current from magnetic field
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
 [Jcurl,divB,gseB,JxB,gseCurvB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
 % [JxB] = T A/m2
@@ -118,6 +120,16 @@ gseDivPb.name = 'div P_B'; gseDivB.units = '...';
 gseCurvB.name = 'curv B'; gseCurvB.units = '...';
 gseJxB = JxB; gseJxB.name = 'JxB'; gseJxB.data = gseJxB.data; gseJxB.units = 'Am^-2 T';
 
+c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J par''; gseJ?perp.name = ''J perp'';',ic)
+
+
+% 4sc averages
+Peav = (gsePe1.trace.resample(gsePe1) + gsePe2.trace.resample(gseVe1) + gsePe3.trace.resample(gseVe1) + gsePe4.trace.resample(gseVe1))/4/3; gsePeav.name = 'Pe1234';
+Piav = (gsePi1.trace.resample(gsePi1) + gsePi2.trace.resample(gseVi1) + gsePi3.trace.resample(gseVi1) + gsePi4.trace.resample(gseVi1))/4/3; gsePiav.name = 'Pi1234';
+PDiav = (PDi1.resample(PDi1) + PDi2.resample(PDi1) + PDi3.resample(PDi1) + PDi4.resample(PDi1))/4; PDiav.name = 'Pdyn_x_i1234';
+PBav = (PB1.resample(PB1) + PB2.resample(PB1) + PB3.resample(PB1) + PB4.resample(PB1))/4; gsePiav.name = 'Pi1234';
+
+
 %gseJxB = gseJcurl.cross(Bbrst); gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
 gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
 gseJav = (gseJ1.resample(gseJ2) + gseJ2.resample(gseJ2) + gseJ3.resample(gseJ2) + gseJ4.resample(gseJ2))/4; gseJav.name = 'J1234'; 
@@ -130,8 +142,6 @@ gseJxBne_mVm = (gseJxB)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.na
 gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
 %gseJxBne_mVm.data(abs(neav.data)<0.02,:) = NaN;
 
-c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',1:4)
-c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.name = ''v_exB'';',1:4)
 gseVixBav = (gseVixB1.resample(gseVixB2) + gseVixB2.resample(gseVixB2) + gseVixB3.resample(gseVixB2) + gseVixB4.resample(gseVixB2))/4; gseVixBav.name = 'gseVixB1234';
 gseVexBav = (gseVexB1.resample(gseVexB2) + gseVexB2.resample(gseVexB2) + gseVexB3.resample(gseVexB2) + gseVexB4.resample(gseVexB2))/4; gseVexBav.name = 'gseVexB1234';
 
@@ -151,7 +161,6 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',ic)
 %c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
 
-c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J par''; gseJ?perp.name = ''J perp'';',ic)
 [gseJcurlpar,gseJcurlperp] = irf_dec_parperp(gseBav,gseJcurl); gseJcurlpar.name = 'J curl par'; gseJcurlperp.name = 'J curl perp';
 
 disp('Done loading data.')
