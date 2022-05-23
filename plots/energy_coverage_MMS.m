@@ -55,36 +55,6 @@ cmap = colormap(pic_colors('candy4'));
 isub = 0;
 zoomy = [];
 
-if 1 % i DEF feeps omni
-  isub = isub + 1;
-  hca = irf_panel('i DEF feeps omni');  
-  c_eval('[hout,hcb] = irf_spectrogram(hca,feeps_ion_omni?.specrec(''energy''),''log'');',ic)  
-  set(hca,'yscale','log');
-  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
-  colormap(hca,cmap) 
-  hca.YLabel.String = {'E_i^{FEEPS}','(eV)'};   
-end
-if 1 % i DEF EIS omni
-  isub = isub + 1;
-  hca = irf_panel('i DEF eis omni');  
-  c_eval('specrec = eis_omni?.specrec(''energy'');',ic)
-  % add a nan energy level to get the yscale in 10^x format
-  %specrec.p = [specrec.p, nan(size(specrec.t))];
-  %specrec.f = [specrec.f, 10e4*ones(size(specrec.t))];
-  [hout,hcb] = irf_spectrogram(hca,specrec,'log');
-  %hca.YLim(2) = specrec.f(1,end-1);
-  set(hca,'yscale','log');
-  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
-  if exist('Etop_fpi','var')
-    hold(hca,'on')
-    c_eval('tint_tmp = eis_omni?.time;',ic)
-    irf_plot(hca,irf.ts_scalar(tint_tmp([1 end]),Etop_fpi*[1 1]),'k')
-    hold(hca,'off')
-  end
-  colormap(hca,cmap) 
-  hca.YLabel.String = {'E_i^{EIS}','(eV)'};   
-  hca.YLabel.Interpreter = 'tex'; 
-end
 if 1 % i DPF omni
   isub = isub + 1;
   hca = irf_panel('i DEF omni');  
