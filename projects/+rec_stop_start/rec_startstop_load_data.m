@@ -24,6 +24,7 @@ tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
 
 % Event path
 eventPath = ['/Users/' localuser '/Research/Events/mms_' fileId '/']; % for saving figures
+eventPath = ['/Users/' localuser '/GoogleDrive/Research/Events/mms_' fileId '/']; % for saving figures
 %matlabPath = ['/Users/' localuser '/MATLAB/cn-matlab/mms_' fileID '/'];
 mkdir(eventPath)
 
@@ -72,7 +73,9 @@ c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some 
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 % Remove all one-count "noise"
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.00) = 0;',ic)
+c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
+
 %% Par/perp electric field
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 % vExB
@@ -165,6 +168,15 @@ vint = [-Inf Inf];
 c_eval('if1Dx? = iPDist?.reduce(''1D'',[1 0 0],''vint'',vint);',ic)
 c_eval('if1Dy? = iPDist?.reduce(''1D'',[0 1 0],''vint'',vint);',ic)
 c_eval('if1Dz? = iPDist?.reduce(''1D'',[0 0 1],''vint'',vint);',ic)
+
+
+c_eval('if1Dy?_050 = iPDist?_nobg.elim([050 1e6]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+c_eval('if1Dy?_100 = iPDist?_nobg.elim([100 1e6]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+c_eval('if1Dy?_200 = iPDist?_nobg.elim([200 1e6]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+
+c_eval('if1Dx?_nobg = iPDist?_nobg.reduce(''1D'',[1 0 0],''vint'',vint);',ic)
+c_eval('if1Dy?_nobg = iPDist?_nobg.reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+c_eval('if1Dz?_nobg = iPDist?_nobg.reduce(''1D'',[0 0 1],''vint'',vint);',ic)
 
 lowerelim = 50; % eV
 c_eval('vPara = dmpaB?.resample(ePDist?).norm;',ic)
