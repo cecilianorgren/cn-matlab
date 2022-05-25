@@ -30,7 +30,7 @@ c_eval('vHp?_srvy = mms.get_data(''Vhplus_gsm_hpca_srvy_l2'',tint_fast,?);',ic);
 
 c_eval('iPDist?_Hp_fast = mms.get_data(''Omnifluxhplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
 c_eval('iPDist?_Op_fast = mms.get_data(''Omnifluxoplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
-c_eval('iPDist?_Opp_fast = mms.get_data(''Omnifluxoplusplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
+%c_eval('iPDist?_Opp_fast = mms.get_data(''Omnifluxoplusplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
 
 c_eval('[gseVi?_fast_par,gseVi?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample(gseVi?_fast),gseVi?_fast); gseVi?_fast_par.name = ''Vi par''; gseVi?_fast_perp.name = ''Vi perp'';',ic)
 c_eval('[gseVe?_fast_par,gseVe?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample(gseVe?_fast),gseVe?_fast); gseVe?_fast_par.name = ''Ve par''; gseVe?_fast_perp.name = ''Ve perp'';',ic)

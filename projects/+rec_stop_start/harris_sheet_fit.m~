@@ -1868,52 +1868,13 @@ mf_Ln = matlabFunction(Ln);
 % mf_L_B = solve(Bx,L);
 % mf_L_J = solve(Jy,L);
 
-L_ = 10000e3;
-z_ = L_*linspace(0.5,3,100);
-n0_ = 0.1*1e6;
-B0_ = 21e-9;
-z0_ = 0;
-
-nrows = 4;
+nrows = 2;
 ncols = 2;
 h = setup_subplots(nrows,ncols);
 isub = 1;
 
-if 1 % B
+if 1
   hca = h(isub); isub = isub + 1;
-  plot(hca,z_*1e-3,mf_Bx(B0_,L_,z_,z0_)*1e-9)
-  hca.XLabel.String = 'z (km)';
-  hca.YLabel.String = 'B (nT)';
-end
-if 1 % n
-  hca = h(isub); isub = isub + 1;
-  plot(hca,z_*1e-3,mf_n(L_,n0_,z_,z0_)*1e-6)
-  hca.XLabel.String = 'z (km)';
-  hca.YLabel.String = 'n (cc)';
-end
-if 1 % gradn
-  hca = h(isub); isub = isub + 1;
-  plot(hca,z_*1e-3,mf_gradn(L_,n0_,z_,z0_)*1e-6*1e3)
-  hca.XLabel.String = 'z (km)';
-  hca.YLabel.String = 'grad n (cc/km ?)';
-end
-if 1 % Ln
-  hca = h(isub); isub = isub + 1;
-  plot(hca,z_*1e-3,mf_Ln(L_,z_,z0_)*1e-3)
-  hca.XLabel.String = 'z (km)';
-  hca.YLabel.String = 'L_n (km ?)';
-end
-if 1 % (Bx,1/Ln)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,mf_Bx(B0_,L_,z_,z0_)*1e-9,1./mf_Ln(L_,z_,z0_)*1e-3)
-  hca.XLabel.String = 'B_x (nT)';
-  hca.YLabel.String = '1/L_n (km)';
-end
-if 1 % (z,Bx*Ln)
-  hca = h(isub); isub = isub + 1;
-  plot(hca,z_*1e-3,mf_Bx(B0_,L_,z_,z0_)*1e-9.*mf_Ln(L_,z_,z0_)*1e-3)
-  hca.XLabel.String = 'z (km)';
-  %hca.XLabel.String = 'B_x (nT)';
-  hca.YLabel.String = 'Bx*L_n (...)';
+  plot(h)
 end
 

@@ -3212,19 +3212,17 @@ ic = 1;
 
 q = units.e;
 % Lp = p/(q*n*B*vy_perp)
-pp = Pi1perp.data*1e-9;               % Pa
-vv = lmnVi1perp.y.data*1e3;           % m/s
-nn = ne1.resample(ni1).data*1e6;      % m^-3
-bb = lmnB1.x.resample(ni1).data*1e-9; % T 
+pp = gsePi1.trace.data/3*1e-9;          % Pa
+vv = lmnVi1.y.data*1e3;                 % m/s
+nn = ne1.resample(ni1).data*1e6;        % m^-3
+bb = lmnB1.abs.resample(ni1).data*1e-9; % T 
 
 Lp1 = irf.ts_scalar(gseVi1.time,pp./(q*vv.*nn.*bb))*1e-3; % km
-Lp1.data(Lp1.data > 10000,:) = NaN;
-Lp1.data(Lp1.data < 0,:) = NaN;
-
-LpB1 = irf.ts_scalar(gseVi1.time,Lp1.data.*lmnB1.x.resample(ni1).data); % km*nT
+Lp1.data(Lp1.data > 20000) = NaN;
+Lp1.data(Lp1.data < 0) = NaN;
 
 % Plot
-npanels = 10;
+npanels = 7;
 h = irf_plot(npanels);
 doFilt = 0;
 ffilt = 1;
@@ -3241,7 +3239,7 @@ if 1 % B lmn
   irf_legend(hca,{'  [L; M; N] = ',...
                   sprintf('[%5.2f, %5.2f, %5.2f]',R(1,1),R(1,2),R(1,3)),...
                   sprintf('[%5.2f, %5.2f, %5.2f]',R(2,1),R(2,2),R(2,3)),...
-                  sprintf('[%5.2f, %5.2f, %5.2f]  (GSE)',R(3,1),R(3,2),R(3,3))},[0.02 1.05],'fontsize',12,'color','k');  
+                  sprintf('[%5.2f, %5.2f, %5.2f]',R(3,1),R(3,2),R(3,3))}',[1.002 0.9],'fontsize',12,'color','k');  
 end
 if 1 % E lmn
   isub = isub + 1;
@@ -3292,26 +3290,34 @@ if 1 % n
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('matlab'))
   %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
-  c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
+  c_eval('irf_plot(hca,{ne?,ne?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
   set(hca,'ColorOrder',mms_colors('matlab'))
   %irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_i^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
+  irf_legend(hca,{'n_e^{brst}','n_e^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
   hca.YLabel.String = {'n','(cm^{-3})'};
 end
 
 if 1 % Pi
   isub = isub + 1;
   zoomy = [zoomy isub];
-  hca = irf_panel('Pi');
+  hca = irf_panel('Te');
   set(hca,'ColorOrder',mms_colors('1234'))
+  refTi = 1;
+  c_eval('tepar_plot = Te?par;',ic)
+  tepar_plot.data(tepar_plot.data<0) = NaN;
+  c_eval('tepar_plot = tepar_plot.resample(gseTi?);',ic)
   
-  c_eval('irf_plot(hca,{gsePi?.trace/3,Pi?perp,Pi?par},''comp'');',ic)
-  hca.YLabel.String = {'P_i','(eV)'};
+  c_eval('teper_plot = Te?perp;',ic)
+  teper_plot.data(teper_plot.data<0) = NaN;
+  c_eval('teper_plot = teper_plot.resample(gseTi?);',ic)
+  
+  c_eval('irf_plot(hca,{gsePi1.trace/,teper_plot,Ti?par.tlim(tint),Ti?perp.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
   set(hca,'ColorOrder',mms_colors('1234'))
-  irf_legend(hca,{'P_{i,||}','P_{i,\perp}','P_{i,||}'}',[1.01 0.90],'fontsize',12);  
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}','T_{i,||}','T_{i,\perp}'}',[1.01 0.90],'fontsize',12);  
   %hca.YLim = [10 400];  
   %irf_zoom(hca,'y')
-  %hca.YLim = [0 1e4];
+  hca.YLim = [0 1e4];
 end
 if 0 % n log scale
   hca = irf_panel('n log scale');
@@ -3351,38 +3357,17 @@ if 0 % i DEF omni
   hca.YLabel.String = {'E_i','(eV)'};   
   hca.YLabel.Interpreter = 'tex';
 end
+
 if 1 % Lp
   hca = irf_panel('Lp');
   set(hca,'ColorOrder',mms_colors('matlab'))
   %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
-  c_eval('irf_plot(hca,{Lp?},''comp'')',ic)
+  c_eval('irf_plot(hca,{Lp},''comp'')',ic)
   set(hca,'ColorOrder',mms_colors('matlab'))
   %irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_i^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
   %irf_legend(hca,{'n_e^{brst}','n_e^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  hca.YLabel.String = {'L_p','(km)'};
+  hca.YLabel.String = {'L_p','(...)'};
   hca.YLim = [0 10000];
-end
-if 1 % Lp*Bx
-  hca = irf_panel('Lp*Bx');
-  set(hca,'ColorOrder',mms_colors('matlab'))
-  %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
-  c_eval('irf_plot(hca,{LpB?},''comp'')',ic)
-  set(hca,'ColorOrder',mms_colors('matlab'))
-  %irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_i^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  %irf_legend(hca,{'n_e^{brst}','n_e^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  hca.YLabel.String = {'L_pB_x','(km nT)'};
-  %hca.YLim = [0 10000];
-end
-if 1 % Lp*Bx/(B0/2)
-  hca = irf_panel('Lp*Bx/(B0)');
-  set(hca,'ColorOrder',mms_colors('matlab'))
-  %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
-  c_eval('irf_plot(hca,{LpB?/(B0_*1e9)},''comp'')',ic)
-  set(hca,'ColorOrder',mms_colors('matlab'))
-  %irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_i^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  %irf_legend(hca,{'n_e^{brst}','n_e^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  hca.YLabel.String = {'L = L_pB_x/(B_0)','(km)'};
-  %hca.YLim = [0 10000];
 end
 
 irf_zoom(h,'x',tint)

@@ -66,6 +66,9 @@ c_eval('Ti?perp = 0.5*(facTi?.yy+facTi?.zz);',ic)
 c_eval('Te?perp = 0.5*(facTe?.yy+facTe?.zz);',ic)
 c_eval('Ti?par = facTi?.xx;',ic)
 c_eval('Te?par = facTe?.xx;',ic)
+c_eval('Pi?perp = 0.5*(facPi?.yy+facPi?.zz);',ic)
+c_eval('Pi?par = facPi?.xx;',ic)
+
 % Spacecraft position
 c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
 % Distributions, FPI
