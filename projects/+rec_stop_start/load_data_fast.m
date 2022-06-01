@@ -35,6 +35,14 @@ c_eval('iPDist?_Op_fast = mms.get_data(''Omnifluxoplus_hpca_srvy_l2'',tint_fast,
 c_eval('[gseVi?_fast_par,gseVi?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample(gseVi?_fast),gseVi?_fast); gseVi?_fast_par.name = ''Vi par''; gseVi?_fast_perp.name = ''Vi perp'';',ic)
 c_eval('[gseVe?_fast_par,gseVe?_fast_perp] = irf_dec_parperp(gseB?_srvy.resample(gseVe?_fast),gseVe?_fast); gseVe?_fast_par.name = ''Ve par''; gseVe?_fast_perp.name = ''Ve perp'';',ic)
 
+% Convective electric fields
+c_eval('gseVexB?_fast = gseVe?_fast.cross(gseB?_srvy.resample(gseVe?_fast))*1e-3; gseVexB?_fast.units = ''mV/m'';',ic)
+c_eval('gseVixB?_fast = gseVi?_fast.cross(gseB?_srvy.resample(gseVi?_fast))*1e-3; gseVixB?_fast.units = ''mV/m'';',ic)
+% Non-ideal electric field, E+VexB
+c_eval('gseEVexB?_fast = gseE?_fast.resample(gseVexB?_fast.time)+gseVexB?_fast; gseEVexB?_fast.name = ''E+VexB'';',ic)
+c_eval('gseEVixB?_fast = gseE?_fast.resample(gseVixB?_fast.time)+gseVixB?_fast; gseEVixB?_fast.name = ''E+VixB'';',ic)
+
+
 %% Rotated coordinates
 tint_mva = irf.tint('2017-07-25T20:14:08.398745849Z/2017-07-25T21:57:25.093696533Z'); % early
 tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later

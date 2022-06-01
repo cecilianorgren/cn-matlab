@@ -38,89 +38,14 @@ plot(hca,xvec(2:end),diff(fun_A(xvec,x0,rmin,rmax))/dx)
 
 %% Syms, Venturi/Venturi-Laval
 % Define variables
-syms x v(x) t
-Dv = diff(v,x);
+syms x v(x)
 
 % Define constants
 rmax = 2;
 rmin = 1.8506; % v0 = 0.2vs
 rmin = 0.5;
 
-vs = 1;
-x0 = 3;
-xvec = linspace(0,2*x0,1000);
-
-% Specify box
-r = rmax - (rmax-rmin)*exp(-(x-x0)^2);
-r = 0.1*x/(rmax-rmin);
-A = pi*r^2;
-dAdx = gradient(A,x);
-
-% Specify and solve ode
-ode = Dv == v*(-dAdx/A)/(1-v^2/vs^2);
-cond1 = v(x0) == 1.0*vs;
-cond2 = Dv(x0) == 0;
-conds = [cond1];
-%cond = r(0) == 0;
-vSolx = dsolve(ode,conds);
-dvdx = gradient(vSolx,x);
-
-% Numerical
-%rhs = matlabFunction(v*(-dAdx/A)/(1-v^2/vs^2));
-%v_num = ode45(rhs,[0 x0],[0.1 0.1]);
-
-
-% Make functions
-mf_r = matlabFunction(r);
-mf_A = matlabFunction(A);
-mf_dAdx = matlabFunction(dAdx);
-mf_v = matlabFunction(vSolx);
-mf_dvdx = matlabFunction(dvdx);
-
-% Plot
-nrows = 5;
-ncols = 1;
-isub = 1;
-
-hca = subplot(nrows,ncols,isub); isub = isub + 1;
-plot(hca,xvec,mf_r(xvec))
-hca.XLabel.String = 'x';
-hca.YLabel.String = 'r';
-hca.YLim = [0 rmax];
-
-hca = subplot(nrows,ncols,isub); isub = isub + 1;
-plot(hca,xvec,mf_A(xvec))
-hca.XLabel.String = 'x';
-hca.YLabel.String = 'A';
-hca.YLim(1) = 0;
-
-hca = subplot(nrows,ncols,isub); isub = isub + 1;
-plot(hca,xvec,mf_dAdx(xvec))
-hca.XLabel.String = 'x';
-hca.YLabel.String = 'dA/dx';
-
-hca = subplot(nrows,ncols,isub); isub = isub + 1;
-plot(hca,xvec,real(mf_v(xvec)),xvec,imag(mf_v(xvec)))
-hca.XLabel.String = 'x';
-hca.YLabel.String = 'v';
-
-hca = subplot(nrows,ncols,isub); isub = isub + 1;
-%plot(hca,mf_v(xvec),real(mf_v(xvec)),xvec,imag(mf_v(xvec)))
-plot(hca,mf_v(xvec)/vs,mf_dvdx(xvec))
-hca.XLabel.String = 'v/v_s';
-hca.YLabel.String = 'dv/dx';
-
-%% Numerical, Venturi/Venturi-Laval
-% Define variables
-syms x v(x)
-Dv = diff(v,x);
-
-% Define constants
-rmax = 2;
-rmin = 1.8506; % v0 = 0.2vs
-rmin = 1.5;
-
-vs = 1;
+vs = 0.1;
 x0 = 3;
 xvec = linspace(0,2*x0,1000);
 
@@ -131,12 +56,10 @@ A = pi*r^2;
 dAdx = gradient(A,x);
 
 % Specify and solve ode
-ode = Dv == v*(-dAdx/A)/(1-v^2/vs^2);
-cond1 = v(x0) == 1*vs;
-cond2 = Dv(x0) == 0;
-conds = [cond1];
+ode = diff(v,x) == v*(-dAdx/A)/(1-v^2/vs^2);
+cond = v(0.5*x0) == 0.5*vs;
 %cond = r(0) == 0;
-vSolx = dsolve(ode,conds);
+vSolx = dsolve(ode,cond);
 dvdx = gradient(vSolx,x);
 
 % Make functions

@@ -1,0 +1,39 @@
+function out = costfunction_artemyev(params,B,n,doPlot)
+% COSTFUNCTION_ARTEMYEV
+%   Cost function for 
+%     y = y0*(1-a*x^2)   
+%   where y is n or T, and x is Bx (Artemyev 2017).
+% 
+%   Params = [y0, a]
+%
+
+f = @(x,y0,a) y0*(1-a*x.^2);
+
+y0 = params(1);
+a = params(2);
+
+out = f(B,y0,a) - n;
+
+
+if doPlot
+  hca = subplot(1,1,1);
+  plot(hca,B,n,'.',)
+  hca.Title.String = {...
+    str_param,...
+    'Cost function (to be minimized):',...
+    sprintf(' CF = %g x CF0 + %g x CF1 + %g x CF2 = %g',weight(1),weight(2),weight(3),out),...
+    sprintf('(f) CF0 = %g',out_mom0)
+    };
+
+  hca = subplot(nrows,ncols,isub); isub = isub + 1;    
+  plot(hca,v{1},data_obs_mom1,v{1},data_fit_mom1)
+  hca.Title.String = {sprintf('(vf) CF1 = %g',out_mom1)};
+
+  hca = subplot(nrows,ncols,isub); isub = isub + 1;    
+  plot(hca,v{1},data_obs_mom2,v{1},data_fit_mom2)
+  hca.Title.String = {sprintf('(v^2f) CF2 = %g',out_mom2)};  
+
+  drawnow
+  pause(0.1)
+end
+

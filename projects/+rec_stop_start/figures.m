@@ -3019,7 +3019,7 @@ cmap = irf_colormap('waterfall');
 doFilt = 1;
 ffilt = 1;
 
-npanels = 9;
+npanels = 7;
 h = irf_plot(npanels);
 isub = 1;
 zoomy = [];
@@ -3048,7 +3048,7 @@ if 1 % B lmn fast
                   sprintf('[%5.2f, %5.2f, %5.2f]',R(2,1),R(2,2),R(2,3)),...
                   sprintf('[%5.2f, %5.2f, %5.2f]',R(3,1),R(3,2),R(3,3))}',[1.002 0.9],'fontsize',12,'color','k');  
 end
-if 0 % E gse fast
+if 1 % E gse fast
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E gse');
@@ -3104,6 +3104,16 @@ if 0 % VExB gse
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
 end
+if 1 % E + VixB gse fast
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E + VixB gse');
+  set(hca,'ColorOrder',mms_colors('xyza'))    
+  c_eval('irf_plot(hca,{gseEVixB?_fast.x,gseEVixB?_fast.y,gseEVixB?_fast.z},''comp'');',ic)    
+  hca.YLabel.String = {'E_{GSE} + V_ixB','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
+end 
 if 0 % n
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('matlab'))
@@ -3126,7 +3136,7 @@ if 0 % n log scale
   hca.YScale = 'log';
   hca.YLim(1) = 1e-5;
 end
-if 1 % n log scale, no burst
+if 0 % n log scale, no burst
   hca = irf_panel('n log scale');
   set(hca,'ColorOrder',mms_colors('matlab'))
   %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
@@ -3138,7 +3148,7 @@ if 1 % n log scale, no burst
   hca.YScale = 'log';
   hca.YLim(1) = 1e-5;
 end
-if 1 % i DEF omni
+if 0 % i DEF omni
   isub = isub + 1;
   hca = irf_panel('i DEF omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?_fast.omni.deflux.specrec,''log'');',ic)  
@@ -3164,7 +3174,7 @@ if 1 % i DEF omni
   hca.YLabel.String = {'E_i','(eV)'};   
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % hplus DEF omni
+if 0 % hplus DEF omni
   isub = isub + 1;
   hca = irf_panel('hplus DEF omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?_Hp_fast.dpflux(-1).deflux.specrec,''log'');',ic)  
@@ -3181,7 +3191,7 @@ if 1 % hplus DEF omni
   hca.YLabel.String = {'E_{H+}','(eV)'};     
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % oplus DEF omni
+if 0 % oplus DEF omni
   isub = isub + 1;
   hca = irf_panel('oplus DEF omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?_Op_fast.dpflux(-1).deflux.specrec,''log'');',ic)  
@@ -3387,3 +3397,5 @@ end
 
 irf_zoom(h,'x',tint)
 irf_plot_axis_align
+
+%% Scatter plots of 
