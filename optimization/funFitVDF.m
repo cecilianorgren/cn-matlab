@@ -135,6 +135,7 @@ vtmin = 4000e3;   vtmax = 100000e3;
 
 
 % Read input provided by the user
+have_options = 0;
 nargs = numel(varargin);
 if nargs > 0, have_options = 1; args = varargin(:); end
 

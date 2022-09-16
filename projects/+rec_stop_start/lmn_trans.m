@@ -1,6 +1,6 @@
 % Set up new coordinate system
 tint_mva = irf.tint('2017-07-25T20:14:08.398745849Z/2017-07-25T21:57:25.093696533Z'); % early
-tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later
+%tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later
 
 [out,l,v]=irf_minvar(gseB1_srvy.tlim(tint_mva));
 
@@ -9,33 +9,77 @@ Radjust = [-1 0 0; 0 -1 0;0 0 1]; % early
 %Radjust = [1 0 0; 0 1 0; 0 0 1];
 R = v*Radjust';
 
-
+%%
 r1 = [1 -0.3 0]; r1 = r1/norm(r1);
-r3 = [0 0 1];
+r3 = cross(cross(r1,[0 0 1]),r1);
+%r3 = [0 0 1];
 r2 = cross(r3,r1);
 R = [r1;r2;r3];
 
-%% Brst
+%% Density cavity coordinates
+r1 = -[-0.85 -0.52 -0.10]; r1 = r1/norm(r1);
+r3 = cross(cross(r1,-[-0.21 -0.12 -0.97]),r1);
+r2 = cross(r3,r1);
+R = [r1;r2;r3];
+
+%% different event
+r1 = [1 0 0.5]; r1 = r1/norm(r1);
+% r2 = cross(cross(r1,[0 1 0]),r1);
+% r3 = cross(r1,r2);
+r3 = cross(cross(r1,[-0.56 -0.46 0.68]),r1);
+r2 = cross(r3,r1);
+
+R = [r1;r2;r3];
+
+%%
+L = R(1,:);
+M = R(2,:);
+N = R(3,:);
+
+% Brst
 c_eval('lmnB? = gseB?*R'';',ic)
 c_eval('lmnE? = gseE?*R'';',ic)
 c_eval('lmnVi? = gseVi?*R'';',ic)
 c_eval('lmnVe? = gseVe?*R'';',ic)
 c_eval('lmnVExB? = gseVExB?*R'';',ic)
+c_eval('lmnJxB? = gseJxB?*R'';',ic)
 
 c_eval('lmnVi? = gseVi?*R'';',ic)
+c_eval('lmnJ? = gseJ?*R'';',ic)
+c_eval('lmnJe? = gseJe?*R'';',ic)
+c_eval('lmnJi? = gseJi?*R'';',ic)
+
+
+c_eval('lmnVExB? = gseVExB?*R'';',ic)
 
 c_eval('lmnE?perp = gseE?perp*R'';',ic)
 c_eval('lmnVi?perp = gseVi?perp*R'';',ic)
 c_eval('lmnVi?par = gseVi?par'';',ic)
 
-%% Srvy/fast
+c_eval('lmnVe?perp = gseVe?perp*R'';',ic)
+c_eval('lmnVe?par = gseVe?par'';',ic)
+
+c_eval('lmnVe?perp = gseVe?perp*R'';',ic)
+c_eval('lmnVi?perp = gseVi?perp*R'';',ic)
+
+
+c_eval('lmnVi? = gseVi?*R'';',ic)
+
+
+c_eval('lmnJxBne?_mVm = gseJxBne?_mVm*R'';',ic)
+lmnJcurl = gseJcurl*R';
+lmnJxB = JxB*R';
+lmnJav = gseJav*R';
+lmnJiav = gseJiav*R';
+lmnJeav = gseJeav*R';
+lmnBav = gseBav*R';
+
+% Srvy/fast
 c_eval('lmnB?_srvy = gseB?_srvy*R'';',ic)
 c_eval('lmnE?_fast = gseE?_fast*R'';',ic)
 c_eval('lmnVi?_fast = gseVi?_fast*R'';',ic)
 c_eval('lmnVe?_fast = gseVe?_fast*R'';',ic)
 c_eval('lmnVExB?_srvy = gseVExB?_srvy*R'';',ic)
-
-c_eval('lmnVi? = gseVi?*R'';',ic)
 
 %% Plot
 npanels = 7;

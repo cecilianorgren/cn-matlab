@@ -1,19 +1,19 @@
 tint = irf.tint('2015-10-16T10:32:54.00Z/2015-10-16T10:34:14.00Z'); % magnetosphere-magnetosheath-magnetosphere
-ic = 1:2;
-if 0 
-  %load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-23.mat') % has this dobj thing
-  load('/Users/Cecilia/Data/MMS/20151112071854_2016-08-24.mat')
-  return
-end
+ic = 1:4;
+
 %% Load datastore
-mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS/');
+localuser = datastore('local','user');
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+
 db_info = datastore('mms_db');   
 
 %% Particle distributions: electrons and ions
 disp('Loading particle distributions...')
-mms.get_filepath('mms3_fpi_brst_l2_des-dist',tint+[20 0])
-%c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
-%c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+%mms.get_filepath('mms3_fpi_brst_l2_des-dist',tint+[20 0])
+c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',1)
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',1)
 %c_eval('tic; [ePDist?,ePDist?error] = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_des-dist'',tint+[20 0])); toc',ic)
 %c_eval('tic; iPDist? = mms.make_pdist(mms.get_filepath(''mms?_fpi_brst_l2_dis-dist'',tint+[20 0])); toc',ic)
 %% Make event directory
@@ -25,18 +25,19 @@ dirName = sprintf('%s-%s-%s_%s',numName(1:4),numName(5:6),numName(7:8),numName(9
 if strfind(computername,'ift0227887')
   eventPath = ['/Users/cno062/Research/Events/' dirName '/fluxrope/'];
 else
-  eventPath = ['/Users/Cecilia/Research/Events/' dirName '/fluxrope/'];
+  eventPath = ['/Users/cecilia/Research/Events/' dirName '/fluxrope/'];
 end
 
 mkdir(eventPath)
 end
+eventPath = ['/Users/' localuser '/GoogleDrive/Research/2015-10-16_fluxrope/'];
 %% Load defatt, for coordinate tranformation
-disp('Loading defatt...')
 if 0
-%load /Users/Cecilia/Data/MMS/2015Oct16/defatt.mat
-c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic);
-c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic);
-c_eval('defatt? = mms_removerepeatpnts(defatt?);',ic)
+  disp('Loading defatt...')
+  %load /Users/Cecilia/Data/MMS/2015Oct16/defatt.mat
+  c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic);
+  c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic);
+  c_eval('defatt? = mms_removerepeatpnts(defatt?);',ic)
 end
 %% Magnetic field
 disp('Loading magnetic field...')
@@ -55,6 +56,7 @@ c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_p
 
 %% Load spacecraft position
 disp('Loading spacecraft position...')
+c_eval('gseR? = mms.get_data(''R_gse'',tint,ic);',ic)
 R = mms.get_data('R_gse',tint);
 if size(R.gseR1,2) == 4
   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
@@ -97,3 +99,4 @@ c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic); toc
 
 %c_eval('tic; gseVe?fast = mms.get_data(''Ve_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
 %c_eval('tic; gseVi?fast = mms.get_data(''Vi_gse_fpi_fast_l2'',fastTint,?); toc;',ic)
+

@@ -135,7 +135,7 @@ Ex = @(x,y,z) x*0 + y*0 + z*0;
 Ey = @(x,y,z) x*0 + y*0 + z*0 + Er;
 Ez = @(x,y,z) x*0 + y*0 + z*0;
 Ay = @(z) B0*d*log(cosh(z/d));
-Az = @(z) -Bg*z;
+Az = @(z) -Bg*z*1;
 
 Gamma = @(z,py,pz,phi0,d) 0.5/m*((py-q*Ay(z)).^2+(pz-q*Az(z)).^2);
 
@@ -282,6 +282,8 @@ h(3).XLim = zlim*[-1 1];
 %h(3).YLim = [0 2]*1e-16;
 h(3).YLim = [0 500];
 h(3).YScale = 'lin';
+hold(h(3),'off')
+
 %% Plot one electron distribution and associated orbit
 nRows = 2;
 nCols = 3;

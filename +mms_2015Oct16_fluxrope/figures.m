@@ -683,7 +683,7 @@ end
 
 %% Overview, MSH > MSP, MVA electrons
 tint = irf.tint('2015-10-16T10:33:20.00Z/2015-10-16T10:34:00.00Z'); % magnetosheath-magnetosphere
-npanels = 8;
+npanels = 9;
 cmap = 'jet';
 
 % Initialize figure
@@ -752,7 +752,7 @@ if 0 % Ve
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);  
   hca.YLim = [-500 500];  
 end
-if 0 % Ve par
+if 1 % Ve par
   hca = irf_panel('Ve par');
   set(hca,'ColorOrder',mms_colors('1'))
   %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint),gseVe?.abs.tlim(tint)},''comp'');',ic)
@@ -760,7 +760,7 @@ if 0 % Ve par
   hca.YLabel.String = {'v_{e,||}','(nT)'};    
   hca.YLim = [-500 500];  
 end
-if 0 % Ve perp
+if 1 % Ve perp
   hca = irf_panel('Ve perp');
   set(hca,'ColorOrder',mms_colors('xyza'))
   %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint),gseVe?.abs.tlim(tint)},''comp'');',ic)
@@ -769,6 +769,32 @@ if 0 % Ve perp
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);  
   hca.YLim = [-300 300];  
+end
+if 1 % E+VexB perp
+  hca = irf_panel('E VexB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint),gseVe?.abs.tlim(tint)},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaEVexB?.x.tlim(tint),mvaEVexB?.y.tlim(tint),mvaEVexB?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'E+v_{e}xB','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [-300 300];  
+end
+comps_str = ['L','M','N'];
+comps = ['x','y','z'];
+for icomp = 1:numel(comps)
+  comp = comps(icomp);
+  comp_str = comps_str(icomp);
+  if 1 % ve/iperp +VExB perp
+    hca = irf_panel(['E VexB ' comp]);
+    set(hca,'ColorOrder',mms_colors('xyza'))
+    %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint),gseVe?.abs.tlim(tint)},''comp'');',ic)
+    c_eval('irf_plot(hca,{mvaVe?perp.(comp).tlim(tint),mvaVi?perp.(comp).tlim(tint),mvaVExB?.(comp).tlim(tint)},''comp'');',ic)  
+    hca.YLabel.String = {['v_{\perp' comp_str '}'],'(km/s)'};
+    set(hca,'ColorOrder',mms_colors('xyza'))
+    irf_legend(hca,{'v_e','v_i','v_{ExB}'},[0.98 0.9],'fontsize',12);  
+    %hca.YLim = [-300 300];  
+  end
 end
 if 0 % Te par perp, Ti/10
   hca = irf_panel('T');
@@ -781,7 +807,7 @@ if 0 % Te par perp, Ti/10
   hca.YLim = [10 80];
   %hca.YTick
 end
-if 0 % J curl 
+if 1 % J curl 
   hca = irf_panel('J curl');
   set(hca,'ColorOrder',mms_colors('xyz'))
   %c_eval('irf_plot(hca,{gseJcurl.x.tlim(tint),gseJcurl.y.tlim(tint),gseJcurl.z.tlim(tint),gseJcurl.abs.tlim(tint)},''comp'');',ic)
@@ -793,9 +819,9 @@ if 0 % J curl
   hca.YScale = 'lin';
   hca.YLim = [-800 1100];
 end
-if 1 % eDist omni 64
+if 0 % eDist omni 64
   hca = irf_panel('e DEF omni 64');    
-  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.deflux.e64.omni.tlim(tint).specrec,''log'');',ic)  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.deflux.omni.tlim(tint).specrec,''log'');',ic)  
   set(hca,'yscale','log');
   set(hca,'ytick',[1e1 1e2 1e3 1e4]);
   if 1 % sc pot
@@ -811,7 +837,7 @@ if 1 % eDist omni 64
   hca.YLim = [10 1000];
   hca.CLim = [5 8.3];
 end
-if 1 % ePDist pa 32
+if 0 % ePDist pa 32
   hca = irf_panel('e PA e32 deflux all low E');
   elim = [0 120];
   try
@@ -826,7 +852,7 @@ if 1 % ePDist pa 32
   colormap(hca,cmap)
   irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.98 0.90],'fontsize',12,'color',[0 0 0]);
 end
-if 1 % ePDist pa 32
+if 0 % ePDist pa 32
   %%
   hca = irf_panel('e PA e32 deflux high E');  
   elim = [120 1000];  
@@ -842,7 +868,7 @@ if 1 % ePDist pa 32
   colormap(hca,cmap)
   irf_legend(hca,{[num2str(elim(1),'%.0f') '<E_e<' num2str(elim(2),'%.0f') ' eV']},[0.98 0.90],'fontsize',12,'color',[0 0 0]);
 end
-if 1 % eDist omni 64 par
+if 0 % eDist omni 64 par
   hca = irf_panel('e DEF par');
   pas = [0 30];
   c_eval('ePitch?lim = ePDist?.pitchangles(dmpaB?,pas);',ic)  
@@ -863,7 +889,7 @@ if 1 % eDist omni 64 par
   irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta<' num2str(pas(2),'%.0f')]},[0.98 0.15],'fontsize',12,'color',[0 0 0]);
   hca.YLim = [10 1000];
 end
-if 1 % eDist omni 64 perp
+if 0 % eDist omni 64 perp
   hca = irf_panel('e DEF perp');
   pas = [75 115];
   c_eval('ePitch?lim = ePDist?.pitchangles(dmpaB?,pas);',ic)  
@@ -884,7 +910,7 @@ if 1 % eDist omni 64 perp
   irf_legend(hca,{[num2str(pas(1),'%.0f') '<\theta<' num2str(pas(2),'%.0f')]},[0.98 0.15],'fontsize',12,'color',[0 0 0]);
   hca.YLim = [10 1000];
 end
-if 1 % eDist omni 64 apar
+if 0 % eDist omni 64 apar
   hca = irf_panel('e DEF apar');
   pas = [150 180];
   c_eval('ePitch?lim = ePDist?.pitchangles(dmpaB?,pas);',ic)  
@@ -1417,7 +1443,7 @@ irf_plot_axis_align
 %h(10).YLim = 7*[-1 1];
 %h(11).YLim = 7*[-1 1];
 
-.%% Electron adiabaticity, Teperp
+%% Electron adiabaticity, Teperp
 npanels = 7;
 tint = irf.tint('2015-10-16T10:33:20.00Z/2015-10-16T10:34:00.00Z');
 tintZoom = irf.tint('2015-10-16T10:33:41.00Z/2015-10-16T10:33:50.00Z');

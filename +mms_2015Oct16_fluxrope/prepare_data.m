@@ -21,6 +21,18 @@ c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 gseAvJ = (gseJ1+gseJ2.resample(gseJ1.time)+gseJ3.resample(gseJ1.time)+gseJ4.resample(gseJ1.time))/4; 
 
+%% Pressure/temperature, FAC
+c_eval('facPe? = mms.rotate_tensor(gsePe?,''fac'',gseB?); facPe?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
+c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
+c_eval('facPi? = mms.rotate_tensor(gsePi?,''fac'',gseB?); facPi?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
+c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
+c_eval('Ti?perp = 0.5*(facTi?.yy+facTi?.zz);',ic)
+c_eval('Te?perp = 0.5*(facTe?.yy+facTe?.zz);',ic)
+c_eval('Ti?par = facTi?.xx;',ic)
+c_eval('Te?par = facTe?.xx;',ic)
+c_eval('Pi?perp = 0.5*(facPi?.yy+facPi?.zz);',ic)
+c_eval('Pi?par = facPi?.xx;',ic)
+
 %% Pressure and temperature divergences
 gseGradPe = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km';
 gseGradPi = mms_2015Oct16.gradP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
@@ -69,11 +81,12 @@ curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
 %% Pitchangle distributions
 if 0
   load /Users/Cecilia/Data/MMS/20151112071854_2017-03-11_ePitch15.mat
-else
-  c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',ic)
-  c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',ic)
-  c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',ic)
-  c_eval('ePitch?apar = ePDist?.pitchangles(dmpaB?,[165 180]);',ic)
+elseif 0
+  c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,15);',1)
+  c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,15);',1)
+  c_eval('ePitch?par = ePDist?.pitchangles(dmpaB?,[0 15]);',1)
+  c_eval('ePitch?perp = ePDist?.pitchangles(dmpaB?,[75 105]);',1)
+  c_eval('ePitch?apar = ePDist?.pitchangles(dmpaB?,[165 180]);',1)
 end
 
 %% Calculate some additional parameters, irf_plasma_calc
@@ -239,6 +252,8 @@ c_eval('mvaEVexB? =  irf.ts_vec_xyz(gseEVexB?.time,[gseEVexB?.dot(L).data gseEVe
 %mvaVDe =  irf.ts_vec_xyz(vDe.time,[vDe.dot(L).data vDe.dot(M).data vDe.dot(N).data]); mvaVDe.units = '';
 mvaAvJ =  gseAvJ*lmn'; mvaAvJ.units = 'nA/m^2';
 c_eval('mvaJxB? = mvaJ?.cross(mvaB?.resample(mvaJ?.time));')
+c_eval('mvaJxB? = mvaJ?.cross(mvaB?.resample(mvaJ?.time));')
+c_eval('[mvaJxB?par,mvaJxB?perp] = irf_dec_parperp(mvaB?,mvaJxB?); mvaJxB?par.name = ''xBJ par''; mvaJxB?perp.name = ''JxB perp'';',ic)
 c_eval('mvaVExB? =  gseVExB?*lmn'';')
 c_eval('mvaVe?par = gseVe?par;')
 c_eval('mvaVe?perp = gseVe?perp*lmn''; mvaVe?perp.name = ''Ve perp lmn'';')
@@ -248,6 +263,8 @@ c_eval('mvaE?par = gseE?par;')
 c_eval('mvaE?perp = gseE?perp*lmn''; mvaE?perp.name = ''E perp lmn'';')
 %c_eval('mvaE?fastpar = gseE?fastpar;')
 %c_eval('mvaE?fastperp = irf.ts_vec_xyz(gseE?fastperp.time,[gseE?fastperp.dot(L).data gseE?fastperp.dot(M).data gseE?fastperp.dot(N).data]);')
+
+
 
 
 if 0
@@ -261,6 +278,8 @@ end
 
 mvaRotRe = irf.ts_vec_xyz(gseRotRe.time,[gseRotRe.dot(L).data gseRotRe.dot(M).data gseRotRe.dot(N).data]);
 mvaGradPe = irf.ts_vec_xyz(gseGradPe.time,[gseGradPe.dot(L).data gseGradPe.dot(M).data gseGradPe.dot(N).data]);
+mvaCurvB = gseCurvB*lmn';
+
 
 mvaAvE = (mvaE1+mvaE2.resample(mvaE1.time)+mvaE3.resample(mvaE1.time)+mvaE4.resample(mvaE1.time))/4; 
 mvaAvVe = (mvaVe1+mvaVe2.resample(mvaVe1.time)+mvaVe3.resample(mvaVe1.time)+mvaVe4.resample(mvaVe1.time))/4; 
