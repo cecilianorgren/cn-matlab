@@ -1208,7 +1208,7 @@ times_dist = EpochTT(['2015-10-16T10:33:44.507494873Z';...
 times_dist = EpochTT('2015-10-16T10:33:44.500Z'):0.1:EpochTT('2015-10-16T10:33:45.50Z');
 nd = times_dist.length;
 colors = colormap('jet'); pic_colors('thermal'); pic_colors('pasteljet');
-colors = interp1(1:size(colors,1),colors,linspace(1,size(colors,1),nd))
+colors = interp1(1:nd,colors,linspace(0,size(colors,1),nd))
 %colors = colors(10:10:size(colors,1),:);
 %interp1(linspace(1,101,size(c,1)),c,1:101);
 %colors = interp1((1:size(colors,1))',pic_colors('thermal'),5:5:25');
@@ -1275,7 +1275,7 @@ if 1
   end
   hold(hca,'off')
   set(hca,'colororder',colors)
-  irf_legend(hca,legs',[1.01 0.98])
+  irf_legend(hca,legs',[0.98 0.98])
   hca.XLim = [0 180];
 end
 
