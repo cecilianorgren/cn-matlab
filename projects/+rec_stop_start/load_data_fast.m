@@ -57,7 +57,7 @@ c_eval('PB?_srvy = gseB?_srvy.abs2/2/units.mu0*1e-9; PB?_srvy.name = ''Magnetic 
 %c_eval('betae?_srvy = PB?.resample(gsePi?)*3/(gsePe?.trace.resample(gsePi?));',ic)
 %c_eval('betai?_srvy = PB?.resample(gsePi?)*3/(gsePi?.trace);',ic)
 c_eval('beta?_srvy_fpi = PB?_srvy.resample(Pi?_fast)*3/(Pi?_fast.trace+Pe?_fast.trace.resample(Pi?_fast)); beta?_srvy_fpi.name = ''beta ie'';',ic)
-c_eval('betai?_srvy_hpca = PB?_srvy.resample(pOp?_srvy)*3/(pOp?_srvy.trace + pHp?_srvy.trace); betai?_srvy_hpca.name = ''beta op hp'';',ic)
+%c_eval('betai?_srvy_hpca = PB?_srvy.resample(pOp?_srvy)*3/(pOp?_srvy.trace + pHp?_srvy.trace); betai?_srvy_hpca.name = ''beta op hp'';',ic)
 
 % Energetic particles
 c_eval('feeps_ion_omni?_srvy = mms.get_data(''Omnifluxion_epd_feeps_srvy_l2'',tint_fast,?);',ic)

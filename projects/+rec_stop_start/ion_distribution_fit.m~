@@ -75,11 +75,11 @@ tic
 % fitdata_nobg = fitdata; ts_nobg = ts;
 [fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',1,'guessprevious',0,'X0',X0,'weight',[1 1 1]);
 units = irf_units; ts.vt = irf.ts_scalar(ts.T.time,units.s*(1-1./(ts.T.data*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3);
-units = irf_units; ts.vt = irf.ts_scalar(ts.T.time,(2*ts.T.data*units.e/units.mp).^0.5*1e-3);
+units = irf_units; ts.vt = irf.ts_scalar(ts.T.time,(2*ts.T.data*units.e/units.mp.^0.5*1e-3);
 toc
 vfitmaxtot = irf.ts_scalar(ts.n.time,sum(ts.n.data.*ts.vd.data,2)./sum(ts.n.data,2));
 %% Plot results from funFitVDF()
-h = irf_plot(8);
+h = irf_plot(7);
 hca = irf_panel('vdf_obs');
 irf_spectrogram(hca,vdf.specrec('velocity'),'log'); colormap(hca,irf_colormap('waterfall')) 
 hca.YLabel.String = 'v^{obs} (km/s)';
@@ -125,17 +125,6 @@ irf_plot(hca,ts.vt)
 %hold(hca,'on'); hTobs = irf_plot(hca,T0.xx); hold(hca,'off'); 
 %irf_legend(hca,'obs',[0.98 0.98],'color',hTobs.Color)
 hca.YLabel.String = 'v_t (km/s)';
-hca.YLabel.Interpreter = 'tex';
-
-if 1
-  hca = irf_panel('vt_fit/vd_fit');
-  irf_plot(hca,irf.ts_scalar(ts.vt.time,ts.vt.data./ts.vd.data))
-  %hold(hca,'on'); hTobs = irf_plot(hca,T0.xx); hold(hca,'off'); 
-  %irf_legend(hca,'obs',[0.98 0.98],'color',hTobs.Color)
-  hca.YLabel.String = 'v_t/v_d';
-  hca.YLabel.Interpreter = 'tex';
-  
-end
 
 hca = irf_panel('cf_fit');
 irf_plot(hca,ts.cf)
@@ -143,6 +132,4 @@ irf_plot(hca,ts.cf)
 irf_plot_axis_align(h)
 hlinks = linkprop([irf_panel('vdf_obs'),irf_panel('vdf_fit')],{'CLim','YLim'});
 irf_zoom(h,'x',vdf.time([1 end]))
-
-
 

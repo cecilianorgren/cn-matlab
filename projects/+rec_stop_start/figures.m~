@@ -6942,7 +6942,7 @@ if 0 % J, Jeav, Jiav, Jav ,curl
     irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{i%s}^{FPI}',comp),sprintf('J_{e%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
-if 0 % Only  Jav ,curl
+if 1 % Only  Jav ,curl
   for comp = ['x','y','z']      
     isub = isub + 1;
     %zoomy = [zoomy isub];
@@ -6955,7 +6955,7 @@ if 0 % Only  Jav ,curl
       irf_plot(hca,{gseJ1.(comp),gseJ2.(comp),gseJ3.(comp),gseJ4.(comp),gseJcurl.(comp)},'comp');  
     end
     hca.YLabel.String = {sprintf('J_%s',comp),'(nA/m^2)'};
-    set(hca,'ColorOrder',j_colors([1 4],:))
+    set(hca,'ColorOrder',j_colors)
     irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
@@ -6965,18 +6965,15 @@ if 1 % Only  Jiav Jeav
     %zoomy = [zoomy isub];
     hca = irf_panel(sprintf('J%s',comp));
     set(hca,'ColorOrder',j_colors([2 3],:))
-    if 1
-      irf_plot(hca,{gseJiav.(comp),gseJeav.(comp)},'comp');
-      %irf_legend(hca,{sprintf('resampled to %g s (for visibility)',dt_resample)},[0.02 0.05],'color','k','fontsize',fontsize_leg)
-    elseif doResample    
-      irf_plot(hca,{gseJiav.(comp).resample(timeline),gseJeav.(comp).resample(timeline)},'comp');
+    if doResample    
+      irf_plot(hca,{gseJav.(comp).resample(timeline),gseJiav.(comp).resample(timeline),gseJeav.(comp).resample(timeline),gseJcurl.(comp).resample(timeline)},'comp');
       irf_legend(hca,{sprintf('resampled to %g s (for visibility)',dt_resample)},[0.02 0.05],'color','k','fontsize',fontsize_leg)
     else
       irf_plot(hca,{gseJ1.(comp),gseJ2.(comp),gseJ3.(comp),gseJ4.(comp),gseJcurl.(comp)},'comp');  
     end
     hca.YLabel.String = {sprintf('J_%s',comp),'(nA/m^2)'};
     set(hca,'ColorOrder',j_colors([2 3],:))
-    irf_legend(hca,{sprintf('J_{i%s}^{FPI}',comp),sprintf('J_{e%s}^{FPI}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
+    irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
 if 0 % J, mms1-4,curl

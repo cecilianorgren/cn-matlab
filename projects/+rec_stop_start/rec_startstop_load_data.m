@@ -135,10 +135,11 @@ c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 
 c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',2)
 c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint,?);',2)
+
 c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
 c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint,?);',ic)
 c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint,?);',ic)
-
+%%
 
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
 
@@ -223,7 +224,7 @@ if 0
 
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
-elim = [700 40000];
+elim = [200 40000];
 
 
 c_eval('if1Dx? = iPDist?.elim(elim).reduce(''1D'',[1 0 0],''vint'',vint);',ic)
