@@ -3258,7 +3258,7 @@ cmap = irf_colormap('waterfall');
 doFilt = 1;
 ffilt = 1;
 
-npanels = 5;
+npanels = 8;
 h = irf_plot(npanels);
 isub = 1;
 zoomy = [];
@@ -3401,7 +3401,7 @@ if 0 % nO/nHp
 end
 
 elim_feeps = [8e04 Inf]; % [8e04 Inf]
-if 0 % FEEPS Pitch 0 allE
+if 1 % FEEPS Pitch 0 allE
 %  feeps_pa2.elim([9.7+04 Inf])
   isub = isub + 1;
   hca = irf_panel('feeps Pitch all E');  
@@ -3412,7 +3412,7 @@ if 0 % FEEPS Pitch 0 allE
   hca.YLabel.Interpreter = 'tex';
   %irf_legend(hca,sprintf('%.0f < E_i < %.0f keV',elim(1)*1e-3,elim(2)*1e-3),[0.05 0.98])
 end
-if 0 % i PEF feeps omni
+if 1 % i PEF feeps omni
   isub = isub + 1;
   hca = irf_panel('i DEF feeps omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,feeps_ion_omni?_srvy.elim(elim_feeps).specrec(''energy''),''log'');',ic)  
@@ -3421,7 +3421,7 @@ if 0 % i PEF feeps omni
   colormap(hca,cmap) 
   hca.YLabel.String = {'E_i^{FEEPS}','(eV)'};   
 end
-if 0 % beta
+if 1 % beta
   hca = irf_panel('beta');
   set(hca,'ColorOrder',mms_colors('matlab'))  
   c_eval('irf_plot(hca,{betai?_srvy_hpca,beta?_srvy_fpi},''comp'')',ic)
@@ -5885,6 +5885,7 @@ times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
 
 cs = 'lmn';
 cs_str = 'LMN';
+elim = [600 40000];
 
 comps = ['x','y','z'];
 comp_str = 'LMN';
@@ -5954,7 +5955,7 @@ end
 if 1 % i DEF omni
   isub = isub + 1;
   hca = irf_panel('i DEF omni');  
-  elim = [700 40000];
+  
   c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?.omni.deflux.specrec,''log'');',ic)  
   set(hca,'yscale','log');
   %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
@@ -6056,10 +6057,6 @@ times_dist = EpochTT(['2017-07-09T17:33:18.00Z';...
 times_dist = EpochTT(['2017-07-09T17:33:19.00Z']) + 3*0.03*[-2:1:3];
 
 
-times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
-                      '2017-07-25T22:10:07.00Z';...
-                      '2017-07-25T22:10:08.00Z';...
-                      '2017-07-25T22:10:09.20Z']);
 
 
 times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
@@ -6071,9 +6068,14 @@ times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
                       '2017-07-25T22:10:29.00Z';...
                     ]);
                     
+                  
+times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
+                      '2017-07-25T22:10:07.00Z';...
+                      '2017-07-25T22:10:08.00Z';...
+                      '2017-07-25T22:10:09.20Z']);
 times_dist_exact = EpochTT([]);
 
-elim = [000 Inf];
+%elim = [700 Inf];
 
 for id = 1:times_dist.length
   hca = h2(id);
@@ -6081,13 +6083,20 @@ for id = 1:times_dist.length
   v1 = [1 0 0];
   v2 = [0 1 0];
   v3 = [0 0 1];
+  v1 = L;
+  v2 = M;
+  v3 = N;
+  % dugcheck, slightly rotate system
+%   rotang = 30;
+%   v2n = v2*cosd(rotang) + v3*sind(rotang);
+%   v3n = -v2*sind(rotang) + v3*cosd(rotang);
   vlim = 2300;
   vg = -vlim:100:vlim;
   if 1 % x,z
     c_eval('ddist = iPDist?.elim(elim).tlim(times_dist(id)+2*0.15*0.5*[-1 1]+0);',ic)
 %    ddist = ddist(1).elim([100 Inf]);
     times_dist_exact_eu(id) = ddist(1).time.epochUnix;
-    f2d = ddist.reduce('2D',v2,v3);
+    f2d = ddist.reduce('2D',v2,v3n);
 
     f2d.plot_plane(hca,'smooth',0);
     axis(hca,'square')
@@ -6942,7 +6951,7 @@ if 0 % J, Jeav, Jiav, Jav ,curl
     irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{i%s}^{FPI}',comp),sprintf('J_{e%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
-if 1 % Only  Jav ,curl
+if 0 % Only  Jav ,curl
   for comp = ['x','y','z']      
     isub = isub + 1;
     %zoomy = [zoomy isub];
@@ -6955,7 +6964,7 @@ if 1 % Only  Jav ,curl
       irf_plot(hca,{gseJ1.(comp),gseJ2.(comp),gseJ3.(comp),gseJ4.(comp),gseJcurl.(comp)},'comp');  
     end
     hca.YLabel.String = {sprintf('J_%s',comp),'(nA/m^2)'};
-    set(hca,'ColorOrder',j_colors)
+    set(hca,'ColorOrder',j_colors([1 4],:))
     irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
@@ -6965,15 +6974,18 @@ if 1 % Only  Jiav Jeav
     %zoomy = [zoomy isub];
     hca = irf_panel(sprintf('J%s',comp));
     set(hca,'ColorOrder',j_colors([2 3],:))
-    if doResample    
-      irf_plot(hca,{gseJav.(comp).resample(timeline),gseJiav.(comp).resample(timeline),gseJeav.(comp).resample(timeline),gseJcurl.(comp).resample(timeline)},'comp');
+    if 1
+      irf_plot(hca,{gseJiav.(comp),gseJeav.(comp)},'comp');
+      %irf_legend(hca,{sprintf('resampled to %g s (for visibility)',dt_resample)},[0.02 0.05],'color','k','fontsize',fontsize_leg)
+    elseif doResample    
+      irf_plot(hca,{gseJiav.(comp).resample(timeline),gseJeav.(comp).resample(timeline)},'comp');
       irf_legend(hca,{sprintf('resampled to %g s (for visibility)',dt_resample)},[0.02 0.05],'color','k','fontsize',fontsize_leg)
     else
       irf_plot(hca,{gseJ1.(comp),gseJ2.(comp),gseJ3.(comp),gseJ4.(comp),gseJcurl.(comp)},'comp');  
     end
     hca.YLabel.String = {sprintf('J_%s',comp),'(nA/m^2)'};
     set(hca,'ColorOrder',j_colors([2 3],:))
-    irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
+    irf_legend(hca,{sprintf('J_{i%s}^{FPI}',comp),sprintf('J_{e%s}^{FPI}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
 if 0 % J, mms1-4,curl
@@ -7072,3 +7084,798 @@ end
 
 
 c_eval('h2(?).FontSize = 16;',1:numel(h2))
+
+%% MMS SWT: Figure: onset 
+ic = 1;
+time_mark = EpochTT('2017-07-25T22:09:08.00Z');
+time_df = EpochTT('2017-07-25T22:10:06.50Z');
+%c_eval('Etop_fpi = iPDist?.ancillary.energy(1,end)+iPDist?.ancillary.delta_energy_plus(1,end);',ic)
+c_eval('Etop_fpi = iPDist?.depend{1}(1,end)+iPDist?.ancillary.delta_energy_plus(1,end);',ic)
+
+npanels = 6;
+h = irf_plot(npanels);
+iisub = 0;
+cmap = colormap(pic_colors('candy4'));
+colors = mms_colors('matlab');
+
+fontsize_leg = 14;
+
+isub = 0;
+zoomy = [];
+cs = 'lmn';
+if 1 % B cs
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('B gsm');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sB?.x,%sB?.y,%sB?.z},''comp'');',cs,cs,cs),ic)
+  hca.YLabel.String = {sprintf('B_{%s}',cs),'(nT)'};
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'L','M','N'}',[1.02 0.9],'fontsize',12);
+end 
+if 0 % ne
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'')',ic)
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'n_e'},[0.98 0.98])
+  hca.YLabel.String = {'n','(cm^{-3})'};
+end
+if 0 % Pressures, PB, Pi, Pe
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Pressure');  
+  set(hca,'ColorOrder',mms_colors('matlab'))  
+  c_eval(['irf_plot(hca,{PB?,'...
+                         'gsePi?.trace/3,'...
+                         'gsePe?.trace/3,'...
+                         'gsePe?.resample(gsePi?).trace/3+PB?.resample(gsePi?)+gsePi?.trace/3},''comp'');'],ic)
+  hca.YLabel.String = {'P','(nPa)'};
+  set(hca,'ColorOrder',mms_colors('matlab'))
+  irf_legend(hca,{'P_B','P_i','P_e','P_{tot}'}',[1.02 0.9],'fontsize',12);  
+end
+if 0 % beta
+  hca = irf_panel('beta');
+  set(hca,'ColorOrder',mms_colors('1'))  
+  c_eval('irf_plot(hca,{beta?},''comp'')',ic)
+  hold(hca,'on')   
+  hp = irf_patch(hca,{beta1,1/0.3},'smaller');
+  hp.EdgeColor = 'none';
+  hp.FaceColor = colors(1,:);
+  hold(hca,'off')
+  
+  hca.YScale = 'log';
+  %irf_legend(hca,{'hpca','fpi'},[0.98 0.98])
+  hca.YLabel.String = '\beta';
+  hca.YTick = 10.^[-3:1:2];
+  hca.YLabel.Interpreter = 'tex';
+end
+if 0% Vi perp,par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vi perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval(sprintf('irf_plot(hca,{%sVi?perp.x,%sVi?perp.y,%sVi?perp.z,%sVi?par},''comp'');',cs,cs,cs,cs),ic)  
+  hca.YLabel.String = {'v_{i,\perp,||}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'v_{\perp,x}','v_{\perp,y}','v_{\perp,z}','v_{||}'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'v_{i\perp,L}','v_{i\perp,M}','v_{i\perp,N}','v_{i||}'}',[1.02 0.9],'fontsize',12);
+end
+
+elim_feeps = [8e4 Inf];
+if 1 % FEEPS Pitch all sc
+  % for data see feeps_data.m
+  isub = isub + 1;
+  hca = irf_panel('feeps pitch mms 1234');  
+  %elim = [0 32000];
+  irf_spectrogram(hca,feeps_ion_pa1234.elim(elim_feeps).specrec('pitchangle'));
+  hca.YLim = [0 180];
+  hca.YLabel.String = {'\theta^{FEEPS}_i','(deg)'};  
+  hca.YLabel.Interpreter = 'tex';
+  %irf_legend(hca,sprintf('%.0f < E_i < %.0f keV',elim(1)*1e-3,elim(2)*1e-3),[0.05 0.98])
+  hca.YTick = 0:60:180;
+end
+if 1 % i DEF feeps omni all sc
+  % for data see feeps_data.m
+  isub = isub + 1;
+  hca = irf_panel('feeps omni mms 1234');  
+  [hout,hcb] = irf_spectrogram(hca,feeps_ion_omni1234.elim(elim_feeps).specrec('energy'),'log');
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  colormap(hca,cmap) 
+  hca.YLabel.String = {'E_i^{FEEPS}','(eV)'};   
+end
+if 1 % i DEF omni, FPI
+  isub = isub + 1;
+  hca = irf_panel('i DEF omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  colormap(hca,cmap) 
+  if 0 % E_ExB
+    hold(hca,'on')
+    c_eval('vexb = gseVExB?.abs.resample(iPDist?);',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'k')
+    hold(hca,'off')
+  end
+  if 0 % vi_par
+    hold(hca,'on')
+    c_eval('vexb = gseVi?par.abs;',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'b')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'E_i','(eV)'};   
+end
+if 0 % vExB.x/y/z , Vi resample, ve, 3 panels
+  for comp = ['x','y','z'] % vExB.x , Vi resample, ve  
+    isub = isub + 1;
+    zoomy = [zoomy isub];
+    hca = irf_panel(['V ExB Vi ',comp]);
+    set(hca,'ColorOrder',mms_colors('123'))
+    c_eval(sprintf('ve = %sVe?perp.(comp).resample(%sVi?);',cs,cs),ic);
+    ve.data(abs(ve.data)>5000) = NaN;
+    c_eval(sprintf('irf_plot(hca,{ve,%sVi?perp.(comp),%sVExB?.resample(%sVi?).(comp)},''comp'');',cs,cs,cs),ic)  
+    %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
+    hca.YLabel.String = {sprintf('v_{\\perp,(%s)}^{%s}',comp,cs),'(km/s)'};
+    set(hca,'ColorOrder',mms_colors('123'))
+    irf_legend(hca,{'v_e','v_i','ExB'},[0.98 0.9],'fontsize',12);
+    %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);
+  end
+end
+if 0 % vExB.x/y/z , Vi resample, 3 panels
+  strcomp = ['L','M','N'];
+  comps = ['x','y','z'];
+  for icomp = 1:3 % vExB.x , Vi resample, ve
+    comp = comps(icomp);
+    isub = isub + 1;
+    zoomy = [zoomy isub];
+    hca = irf_panel(['V ExB Vi ',comp]);
+    set(hca,'ColorOrder',mms_colors('21'))
+    c_eval(sprintf('irf_plot(hca,{%sVExB?.resample(%sVi?).(comp),%sVi?perp.(comp)},''comp'');',cs,cs,cs),ic)  
+    %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
+    hca.YLabel.String = {sprintf('v_{i\\perp,(%s)}^{%s}',comp,cs),'(km/s)'};
+    hca.YLabel.String = {sprintf('v_{i\\perp,%s}',strcomp(icomp)),'(km/s)'};
+    set(hca,'ColorOrder',mms_colors('21'))
+    %irf_legend(hca,{'v_{ExB}','v_i'},[0.98 0.9],'fontsize',12);
+    irf_legend(hca,{'v_{ExB}','v_i'}',[1.02 0.9],'fontsize',12);    
+  end
+end
+
+if 0 % E+vxB.x/y/z , Vi resample, 3 panels
+  for comp = ['x','y','z'] % vExB.x , Vi resample, ve
+    isub = isub + 1;    
+    hca = irf_panel(['E + VxB ',comp]);
+    set(hca,'ColorOrder',mms_colors('123'))
+    c_eval(sprintf('evexb = %sE?perp.(comp).resample(%sVi?)+gseVexB?.(comp).resample(%sVi?);',cs,cs,cs),ic)
+    c_eval(sprintf('irf_plot(hca,{evexb,%sE?perp.(comp).resample(%sVi?)+gseVixB?.(comp)},''comp'');',cs,cs),ic)  
+    %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
+    hca.YLabel.String = {sprintf('E+v_{(%s)}\times B',comp,cs),'(km/s)'};
+    set(hca,'ColorOrder',mms_colors('123'))
+    irf_legend(hca,{'e','i'},[0.98 0.9],'fontsize',12);
+    %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);
+    hca.YLim = [-5 5];
+  end
+end
+if 0 % J curl
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('J curl');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  eval(sprintf('irf_plot(hca,{%sJcurl.x,%sJcurl.y,%sJcurl.z},''comp'');',cs,cs,cs))
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'curlometer'},[0.05 0.9],'fontsize',12);    
+end
+if 0 % J 
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('J fpi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseJ?.x,gseJ?.y,gseJ?.z},''comp'');',ic)
+  %c_eval('irf_plot(hca,{gseVe?.x.tlim(tint),gseVe?.y.tlim(tint),gseVe?.z.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'J','(nA/m^2)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  %hca.YLim = [-1100 1100];  
+end
+if 0 % E cs
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E gsm');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval(sprintf('irf_plot(hca,{%sE?.x,%sE?.y,%sE?.z},''comp'');',cs,cs,cs),ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_zoom(hca,'y')
+end
+if 0 % E gsm lowpass filt
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E gsm');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  ffilt = 1;
+  c_eval('irf_plot(hca,{gsmE?.filt(0,1,[],3).x,gsmE?.filt(0,1,[],3).y,gsmE?.filt(0,1,[],3).z},''comp'');',ic)
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{sprintf('f < %.0f',ffilt)},[0.1 0.9],'fontsize',12,'color',[0 0 0]);
+  irf_zoom(hca,'y')
+end
+if 0 % Vi gsm
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vi');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gsmVi?.x,gsmVi?.y,gsmVi?.z},''comp'');',ic)  
+  hca.YLabel.String = {'v_i','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+if 0 % Vi par
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vi par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVi?par},''comp'');',ic)  
+  hca.YLabel.String = {'v_{i,||}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+end
+if 0 % Ve x B
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('VexB');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{gseVExB?.x,gseVExB?.y,gseVExB?.z},''comp'');',ic)  
+  hca.YLabel.String = {'-v_e x B','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);
+end
+
+if 0 % EIS Pitch
+  isub = isub + 1;
+  hca = irf_panel('eis Pitch');  
+  irf_spectrogram(hca,eis_pa2.elim([14 4500]*1e3).specrec('pitchangle'));  
+  hca.YLim = [0 180];
+  %hca.YLabel.String = {'\theta','(deg)'};  
+  hca.YLabel.Interpreter = 'tex';
+end
+if 0 % i DEF EIS omni
+  isub = isub + 1;
+  hca = irf_panel('i DEF eis omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,eis_omni?.specrec(''energy''),''log'');',2)  
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  if exist('Etop_fpi','var')
+    hold(hca,'on')
+    c_eval('tint_tmp = eis_omni?.time;',2)
+    irf_plot(hca,irf.ts_scalar(tint_tmp([1 end]),Etop_fpi*[1 1]),'k')
+    hold(hca,'off')
+  end
+  colormap(hca,cmap) 
+  hca.YLabel.String = {'E_i^{EIS}','(eV)'};   
+  hca.YLabel.Interpreter = 'tex';
+end
+if 0 % i DEF feeps omni
+  isub = isub + 1;
+  hca = irf_panel('i DEF feeps omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,feeps_ion_omni?.specrec(''energy''),''log'');',ic)  
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  colormap(hca,cmap) 
+  hca.YLabel.String = {'E_i^{FEEPS}','(eV)'};   
+end
+if 0 % i DEF omni
+  isub = isub + 1;
+  hca = irf_panel('i DEF omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  colormap(hca,cmap) 
+  if 0 % E_ExB
+    hold(hca,'on')
+    c_eval('vexb = gseVExB?.abs.resample(iPDist?);',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'k')
+    hold(hca,'off')
+  end
+  if 0 % vi_par
+    hold(hca,'on')
+    c_eval('vexb = gseVi?par.abs;',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'b')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'E_i','(eV)'};   
+end
+if 0 % Te par perp Ti/Tref
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTe?.xx.tlim(tint),(facTe?.yy+facTe?.zz)/2,facTi?.trace/3/refTi},''comp'');',ic)
+  hca.YLabel.String = {'T','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}',['T_i/' num2str(refTi,'%.0f')]},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [10 400];  
+  %irf_zoom(hca,'y')
+end
+if 0 % Ti par perp
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Te');
+  set(hca,'ColorOrder',mms_colors('123'))
+  refTi = 10;
+  c_eval('irf_plot(hca,{facTi?.xx.tlim(tint),(facTi?.yy+facTi?.zz)/2},''comp'');',ic)
+  hca.YLabel.String = {'T_i','(eV)'};
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'T_{i,||}','T_{i,\perp}'},[0.98 0.9],'fontsize',12);  
+  %hca.YLim = [10 400];  
+  %irf_zoom(hca,'y')
+end
+
+if 1 % i psd x,y,z, 3 panels
+  for comp = ['x']
+    isub = isub + 1;
+    hca = irf_panel(['f1D ' comp]);
+    c_eval(sprintf('if1D = if1D%s?;',comp),ic)
+    irf_spectrogram(hca,if1D.specrec('velocity_1D'));  
+    hca.YLim = if1D.depend{1}(1,[1 end]);  
+    if 0 % % Vi, VExB
+      hold(hca,'on')    
+      c_eval('hl = irf_plot(hca,{gseVi?.(comp),gseVExB?.(comp).resample(gseVi?)},''comp'');',ic)      
+      hold(hca,'off')
+      irf_legend(hl,{'v_i','v_{ExB}'},[0.02 0.12])
+      hl = findobj(hca,'type','line');
+    end
+    hca.YLabel.String = {sprintf('v_{i%s}',comp),'(km/s)'}; 
+    hca.YLabel.Interpreter = 'tex';
+  end
+end
+if 0 % e DEF omni
+  isub = isub + 1;
+  hca = irf_panel('e DEF omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  set(hca,'ytick',[1e1 1e2 1e3 1e4]);
+  if 0 % scPot
+    hold(hca,'on')
+    c_eval('lineScpot = irf_plot(hca,scPot?,''k'');',ic)  
+    lineScpot.Color = [0 0 0]; lineScpot.LineWidth = 1.5;
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'E_e','(eV)'};   
+  colormap(hca,cmap) 
+end
+
+if 0 % i psd y
+  isub = isub + 1;
+  hca = irf_panel('iLine y');
+  c_eval('if1D = if1Dy?;',ic)
+  irf_spectrogram(hca,if1D.specrec('velocity_1D'));  
+  hca.YLim = if1D.depend{1}(1,[1 end]);
+  if 0 % % Vi
+    hold(hca,'on')    
+    irf_plot(hca,gseVi1.y,'k')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'v_{iy}','(km/s)'};  
+  hca.YLabel.Interpreter = 'tex';
+  hca.CLim = [-5 -1];
+end
+
+if 0 % Tepar/Teperp
+  isub = isub + 1;  
+  hca = irf_panel('Tepar/Teperp par');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{Te?par/Te?perp},''comp'');',ic)  
+  hca.YLabel.String = 'T_{e||}/T_{e\perp}';
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  hca.YLim = [0 5];
+end
+
+if 1 % Vi
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vi perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval(sprintf('irf_plot(hca,{%sVi?.x,%sVi?.y,%sVi?.z},''comp'');',cs,cs,cs),ic)  
+  hca.YLabel.String = {'v_{i}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'v_{\perp,x}','v_{\perp,y}','v_{\perp,z}','v_{||}'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'v_{iL}','v_{iM}','v_{iN}'}',[1.02 0.9],'fontsize',12);
+end
+
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
+nInd = 1;
+for ii = 1:npanels
+  irf_legend(h(ii),legends{nInd},[0.01 0.9],'color',[0 0 0])
+  nInd = nInd + 1;
+  h(ii).FontSize = 12;
+end
+
+%irf_zoom(h(1:iisub),'x',fastTint)
+irf_zoom(h,'x',tint)
+%irf_zoom(h,'x',tint)
+irf_zoom(h(zoomy),'y')
+irf_plot_axis_align
+tmark_eis = tint(1):20:tint(2);
+%irf_pl_mark(h(3),tmark_eis.EpochUnix')
+%h(1).Title.String = irf_ssub('MMS ?',ic);
+
+
+hca = irf_panel('Vi perp'); hca.YLim = [-750 1150];
+hca1 = irf_panel('feeps omni mms 1234');  
+hca2 = irf_panel('i DEF omni'); 
+hca2.YLim(2) = hca1.YLim(1);
+%hca = irf_panel('V ExB Vi x'); hca.YLim = [-200 1000]*0.99;
+%hca = irf_panel('V ExB Vi y'); hca.YLim = [-500 800]*0.99;
+%hca = irf_panel('V ExB Vi z'); hca.YLim = [-500 500]*0.99;
+%hca = irf_panel('Pressure');  hca.YLim = [0 0.5];
+%hca = irf_panel('beta'); hca.YLim = [0 4]*0.99;
+
+
+c_eval('h(?).FontSize = fontsize_leg;',1:numel(h))
+
+
+drawnow
+%h(6).YLim(1) = h(7).YLim(2);
+%h(2).YLim(1) = 0.001;
+
+drawnow
+hmark = irf_pl_mark(h,time_mark,'k');
+c_eval('hmark(?).LineStyle = '':'';',1:numel(hmark))
+c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+
+
+hmark2 = irf_pl_mark(h,time_df,'k');
+c_eval('hmark2(?).LineStyle = '':'';',1:numel(hmark2))
+c_eval('hmark2(?).LineWidth = 1;',1:numel(hmark2))
+
+%hat=annotation('textarrow',[0.593 0.593],[.2 .22],'string',{'first energetic ions appearing'}','fontsize',12,'horizontalalignment','center','TextBackgroundColor',[1 1 1]);
+%hat=annotation('textarrow',[0.593 0.593],[.245 .26],'string',{'first energetic ions appearing'}','fontsize',fontsize_leg,'horizontalalignment','center','TextBackgroundColor',[1 1 1]);
+hat=annotation('textarrow',[0.593 0.593]+0.0094,[.56 .54]+0.08,'string',{'first energetic ions appearing'}','fontsize',fontsize_leg,'horizontalalignment','center','TextBackgroundColor','none');
+hat=annotation('textarrow',[0.593 0.593]+0.104,[.4 .38]+0.01,'string',{'first cold ions appearing'}','fontsize',fontsize_leg,'horizontalalignment','center','TextBackgroundColor','none');
+%
+
+%% MMS SWT: detailed look at cold ions
+% Plot 2D ion distributions to show off cold ions
+ic = 1;
+[h,h2] = initialize_combined_plot(7,2,1,0.5,'vertical');
+c_eval('h(?).Position(1) = 0.10;',1:numel(h))
+%h = irf_plot(10);
+
+%tint_figure = tint_cavity + [-135 15];
+
+
+tint_figure = tint_action;
+tint_figure = irf.tint('2017-07-25T22:09:50.00Z/2017-07-25T22:10:20.00Z');
+
+times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
+                      '2017-07-25T22:10:07.00Z';...
+                      '2017-07-25T22:10:08.00Z';...
+                      '2017-07-25T22:10:09.20Z']);
+
+fontsize_leg = 14;
+                    
+cs = 'lmn';
+cs_str = 'LMN';
+elim = [600 40000];
+
+comps = ['x','y','z'];
+comp_str = 'LMN';
+comps = ['x'];
+comp_str = 'x';
+
+if 0
+cs = 'gse';
+cs_str = 'xyz';
+
+comps = ['x','y','z'];
+comp_str = 'xyz';
+end
+
+zoomy = []; isub = 1;
+if 1 % B
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('B');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval(sprintf('irf_plot(hca,{%sB?.x,%sB?.y,%sB?.z,%sB?.abs},''comp'');',cs,cs,cs,cs),ic)    
+  hca.YLabel.String = {'B','(nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{cs_str(1),cs_str(2),cs_str(3),'|B|'}',[1.02 0.9],'fontsize',fontsize_leg);  
+end 
+if 1 % ne
+  isub = isub + 1;
+  hca = irf_panel('n');
+  set(hca,'ColorOrder',mms_colors('12'))
+  c_eval('irf_plot(hca,{ne?},''comp'')',ic)
+  set(hca,'ColorOrder',mms_colors('12'))
+  irf_legend(hca,{'n_e'},[0.98 0.98],'fontsize',fontsize_leg)
+  hca.YLabel.String = {'n','(cm^{-3})'};
+end
+if 1 % Vi
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('Vi perp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval(sprintf('irf_plot(hca,{%sVi?.x,%sVi?.y,%sVi?.z},''comp'');',cs,cs,cs),ic)  
+  hca.YLabel.String = {'v_{i}','(km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'v_{\perp,x}','v_{\perp,y}','v_{\perp,z}','v_{||}'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{'L','M','N'}',[1.02 0.9],'fontsize',fontsize_leg);
+end
+
+if 1 % i DEF omni
+  isub = isub + 1;
+  hca = irf_panel('i DEF omni');  
+  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,iPDist?.tlim(tint_figure).omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  colormap(hca,cmap) 
+  if 1 % elim
+    %%
+    hold(hca,'on')
+    c_eval('timeline = iPDist?.time;',ic)    
+    irf_plot(hca,irf.ts_scalar(timeline,700*ones([timeline.length,1])),'k')
+    hold(hca,'off')
+  end
+  if 0 % E_ExB
+    hold(hca,'on')
+    c_eval('vexb = gseVExB?.abs.resample(iPDist?);',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'k')
+    hold(hca,'off')
+  end
+  if 0 % vi_par
+    hold(hca,'on')
+    c_eval('vexb = gseVi?par.abs;',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'b')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'E_i','(eV)'};  
+  hca.YLabel.Interpreter = 'tex';  
+  hca.XGrid = 'off';
+  hca.YGrid = 'off'; 
+end
+
+if 1 % i psd x
+  isub = isub + 1;
+  hca = irf_panel('iLine x');
+  c_eval('if1D = if1DL?.tlim(tint_figure);',ic)
+  irf_spectrogram(hca,if1D.specrec('velocity_1D'));  
+  hca.YLim = if1D.depend{1}(1,[1 end]);  
+  if 0 % % Vi
+    hold(hca,'on')    
+    irf_plot(hca,gseVi1.x,'k')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'v_{iL}','(km/s)'}; 
+  hca.YLabel.Interpreter = 'tex';
+end
+if 1 % i psd y
+  isub = isub + 1;
+  hca = irf_panel('iLine y');
+  c_eval('if1D = if1DM?.tlim(tint_figure);',ic)
+  irf_spectrogram(hca,if1D.specrec('velocity_1D'));  
+  hca.YLim = if1D.depend{1}(1,[1 end]);
+  if 0 % % Vi
+    hold(hca,'on')    
+    irf_plot(hca,gseVi1.y,'k')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'v_{iM}','(km/s)'};  
+  hca.YLabel.Interpreter = 'tex';
+end
+if 1 % i psd z
+  isub = isub + 1;
+  hca = irf_panel('iLine z');
+  c_eval('if1D = if1DN?.tlim(tint_figure);',ic)
+  irf_spectrogram(hca,if1D.specrec('velocity_1D'));  
+  hca.YLim = if1D.depend{1}(1,[1 end]);
+  if 0 % % Vi
+    hold(hca,'on')    
+    irf_plot(hca,gseVi1.z,'k')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'v_{iN}','(km/s)'};  
+  hca.YLabel.Interpreter = 'tex';
+end
+
+
+linkprop([irf_panel('iLine x'),irf_panel('iLine y'),irf_panel('iLine z')],{'CLim'})
+colormap(pic_colors('candy4'))
+drawnow
+irf_zoom(h,'x',tint_figure)
+drawnow
+%irf_zoom(h(zoomy),'y')
+irf_plot_axis_align(h)
+%h(1).Title.String = sprintf('L = [%5.2f,%5.2f,%5.2f], M = [%5.2f,%5.2f,%5.2f], N = [%5.2f,%5.2f,%5.2f]',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3));
+drawnow
+
+% Distributions
+if exist('hmark'); delete(hmark); end
+times_dist = EpochTT(['2017-07-09T17:33:17.00Z';...
+                      '2017-07-09T17:33:18.00Z';...
+                      '2017-07-09T17:33:19.00Z';...
+                      '2017-07-09T17:33:20.00Z';...
+                      '2017-07-09T17:33:21.00Z';...
+                      '2017-07-09T17:33:22.00Z']);
+                    
+
+times_dist = EpochTT(['2017-07-09T17:33:18.00Z';...
+                      '2017-07-09T17:33:18.50Z';...
+                      '2017-07-09T17:33:19.00Z';...
+                      '2017-07-09T17:33:19.50Z';...
+                      '2017-07-09T17:33:20.00Z';...
+                      '2017-07-09T17:33:20.50Z']);
+
+times_dist = EpochTT(['2017-07-09T17:33:19.00Z']) + 3*0.03*[-2:1:3];
+
+
+
+
+times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
+                      '2017-07-25T22:10:09.00Z';...
+                      '2017-07-25T22:10:15.00Z';...
+                      %'2017-07-25T22:10:29.00Z';...
+                      %'2017-07-25T22:10:49.00Z';...
+                      %'2017-07-25T22:10:27.00Z';...
+                      '2017-07-25T22:10:29.00Z';...
+                    ]);
+                    
+                  
+times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
+                      '2017-07-25T22:10:07.00Z';...
+                      '2017-07-25T22:10:08.00Z';...
+                      '2017-07-25T22:10:09.20Z']);
+                    
+                    
+times_dist = EpochTT(['2017-07-25T22:10:00.00Z';...
+                      '2017-07-25T22:10:07.50Z']);
+                    
+times_dist_exact = EpochTT([]);
+clear times_dist_exact_eu hmarkb hmark_tmp
+
+%elim = [700 Inf];
+
+for id = 1:times_dist.length
+  hca = h2(id);
+  dt = 0.05;
+  v1 = [1 0 0];
+  v2 = [0 1 0];
+  v3 = [0 0 1];
+  v1 = R(1,:);
+  v2 = R(2,:);
+  v3 = R(3,:);
+  x_str = 'v_L (km/s)';
+  y_str = 'v_M (km/s)';
+  z_str = 'v_N (km/s)';
+  % bugcheck, slightly rotate system
+%   rotang = 30;
+%   v2n = v2*cosd(rotang) + v3*sind(rotang);
+%   v3n = -v2*sind(rotang) + v3*cosd(rotang);
+%   v2 = v2n; v3 = v3n;
+  vlim = 2300;
+  vg = -vlim:100:vlim;
+  if 1 % x,z
+    c_eval('ddist = iPDist?.elim(elim).tlim(times_dist(id)+6*0.15*0.5*[-1 1]+0);',ic)
+%    ddist = ddist(1).elim([100 Inf]);
+    times_dist_exact_eu(id) = mean(ddist.time.epochUnix);
+    f2d = ddist.reduce('2D',v2,v3);
+
+    f2d.plot_plane(hca,'smooth',0);
+    axis(hca,'square')
+    hca.XLim = 0.99*vlim*[-1 1];
+    hca.YLim = 0.99*vlim*[-1 1];
+    hca.Layer = 'top';
+    hca.XLabel.String = x_str;
+    hca.YLabel.String = z_str;
+    
+    hmark_tmp = irf_pl_mark(h,ddist.time,'r');
+    drawnow
+    %c_eval('hmark(?).LineWidth = 0.5; hmark(?).Color = [0 0 0]; hmark(?).LineStyle = ''-'';',1:numel(hmark))
+
+  end
+  if 0 % x,y
+    c_eval('ddist = iPDist?.elim(elim).tlim(times_dist(id)+0.15*0.5*[-1 1]);',ic)
+%    ddist = ddist(1).elim([100 Inf]);
+    times_dist_exact_eu(id) = ddist.time.epochUnix;
+    f2d = ddist.reduce('2D',v1,v2,'vg',vg);
+
+    f2d.plot_plane(hca);
+    axis(hca,'square')
+    hca.XLim = 0.99*vlim*[-1 1];
+    hca.YLim = 0.99*vlim*[-1 1];
+    hca.Layer = 'top';
+    hca.XLabel.String = 'v_x (km/s)';
+    hca.YLabel.String = 'v_y (km/s)';
+  end
+  if 0 % vB,vExB
+    c_eval('ddist = ePDist?.tlim(times_dist(id)+0.03*0.5*[-1 1]);',ic)
+    ddist = ddist(1).elim([100 Inf]);
+    times_dist_exact_eu(id) = ddist.time.epochUnix;
+    f2d = ddist.reduce('2D',v1,v3,'vint',20e3*[-1 1]);
+
+    f2d.plot_plane(hca);
+    axis(hca,'square')
+    hca.XLim = 0.99*vlim*[-1 1];
+    hca.YLim = 0.99*vlim*[-1 1];
+    hca.Layer = 'top';
+    hca.XLabel.String = 'v_B (10^3 km/s)';
+    hca.YLabel.String = 'v_{ExB} (10^3 km/s)';
+  end
+  colormap(hca,pic_colors('pasteljet'))
+end
+if 0
+for id = 1:times_dist.length
+  hca = h2(id);
+  dt = 0.05;
+  c_eval('v1 = mean(dmpaB?.tlim(times_dist(id)+dt*[-1 1]).norm.data,1);',ic)
+  c_eval('v2 = mean(dslE?.tlim(times_dist(id)+dt*[-1 1]).norm.data,1);',ic)
+  v2 = cross(v1,cross(v2,v1)); v2 = v2/norm(v2);
+  v3 = cross(v1,v2);
+  vlim = 70;
+  if 0 % vE,vExB
+    c_eval('ddist = ePDist?.tlim(times_dist(id)+0.03*0.5*[-1 1]);',ic)
+    ddist = ddist(1).elim([100 Inf]);
+    times_dist_exact_eu(id) = ddist.time.epochUnix;
+    f2d = ddist.reduce('2D',v2,v3,'vint',20e3*[-1 1]);
+
+    f2d.plot_plane(hca);
+    axis(hca,'square')
+    hca.XLim = 0.99*vlim*[-1 1];
+    hca.YLim = 0.99*vlim*[-1 1];
+    hca.Layer = 'top';
+    hca.XLabel.String = 'v_E (10^3 km/s)';
+    hca.YLabel.String = 'v_{ExB} (10^3 km/s)';
+  end
+  if 0 % vB,vExB
+    c_eval('ddist = ePDist?.tlim(times_dist(id)+0.03*0.5*[-1 1]);',ic)
+    ddist = ddist(1).elim([100 Inf]);
+    times_dist_exact_eu(id) = ddist.time.epochUnix;
+    f2d = ddist.reduce('2D',v1,v2,'vint',20e3*[-1 1]);
+
+    f2d.plot_plane(hca);
+    axis(hca,'square')
+    hca.XLim = 0.99*vlim*[-1 1];
+    hca.YLim = 0.99*vlim*[-1 1];
+    hca.Layer = 'top';
+    hca.XLabel.String = 'v_B (10^3 km/s)';
+    hca.YLabel.String = 'v_{E} (10^3 km/s)';
+  end
+  if 1 % vB,vExB
+    c_eval('ddist = ePDist?.tlim(times_dist(id)+0.03*0.5*[-1 1]);',ic)
+    ddist = ddist(1).elim([100 Inf]);
+    times_dist_exact_eu(id) = ddist.time.epochUnix;
+    f2d = ddist.reduce('2D',v1,v3,'vint',20e3*[-1 1]);
+
+    f2d.plot_plane(hca);
+    axis(hca,'square')
+    hca.XLim = 0.99*vlim*[-1 1];
+    hca.YLim = 0.99*vlim*[-1 1];
+    hca.Layer = 'top';
+    hca.XLabel.String = 'v_B (10^3 km/s)';
+    hca.YLabel.String = 'v_{ExB} (10^3 km/s)';
+  end
+end
+end
+
+hlinks = linkprop(h2,{'CLim','XLim','YLim'});
+
+c_eval('h1(?).FontSize = fontsize_leg;',1:numel(h))
+%c_eval('h2(?).CLim = [-14.5 -9.5];',1:numel(h2))
+hmark = irf_pl_mark(h,tocolumn(times_dist_exact_eu),'r');
+c_eval('hmark(?).LineWidth = 0.5; hmark(?).Color = [0 0 0]; hmark(?).LineStyle = ''-'';',1:numel(hmark))
+
+
