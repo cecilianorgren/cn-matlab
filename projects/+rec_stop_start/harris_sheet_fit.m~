@@ -2983,7 +2983,7 @@ mf_L_J = solve(Jy,L);
 % Calculate L directly from J and Bx
 B0 = 21e-9;
 dt_resample = 0.5;
-dt_L = 1;
+dt_L = 0.5;
 timeline = tint(1):dt_resample:tint(2);
 
 dataL = mf_L(lmnBav.x.data*1e-9,B0,Jcurl.resample(lmnBav).y.data)*1e-3; % m -> km
@@ -3001,14 +3001,10 @@ specrecL.f_label = 'L (km)';
 specrecL.p = N';
 specrecL.t = irf_time(t_edges(1) + mid{2},'EpochTT>epoch');
 specrecL.f = mid{1};
-Lpeak = nan(numel(mid{2}),1);
+Lpeak = zeros();
 for it = 1:numel(mid{2})
-  [PKS,LOCS] = findpeaks(N(:,it),'NPeaks',1);
-  if not(isempty(LOCS))
-    Lpeak(it) = mid{1}(LOCS);
-  end
+  Lpeak(it) = findpeaks(N(:,it),'NPeaks',1);
 end
-tsLpeak = irf.ts_scalar(t_edges(1) + mid{2},Lpeak);
 
 % Since the total pressure is changing, it is likely that B0 is also
 % changing. So recalculate a varying B0 based on the total pressure.
@@ -3034,19 +3030,11 @@ specrecL_varB0.p(specrecL_varB0.p==0) = NaN;
 specrecL_varB0.t = irf_time(t_edges(1) + mid{2},'EpochTT>epoch');
 specrecL_varB0.f = mid{1};
 
-Lpeak_varB0 = nan(numel(mid{2}),1);
-for it = 1:numel(mid{2})
-  [PKS,LOCS] = findpeaks(N_varB0(:,it),'NPeaks',1);
-  if not(isempty(LOCS))
-    Lpeak_varB0(it) = mid{1}(LOCS);
-  end
-end
-tsLpeak_varB0 = irf.ts_scalar(t_edges(1) + mid{2},Lpeak_varB0);
 %tsL = tsL.resample(timeline);
 
 % Setup figure
-fontsize = 15;
-npanels = 7;
+fontsize = 16;
+npanels = 6;
 nrows = 2;
 ncols = 1;
 
@@ -3057,7 +3045,6 @@ if not(isempty(gca))
   doResize = 1;
 end
 [h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.6,'vertical');
-c_eval('h1(?).Position(1) = 0.10;',1:numel(h1))
 
 if doResize
   fig = h1.Parent;
@@ -3160,24 +3147,23 @@ if 1 % L specrec
   c_eval('[hout,hcb] = irf_spectrogram(hca,specrecL,''log'');',2)  
   set(hca,'yscale','lin');
   %set(hca,'ytick',[1e1 1e2 1e3 1e4]);    
-  colormap(hca,cmap)   
+  colormap(hca,cmap) 
+  hca.YLabel.String = {'L','(km)'};   
   hca.YLabel.Interpreter = 'tex';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.Layer = 'top';
   irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9)},[0.02 0.98],'color','k','fontsize',fontsize)
-  hold(hca,'on')
-  irf_plot(hca,tsLpeak,'k')
-  hold(hca,'off')
-  hca.YLabel.String = {'L','(km)'}; 
 end
+
 if 1 % L specrec
   isub = isub + 1;
-  hca = irf_panel('L specrec var B0');  
+  hca = irf_panel('L specrec  var B0');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,specrecL_varB0,''log'');',2)  
   set(hca,'yscale','lin');
   %set(hca,'ytick',[1e1 1e2 1e3 1e4]);    
   colormap(hca,cmap) 
+  hca.YLabel.String = {'L','(km)'};
   hca.YLabel.Interpreter = 'tex';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
@@ -3185,29 +3171,10 @@ if 1 % L specrec
   irf_legend(hca,{sprintf('B_0 varying')},[0.02 0.98],'color','k','fontsize',fontsize)
   %colormap(hca,irf_colormap('waterfall'))
   colormap(hca,pic_colors('candy4'))
-  hold(hca,'on')
-  irf_plot(hca,tsLpeak_varB0,'k')
-  hold(hca,'off')
-  hca.YLabel.String = {'L','(km)'};
 end
-if 1 % compare L with const and varying B0
-  isub = isub + 1;
-  %zoomy = [zoomy isub];
-  hca = irf_panel('L const and varying');
-  set(hca,'ColorOrder',mms_colors('xyza'))  
-  %c_eval('irf_plot(hca,{gseB?.x,gseB?.y,gseB?.z},''comp'');',ic)
-  irf_plot(hca,{tsLpeak,tsLpeak_varB0},'comp');
-  hca.YLabel.String = {'L','(km)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'constant B_0','varying B_0'},[0.98 0.9],'fontsize',12);
-  irf_legend(hca,{sprintf('resampled to %g s (for noise reduction)',dt_L)},[0.02 0.98],'color','k')
-end 
 
 irf_zoom(h1,'x',tint)
 irf_zoom(h1(zoomy),'y')
-drawnow
-h1(end).YLabel.Position(1) = -0.10;
-drawnow
 irf_plot_axis_align
 hmark = irf_pl_mark(h1(1),tint_harris);
 c_eval('h1(?).FontSize = fontsize;',1:numel(h1))

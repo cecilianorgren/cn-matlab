@@ -241,9 +241,16 @@ c_eval('if1Dz?_low = iPDist?.elim([0 10000]).reduce(''1D'',[0 0 1],''vint'',vint
 
 
 %%
+vint = [-Inf Inf];
+elim = [200 40000];
 c_eval('if1DL? = iPDist?.elim(elim).reduce(''1D'',L,''vint'',vint);',ic)
 c_eval('if1DM? = iPDist?.elim(elim).reduce(''1D'',M,''vint'',vint);',ic)
 c_eval('if1DN? = iPDist?.elim(elim).reduce(''1D'',N,''vint'',vint);',ic)
+
+
+c_eval('if1DL?_nobg = iPDist?_nobg.elim(elim).reduce(''1D'',L,''vint'',vint);',ic)
+c_eval('if1DM?_nobg = iPDist?_nobg.elim(elim).reduce(''1D'',M,''vint'',vint);',ic)
+c_eval('if1DN?_nobg = iPDist?_nobg.elim(elim).reduce(''1D'',N,''vint'',vint);',ic)
 
 %%
 %%
