@@ -1,0 +1,224 @@
+% See integrate_trajectories
+no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
+%trp =
+%PICTraj('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/trajectories_paul.h5'); % not yet there
+
+%% Make overview plot to pick starting locations
+pic = no02m.twpelim(15000).xlim(mean(no02m.xi)+[-5 5]).zlim([-5 5]);
+pic.plot_map({'vex','vez','vtperp(4)'}','clim',{[-5 5],[-1 1],[0 5]},'A',0.5)
+
+%%
+traj = PICTraj('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/trajectories.h5');
+ntr_pre = traj.ntr;
+
+t0 = no02m.twpelim(16000).twci;
+tspan = [t0-5 t0 t0+10];
+
+r0 = [102,0,1];
+
+vx = mean(pic.xlim(r0(1)+[-0.02 0.02]).zlim(r0(3)+[-0.02 0.02]).vx(4),'all');
+vy = mean(pic.xlim(r0(1)+[-0.02 0.02]).zlim(r0(3)+[-0.02 0.02]).vy(4),'all') + 1*mean(pic.xlim(r0(1)+[-0.02 0.02]).zlim(r0(3)+[-0.02 0.02]).vtperp(4),'all');
+vz = mean(pic.xlim(r0(1)+[-0.02 0.02]).zlim(r0(3)+[-0.02 0.02]).vz(4),'all') + 1*mean(pic.xlim(r0(1)+[-0.02 0.02]).zlim(r0(3)+[-0.02 0.02]).vtperp(4),'all');
+v0 = [0, vy, vz];
+
+m = 1/100;
+q = -1;
+tr_tmp = no02m.integrate_trajectory(r0,v0,tspan,m,q);
+
+
+h5write_trajs('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/trajectories.h5',tr_tmp,'id',ntr_pre+1)
+%% Plot
+%traj = PICTraj('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/trajectories.h5');
+itr = traj.ntr;
+
+tr = traj(itr-0);
+
+
+tr = tr.tlim([80 84.3]);
+%tr_tmp = tr.tlim([81 85]);
+tr_tmp = tr;
+
+h = setup_subplots(3,3);
+isub = 1;
+
+if 0
+  hca = h(isub); isub = isub + 1;
+  scatter3(hca,tr.x,tr.y,tr.z,[],tr.t)
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'time';
+  colormap(hca,irf_colormap('waterfall'))
+  hca.XLabel.String = 'x';
+  hca.YLabel.String = 'y';
+  hca.ZLabel.String = 'z';
+end
+if 0
+  hca = h(isub); isub = isub + 1;
+  scatter3(hca,tr.x,tr.y,tr.z,[],tr.Wy)
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'W_y';
+  colormap(hca,pic_colors('blue_gray_red'))
+  hca.XLabel.String = 'x';
+  hca.YLabel.String = 'y';
+  hca.ZLabel.String = 'z';
+end
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr.y,tr.z,[],tr.t)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'time';
+colormap(hca,irf_colormap('waterfall'))
+hca.XLabel.String = 'y';
+hca.YLabel.String = 'z';
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr.y,tr.z,[],tr.vy)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'vy';
+colormap(hca,irf_colormap('waterfall'))
+hca.XLabel.String = 'y';
+hca.YLabel.String = 'z';
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr.y,tr.z,[],tr.Wy)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'W_y';
+colormap(hca,pic_colors('candy2'))
+hca.XLabel.String = 'y';
+hca.YLabel.String = 'z';
+hca.CLim = 0.6*abs(max(hca.CLim))*[-1 1];
+
+
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr.x,tr.z,[],tr.t)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'time';
+colormap(hca,irf_colormap('waterfall'))
+hca.XLabel.String = 'x';
+hca.YLabel.String = 'z';
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr.x,tr.z,[],tr.vy)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'vy';
+colormap(hca,irf_colormap('waterfall'))
+hca.XLabel.String = 'x';
+hca.YLabel.String = 'z';
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr.x,tr.z,[],tr.Wy)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'W_y';
+colormap(hca,pic_colors('blue_gray_red'))
+hca.XLabel.String = 'x';
+hca.YLabel.String = 'z';
+
+if 0 % (x,y,z)
+  hca = h(isub); isub = isub + 1;
+  plot3(hca,tr.x,tr.y,tr.z)
+  hca.XLabel.String = 'x';
+  hca.YLabel.String = 'y';
+  hca.ZLabel.String = 'z';
+end
+if 0 %(y,z)
+  hca = h(isub); isub = isub + 1;
+  plot(hca,tr.y,tr.z)
+  hca.XLabel.String = 'y';
+  hca.YLabel.String = 'z';
+end
+
+hca = h(isub); isub = isub + 1;
+tr_tmp = tr.tlim([73 85]);
+plot(hca,tr_tmp.vy,tr_tmp.vz)
+hcb = colorbar('peer',hca);
+%hcb.YLabel.String = 'W_y';
+%colormap(hca,pic_colors('blue_gray_red'))
+hca.XLabel.String = 'v_y';
+hca.YLabel.String = 'v_z';
+
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr_tmp.vy,tr_tmp.vz,[],tr_tmp.t)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'time';
+colormap(hca,irf_colormap('waterfall'))
+hca.CLim = [tr.t(1) tr.t(end)];
+hca.XLabel.String = 'v_y';
+hca.YLabel.String = 'v_z';
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,tr_tmp.vy,tr_tmp.vz,[],tr_tmp.Wy)
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'z';
+colormap(hca,irf_colormap('waterfall'))
+%hca.CLim = [tr.t(1) tr.t(end)];
+hca.XLabel.String = 'v_y';
+hca.YLabel.String = 'v_z';
+
+%% Figure for paper
+itr = traj.ntr;
+
+tr = traj(itr-0);
+
+%tr = tr.tlim([80 84.3]);
+tr = tr.tlim([79.2 89]);
+%tr_tmp = tr.tlim([81 85]);
+tr_tmp = tr;
+
+h = setup_subplots(1,1);
+isub = 1;
+
+
+hca = h(isub); isub = isub + 1;
+hs = scatter(hca,tr.y*sqrt(100),tr.z*sqrt(100),30,tr.Wy);
+hs.MarkerFaceColor = 'flat';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'W_y';
+%colormap(hca,pic_colors('blue_red'))
+%colormap(hca,irf_colormap('bluered'))
+hca.XLabel.String = 'y (d_e)';
+hca.YLabel.String = 'z (d_e)';
+%hca.CLim = 0.6*abs(max(hca.CLim))*[-1 1];
+
+
+if 0
+hca = h(isub); isub = isub + 1;
+hs = scatter(hca,tr.x*sqrt(100),tr.z*sqrt(100),[],tr.Wy);
+hs.MarkerFaceColor = 'flat';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'W_y';
+%colormap(hca,pic_colors('blue_red'))
+hca.XLabel.String = 'x';
+hca.YLabel.String = 'z';
+%hca.CLim = 0.6*abs(max(hca.CLim))*[-1 1];
+
+hca = h(isub); isub = isub + 1;
+hs = scatter(hca,tr.vy*sqrt(100),tr.vz*sqrt(100),[],tr.Wy);
+hs.MarkerFaceColor = 'flat';
+hcb = colorbar('peer',hca);
+hcb.YLabel.String = 'W_y';
+%colormap(hca,irf_colormap('waterfall'))
+%colormap(hca,pic_colors('blue_red'))
+%hca.CLim = [tr.t(1) tr.t(end)];
+hca.XLabel.String = 'v_y';
+hca.YLabel.String = 'v_z';
+%hca.CLim = 0.9*abs(max(hca.CLim))*[-1 1];
+end
+hlinks = linkprop(h,{'CLim'});
+colormap(irf_colormap('waterfall'))
+colormap(pic_colors('blue_red'))
+%colormap('parula')
+h(1).CLim = max(tr.Wy)*[-1 1];
+
+grid on
+box on
+fontsize = 15;
+%hca.FontSize = 16;
+hca.FontSize = fontsize;
+hca.Position(2) = 0.15;
+
+annotation('textarrow',[0.7 0.75],[0.9 0.9],'String',{'ExB drift in the inflow'},'fontsize',fontsize,'fontweight','light')
+annotation('textarrow',[0.7 0.7],[0.55 0.65],'String',{'gradual acceleration by E_y'},'fontsize',fontsize,'fontweight','light')
+annotation('textarrow',[0.47 0.45],[0.45 0.55],'String',{'increased acceleration by E_y','during meandering orbit'},'fontsize',fontsize,'fontweight','light')
+annotation('textarrow',[0.47 0.45],[0.45 0.55],'String',{'increased acceleration by E_y','during meandering orbit'},'fontsize',fontsize,'fontweight','light')
+%hca.Visible = 'off';

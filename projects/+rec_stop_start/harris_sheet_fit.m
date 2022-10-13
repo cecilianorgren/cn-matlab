@@ -2981,7 +2981,7 @@ mf_L_B = solve(Bx,L);
 mf_L_J = solve(Jy,L);
 
 % Calculate L directly from J and Bx
-B0 = 21e-9;
+B0 = 22e-9;
 dt_resample = 0.5;
 dt_L = 1;
 timeline = tint(1):dt_resample:tint(2);
