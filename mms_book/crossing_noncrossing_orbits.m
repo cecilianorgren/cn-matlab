@@ -1307,9 +1307,6 @@ hl = findobj(gcf,'type','line');
 c_eval('hl(?).LineWidth = 1;',1:numel(hl))
 %c_eval('h(?).Visible = ''off'';',1:numel(h))
 
-
-
-
 %% integrate electron orbits for a given magnetic field: several particles, common plotting with setup before
 units = irf_units;
 L = 5000e3;

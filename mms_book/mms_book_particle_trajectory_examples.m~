@@ -7,7 +7,7 @@ no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
 pic = no02m.twpelim(15000).xlim(mean(no02m.xi)+[-4 4]).zlim([-2 2]);
 %pic.plot_map({'vex','vez','vtperp(4)'}','clim',{[-5 5],[-1 1],[0 5]},'A',0.5)
 %pic.plot_map({'vex','vez','vtperp(4)','Ez','vey','vy([4 6])','ne','Ez.*Bx./Bx./Bx'}','clim',{[-5 5],[-1 1],[0 5],[-1 1],[-5 5],[-5 5],[0 0.3],[-5 5]},'A',0.5)
-pic.plot_map({'Ez','ne','vey','Ez.*Bx./Bx./Bx','pxy([4 6])','divpy([4 6])','Ey'}','clim',{[-1 1],[0 0.3],[-5 5],[-5 5],0.003*[-1 1],0.3*[-1 1],0.3*[-1 1]},'A',0.5)
+pic.plot_map({'Ez','ne','vey','Ez.*Bx./Bx./Bx','pxy([4 6])','pxy([4 6])','Ey'}','clim',{[-1 1],[0 0.3],[-5 5],[-5 5],0.003*[-1 1],0.3*[-1 1]},'A',0.5)
 
 %%
 traj = PICTraj('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/trajectories.h5');
