@@ -8,7 +8,7 @@ twpe = 16000;
 no02m.twpelim(twpe).xlim([97 107]).zlim([-3 3]).plot_map({'Ey','n(4)','ne','Ez','vex'}','A',1,'sep');
 
 %% Plot Ey and contributions
-twpe = 18000;
+twpe = 17200;
 xline_position = no02m.twpelim(twpe).xline_position;
 xlim = xline_position(1) + 0.25*[-1 1];
 pic = no02m.twpelim(twpe).xlim(xlim).zlim(1*[-1 1]);
@@ -18,8 +18,10 @@ varstrs = {{'Ey';'-vez.*Bx';'vex.*Bz';'-divpey';'Ey+vez.*Bx-vex.*Bz+divpey'},{'v
 varstrs = {{'Ey';'-vez.*Bx';'vex.*Bz';'-divpey';'Ey+vez.*Bx-vex.*Bz+divpey'},{'vez','-Ey.*Bx./(Bz.^2+Bx.^2)'}}';%,{'ne','n(2)','n(4)','n(6)'},{'ni','n(1)','n(3)','n(5)'}}'; % {'vez'},{'Ey.*Bx./(Bz.^2+Bx.^2)'},
 
 varstrs= {{'Ey','(Bz.*vex-Bx.*vez)','-divpey./ne','-vdvey/100','-dveydt/100','(Bz.*vex-Bx.*vez)-divpey./ne-vdvey/100'},{'vez','-Ey.*Bx./(Bz.^2+Bx.^2)'},{'vey','vez','vy(2)','vy([4 6])'},{'jy(2)','jy(4)','jy(6)'},{'n(2)','n(4)','n(6)'}}';
-h = pic.plot_line('z',varstrs,'smooth',5);
+varstrs= {{'Ey','(Bz.*vex-Bx.*vez)','-divpey./ne','-vdvey/100','-dveydt/100','(Bz.*vex-Bx.*vez)-divpey./ne-vdvey/100'},{'vez','-Ey.*Bx./(Bz.^2+Bx.^2)'},{'vey','vez','vy(2)','vy([4 6])'}}';
+varstrs= {{'Ey','(Bz.*vex-Bx.*vez)','-divpey./ne','-vdvey/100','-dveydt/100','(Bz.*vex-Bx.*vez)-divpey./ne-vdvey/100'},{'vez','-Ey.*Bx./(Bz.^2+Bx.^2)'},{'vey','Ez.*Bx./(Babs.^2)','(divpiz./ni).*Bx./(Babs.^2)'}}';
 
+h = pic.plot_line('z',varstrs,'smooth',7);
 h(2).YLim = [-1 1]*0.99;
 c_eval('h(?).FontSize = 15;',1:numel(h))
 %%
