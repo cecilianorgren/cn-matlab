@@ -142,11 +142,10 @@ X0 = [0.01e6, -1000e3, 500e3,...
 [fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0,'guessprevious',0,'X0',X0);
 
 
-%% 2D fit
-tint_vdf =  irf_time('2017-07-11T22:33:50.00Z','utc>EpochTT');
-ielim = [1000 40000];
-c_eval('vdf = iPDist?.elim(ielim).tlim(tint_vdf+2*0.076*[-1 1]).reduce(''2D'',L,M,''vint'',vint,''scpot'',scPot?);',ic)
-vdf = vdf(1);
+%%
+vdf = tint_ifred =  irf.tint('2017-07-11T22:32:00.00Z/2017-07-11T22:35:20.00Z');
+  ielim = [1000 40000];
+  c_eval('if1DL?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',L,''vint'',vint,''scpot'',scPot?);',ic)
 tint_fit =  irf.tint('2017-07-11T22:33:20.00Z/2017-07-11T22:34:30.00Z');
 nPop = 2;
 X0 = [0.01e6, -1000e3, 0e3, 500e3, 500e3...
