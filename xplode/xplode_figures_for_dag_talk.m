@@ -47,8 +47,8 @@ clims = {[15.7 16.8],0.1*[-1 1],[0 1.2],0.02*[-1 1],0.02*[-1 1],0.1*[-1 1]};
 
 
 
-varstrs = {'A','Ey','Bz'}';
-clims = {[16.2 16.8],0.1*[-1 1],0.2*[-1 1]};
+varstrs = {'A','Ey','Bz','vey','Ey+vez.*Bx-vex.*Bz','vex'}';
+clims = {[16.2 16.8],0.1*[-1 1],0.1*[-1 1],[-1.5 0],0.02*[-1 1],0.5*[-1 1]};
 
 cmapbr = pic_colors('blue_red');
 cmapca = pic_colors('candy4');
@@ -57,17 +57,42 @@ cmaps = {cmappa,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr};
 %varstrs = {'Ez','divpiz./ni','-viy.*Bx+vix.*By'}';
 %clims = {1*[-1 1],1*[-1 1],1*[-1 1],[0 0.2]};
 
+
+varstrs = {'Ey','Bz','vey','vex','-vey.*Ey','Ex','-vey.*Bz'}';
+clims = {0.1*[-1 1],0.1*[-1 1],[-1.5 0],0.5*[-1 1],0.1*[-1 1],0.1*[-1 1],0.1*[-1 1],0.5*[-1 1]};
+cmaps = {cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr};
+
+h = ons.twpelim([10000 13000]).xlim([5 25]).zlim(0.1*[-1 1]).plot_timemap('xt',varstrs,'clim',clims,'cmap',cmaps,'A',0.01,'smooth',0);
+%h = ons.twpelim([10000 13000]).xlim(15+[-0.1 0.1]).zlim(2*[-1 1]).plot_timemap('tz',varstrs,'clim',clims,'cmap',cmaps,'A',0.05);
+
 %h = pic.plot_map(varstrs,'clim',clims,'A',0.1,'sep','smooth',2);
 %pic.plot_map(varstrs,'A',0.5,'sep','smooth',2)
 %h = no02m.twpelim(10000:1000:20000).xlim(mean(no02m.xi)+3*[-5 5]).zlim(3*[-1 1]).movie(varstrs,'clim',clims,'A',0.5,'sep','smooth',10,'filename',[printpath 'no02m_Ez_balance_ions_smooth2']);
-colormap(pic_colors('blue_red'))
+%colormap(pic_colors('blue_red'))
 c_eval('h(?).FontSize = 15;',1:numel(h))
 
 %h = ons.twpelim([10000 13000]).xlim([5 25]).zlim(1.5*[-1 1]).movie(varstrs,'clim',clims,'A',0.1,'sep','smooth',2,'filename',[printpath 'ons_e_eom']);
 %ons.twpelim([10000 13000]).xlim([5 25]).zlim(1.5*[-1 1]).movie(varstrs,'clim',clims,'cmap',cmaps,'A',0.1,'sep','smooth',2,'filename',[printpath 'ons_Ay_Ey_Bz']);
 
-h = ons.twpelim([10000 13000]).xlim([5 25]).zlim(0.1*[-1 1]).plot_timemap('xt',varstrs,'clim',clims,'cmap',cmaps,'A',0.1);
 
+%% Nice movies
+
+varstrs = {'vey','vex','Bz','Ey'}';
+clims = {2.999*[-1 1],1.999*[-1 1],0.2*[-1 1],0.199*[-1 1]};
+
+
+cmapbr = pic_colors('blue_red');
+cmapca = pic_colors('candy4');
+cmappa = pic_colors('pasteljet');
+cmaps = {cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr};
+ons.twpelim(4000:200:13000).xlim([2 30]).zlim(2*[-1 1]).movie(varstrs,'clim',clims,'cmap',cmaps,'A',0.2,'sep','smooth',2,'filename',[printpath 'no02m_signatures_4']);
+
+%%
+
+varstrs = {'Ey','Bz','vey','vex'}';
+clims = {0.1*[-1 1],0.1*[-1 1],[-1.5 0],0.5*[-1 1]};
+cmaps = {cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr};
+ons.twpelim(4000:200:13000).xlim([5 25]).zlim(2*[-1 1]).movie(varstrs,'clim',clims,'cmap',cmaps,'A',0.2,'sep','smooth',2,'filename',[printpath 'no02m_signatures_4_5 ']);
 
 %% Background
 pic = no02m.twpelim(22000).xlim(mean(no02m.xi)+[-30 30]).zlim(8*[-1 1]);

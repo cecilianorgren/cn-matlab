@@ -1,4 +1,4 @@
-ic = 1:4;
+ic = 1;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
 if 0
@@ -8,7 +8,8 @@ if 0
 end
 %% Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
-mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 db_info = datastore('mms_db');
 
 %% Make event directory
@@ -56,12 +57,13 @@ c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_p
 
 %% Load spacecraft position
 disp('Loading spacecraft position...')
-R = mms.get_data('R_gse',tint);
-if size(R.gseR1,2) == 4
-  c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
-else
-  c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
-end
+c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',ic);
+% R = mms.get_data('R_gse',tint);
+% if size(R.gseR1,2) == 4
+%   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?(:,2:4));',1:4); % dfg_srvy_l2pre
+% else
+%   c_eval('gseR? = irf.ts_vec_xyz(R.time,R.gseR?);',1:4); % mec
+% end
 
 %% Spacecraft potential
 disp('Loading spacecraft potential...')
