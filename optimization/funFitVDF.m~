@@ -317,7 +317,7 @@ for iTime = 1:nTimes
   % only for single variable
   % [X,FVAL,EXITFLAG,OUTPUT] = fminbnd(cost_function,Xlo,Xhi,options); %
   
-  if nDim > 1 % This is to allow to use cat later, but for individual it makes it worse
+  if nDim > 1 % This is to allow to use cat later
     f_final = reshape(f_final,[1,size(f_final)]);
     f_final_separate = reshape(f_final_separate,[1,size(f_final_separate)]);
   end
@@ -385,12 +385,12 @@ if nargout == 2
       ts_T1 = irf.ts_scalar(vdf.time,data_all(:,4:(2*nDim+1):end)); ts_T1.units = Xu_units{3}; ts_T1.name = 'T, dir1'; 
       ts_T2 = irf.ts_scalar(vdf.time,data_all(:,5:(2*nDim+1):end)); ts_T2.units = Xu_units{3}; ts_T1.name = 'T, dir2'; 
       
-      %if vdf.length == 1, f_all = reshape(f_all,[1 size(f_all)]);end      
+      if vdf.length == 1, f_all = reshape(f_all,[1 size(f_all)]);end      
       ts_f =  PDist(vdf.time,f_all,'2Dcart',v{1}*1e-3,v{2}*1e-3);
 
       % Also pass the different population separately
       for iPop = 1:nPop
-        ts_f_sep{iPop} =  PDist(vdf.time,f_all_separate(:,:,:,iPop),'2Dcart',v{1}*1e-3,v{2}*1e-3);
+        ts_f_sep{iPop} =  PDist(vdf.time,f_separate,'2Dcart',v{1}*1e-3,v{2}*1e-3);
       end
       
       % Apply limits to data, data outside of limits are put to NaN
@@ -411,7 +411,6 @@ if nargout == 2
       ts.exitflag = ts_exitflag;
       ts.iter = ts_iter;
       ts.feval = ts_feval;
-      ts.f_sep = ts_f_sep;
 
       % Add to output
       varargout{2} = ts;     
@@ -598,13 +597,9 @@ switch nDim
     out_mom1y = sum((data_fit_mom1y(:)-data_obs_mom1y(:)).^2)/sum(data_obs_mom1y(:).^2);
     out_mom2x = sum((data_fit_mom2x(:)-data_obs_mom2x(:)).^2)/sum(data_obs_mom2x(:).^2);
     out_mom2y = sum((data_fit_mom2y(:)-data_obs_mom2y(:)).^2)/sum(data_obs_mom2y(:).^2);
-        
-    % In case of negative density for any sub population, put costfunction
-    % to infinity so that fminserch realizes it's undesireable
-    if any(f_fit_separate(:) < 0)
-      out_mom0 = Inf;
-    end
-    %out_mom0(data_fit_mom0 < 0) = Inf;
+    
+    % In case of negative density
+    out_mom0(data_fit_mom0 < 0) = Inf;
     
     % Final costfunction can be based on one or a combination of the data
     % above.
