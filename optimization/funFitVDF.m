@@ -142,6 +142,9 @@ if nargs > 0, have_options = 1; args = varargin(:); end
 while have_options
   l = 1;
   switch(lower(args{1}))
+    case 'weight'
+      l = 2;
+      weight = args{2};
     case 'npop'
       l = 2;
       nPop = args{2};

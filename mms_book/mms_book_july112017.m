@@ -5,7 +5,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 db_info = datastore('mms_db');
 
 
@@ -139,8 +140,8 @@ end
 tint_fit =  irf.tint('2017-07-11T22:33:20.00Z/2017-07-11T22:34:30.00Z');
 tint_fit =  irf.tint('2017-07-11T22:33:30.00Z/2017-07-11T22:34:20.00Z');
 vdf = if1DN1_elim.tlim(tint_fit);
-vdf = if1DN1_nobg.tlim(tint_fit);
-vdf = vdf(1:10:vdf.length);
+%vdf = if1DN1_nobg.tlim(tint_fit);
+vdf = vdf(1:1:vdf.length);
 %vdf = vdf(fix(vdf.length/2));
 %vdf = vdf([1 vdf.length]);
 nPop = 3; % Three populations give colder and faster counterstreaming beams
@@ -148,10 +149,18 @@ X0 = [0.01e6, -1000e3, 500e3,...
       0.01e6,  1000e3, 500e3,...
       0.01e6,  0,      1000e3];
 
-%nPop = 2; % Two populations looks ok, but beams are warmer and slower to cover region around v=0
-%X0 = [0.01e6, -1000e3, 500e3,...
-%      0.01e6,  1000e3, 500e3];
-tic; [fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0,'guessprevious',0,'X0',X0); toc;
+% nPop = 2; % Two populations looks ok, but beams are warmer and slower to cover region around v=0
+% X0 = [0.01e6, -1000e3, 500e3,...
+%       0.01e6,  1000e3, 500e3];
+
+if 1
+nPop = 4; % Three populations give colder and faster counterstreaming beams
+X0 = [0.01e6, -1000e3, 500e3,...
+      0.01e6,  1000e3, 500e3,...
+      0.01e6,  -1000e3,      1000e3,...
+      0.01e6,  1000e3,      1000e3];
+end
+tic; [fitdata_,ts_] = funFitVDF(vdf(100),'nPop',nPop,'plot',1,'guessprevious',0,'X0',X0,'weight',repmat([0 1 1],1,nPop)); toc;
 
 %% Plot fit
 h = irf_plot(7);
@@ -174,7 +183,8 @@ irf_plot(hca,ts.cf)
 irf_plot_axis_align(h)
 irf_zoom(h,'x',vdf.time([1 vdf.length]))
 hlinks = linkprop([irf_panel('vdf_obs'),irf_panel('vdf_fit')],{'CLim','YLim'});
- 
+colormap(pic_colors('candy4'))
+
 %% 2D fit
 %tint_vdf =  irf_time('2017-07-11T22:33:50.00Z','utc>EpochTT');
 %tint_fit =  irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:00.00Z');

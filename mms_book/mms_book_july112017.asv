@@ -5,6 +5,7 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 db_info = datastore('mms_db');
 
@@ -40,6 +41,9 @@ c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l
 disp('Loading skymaps...')
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
+c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
 
 % Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -69,7 +73,7 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
 
-%%hings into new coordinate system 
+%% Rotate things into new coordinate system 
 L = [0.9482,-0.255,-0.1893];
 M = [0.1818,0.9245,-0.3350];
 N = [0.2604,0.2832,0.9239];
@@ -96,7 +100,7 @@ c_eval('mvaTe? = lmn*gseTe?*lmn''; mvaTe?.units = gseTe?.units;',ic)
 
 
 
-% Make reduced distributions
+%% Make reduced distributions
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 
@@ -118,6 +122,12 @@ if 1 % ion LMN, ielim
   c_eval('if1DM?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',M,''vint'',vint,''scpot'',scPot?);',ic)
   c_eval('if1DN?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',N,''vint'',vint,''scpot'',scPot?);',ic)
 end
+if 0 % ion LMN, nobg   
+  tint_ifred =  irf.tint('2017-07-11T22:32:00.00Z/2017-07-11T22:35:20.00Z');  
+  c_eval('if1DL?_nobg = iPDist?_nobg.tlim(tint_ifred).reduce(''1D'',L,''vint'',vint,''scpot'',scPot?);',ic)
+  c_eval('if1DM?_nobg = iPDist?_nobg.tlim(tint_ifred).reduce(''1D'',M,''vint'',vint,''scpot'',scPot?);',ic)
+  c_eval('if1DN?_nobg = iPDist?_nobg.tlim(tint_ifred).reduce(''1D'',N,''vint'',vint,''scpot'',scPot?);',ic)
+end
 if 0 % electron LMN, elim
   tint_efred =  irf.tint('2017-07-11T22:33:40.00Z/2017-07-11T22:34:30.00Z');
   elim = [100 40000];
@@ -128,47 +138,156 @@ end
 
 %% Estimating the ion components
 tint_fit =  irf.tint('2017-07-11T22:33:20.00Z/2017-07-11T22:34:30.00Z');
+tint_fit =  irf.tint('2017-07-11T22:33:30.00Z/2017-07-11T22:34:20.00Z');
 vdf = if1DN1_elim.tlim(tint_fit);
-vdf = vdf(1:10:vdf.length);
-vdf = vdf(fix(vdf.length/2));
-nPop = 3;
+%vdf = if1DN1_nobg.tlim(tint_fit);
+vdf = vdf(1:1:vdf.length);
+%vdf = vdf(fix(vdf.length/2));
+%vdf = vdf([1 vdf.length]);
+nPop = 3; % Three populations give colder and faster counterstreaming beams
 X0 = [0.01e6, -1000e3, 500e3,...
       0.01e6,  1000e3, 500e3,...
       0.01e6,  0,      1000e3];
 
-nPop = 2;
+% nPop = 2; % Two populations looks ok, but beams are warmer and slower to cover region around v=0
+% X0 = [0.01e6, -1000e3, 500e3,...
+%       0.01e6,  1000e3, 500e3];
+
+nPop = 4; % Three populations give colder and faster counterstreaming beams
 X0 = [0.01e6, -1000e3, 500e3,...
-      0.01e6,  1000e3, 500e3];
-[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0,'guessprevious',0,'X0',X0);
-
-
-%%
-vdf = tint_ifred =  irf.tint('2017-07-11T22:32:00.00Z/2017-07-11T22:35:20.00Z');
-  ielim = [1000 40000];
-  c_eval('if1DL?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',L,''vint'',vint,''scpot'',scPot?);',ic)
-tint_fit =  irf.tint('2017-07-11T22:33:20.00Z/2017-07-11T22:34:30.00Z');
-nPop = 2;
-X0 = [0.01e6, -1000e3, 0e3, 500e3, 500e3...
-      0.01e6,  1000e3, 0e3, 500e3, 500e3];
-[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0,'guessprevious',0,'X0',X0);
+      0.01e6,  1000e3, 500e3,...
+      0.01e6,  0,      1000e3,...
+      0.01e6,  0,      1000e3];
+tic; [fitdata_,ts_] = funFitVDF(vdf(100),'nPop',nPop,'plot',1,'guessprevious',0,'X0',X0,'weight',repmat(1,nPop,[1 1 0])); toc;
 
 %% Plot fit
-h = irf_plot(5);
+h = irf_plot(7);
 hca = irf_panel('vdf_obs');
 irf_spectrogram(hca,vdf.specrec('velocity'),'lin')
 hca = irf_panel('vdf_fit');
 irf_spectrogram(hca,ts.f.specrec('velocity'),'lin')
-hold(hca,'on'); irf_plot(hca,ts.vd); hold(hca,'off'); 
+hold(hca,'on'); irf_plot(hca,ts.vd,':'); hold(hca,'off'); 
 hca = irf_panel('n_fit');
 irf_plot(hca,ts.n)
 hca = irf_panel('vd_fit');
 irf_plot(hca,ts.vd)
 hca = irf_panel('T_fit');
 irf_plot(hca,ts.T)
-irf_plot_axis_align(h)
-hlinks = linkprop([irf_panel('vdf_obs'),irf_panel('vdf_fit')],{'CLim','YLim'});
- 
+hca = irf_panel('T*n_fit');
+irf_plot(hca,ts.T.*ts.n)
+hca = irf_panel('cost function');
+irf_plot(hca,ts.cf)
 
+irf_plot_axis_align(h)
+irf_zoom(h,'x',vdf.time([1 vdf.length]))
+hlinks = linkprop([irf_panel('vdf_obs'),irf_panel('vdf_fit')],{'CLim','YLim'});
+colormap(pic_colors('candy4'))
+
+%% 2D fit
+%tint_vdf =  irf_time('2017-07-11T22:33:50.00Z','utc>EpochTT');
+%tint_fit =  irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:00.00Z');
+tint_fit =  irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:00.00Z');
+tint_vdf =  irf_time('2017-07-11T22:34:00.00Z','utc>EpochTT');
+tint_vdf = tint_fit([1 2]);
+
+ielim = [1000 40000];
+vg = -2500:100:2500; % higher grid resolution slows down fit
+c_eval('vdf = iPDist?.elim(ielim).tlim(tint_vdf).reduce(''2D'',M,N,''vint'',vint,''scpot'',scPot?,''vg'',vg);',ic)
+vdf = vdf([1]);
+tint_fit =  irf.tint('2017-07-11T22:33:20.00Z/2017-07-11T22:34:30.00Z');
+
+nPop = 2;
+X0 = [0.01e6, -1000e3, -500e3, 500e3, 500e3,...
+      0.01e6,  1000e3, -500e3, 500e3, 500e3];
+nPop = 3;
+X0 = [0.01e6, 500e3, -200e3, 200e3, 200e3,... % initial xy/MN switched..?
+      0.01e6,  -500e3, -200e3, 200e3, 200e3,...
+      0.02e6,  000e3, 000e3, 2000e3, 2000e3];
+
+nPop = 4;
+X0 = [0.01e6, 500e3, -200e3, 200e3, 200e3,... % initial xy/MN switched..?
+      0.01e6,  -500e3, -200e3, 200e3, 200e3,...
+      0.02e6,  500e3, 000e3, 2000e3, 2000e3,...
+      0.02e6,  -500e3, 000e3, 2000e3, 2000e3];    
+
+% nPop = 4;
+% X0 = [0.01e6, -500e3, -500e3, 800e3, 800e3,...
+%       0.01e6,  -500e3, 500e3, 800e3, 800e3,...
+%       0.01e6,  000e3, -500e3, 1000e3, 1000e3,...
+%       0.01e6,  000e3, 500e3, 1000e3, 1000e3];
+[fitdata,ts] = funFitVDF(vdf,'nPop',nPop,'plot',0,'guessprevious',0,'X0',X0,'maxFunEvals',2000);
+%%
+iplot = 1;
+h = setup_subplots(1,2+nPop); isub = 1;
+
+hca = h(isub); isub = isub + 1;
+imagesc(hca,vdf.depend{1}(iplot,:),vdf.depend{1}(iplot,:),squeeze(vdf.data(iplot,:,:)))
+
+hca = h(isub); isub = isub + 1;
+imagesc(hca,ts.f.depend{1}(iplot,:),ts.f.depend{1}(iplot,:),squeeze(ts.f.data(iplot,:,:)))
+
+for iPop = 1:nPop  
+  hca = h(isub); isub = isub + 1;  
+  imagesc(hca,ts.f_sep{iPop}.depend{1}(iplot,:),ts.f_sep{iPop}.depend{1}(iplot,:),squeeze(ts.f_sep{iPop}.data(iplot,:,:)))
+end
+
+hlinks = linkprop(h,{'CLim'});
+colormap(pic_colors('thermal'))
+c_eval('axis(h(?),''square'');',1:numel(h))
+c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on''; h(?).Layer = ''top'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''v_N''; h(?).YLabel.String = ''v_M'';',1:numel(h))
+
+%% Check if 1D and 2D reduced makes sense, looks good
+tint_vdf =  irf_time('2017-07-11T22:34:00.00Z','utc>EpochTT');
+ielim = [1000 40000];
+vg = -2500:100:2500;
+
+% vdf_2D_LM = iPDist1.elim(ielim).tlim(tint_vdf+0.076*[-1 1]).reduce('2D',L,M,'vint',vint,'vg',vg);
+% vdf_1D_L = iPDist1.elim(ielim).tlim(tint_vdf+0.076*[-1 1]).reduce('1D',L,'vint',vint,'vg',vg);
+% vdf_1D_M = iPDist1.elim(ielim).tlim(tint_vdf+0.076*[-1 1]).reduce('1D',M,'vint',vint,'vg',vg);
+vdf_2D_MN = iPDist1.elim(ielim).tlim(tint_vdf+0.076*[-1 1]).reduce('2D',M,N,'vint',vint,'vg',vg);
+vdf_1D_M = iPDist1.elim(ielim).tlim(tint_vdf+0.076*[-1 1]).reduce('1D',M,'vint',vint,'vg',vg);
+vdf_1D_N = iPDist1.elim(ielim).tlim(tint_vdf+0.076*[-1 1]).reduce('1D',N,'vint',vint,'vg',vg);
+
+ielim = [1000 40000];
+vg = -2500:100:2500;
+
+
+h = setup_subplots(3,1); isub = 1;
+hca = h(isub); isub = isub + 1;
+vdf_2D_MN.plot_plane(hca);
+hca.XLabel.String = 'v_M';
+hca.YLabel.String = 'v_N';
+
+hca = h(isub); isub = isub + 1;
+plotyy(hca,vdf_1D_M.depend{1}(1,:),squeeze(vdf_1D_M.data(1,:,:)),...
+         vdf_2D_MN.depend{1}(1,:),sum(squeeze(vdf_2D_MN.data(1,:,:)),2))
+hca.XLabel.String = 'v_M';
+
+hca = h(isub); isub = isub + 1;
+plotyy(hca,vdf_1D_N.depend{1}(1,:),squeeze(vdf_1D_N.data(1,:,:)),...
+         vdf_2D_MN.depend{2}(1,:),sum(squeeze(vdf_2D_MN.data(1,:,:)),1))
+hca.XLabel.String = 'v_N';
+
+irf_plot_axis_align(h) 
+if 0 % LM
+h = setup_subplots(3,1); isub = 1;
+hca = h(isub); isub = isub + 1;
+%imagesc(hca,vdf_2D_LM.depend{1}(1,:),vdf_2D_LM.depend{1}(1,:),squeeze(vdf_2D_LM.data(1,:,:)))
+vdf_2D_LM.plot_plane(hca);
+
+hca = h(isub); isub = isub + 1;
+plotyy(hca,vdf_1D_L.depend{1}(1,:),squeeze(vdf_1D_L.data(1,:,:)),...
+         vdf_2D_LM.depend{1}(1,:),sum(squeeze(vdf_2D_LM.data(1,:,:)),2))
+hca.XLabel.String = 'v_L';
+
+hca = h(isub); isub = isub + 1;
+plotyy(hca,vdf_1D_M.depend{1}(1,:),squeeze(vdf_1D_M.data(1,:,:)),...
+         vdf_2D_LM.depend{2}(1,:),sum(squeeze(vdf_2D_LM.data(1,:,:)),1))
+hca.XLabel.String = 'v_M';
+
+irf_plot_axis_align(h)    
+end
 %% Plot
 tint_figure = irf.tint('2017-07-11T22:33:40.00Z/2017-07-11T22:34:30.00Z');
 tint_figure = tint_ifred;
