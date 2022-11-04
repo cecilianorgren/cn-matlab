@@ -73,7 +73,27 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
 
-%% Rotate things into new coordinate system 
+% EDR signatures
+c_eval('facPepp? = mms.rotate_tensor(gsePe?,''fac'',gseB?,''pp'');',ic); % Peperp1 = Peperp2
+c_eval('facPeqq? = mms.rotate_tensor(gsePe?,''fac'',gseB?,''qq'');',ic); % Peperp1 and Peperp2 are most unequal
+c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic);
+c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic);
+
+% Compute Q and Dng from facPepp
+c_eval('Q? = (facPepp?.xy.data.^2+facPepp?.xz.data.^2+facPepp?.yz.data.^2)./(facPepp?.yy.data.^2+2*facPepp?.yy.data.*facPepp?.xx.data);',ic);
+c_eval('Q? = irf.ts_scalar(ne?.time,sqrt(Q?));',ic);
+c_eval('Dng? = sqrt(8*(facPepp?.xy.data.^2+facPepp?.xz.data.^2+facPepp?.yz.data.^2))./(facPepp?.xx.data+2*facPepp?.yy.data);',ic);
+c_eval('Dng? = irf.ts_scalar(ne?.time,Dng?);',ic);
+
+% Compute agyrotropy Aphi from facPeqq
+c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? = agyro?.abs',ic);
+
+% Compute temperature ratio An
+c_eval('Temprat? = facPepp?.xx/(facPepp?.yy);',ic);
+
+
+disp('Done.')
+% Rotate things into new coordinate system 
 L = [0.9482,-0.255,-0.1893];
 M = [0.1818,0.9245,-0.3350];
 N = [0.2604,0.2832,0.9239];
@@ -153,12 +173,14 @@ X0 = [0.01e6, -1000e3, 500e3,...
 % X0 = [0.01e6, -1000e3, 500e3,...
 %       0.01e6,  1000e3, 500e3];
 
+if 1
 nPop = 4; % Three populations give colder and faster counterstreaming beams
 X0 = [0.01e6, -1000e3, 500e3,...
       0.01e6,  1000e3, 500e3,...
-      0.01e6,  0,      1000e3,...
-      0.01e6,  0,      1000e3];
-tic; [fitdata_,ts_] = funFitVDF(vdf(100),'nPop',nPop,'plot',1,'guessprevious',0,'X0',X0,'weight',repmat(1,nPop,[1 1 0])); toc;
+      0.01e6,  -1000e3,      1000e3,...
+      0.01e6,  1000e3,      1000e3];
+end
+tic; [fitdata_,ts_] = funFitVDF(vdf(100),'nPop',nPop,'plot',1,'guessprevious',0,'X0',X0,'weight',repmat([0 1 1],1,nPop)); toc;
 
 %% Plot fit
 h = irf_plot(7);
@@ -465,3 +487,302 @@ end
 irf_zoom(h,'x',tint_figure)
 irf_zoom(h(zoomy),'y')
 irf_plot_axis_align
+
+%% 2D distribution and pressure contributionss
+time = 1;
+time =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+vint = [-Inf Inf];
+
+nshift = 12;
+%tint_fit =  irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:00.00Z');
+tint_fit =  irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:00.00Z');
+tint_vdf =  irf_time('2017-07-11T22:34:00.00Z','utc>EpochTT');
+tint_vdf = tint_fit([1 2]);
+
+%vg = 20000:100:2500; % higher grid resolution slows down fit
+%c_eval('vdf = ePDist?.tlim(time).reduce(''2D'',M,N,''vint'',vint,''scpot'',scPot?,''vg'',vg);',ic)
+c_eval('dist = ePDist?.tlim(time+0.015*[-1 1]+nshift*0.03);',ic)
+c_eval('scpot = scPot?.resample(dist);',ic)
+vg = -70000:2000:70000;
+vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+vdf = vdf([1]);
+
+h = setup_subplots(2,1); isub = 1;
+
+hca = h(isub); isub = isub + 1;
+vdf.plot_plane(hca);
+colormap(hca,pic_colors('candy4'))
+
+hca = h(isub); isub = isub + 1;
+vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.x.resample(dist),mvaVe1.y.resample(dist));
+
+colormap(hca,pic_colors('blue_red'))
+hca.CLim = max(abs(hca.CLim))*[-1 1];
+axis(hca,'square')
+
+%% 2D distribution and pressure contributions, 2 different times
+
+%t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
+%t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:04.00Z'],'utc>EpochTT')+0.06;
+
+times = times(1):0.5:times(2);
+vint = [-Inf Inf];
+vg = -60000:2000:60000;
+elim = [100 Inf];
+h = setup_subplots(2,times.length,'vertical'); isub = 1;
+
+for itime = 1:times.length
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h(isub); isub = isub + 1;
+  vdf.plot_plane(hca);
+  colormap(hca,pic_colors('candy4'))
+  
+  hca = h(isub); isub = isub + 1;
+  vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.x.resample(dist),mvaVe1.y.resample(dist));
+  
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  %axis(hca,'square')
+end
+
+hlinks_all = linkprop(h,{'XLim','YLim'});
+hlinks_f = linkprop(h(1:2:end),{'CLim'});
+hlinks_p = linkprop(h(2:2:end),{'CLim'});
+
+h(1).XLim = vg([1 end])*1e-3;
+h(1).YLim = vg([1 end])*1e-3;
+
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).FontSize = 14;',1:numel(h))
+c_eval('axis(h(?),''square'');',1:numel(h))
+
+%% 2D distribution and pressure contributions, MN
+ic = 1;
+%t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
+%t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:04.00Z'],'utc>EpochTT')+0.06;
+
+times = times(1):0.5:times(2);
+vint = [-Inf Inf];
+vg = -60000:2000:60000;
+elim = [100 Inf];
+h = setup_subplots(2,times.length,'vertical'); isub = 1;
+
+for itime = 1:times.length
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h(isub); isub = isub + 1;
+  vdf.plot_plane(hca);
+  colormap(hca,pic_colors('candy4'))
+  
+  hca = h(isub); isub = isub + 1;
+  vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.y.resample(dist),mvaVe1.z.resample(dist));
+  
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  %axis(hca,'square')
+end
+
+hlinks_all = linkprop(h,{'XLim','YLim'});
+hlinks_f = linkprop(h(1:2:end),{'CLim'});
+hlinks_p = linkprop(h(2:2:end),{'CLim'});
+
+h(1).XLim = vg([1 end])*1e-3;
+h(1).YLim = vg([1 end])*1e-3;
+
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).FontSize = 14;',1:numel(h))
+c_eval('axis(h(?),''square'');',1:numel(h))
+
+%% 2D distribution and pressure contributions, MN, 3 times, with locations shown
+ic = 1;
+%t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
+%t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.03;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.4;
+times = times(1):0.5:times(2);
+
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z'])
+times = times([2 3 4])+0.25;
+
+vint = [-Inf Inf];
+vint = [-20000 20000];
+vg = -60000:2000:60000;
+elim = [100 Inf];
+%h = setup_subplots(2,times.length,'vertical'); 
+h1_pos = subplot(3,3,1:3); position = h1_pos.Position;
+h1 = irf_plot(1); 
+h1.Position = position; 
+%delete(h1_pos);
+for ip = 1:6
+  h2(ip) = subplot(3,3,3+ip);
+end
+
+
+hca = h1(1);
+irf_plot(hca,mvaPe1.xy,'color','k','linewidth',1)
+hca.YLabel.String = 'P_{eLM} (nPa)';
+hca.YLabel.Interpreter = 'tex';
+irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
+irf_zoom(hca,'y')
+hmark = irf_pl_mark(hca,times.epochUnix,'k');
+c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+xtickangle(h1,0)
+h1.Position(4) = 0.16;
+
+isub = 1;
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca);
+  hc_.Colorbar.YLabel.String = 'log_{10} f_e (s^2/m^5)';
+  colormap(hca,pic_colors('candy4'))   
+  hca.XLabel.String = 'v_L (10^3 km/s)';
+  hca.YLabel.String = 'v_M (10^3 km/s)';
+end
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.x.resample(dist),mvaVe1.y.resample(dist));  
+  hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = 'v_L (10^3 km/s)';
+  hca.YLabel.String = 'v_M (10^3 km/s)';
+end
+
+hlinks_all = linkprop(h2,{'XLim','YLim'});
+hlinks_f = linkprop(h2(1:3),{'CLim'});
+hlinks_p = linkprop(h2(4:6),{'CLim'});
+
+h2(1).XLim = 0.99*vg([1 end])*1e-3;
+h2(1).YLim = 0.99*vg([1 end])*1e-3;
+
+c_eval('h2(?).XTick = -60:20:60; h2(?).YTick = -60:20:60;',1:numel(h2))
+
+c_eval('h2(?).LineWidth = 1;',1:numel(h2))
+c_eval('h2(?).FontSize = 14;',1:numel(h2))
+c_eval('axis(h2(?),''square'');',1:numel(h2))
+
+c_eval('h1(?).LineWidth = 1;',1:numel(h1))
+c_eval('h1(?).FontSize = 14;',1:numel(h1))
+
+%compact_panels(h2,0.0,00)
+compact_panels(h2,0.005,00.005)
+hb = findobj(gcf,'type','colorbar'); 
+c_eval('hb(?).FontSize = 14;',1:numel(h2))
+hb = hb(end:-1:1);
+ihsub = [1 2 4 5];
+delete(hb(ihsub))
+ih = 3;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+ih = 6;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+%hb(3).Position(4) = 0.22; hb(6).Position(4) = 0.22;
+ihsub = [2 3 5 6];
+c_eval('h2(?).YLabel.String = [];',ihsub)
+c_eval('h2(?).YTickLabel = [];',ihsub)
+
+%% Plot data fomr simulation
+% ons = PIC('/Volumes/DataRaid/Susanne-onset/data_h5/fields.h5');
+% no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
+pic = ons.twcilim(65).xlim([5 25]).zlim([-2 2]);
+clims = {0.01*[-1 1],0.03*[-1 1],0.01*[-1 1],0.03*[-1 1]};
+
+pic = no02m.twpelim([16000]).xlim([95 110]).zlim([-2 2]);
+clims = {0.003*[-1 1],0.3*[-1 1],0.003*[-1 1],0.3*[-1 1]};
+
+varstrs = {'pexy','-dxPexy./ne','peyz','-dzPezy./ne'}';
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+pic.plot_map(varstrs,'clim',clims,'cmap',cmaps,'A',0.2,'smooth',5)
+
+
+%%
+pic = no02m.twpelim([16000]).xlim([95 110]).zlim([-2 2]);
+varstrs = {'vex','vey','pexy','-dxPexy./ne'}';
+clims = {5*[-1 1],5*[-1 1],0.01*[-1 1],0.3*[-1 1],0.003*[-1 1],0.3*[-1 1]};
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+pic.plot_map(varstrs,'clim',clims,'cmap',cmaps,'A',0.2,'smooth',5)
+
+
+%% Plot data fomr simulation, electron ohms law for separate populations
+% no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
+
+pic = no02m.twpelim([20000]).xlim([95 110]).zlim([-2 2]);
+clims = {0.3*[-1 1],0.3*[-1 1],0.3*[-1 1],0.3*[-1 1]};
+
+figure(51)
+varstrs = {'vzdzvy([2 4 6])/100','-dzPzy([2 4 6])./n([2 4 6])','vzdzvy([4])/100','-dzPzy([4])./n([4])'}';
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+pic.plot_map(varstrs,'clim',clims,'cmap',cmaps,'A',0.2,'smooth',5)
+
+figure(52)
+varstrs = {{'vzdzvy([2 4 6])/100','vzdzvy([4])/100'},{'-dzPzy([2 4 6])./n([2 4 6])','-dzPzy([4])./n([4])'}}';
+ylims = {0.3*[-1 1],0.3*[-1 1],0.3*[-1 1],0.3*[-1 1],1*[-1 1]};
+varstrs = {{'vzdzvy([2])/100','vzdzvy([4])/100','vzdzvy([6])/100','(vzdzvy([2])+vzdzvy([4])+vzdzvy([6]))/100','vzdzvy([2 4 6])/100'},{'-dzPzy([2])./n([2])','-dzPzy([4])./n([4])','-dzPzy([6])./n([6])','-dzPzy([2 4 6])./n([2 4 6])'}}';
+varstrs = {{'vzdzvy([2])/100','vzdzvy([4])/100','vzdzvy([6])/100'},...
+           {'(vzdzvy([2])+vzdzvy([4])+vzdzvy([6]))/100','vzdzvy([2 4 6])/100'},...
+           {'-dzPzy([2])./n([2])','-dzPzy([4])./n([4])','-dzPzy([6])./n([6])'},...           
+           {'-dzPzy([2])./n([2])-dzPzy([4])./n([4])-dzPzy([6])./n([6])','-dzPzy([2 4 6])./n([2 4 6])'},...
+           {'-(vzdzvy([2])+vzdzvy([4])+vzdzvy([6]))/100-(dzPzy([2])./n([2])+dzPzy([4])./n([4])+dzPzy([6])./n([6]))'}}';
+% without hot electrons
+varstrs = {{'vzdzvy([4])/100','vzdzvy([6])/100'},...
+           {'(vzdzvy([4])+vzdzvy([6]))/100','vzdzvy([4 6])/100'},...
+           {'-dzPzy([4])./n([4])','-dzPzy([6])./n([6])'},...           
+           {'-dzPzy([4])./n([4])-dzPzy([6])./n([6])','-dzPzy([4 6])./n([4 6])'},...
+           {'-(vzdzvy([4])+vzdzvy([6]))/100-(dzPzy([4])./n([4])+dzPzy([6])./n([6]))','-vzdzvy([4 6])/100-dzPzy([4 6])./n([4 6])','Ey'}}';
+pic.xlim([101 101.5]+2).zlim([-1 1]).plot_line('z',varstrs,'ylim',ylims,'smooth',5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

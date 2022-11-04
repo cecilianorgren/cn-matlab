@@ -1801,3 +1801,289 @@ irf_plot_axis_align
 tmark_eis = tint(1):20:tint(2);
 %irf_pl_mark(h(3),tmark_eis.EpochUnix')
 h(1).Title.String = irf_ssub('MMS ?',ic);
+
+%% Compare to simulations to see if idea is reasonable
+%no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
+
+twpe = [3000 22000];
+xlim = 80 + 0.2*[-1 1];
+zlim = 0.0 + 0.2*[-1 1];
+pic = no02m.twpelim(twpe).xlim(xlim).zlim(zlim);
+
+t = pic.twci;
+Bz = squeeze(mean(mean(pic.Bz,1),2));
+Ey = squeeze(mean(mean(pic.Ey,1),2));
+vx_ExB = squeeze(mean(mean(pic.vExBx,1),2));
+vx_i = squeeze(mean(mean(pic.viperpx,1),2));
+vx_e = squeeze(mean(mean(pic.veperpx,1),2));
+
+% Integrate speeds to get some length
+L_ExB = cumtrapz(t,vx_ExB);
+L_i = cumtrapz(t,vx_i);
+L_e = cumtrapz(t,vx_e);
+
+% Fake reconnection rate
+R = 0.1;
+
+% Find DF
+Blim = 0.5;
+iDF = find(abs(Bz)>Blim*max(abs(Bz)),1,'first');
+tDF = t(iDF);
+inL_ExB = L_ExB(iDF)*R;
+inL_vi = L_i(iDF)*R;
+inL_ve = L_e(iDF)*R;
+
+% Plot
+h = setup_subplots(5,1); isub = 1;
+
+hca = h(isub); isub = isub + 1;
+plot(hca,t,Bz,tDF,Bz(iDF),'*')
+hca.XLabel.String = 't\omega_{ci}';
+hca.YLabel.String = 'B_z';
+
+hca = h(isub); isub = isub + 1;
+plot(hca,t,Ey)
+hca.XLabel.String = 't\omega_{ci}';
+hca.YLabel.String = 'E_y';
+
+hca = h(isub); isub = isub + 1;
+plot(hca,t,vx_ExB,t,vx_i,t,vx_e)
+hca.XLabel.String = 't\omega_{ci}';
+hca.YLabel.String = 'v';
+legend(hca,{'v_{ExB}','v_i','v_e'},'box','off')
+hca.YLim = 1.2*[-1 1];
+
+hca = h(isub); isub = isub + 1;
+plot(hca,t,L_ExB,t,L_i,t,L_e)
+hca.XLabel.String = 't\omega_{ci}';
+hca.YLabel.String = 'L';
+legend(hca,{'L_{ExB}','L_i','L_e'},'box','off')
+
+
+hca = h(isub); isub = isub + 1;
+plot(hca,t,L_ExB*R,t,L_i*R,t,L_e*R)
+hca.XLabel.String = 't\omega_{ci}';
+hca.YLabel.String = 'L*R';
+hold(hca,'on')
+plot(hca,tDF,inL_ExB,'*',tDF,inL_vi,'*',tDF,inL_ve,'*')
+hold(hca,'off')
+legend(hca,{'L_{ExB}','L_i','L_e',sprintf('L_{ExB} = %.2f',inL_ExB),sprintf('L_{i} = %.2f',inL_vi),sprintf('L_{e} = %.2f',inL_ve)},...
+  'box','off','location','best')
+
+c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on''; h(?).Layer = ''top''; h(?).GridAlpha = 0.1;',1:numel(h))
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).FontSize = 14;',1:numel(h))
+
+hl = findobj(gcf,'type','line');
+c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+
+compact_panels(h,0.0)
+
+h(1).Title.String = sprintf('x = [%.1f,%.1f], z = [%.1f,%.1f]',xlim(1),xlim(2),zlim(1),zlim(2));
+
+
+
+
+
+
+
+
+
+
+%% Compare to simulations to see if idea is reasonable, try to show several locations at once
+%no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
+
+twpe = [0000 25000];
+xlim = [65 100];
+zlim = 0.0 + 0.2*[-1 1];
+pic = no02m.twpelim(twpe).xlim(xlim).zlim(zlim);
+
+t = pic.twci;
+Ay = squeeze(mean(pic.A,2));
+Bz = squeeze(mean(pic.Bz,2));
+Ey = squeeze(mean(pic.Ey,2));
+ni = squeeze(mean(pic.ni,2));
+vx_ExB = squeeze(mean(pic.vExBx,2));
+vx_i = squeeze(mean(pic.viperpx,2));
+vx_e = squeeze(mean(pic.veperpx,2));
+
+% Integrate speeds to get some length
+L_ExB = cumtrapz(t,vx_ExB,2); % Too noisy
+L_i = cumtrapz(t,vx_i,2);
+L_e = cumtrapz(t,vx_e,2);
+%
+%% Fake reconnection rate
+R = 0.2;
+
+% Find DF
+% Blim = 0.5;
+% iDF = find(abs(Bz)>Blim*max(abs(Bz)),1,'first');
+% tDF = t(iDF);
+% inL_ExB = L_ExB(iDF)*R;
+% inL_vi = L_i(iDF)*R;
+% inL_ve = L_e(iDF)*R;
+
+% Plot
+ALim = [8 12];
+LinLim = [0 3]*0.99;
+
+figure(72)
+h = setup_subplots(7,1); isub = 1;
+
+if 0 % ni
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,ni')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'n_i';
+end
+if 1 % Ay
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,Ay')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'A_y';
+  hca.CLim = ALim;
+end
+if 1 % Bz
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,Bz')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'B_z';
+end
+if 0 % Ey
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,Ey')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'E_y';
+  hca.CLim = [0 0.5];
+end
+if 1 % Vi
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,vx_i')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'v_{ix\perp}';
+end
+if 1 % Ve
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,vx_e')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'v_{ex\perp}';
+end
+if 0 % L_vi
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,L_i')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'L_{ix\perp}';
+end
+if 0 % L_ve
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,L_e')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = 'L_{ex\perp}';
+end
+if 1 % L_vi*R
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,abs(R*L_i)')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = '|R*L_{ix\perp}|';
+  hca.CLim = LinLim;
+end
+if 1 % L_ve*R
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,pic.xi,t,abs(R*L_e)')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = '|R*L_{ex\perp}|';
+  hca.CLim = LinLim;
+end
+if 1 % L_ve*R
+  hca = h(isub); isub = isub + 1;
+  %[T,X] = ndgrid(t,pic.xi);
+  toplot = abs(R*L_e);
+  %toplot(abs(Bz)<0.1) = NaN;
+  %toplot(X-100<-1*T) = NaN;
+  %toplot = ((X-100)./T)'+1;
+  %pcolor(hca,pic.xi,t,toplot')
+  %shading(hca,'flat')
+  contourf(hca,pic.xi,t,toplot',0:0.2:4)
+  hca.XLabel.String = 'x/d_i';
+  hca.YLabel.String = 't\omega_{ci}';
+  hcb = colorbar('peer',hca);
+  hcb.YLabel.String = '|R*L_{ex\perp}|';
+  hca.CLim = LinLim;
+end
+
+for ip = [1 3:numel(h)] %1:numel(h) % Add Bx contours
+  hca = h(ip);
+  hold(hca,'on')
+  clim = hca.CLim;
+  contour(hca,pic.xi,t,Bz',[-1:0.2:-0.2 0.2:0.2:1],'color','k','linewidth',1)
+  hca.CLim = clim;
+  hold(hca,'off')
+end
+for ip = 2
+  hca = h(ip);
+  hold(hca,'on')
+  clim = hca.CLim;
+  contour(hca,pic.xi,t,abs(R*L_e)',0:0.2:4,'color','k','linewidth',1)
+  hca.CLim = clim;
+  hold(hca,'off')
+end
+c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on''; h(?).Layer = ''top''; h(?).GridAlpha = 0.1;',1:numel(h))
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).FontSize = 14;',1:numel(h))
+
+hl = findobj(gcf,'type','line');
+%c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+
+compact_panels(h,0.0)
+hlinks = linkprop(h,{'XLim','YLim'});
+
+h(1).Title.String = sprintf('z = [%.1f,%.1f]',zlim(1),zlim(2));
+
+
+
+%%
+
+
+figure(73)
+if 1 % Ay   
+  xx = no02m.twpelim(twpe(1)).x_xline;  
+  no02m.twpelim(twpe).xlim(xx+[-0.5 0.5]).zlim([-5 5]).plot_timemap('tz',{'A','ni'}','cmap',{pic_colors('candy4'),pic_colors('candy4')},'A',1,'clim',{ALim,[0 1]})
+  %pcolor(hca,pic.xi,t,Ay')
+  %shading(hca,'flat')
+  %hca.XLabel.String = 'x/d_i';
+  %hca.YLabel.String = 't\omega_{ci}';
+  %hcb = colorbar('peer',hca);
+  %hcb.YLabel.String = 'A_y';
+end
+
+
