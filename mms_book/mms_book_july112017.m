@@ -621,22 +621,23 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:01.800000000Z';...
   '2017-07-11T22:34:02.300000000Z';...
   '2017-07-11T22:34:02.800000000Z';...
-  '2017-07-11T22:34:03.300000000Z'])
-times = times([2 3 4])+0.25;
+  '2017-07-11T22:34:03.300000000Z']);
+%times = times([2 3 4])+0.25;
+times = times + 0.25;
 
 vint = [-Inf Inf];
 vint = [-20000 20000];
 vg = -60000:2000:60000;
 elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
-h1_pos = subplot(3,3,1:3); position = h1_pos.Position;
+nt = times.length;
+h1_pos = subplot(3,nt,1:nt); position = h1_pos.Position;
 h1 = irf_plot(1); 
 h1.Position = position; 
 %delete(h1_pos);
-for ip = 1:6
-  h2(ip) = subplot(3,3,3+ip);
+for ip = 1:(nt*2)
+  h2(ip) = subplot(3,nt,nt+ip);
 end
-
 
 hca = h1(1);
 irf_plot(hca,mvaPe1.xy,'color','k','linewidth',1)
@@ -685,8 +686,8 @@ for itime = 1:times.length
 end
 
 hlinks_all = linkprop(h2,{'XLim','YLim'});
-hlinks_f = linkprop(h2(1:3),{'CLim'});
-hlinks_p = linkprop(h2(4:6),{'CLim'});
+hlinks_f = linkprop(h2(1:nt),{'CLim'});
+hlinks_p = linkprop(h2((nt+1):2*nt),{'CLim'});
 
 h2(1).XLim = 0.99*vg([1 end])*1e-3;
 h2(1).YLim = 0.99*vg([1 end])*1e-3;
@@ -705,18 +706,22 @@ compact_panels(h2,0.005,00.005)
 hb = findobj(gcf,'type','colorbar'); 
 c_eval('hb(?).FontSize = 14;',1:numel(h2))
 hb = hb(end:-1:1);
-ihsub = [1 2 4 5];
+%
+ihsub = [1:nt-1 nt+1:(2*nt-1)];
 delete(hb(ihsub))
-ih = 3;
+ih = nt;
 hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
 hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
-ih = 6;
+ih = nt;
 hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
 hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
 %hb(3).Position(4) = 0.22; hb(6).Position(4) = 0.22;
-ihsub = [2 3 5 6];
+%ihsub = [2 3 5 6];
+ihsub = [2:nt nt+2:(2*nt)];
 c_eval('h2(?).YLabel.String = [];',ihsub)
 c_eval('h2(?).YTickLabel = [];',ihsub)
+c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
+
 
 %% Plot data fomr simulation
 % ons = PIC('/Volumes/DataRaid/Susanne-onset/data_h5/fields.h5');
