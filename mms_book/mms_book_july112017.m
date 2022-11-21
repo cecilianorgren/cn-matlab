@@ -9,7 +9,7 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 db_info = datastore('mms_db');
 
-
+ 
 % Magnetic field
 disp('Loading magnetic field...')
 c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
