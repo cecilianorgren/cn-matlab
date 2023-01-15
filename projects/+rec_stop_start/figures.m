@@ -7296,7 +7296,7 @@ ic = 1;
 
 fontsize_leg = 14;
 
-npanels = 4;
+npanels = 4+3;
 nrows = 1;
 ncols = 1;
 [h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.6,'vertical');
@@ -7311,6 +7311,7 @@ zoomy = [];
 matlab_colors = pic_colors('matlab');
 j_colors = [mms_colors('123'); matlab_colors(6,:)];
 j_colors = [mms_colors('123'); matlab_colors(3,:)];
+j_colors = [mms_colors('xyz'); 0 0 0];
 %j_colors = matlab_colors;
 
 if 1 % B gse
@@ -7340,7 +7341,7 @@ if 0 % J, Jeav, Jiav, Jav ,curl
     irf_legend(hca,{sprintf('J_{%s}^{FPI}',comp),sprintf('J_{i%s}^{FPI}',comp),sprintf('J_{e%s}^{FPI}',comp),sprintf('J_{%s}^{curl}',comp)},[0.02 0.99],'fontsize',fontsize_leg);  
   end
 end
-if 0 % Only  Jav ,curl
+if 1 % Only  Jav ,curl
   for comp = ['x','y','z']      
     isub = isub + 1;
     %zoomy = [zoomy isub];
@@ -7361,9 +7362,9 @@ if 1 % Only  Jiav Jeav
   for comp = ['x','y','z']      
     isub = isub + 1;
     %zoomy = [zoomy isub];
-    hca = irf_panel(sprintf('J%s',comp));
+    hca = irf_panel(sprintf('J%s_ie',comp));
     set(hca,'ColorOrder',j_colors([2 3],:))
-    if 1
+    if 0
       irf_plot(hca,{gseJiav.(comp),gseJeav.(comp)},'comp');
       %irf_legend(hca,{sprintf('resampled to %g s (for visibility)',dt_resample)},[0.02 0.05],'color','k','fontsize',fontsize_leg)
     elseif doResample    
