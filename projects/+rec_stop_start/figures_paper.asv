@@ -1818,7 +1818,6 @@ end
 if 1 % beta
   hca = irf_panel('beta');
   betalow = 1/0.3;
-  betalow = 3;
   set(hca,'ColorOrder',mms_colors('1'))  
   c_eval('irf_plot(hca,{beta?},''comp'')',ic)
   hold(hca,'on')   
@@ -1832,8 +1831,8 @@ if 1 % beta
   hca.YLabel.String = '\beta';
   hca.YTick = 10.^[-5:1:5];
   hca.YLabel.Interpreter = 'tex';
-  hca.YLim = [1.01e-2 1e3];
-  irf_legend(hca,['\beta < ' num2str(betalow,'%.2f')],[0.02 0.62],'color',hp.FaceColor,'fontsize',fontsize_leg)
+  hca.YLim = [1e-2 1e3];
+  irf_legend(hca,['\beta < ' num2str(betalow,'.2f')],)
 end
 
 elim_feeps = [8e4 Inf];
@@ -1855,7 +1854,7 @@ if 1 % i DEF feeps omni all sc
   % for data see feeps_data.m
   isub = isub + 1;
   hca = irf_panel('feeps omni mms 1234'); 
-  specrec = feeps_ion_omni1.elim(elim_feeps).specrec('energy');
+  specrec = feeps_ion_omni1234.elim(elim_feeps).specrec('energy');
   specrec.f = specrec.f*1e-3;
   specrec.f_label =  {'E_i (keV)'};
   [hout,hcb] = irf_spectrogram(hca,specrec,'log');
@@ -1939,10 +1938,6 @@ if 1 % i psd x,y,z, 3 panels
     end
     hca.YLabel.String = {sprintf('v_{i%s}',comp),'(km/s)'}; 
     hca.YLabel.Interpreter = 'tex';
-    %hca.XGrid = 'on';
-    %hca.YGrid = 'on';
-    %hca.Layer = 'top';
-    irf_legend(hca,sprintf('E > %.0f eV',if1D.ancillary.energy(1,1)-if1D.ancillary.delta_energy_minus(1,1)),[0.02 0.08],'color','k','fontsize',fontsize_leg)
   end
 end
 if 0 % e DEF omni
@@ -2004,28 +1999,20 @@ if 1 % Tepar/Teperp
   set(hca,'ColorOrder',mms_colors('1'))
   %c_eval('irf_patch(hca,{Te?par/Te?perp,1});',ic) 
   c_eval('tsdata = Te?par.resample(gseVi?)/Te?perp.resample(gseVi?);',ic)
-  tsdata = tsdata.tlim(irf.tint('2017-07-25T22:05:30.00Z/2017-07-25T22:11:00.00Z'));
-  if 1
-    tsdata.data(ne1.resample(tsdata).data<0.01) = NaN; % doesn't work well with patch
-    tsdata.data = log10(tsdata.data);
-    c_eval('hp = irf_patch(hca,{tsdata,0});',ic)  
-    hp.FaceColor = [0 0 0];
-    hp.EdgeColor = [0 0 0];
-  else
-    tsdata.data(ne1.resample(tsdata).data<0.01) = NaN;
-    tsdata.data = log10(tsdata.data);
-    irf_plot(hca,tsdata,'k')
-  end
+  tsdata.data = log10(tsdata.data);
+  c_eval('hp = irf_patch(hca,{tsdata,0});',ic)  
   hca.YLabel.String = 'log_{10}(T_{e||}/T_{e\perp})';
   set(hca,'ColorOrder',mms_colors('1'))  
-  hca.YLim = [-0.201 0.201];
+  hca.YLim = [-0.301 0.301];
   hca.YLabel.Interpreter = 'tex';
+  hp.FaceColor = [0 0 0];
+  hp.EdgeColor = [0 0 0];
 end
 %
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
 nInd = 1;
 for ii = 1:npanels
-  irf_legend(h(ii),legends{nInd},[0.01 0.95],'color',[0 0 0],'fontsize',fontsize_leg)
+  irf_legend(h(ii),legends{nInd},[0.01 0.9],'color',[0 0 0])
   nInd = nInd + 1;
   h(ii).FontSize = fontsize_leg;
 end
@@ -2044,7 +2031,7 @@ c_eval('h(?).FontSize = fontsize;',1:numel(h))
 
 h(end).XTickLabelRotation = 0;
 
-%hca = irf_panel('feeps omni mms 1234'); hca.CLim = [-1 100];
+hca = irf_panel('feeps omni mms 1234'); hca.CLim = [-1 100];
 hca = irf_panel('Vi perp'); hca.YLim = [-750 1150];
 hca = irf_panel('B gsm'); hca.YLim = 0.99*[-16 25];
 %hca = irf_panel('V ExB Vi x'); hca.YLim = [-200 1000]*0.99;
