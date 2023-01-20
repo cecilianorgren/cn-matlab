@@ -66,7 +66,7 @@ if 1 % Only  Jav ,curl
     irf_plot(hca,{gseJav.(comp),gseJav.(comp).resample(timeline),gseJcurl.(comp).resample(timeline)},'comp');        
     hca.YLabel.String = {sprintf('J_%s',comp),'(nA/m^2)'};    
     set(hca,'ColorOrder',leg_colors)    
-    irf_legend(hca,{sprintf('<J_{%s}^{FPI}> (%g ms)',comp,dt_resample*1e3),sprintf('<J_{%s}^{FPI}> (%g s)',comp,dt_resample),sprintf('J_{%s}^{curl} (%g s)',comp,dt_resample)}',[0.01 0.99],'fontsize',fontsize_leg);  
+    irf_legend(hca,{sprintf('<J_{%s}^{FPI}> (%g ms)',comp,cadence*1e3),sprintf('<J_{%s}^{FPI}> (%g s)',comp,dt_resample),sprintf('J_{%s}^{curl} (%g s)',comp,dt_resample)}',[0.01 0.99],'fontsize',fontsize_leg);  
     %irf_legend(hca,{sprintf('<J_{%s}^{FPI}> (%g ms)',comp,cadence*1e3),sprintf('<J_{%s}^{FPI}> (%g s)',comp,dt_resample),sprintf('J_{%s}^{curl} (%g s)',comp,dt_resample)},[0.02 0.99],'fontsize',fontsize_leg);      
     %hl = findobj(hca,'type','line');    
     %c_eval('hl(?).LineWidth = 0.5;',1:2)
@@ -81,7 +81,7 @@ if 1 % Only  Jiav Jeav
     hca.YLabel.String = {sprintf('J_%s',comp),'(nA/m^2)'};
     set(hca,'ColorOrder',leg_colors)     
     
-    irf_legend(hca,{sprintf('<J_{e%s}^{FPI}> (%g ms)',comp,dt_resample*1e3),sprintf('<J_{e%s}^{FPI}> (%g s)',comp,dt_resample)}',[0.01 0.99],'fontsize',fontsize_leg);          
+    irf_legend(hca,{sprintf('<J_{e%s}^{FPI}> (%g ms)',comp,cadence*1e3),sprintf('<J_{e%s}^{FPI}> (%g s)',comp,dt_resample)}',[0.01 0.99],'fontsize',fontsize_leg);          
     set(hca,'ColorOrder',leg_colors(3,:))     
     irf_legend(hca,{sprintf('<J_{i%s}^{FPI}> (%g s)',comp,dt_resample)}',[0.01 0.07],'fontsize',fontsize_leg);  
     %irf_legend(hca,{sprintf('<J_{e%s}^{FPI}> (%g ms)',comp,cadence*1e3),sprintf('<J_{e%s}^{FPI}> (%g s)',comp,dt_resample),sprintf('<J_{i%s}^{FPI}> (%g s)',comp,dt_resample)}',[0.01 0.05],'fontsize',fontsize_leg);  
@@ -801,7 +801,6 @@ end
 %%
 %% Timeline of Harris sheet thickness, taking into account potentially varying B0
 tint_harris = irf.tint('2017-07-25T22:05:30.00Z/2017-07-25T22:09:30.00Z');
-tint_L = tint_harris + [0 15];
 units = irf_units;
 
 % Parameters for Harris fit. Want an expression Bx(Jy)
@@ -829,17 +828,16 @@ dt_resample = 0.5;
 dt_L = 1;
 timeline = tint(1):dt_resample:tint(2);
 
-dataL = mf_L(gseBav.x.data*1e-9,B0,Jcurl.resample(gseBav).y.data)*1e-3; % m -> km
+dataL = mf_L(lmnBav.x.data*1e-9,B0,Jcurl.resample(lmnBav).y.data)*1e-3; % m -> km
 dataL(abs(dataL)>prctile(dataL,95)) = NaN;
-dataL(Jcurl.resample(gseBav).y.data<0) = NaN;
-tsL = irf.ts_scalar(gseBav.time,dataL);
-tsL = tsL.tlim(tint_L);
+dataL(Jcurl.resample(lmnBav).y.data<0) = NaN;
+tsL = irf.ts_scalar(lmnBav.time,dataL);
 
 % Data is quite scattered, so make specrec of data with binning
 %L_edges = linspace(0,max(dataL),20);
 L_edges = linspace(0,10000*0.99,20);
 t_edges = (tint(1)+-dt_L*0.5):dt_L:(tint(2)+dt_L*0.5);
-[N,edges,mid,loc] = histcn([tsL.data,tsL.time-t_edges(1)], L_edges, t_edges-t_edges(1));
+[N,edges,mid,loc] = histcn([dataL,tsL.time-t_edges(1)], L_edges, t_edges-t_edges(1));
 specrecL.p_label = 'counts';
 specrecL.f_label = 'L (km)';
 specrecL.p = N';
@@ -847,7 +845,7 @@ specrecL.t = irf_time(t_edges(1) + mid{2},'EpochTT>epoch');
 specrecL.f = mid{1};
 Lpeak = nan(numel(mid{2}),1);
 for it = 1:numel(mid{2})
-  [PKS,LOCS] = findpeaks(N(:,it),'NPeaks',1,'SortStr','descend','minpeakprominence',5);
+  [PKS,LOCS] = findpeaks(N(:,it),'NPeaks',1);
   if not(isempty(LOCS))
     Lpeak(it) = mid{1}(LOCS);
   end
@@ -861,16 +859,16 @@ tsLpeak = irf.ts_scalar(t_edges(1) + mid{2},Lpeak);
 tsPtot = irf.ts_scalar(gsePi1.time,gsePe1.resample(gsePi1).trace.data/3+PB1.resample(gsePi1).data+gsePi1.trace.data/3);
 tsB0 = irf.ts_scalar(tsPtot.time,sqrt(tsPtot.data*1e-9*2*units.mu0)*1e9); tsB0.name = 'B_0'; tsB0.units = 'nT'; % nT
 
-dataL_varB0 = mf_L(gseBav.x.data*1e-9,tsB0.resample(gseBav).data*1e-9,Jcurl.resample(gseBav).y.data)*1e-3; % m -> km
+dataL_varB0 = mf_L(lmnBav.x.data*1e-9,tsB0.resample(lmnBav).data*1e-9,Jcurl.resample(lmnBav).y.data)*1e-3; % m -> km
 dataL_varB0(abs(dataL_varB0)>prctile(dataL_varB0,95)) = NaN;
-dataL_varB0(Jcurl.resample(gseBav).y.data<0) = NaN;
-tsL_varB0 = irf.ts_scalar(gseBav.time,dataL_varB0);
-tsL_varB0 = tsL_varB0.tlim(tint_L);
+dataL_varB0(Jcurl.resample(lmnBav).y.data<0) = NaN;
+tsL_varB0 = irf.ts_scalar(lmnBav.time,dataL_varB0);
+
 % Data is quite scattered, so make specrec of data with binning
 %L_edges = linspace(0,max(dataL_varB0),20);
 L_edges = linspace(0,10000*0.99,20);
 t_edges = (tint(1)+-dt_L*0.5):dt_L:(tint(2)+dt_L*0.5);
-[N_varB0,edges,mid,loc] = histcn([tsL_varB0.data,tsL_varB0.time-t_edges(1)], L_edges, t_edges-t_edges(1));
+[N_varB0,edges,mid,loc] = histcn([dataL_varB0,tsL.time-t_edges(1)], L_edges, t_edges-t_edges(1));
 specrecL_varB0.p_label = 'counts';
 specrecL_varB0.f_label = 'L (km)';
 specrecL_varB0.p = N_varB0';
@@ -880,7 +878,7 @@ specrecL_varB0.f = mid{1};
 
 Lpeak_varB0 = nan(numel(mid{2}),1);
 for it = 1:numel(mid{2})
-  [PKS,LOCS] = findpeaks(N_varB0(:,it),'NPeaks',1,'SortStr','descend','minpeakprominence',5);
+  [PKS,LOCS] = findpeaks(N_varB0(:,it),'NPeaks',1);
   if not(isempty(LOCS))
     Lpeak_varB0(it) = mid{1}(LOCS);
   end
@@ -889,10 +887,9 @@ tsLpeak_varB0 = irf.ts_scalar(t_edges(1) + mid{2},Lpeak_varB0);
 %tsL = tsL.resample(timeline);
 
 % Setup figure
-fontsize = 13;
-fontsize_leg = 12;
-npanels = 4;
-nrows = 1;
+fontsize = 15;
+npanels = 7;
+nrows = 2;
 ncols = 1;
 
 gca = gcf;
@@ -901,7 +898,7 @@ if not(isempty(gca))
   fig_position = get(gca, 'Position');
   doResize = 1;
 end
-[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.5,'vertical');
+[h1,h2] = initialize_combined_plot(npanels,nrows,ncols,0.6,'vertical');
 c_eval('h1(?).Position(1) = 0.10;',1:numel(h1))
 
 if doResize
@@ -916,9 +913,8 @@ zoomy = [];
 
 L = [1000 2000 3000 4000]*1e3;
 
-J_edges = linspace(-2,12,50);
+J_edges = linspace(-2,12,70);
 B_edges = linspace(0,22,71);
-B2_edges = linspace(0,22.^2,51);
   
 
 if 1 % B gse
@@ -927,12 +923,12 @@ if 1 % B gse
   hca = irf_panel('B lmn');
   set(hca,'ColorOrder',mms_colors('xyza'))  
   %c_eval('irf_plot(hca,{gseB?.x,gseB?.y,gseB?.z},''comp'');',ic)
-  irf_plot(hca,{gseBav.x,gseBav.y,gseBav.z,tsB0.resample(tsB0.time(1):dt_resample:tsB0.time(end))},'comp');
+  irf_plot(hca,{gseBav.x,gseBav.y,gseBav.z},'comp');
   hca.YLabel.String = {'B','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'B_x','B_y','B_z','B_0 = 2\mu_0P_{tot}^{1/2}'}',[1.02 0.98],'fontsize',fontsize_leg);
+  irf_legend(hca,{'L','M','N'},[0.98 0.9],'fontsize',12);
 end 
-if 0 % J, Jeav, Jiav, Jav ,curl
+if 1 % J, Jeav, Jiav, Jav ,curl
   for comp = ['y']      
     isub = isub + 1;
     %zoomy = [zoomy isub];
@@ -964,7 +960,7 @@ if 0 % J, mms1-4,curl
   end
 end
 
-if 0 % Pressures, PB, Pi, Pe
+if 1 % Pressures, PB, Pi, Pe
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Pressure');  
@@ -978,7 +974,7 @@ if 0 % Pressures, PB, Pi, Pe
   irf_legend(hca,{'P_B','P_i','P_e','P_{tot}'}',[1.02 0.9],'fontsize',fontsize);  
   hca(1).YLim = [0 0.499];
 end
-if 0 % B0
+if 1 % B0
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('B0');
@@ -1005,14 +1001,13 @@ if 1 % L specrec
   hca = irf_panel('L specrec');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,specrecL,''log'');',2)  
   set(hca,'yscale','lin');
-  %set(hca,'ytick',[1e1 1e2 1e3 1e4]); 
-  hcb.YLabel.String = 'log_{10} counts';
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);    
   colormap(hca,cmap)   
   hca.YLabel.Interpreter = 'tex';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.Layer = 'top';
-  irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9)},[0.98 0.98],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9)},[0.02 0.98],'color','k','fontsize',fontsize)
   hold(hca,'on')
   irf_plot(hca,tsLpeak,'k')
   hold(hca,'off')
@@ -1023,14 +1018,13 @@ if 1 % L specrec
   hca = irf_panel('L specrec var B0');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,specrecL_varB0,''log'');',2)  
   set(hca,'yscale','lin');
-  hcb.YLabel.String = 'log_{10} counts';
   %set(hca,'ytick',[1e1 1e2 1e3 1e4]);    
   colormap(hca,cmap) 
   hca.YLabel.Interpreter = 'tex';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.Layer = 'top';
-  irf_legend(hca,{'B_0 = 2\mu_0P_{tot}^{1/2}'},[0.98 0.98],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{sprintf('B_0 varying')},[0.02 0.98],'color','k','fontsize',fontsize)
   %colormap(hca,irf_colormap('waterfall'))
   colormap(hca,pic_colors('candy4'))
   hold(hca,'on')
@@ -1047,8 +1041,8 @@ if 1 % compare L with const and varying B0
   irf_plot(hca,{tsLpeak,tsLpeak_varB0},'comp');
   hca.YLabel.String = {'L','(km)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9),'B_0 = 2\mu_0P_{tot}^{1/2}'}',[0.98 0.98],'fontsize',fontsize_leg);
-  %irf_legend(hca,{sprintf('resampled to %g s (for noise reduction)',dt_L)},[0.02 0.98],'color','k')
+  irf_legend(hca,{'constant B_0','varying B_0'},[0.98 0.9],'fontsize',12);
+  irf_legend(hca,{sprintf('resampled to %g s (for noise reduction)',dt_L)},[0.02 0.98],'color','k')
 end 
 
 irf_zoom(h1,'x',tint)
@@ -1057,7 +1051,7 @@ drawnow
 h1(end).YLabel.Position(1) = -0.10;
 drawnow
 irf_plot_axis_align
-%hmark = irf_pl_mark(h1(1),tint_harris);
+hmark = irf_pl_mark(h1(1),tint_harris);
 c_eval('h1(?).FontSize = fontsize;',1:numel(h1))
 
 %% Non-TSeries panels.
@@ -1147,116 +1141,7 @@ if 0 % Jiy,Jicurl
   hca.XLim = 40*[-1 1];
   hca.YLim = 40*[-1 1];  
 end
-if 0 % Bx,Jiy, binning with B^2
-  hca = h2(isub); isub = isub + 1;
-  ts_yy = gseJcurl; y_str = '<J_{y}^{curl}>';
-  yy = ts_yy.tlim(tint_L).y.data;  
-  xx = gseBav.resample(ts_yy).tlim(tint_L).x.data;  
-  
-  
-  [N edges mid loc] = histcn([xx(:).^2 yy(:)],B2_edges,J_edges);
-  N(N==0) = NaN;
-  pcolor(hca,mid{1},mid{2},log10(N)')
-  shading(hca,'flat')    
-  hcb = colorbar('peer',hca);
-  %hcb.YLabel.String = 'log_{10}(counts)';
-  hcb.YLabel.String = 'counts';
-  hca.XGrid = 'on';
-  hca.YGrid = 'on';
-   
-  % Add L lines
-  hold(hca,'on')
-  % mf_Bx = @(B0,L,z,z0)B0.*tanh((z-z0)./L)
-  % mf_Jy = @(B0,L,z,z0)-(B0.*(tanh((z-z0)./L).^2-1.0))./L
-  legs = {};
-  ileg = 0;
-  z0_ = 00e3;
-  for B0_ = B0
-    for L_ = L
-      ileg = ileg + 1;
-      %legs{ileg} = sprintf('B_0 = %g nT, L = %g km',B0_*1e9,L_*1e-3);
-      legs{ileg} = sprintf('L = %g km',L_*1e-3);
-      legs{ileg} = sprintf('%g km',L_*1e-3);
-      z_ = L_*linspace(0.0,3,20);      
-      hl(ileg) = plot(hca,(mf_Bx(B0_,L_,z_,z0_)*1e9).^2,mf_Jy(B0_,L_,z_,z0_)*1e9*(1+0*1/5),'linewidth',1);
-      plot(hca,(mf_Bx(B0_,L_,z_,z0_)*1e9).^2,mf_Jy(B0_,L_,z_,z0_)*1e9*(1+0*1/5),'k:');
-    end
-  end
-  
-  hca_pos = hca.Position;
-  hlegs = legend(hl,legs,'fontsize',fontsize,'location','northoutside','box','off','orientation','horizontal');
-  hlegs.Title.String = 'L = ';  
-  hca.Position = hca_pos;
-  %hlegs = legend(hl,legs,'fontsize',10,'location','northeast','box','off');
-  %hlegs.Title.String = 'L = ';
-  %hca_pos = hca.Position;
-  %hlegs.Location = 'northoutside';
-  %hca.Position = hca_pos;
-  %hlegs.Position(2) = hca.Position(2) + hca.Position(4);
-  %hlegs.Position = [0.8521    0.3418    0.1180    0.1044];
-  %hlegs.Box = 'on';
-  hold(hca,'off')
-  hca.XLabel.String = 'B_x^2 (nT^2)';
-  hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);  
-  %colormap(hca,irf_colormap('waterfall'))
-  colormap(pic_colors('candy4'))
-end
-if 1 % Bx,Jiy, binning with B^2
-  hca = h2(isub); isub = isub + 1;
-  ts_yy = gseJcurl; y_str = '<J_{y}^{curl}>';
-  yy = ts_yy.tlim(tint_L).y.data;  
-  xx = gseBav.resample(ts_yy).tlim(tint_L).x.data;  
-  
-  
-  [N edges mid loc] = histcn([xx(:).^2 yy(:)],B2_edges,J_edges);
-  N(N==0) = NaN;
-  pcolor(hca,mid{1},mid{2},log10(N)')
-  shading(hca,'flat')    
-  hcb = colorbar('peer',hca);
-  hcb.YLabel.String = 'log_{10}(counts)';
-  %hcb.YLabel.String = 'counts';
-  hca.XGrid = 'on';
-  hca.YGrid = 'on';
-   
-  % Add L lines
-  hold(hca,'on')
-  clim = hca.CLim;
-  % mf_Bx = @(B0,L,z,z0)B0.*tanh((z-z0)./L)
-  % mf_Jy = @(B0,L,z,z0)-(B0.*(tanh((z-z0)./L).^2-1.0))./L
-  % mf_L(B,B0,Jy)
-  J_edges_pos = J_edges(J_edges>0);
-  B_grid = linspace(B2_edges(1),B2_edges(end),500);
-  J_grid = linspace(0,J_edges_pos(end),501);
-  %B_grid = logspace(log10(B2_edges(1)),log10(B2_edges(end)),500);
-  %J_grid = logspace(log10(0.0000001),log10(J_edges_pos(end)),501);
-  [BB2,JJ] = meshgrid(B_grid,J_grid);
-  LL = mf_L(sqrt(BB2),B0*1e9,JJ);
-  [cc,hh] = contour(hca,BB2,JJ,LL*1e-3,[1000:1000:6000],'k');
-  % [cc,hh] = contour(hca,BB2,JJ,LL*1e-3,[1000:500:6000],'k',"ShowText",true,'LabelFormat','L = %g km');
-  clabel(cc,hh,'LabelSpacing',400,'Color','k','FontWeight','normal','fontsize',fontsize_leg);
-  
-%  hca_pos = hca.Position;
-%  hlegs = legend(hl,legs,'fontsize',fontsize,'location','northoutside','box','off','orientation','horizontal');
-%  hlegs.Title.String = 'L = ';  
-%  hca.Position = hca_pos;
-  %hlegs = legend(hl,legs,'fontsize',10,'location','northeast','box','off');
-  %hlegs.Title.String = 'L = ';
-  %hca_pos = hca.Position;
-  %hlegs.Location = 'northoutside';
-  %hca.Position = hca_pos;
-  %hlegs.Position(2) = hca.Position(2) + hca.Position(4);
-  %hlegs.Position = [0.8521    0.3418    0.1180    0.1044];
-  %hlegs.Box = 'on';
-  hold(hca,'off')
-  hca.CLim = clim;
-  hca.XLabel.String = 'B_x^2 (nT^2)';
-  hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);  
-  colormap(hca,irf_colormap('waterfall'))
-  %colormap(pic_colors('candy4'))
-  hca.Layer = 'top';
-end
-
-if 0 % Bx,Jiy
+if 1 % Bx,Jiy
   hca = h2(isub); isub = isub + 1;
   ts_yy = gseJcurl; y_str = '<J_{y}^{curl}>';
   yy = ts_yy.tlim(tint_harris).y.data;  
@@ -1309,7 +1194,7 @@ if 0 % Bx,Jiy
   hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);  
   colormap(hca,irf_colormap('waterfall'))
 end
-if 0 % Bx,Jiy, time
+if 1 % Bx,Jiy, time
   hca = h2(isub); isub = isub + 1;
   timeline = tint_harris(1):0.02:tint_harris(2);
   ts_yy = gseJcurl.resample(timeline); y_str = '<J_{y}^{curl}>';
@@ -1455,12 +1340,12 @@ if 0 % Bx,JxBz, scatter
   hca.YLabel.String = sprintf('%s (nA/m^2)',y_str);
 end
 
-%h2(2).YTick = h2(1).YTick;
-%h2(2).XTick = h2(1).XTick;
+h2(2).YTick = h2(1).YTick;
+h2(2).XTick = h2(1).XTick;
 
-h2(1).Position = [0.58 0.25 0.2 0.5];
-%c_eval('h2(?).FontSize = fontsize;',1:numel(h2))
-%%
+
+c_eval('h2(?).FontSize = fontsize;',1:numel(h2))
+
 % Clone colorbar for time and place on top of panel 1.
 hca = h1(1);
 h_pos = hca.Position;
@@ -1933,7 +1818,6 @@ end
 if 1 % beta
   hca = irf_panel('beta');
   betalow = 1/0.3;
-  betalow = 3;
   set(hca,'ColorOrder',mms_colors('1'))  
   c_eval('irf_plot(hca,{beta?},''comp'')',ic)
   hold(hca,'on')   
@@ -1947,8 +1831,8 @@ if 1 % beta
   hca.YLabel.String = '\beta';
   hca.YTick = 10.^[-5:1:5];
   hca.YLabel.Interpreter = 'tex';
-  hca.YLim = [1.01e-2 1e3];
-  irf_legend(hca,['\beta < ' num2str(betalow,'%.2f')],[0.02 0.62],'color',hp.FaceColor,'fontsize',fontsize_leg)
+  hca.YLim = [1e-2 1e3];
+  irf_legend(hca,['\beta < ' num2str(betalow,'.2f')],)
 end
 
 elim_feeps = [8e4 Inf];
@@ -1970,7 +1854,7 @@ if 1 % i DEF feeps omni all sc
   % for data see feeps_data.m
   isub = isub + 1;
   hca = irf_panel('feeps omni mms 1234'); 
-  specrec = feeps_ion_omni1.elim(elim_feeps).specrec('energy');
+  specrec = feeps_ion_omni1234.elim(elim_feeps).specrec('energy');
   specrec.f = specrec.f*1e-3;
   specrec.f_label =  {'E_i (keV)'};
   [hout,hcb] = irf_spectrogram(hca,specrec,'log');
@@ -2054,10 +1938,6 @@ if 1 % i psd x,y,z, 3 panels
     end
     hca.YLabel.String = {sprintf('v_{i%s}',comp),'(km/s)'}; 
     hca.YLabel.Interpreter = 'tex';
-    %hca.XGrid = 'on';
-    %hca.YGrid = 'on';
-    %hca.Layer = 'top';
-    irf_legend(hca,sprintf('E > %.0f eV',if1D.ancillary.energy(1,1)-if1D.ancillary.delta_energy_minus(1,1)),[0.02 0.08],'color','k','fontsize',fontsize_leg)
   end
 end
 if 0 % e DEF omni
@@ -2119,28 +1999,20 @@ if 1 % Tepar/Teperp
   set(hca,'ColorOrder',mms_colors('1'))
   %c_eval('irf_patch(hca,{Te?par/Te?perp,1});',ic) 
   c_eval('tsdata = Te?par.resample(gseVi?)/Te?perp.resample(gseVi?);',ic)
-  tsdata = tsdata.tlim(irf.tint('2017-07-25T22:05:30.00Z/2017-07-25T22:11:00.00Z'));
-  if 1
-    tsdata.data(ne1.resample(tsdata).data<0.01) = NaN; % doesn't work well with patch
-    tsdata.data = log10(tsdata.data);
-    c_eval('hp = irf_patch(hca,{tsdata,0});',ic)  
-    hp.FaceColor = [0 0 0];
-    hp.EdgeColor = [0 0 0];
-  else
-    tsdata.data(ne1.resample(tsdata).data<0.01) = NaN;
-    tsdata.data = log10(tsdata.data);
-    irf_plot(hca,tsdata,'k')
-  end
+  tsdata.data = log10(tsdata.data);
+  c_eval('hp = irf_patch(hca,{tsdata,0});',ic)  
   hca.YLabel.String = 'log_{10}(T_{e||}/T_{e\perp})';
   set(hca,'ColorOrder',mms_colors('1'))  
-  hca.YLim = [-0.201 0.201];
+  hca.YLim = [-0.301 0.301];
   hca.YLabel.Interpreter = 'tex';
+  hp.FaceColor = [0 0 0];
+  hp.EdgeColor = [0 0 0];
 end
 %
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
 nInd = 1;
 for ii = 1:npanels
-  irf_legend(h(ii),legends{nInd},[0.01 0.95],'color',[0 0 0],'fontsize',fontsize_leg)
+  irf_legend(h(ii),legends{nInd},[0.01 0.9],'color',[0 0 0])
   nInd = nInd + 1;
   h(ii).FontSize = fontsize_leg;
 end
@@ -2159,7 +2031,7 @@ c_eval('h(?).FontSize = fontsize;',1:numel(h))
 
 h(end).XTickLabelRotation = 0;
 
-%hca = irf_panel('feeps omni mms 1234'); hca.CLim = [-1 100];
+hca = irf_panel('feeps omni mms 1234'); hca.CLim = [-1 100];
 hca = irf_panel('Vi perp'); hca.YLim = [-750 1150];
 hca = irf_panel('B gsm'); hca.YLim = 0.99*[-16 25];
 %hca = irf_panel('V ExB Vi x'); hca.YLim = [-200 1000]*0.99;

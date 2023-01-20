@@ -8277,11 +8277,8 @@ h2(1).CLim = [-10 -7.];
 
 c_eval('h(?).FontSize = 16;',1:numel(h))
 c_eval('h2(?).FontSize = 16;',1:numel(h2))
-c_eval('h2(?).Position(1) = 0.58;',1:numel(h2))
 
-h(end).XTickLabelRotation = 0;
-h2(1).Title.String = 'Hot pre-existing plasma sheet';
-h2(2).Title.String = 'Post-DF cold and heated ions';
+h2(1).Title.String = 'Hot pre-existing pla';
 %c_eval('h2(?).CLim = [-14.5 -9.5];',1:numel(h2))
 %hmark = irf_pl_mark(h,tocolumn(times_dist_exact_eu),'r');
 %c_eval('hmark(?).LineWidth = 0.5; hmark(?).Color = [0 0 0]; hmark(?).LineStyle = ''-'';',1:numel(hmark))

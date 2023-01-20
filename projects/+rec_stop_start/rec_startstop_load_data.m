@@ -89,7 +89,7 @@ c_eval('Pi?par = facPi?.xx;',ic)
 
 % Spacecraft position
 c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
-%%
+%% Distributions
 ic = 1;
 % Distributions, FPI
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
@@ -103,7 +103,14 @@ c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.da
 %c_eval('iPDist?_nobg = iPDist?;',ic)
 %c_eval('iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 
-%% Par/perp electric field
+c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',2)
+c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint,?);',2)
+
+c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
+c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint,?);',ic)
+c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint,?);',ic)
+
+%% Derived quantities, par/perp, mag mom, beta, J, 
 ic = 1:4;
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 % vExB
@@ -133,14 +140,7 @@ c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gse
 c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 
-c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',2)
-c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint,?);',2)
-
-c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
-c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint,?);',ic)
-c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint,?);',ic)
-%%
-
+%% Things requiring 4 sc.
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
 
 c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',1:4)
@@ -227,6 +227,12 @@ vint = [-Inf Inf];
 elim = [200 40000];
 
 
+
+c_eval('if1Dx?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[1 0 0],''vint'',vint);',ic)
+c_eval('if1Dy?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+c_eval('if1Dz?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[0 0 1],''vint'',vint);',ic)
+
+%%
 c_eval('if1Dx? = iPDist?.elim(elim).reduce(''1D'',[1 0 0],''vint'',vint);',ic)
 c_eval('if1Dy? = iPDist?.elim(elim).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
 c_eval('if1Dz? = iPDist?.elim(elim).reduce(''1D'',[0 0 1],''vint'',vint);',ic)
