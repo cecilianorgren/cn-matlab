@@ -930,7 +930,7 @@ if 1 % B gse
   irf_plot(hca,{gseBav.x,gseBav.y,gseBav.z,tsB0.resample(tsB0.time(1):dt_resample:tsB0.time(end))},'comp');
   hca.YLabel.String = {'B','(nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'B_x','B_y','B_z','B_0 = 2\mu_0P_{tot}^{1/2}'}',[1.02 0.98],'fontsize',fontsize_leg);
+  irf_legend(hca,{'B_x','B_y','B_z','B_0=2\mu_0P_{tot}^{1/2}'},[0.02 0.1],'fontsize',fontsize_leg);
 end 
 if 0 % J, Jeav, Jiav, Jav ,curl
   for comp = ['y']      
@@ -1012,7 +1012,7 @@ if 1 % L specrec
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.Layer = 'top';
-  irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9)},[0.98 0.98],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9)},[0.02 0.98],'color','k','fontsize',fontsize_leg)
   hold(hca,'on')
   irf_plot(hca,tsLpeak,'k')
   hold(hca,'off')
@@ -1030,7 +1030,7 @@ if 1 % L specrec
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.Layer = 'top';
-  irf_legend(hca,{'B_0 = 2\mu_0P_{tot}^{1/2}'},[0.98 0.98],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{sprintf('B_0 varying')},[0.02 0.98],'color','k','fontsize',fontsize_leg)
   %colormap(hca,irf_colormap('waterfall'))
   colormap(hca,pic_colors('candy4'))
   hold(hca,'on')
@@ -1047,7 +1047,7 @@ if 1 % compare L with const and varying B0
   irf_plot(hca,{tsLpeak,tsLpeak_varB0},'comp');
   hca.YLabel.String = {'L','(km)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{sprintf('B_0 = %.0f nT',B0*1e9),'B_0 = 2\mu_0P_{tot}^{1/2}'}',[0.98 0.98],'fontsize',fontsize_leg);
+  irf_legend(hca,{'constant B_0','varying B_0'}',[0.02 0.98],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('resampled to %g s (for noise reduction)',dt_L)},[0.02 0.98],'color','k')
 end 
 
@@ -1213,8 +1213,8 @@ if 1 % Bx,Jiy, binning with B^2
   pcolor(hca,mid{1},mid{2},log10(N)')
   shading(hca,'flat')    
   hcb = colorbar('peer',hca);
-  hcb.YLabel.String = 'log_{10}(counts)';
-  %hcb.YLabel.String = 'counts';
+  %hcb.YLabel.String = 'log_{10}(counts)';
+  hcb.YLabel.String = 'counts';
   hca.XGrid = 'on';
   hca.YGrid = 'on';
    
@@ -1231,9 +1231,8 @@ if 1 % Bx,Jiy, binning with B^2
   %J_grid = logspace(log10(0.0000001),log10(J_edges_pos(end)),501);
   [BB2,JJ] = meshgrid(B_grid,J_grid);
   LL = mf_L(sqrt(BB2),B0*1e9,JJ);
-  [cc,hh] = contour(hca,BB2,JJ,LL*1e-3,[1000:1000:6000],'k');
-  % [cc,hh] = contour(hca,BB2,JJ,LL*1e-3,[1000:500:6000],'k',"ShowText",true,'LabelFormat','L = %g km');
-  clabel(cc,hh,'LabelSpacing',400,'Color','k','FontWeight','normal','fontsize',fontsize_leg);
+  [cc,hh] = contour(hca,BB2,JJ,LL*1e-3,[1000:500:6000],'k');
+  clab = clabel(cc,hh,'LabelSpacing',400,'Color','k','FontWeight','normal','fontsize',fontsize_leg,'LabelFormat','L = %0.0f');
   
 %  hca_pos = hca.Position;
 %  hlegs = legend(hl,legs,'fontsize',fontsize,'location','northoutside','box','off','orientation','horizontal');
@@ -1458,7 +1457,7 @@ end
 %h2(2).YTick = h2(1).YTick;
 %h2(2).XTick = h2(1).XTick;
 
-h2(1).Position = [0.58 0.25 0.2 0.5];
+
 %c_eval('h2(?).FontSize = fontsize;',1:numel(h2))
 %%
 % Clone colorbar for time and place on top of panel 1.
