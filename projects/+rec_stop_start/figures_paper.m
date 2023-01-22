@@ -1854,7 +1854,6 @@ for ih = 1:numel(h2)
   leg_str = leg_str(2:end);
 end
 
-
 %% MMS SWT: Figure: ongoing reconnection
 ic = 1;
 
