@@ -35,7 +35,7 @@ c_eval('nHp?_srvy = mms.get_data(''Nhplus_hpca_srvy_l2'',tint_fast,?);',ic);
 
 c_eval('vOp?_srvy = mms.get_data(''Voplus_gsm_hpca_srvy_l2'',tint_fast,?);',ic);
 c_eval('vHp?_srvy = mms.get_data(''Vhplus_gsm_hpca_srvy_l2'',tint_fast,?);',ic);
-
+c_eval('gseVHp?_srvy = c_coord_trans(''GSM'',''GSE'',vHp?_srvy);',ic)
 
 c_eval('iPDist?_Hp_fast = mms.get_data(''Omnifluxhplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 
 c_eval('iPDist?_Op_fast = mms.get_data(''Omnifluxoplus_hpca_srvy_l2'',tint_fast,?);',ic) % missing some ancillary data 

@@ -70,6 +70,10 @@ c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',1:4);
 c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
 c_eval('gsmVi? = c_coord_trans(''GSE'',''GSM'',gseVi?);',ic)
+% HPCA
+c_eval('nHp?_brst = mms.get_data(''Nhplus_hpca_brst_l2'',tint_fast,?);',ic);
+c_eval('gsmVHp?_brst = mms.get_data(''Vhplus_gsm_hpca_brst_l2'',tint_fast,?);',ic);
+c_eval('gseVHp?_brst = c_coord_trans(''GSM'',''GSE'',gsmVHp?_brst);',ic)
 % Pressure
 c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic) 
 c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
@@ -106,9 +110,9 @@ c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.da
 c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',2)
 c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint,?);',2)
 
-c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
-c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint,?);',ic)
-c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint,?);',ic)
+c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',1:4)
+c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint,?);',1:4)
+c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint,?);',1:4)
 
 %% Derived quantities, par/perp, mag mom, beta, J, 
 ic = 1:4;
@@ -180,6 +184,7 @@ gseJav = (gseJ1.resample(gseJ2) + gseJ2.resample(gseJ2) + gseJ3.resample(gseJ2) 
 gseJiav = (gseJi1 + gseJi2.resample(gseJi1) + gseJi3.resample(gseJi1) + gseJi4.resample(gseJi1))/4;
 gseJeav = (gseJe1 + gseJe2.resample(gseJe1) + gseJe3.resample(gseJe1) + gseJe4.resample(gseJe1))/4;
 
+c_eval('JdotE? = gseJ?.dot(gseE?.resample(gseJi?))*1e3; JdotE?.name = ''JdotE''; JdotE?.units = ''nW/m^3'';',ic) % nA/m^2*mV/m = piko W
 
 neav = (ne1.resample(ne1) + ne2.resample(ne1) + ne3.resample(ne1) + ne4.resample(ne1))/4; % gseE1 not there?
 gseJxBne_mVm = (gseJxB)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.name = 'JxB/ne';
