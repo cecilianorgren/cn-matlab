@@ -7476,6 +7476,7 @@ end
 c_eval('h2(?).FontSize = 16;',1:numel(h2))
 
 %% MMS SWT: Figure: onset 
+% for feeps_ion_omni1234, see feeps_data.m
 ic = 1;
 time_mark = EpochTT('2017-07-25T22:09:08.00Z');
 time_df = EpochTT('2017-07-25T22:10:06.50Z');

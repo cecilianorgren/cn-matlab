@@ -70,9 +70,9 @@ c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',1:4);
 c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
 c_eval('gsmVi? = c_coord_trans(''GSE'',''GSM'',gseVi?);',ic)
-% HPCA
-c_eval('nHp?_brst = mms.get_data(''Nhplus_hpca_brst_l2'',tint_fast,?);',ic);
-c_eval('gsmVHp?_brst = mms.get_data(''Vhplus_gsm_hpca_brst_l2'',tint_fast,?);',ic);
+%% HPCA
+c_eval('nHp?_brst = mms.get_data(''Nhplus_hpca_brst_l2'',tint,?);',ic);
+c_eval('gsmVHp?_brst = mms.get_data(''Vhplus_gsm_hpca_brst_l2'',tint,?);',ic);
 c_eval('gseVHp?_brst = c_coord_trans(''GSM'',''GSE'',gsmVHp?_brst);',ic)
 % Pressure
 c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic) 
@@ -100,19 +100,63 @@ c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some 
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 % Remove all one-count "noise"
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.00) = 0;',ic)
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
 %c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
 
 %c_eval('iPDist?_nobg = iPDist?;',ic)
 %c_eval('iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 
-c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',2)
-c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint,?);',2)
+c_eval('iPitch? = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
+c_eval('iPitch?_nobg = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
 
-c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',1:4)
-c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint,?);',1:4)
-c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint,?);',1:4)
+
+
+tint_epd = [EpochTT('2017-07-25T22:04:44.822634526Z') EpochTT('2017-07-25T22:11:31.820198151Z')];
+c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint_epd,?);',1:4)
+c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint_epd,?);',1:4)
+c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint_epd,?);',1:4)
+c_eval('feeps_ion_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint_epd,?);',1:4)
+
+c_eval('feeps_pa? = mms.get_data(''Pitchanglefluxion_epd_feeps_brst_l2'',tint_epd,?);',1:4)
+c_eval('feeps_ele_omni? = mms.get_data(''Omnifluxelectron_epd_feeps_brst_l2'',tint_epd,?);',1:4)
+
+
+% Feeps ion omni, coverage not taken into account, 
+omnidata1234 = (feeps_ion_omni1.data + ...
+                feeps_ion_omni2.data(1:end-1,:) + ...
+                feeps_ion_omni3.data + ...
+                feeps_ion_omni4.data)/4;
+feeps_ion_omni1234 =  PDist(feeps_ion_omni1.time,omnidata1234,'omni',feeps_ion_omni1.depend{1}); % energies keV -> eV            
+feeps_ion_omni1234.siConversion = feeps_ion_omni1.siConversion;
+feeps_ion_omni1234.units = feeps_ion_omni1.units;
+feeps_ion_omni1234.species = feeps_ion_omni1.species;
+
+% Feeps ion pitchangle
+padata1234 = cat(4,feeps_ion_pa1.data,feeps_ion_pa2.data(1:end-1,:,:),feeps_ion_pa3.data,feeps_ion_pa4.data);  
+padata1234 = nanmean(padata1234,4);
+feeps_ion_pa1234 =  PDist(feeps_ion_pa1.time,padata1234,'pitchangle',feeps_ion_pa1.depend{1},feeps_ion_pa1.depend{2}); % energies keV -> eV            
+feeps_ion_pa1234.siConversion = feeps_ion_pa1.siConversion;
+feeps_ion_pa1234.units = feeps_ion_pa1.units;
+feeps_ion_pa1234.species = feeps_ion_pa1.species;
+
+% EIS, proton, mms1 has no data
+omnidata1234 = (...
+                eis_omni2.data(1:end-1,:) + ...
+                eis_omni3.data + ...
+                eis_omni4.data)/4;
+eis_omni1234 =  PDist(eis_omni3.time,omnidata1234,'omni',eis_omni3.depend{1}); % energies keV -> eV            
+eis_omni1234.siConversion = eis_omni3.siConversion;
+eis_omni1234.units = eis_omni3.units;
+eis_omni1234.species = eis_omni3.species;
+
+
+padata1234 = cat(4,eis_pa2.data(1:end-1,:,:),eis_pa3.data,eis_pa4.data);
+padata1234 = nanmean(padata1234,4);
+eis_pa1234 =  PDist(eis_pa3.time,padata1234,'pitchangle',eis_pa3.depend{1},eis_pa3.depend{2}); % energies keV -> eV            
+eis_pa1234.siConversion = eis_pa3.siConversion;
+eis_pa1234.units = eis_pa3.units;
+eis_pa1234.species = eis_pa3.species;
 
 %% Derived quantities, par/perp, mag mom, beta, J, 
 ic = 1:4;
@@ -139,13 +183,16 @@ c_eval('mag_momi? = 0.5*units.me*vti?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom
 % Velocity, FAC
 c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
+
+c_eval('[gseVHp?par,gseVHp?perp] = irf_dec_parperp(gseB?,gseVHp?_brst); gseVHp?par.name = ''Vp par''; gseVHp?perp.name = ''Vp perp'';',ic)
+
 % Currents from moments, use ne also for Ji 
 c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 
 %% Things requiring 4 sc.
-c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4 )
 
 c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',1:4)
 c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.name = ''v_exB'';',ic)
@@ -214,11 +261,9 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 % Too noisy, I just keep it here
 %gseGradPine = gseGradPi/neav.resample(gseGradPi.time)/units.e*1e-9*1e-6; gseGradPine.units = 'mV/m';
 %gseGradPine.data(abs(gseGradPine.data)>100) = NaN;
+%%
 
-%c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint,?);',ic)
-%c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint,?);',ic)
-
-
+c_eval('iPitch? = iPDist1.pitchangles(dmpaB?,12);',ic)
 
 disp('Done loading data.')
 
@@ -226,7 +271,7 @@ disp('Done loading data.')
 if 0
   %%
 %c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
-
+ic = 1;
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 elim = [200 40000];
