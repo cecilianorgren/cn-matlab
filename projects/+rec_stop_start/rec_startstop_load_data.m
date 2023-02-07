@@ -64,16 +64,18 @@ c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_
 c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',1:4);
 c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',1:4);
 
+%% HPCA
+c_eval('nHp?_brst = mms.get_data(''Nhplus_hpca_brst_l2'',tint,?);',ic);
+c_eval('gsmVHp?_brst = mms.get_data(''Vhplus_gsm_hpca_brst_l2'',tint,?);',ic);
+c_eval('gseVHp?_brst = c_coord_trans(''GSM'',''GSE'',gsmVHp?_brst);',ic)
+
 %% Velocity
 ic = 1:4;
 c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',1:4);
 c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
 c_eval('gsmVi? = c_coord_trans(''GSE'',''GSM'',gseVi?);',ic)
-%% HPCA
-c_eval('nHp?_brst = mms.get_data(''Nhplus_hpca_brst_l2'',tint,?);',ic);
-c_eval('gsmVHp?_brst = mms.get_data(''Vhplus_gsm_hpca_brst_l2'',tint,?);',ic);
-c_eval('gseVHp?_brst = c_coord_trans(''GSM'',''GSE'',gsmVHp?_brst);',ic)
+
 % Pressure
 c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic) 
 c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)

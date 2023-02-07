@@ -25,3 +25,11 @@ eis_omni = mms.get_data('Omnifluxproton_epd_eis_srvy_l2',tint,1);
 h = irf_plot(1);
 hca = irf_panel('eis omni');
 [hout,hcb] = irf_spectrogram(hca,eis_omni.specrec,'log');
+
+%% Time interval 3, brst
+tint = irf.tint('2020-06-26T00:00:00.00Z/2020-06-26T02:00:00.00Z');
+eis_omni = mms.get_data('Omnifluxproton_epd_eis_brst_l2',tint,1);
+
+h = irf_plot(1);
+hca = irf_panel('eis omni');
+[hout,hcb] = irf_spectrogram(hca,eis_omni.specrec,'log');
