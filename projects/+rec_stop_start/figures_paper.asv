@@ -87,7 +87,7 @@ if 1 % V hplus gse
   hca.YLabel.String = {'v_{H+}^{GSM}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'v_x','v_y','v_z'}',[1.02 0.98],'fontsize',fontsize_leg);
-  irf_legend(hca,{'HPCA'},[0.05 0.9],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{'HPCA'},[0.05 0.9],'color','k')
   hca.YLim = [-800 1600];
 end
 if 0 % VExB gse
@@ -146,13 +146,13 @@ if 0 % n log scale, no burst
 end
 if 1 % n lin scale, no burst
   hca = irf_panel('n lin scale o burst');
-  colors_tmp = [0 0 0; colors_matlab(2,:); colors_matlab(1,:)];
-  set(hca,'ColorOrder',colors_tmp)
+  colors_tmp = [0 0 0; colors_matlab(2,:);]
+  set(hca,'ColorOrder',)
   %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
   c_eval('irf_plot(hca,{ne?_fast,nHp1_srvy,nOp1_srvy*16},''comp'')',ic)
-  set(hca,'ColorOrder',colors_tmp)
+  set(hca,'ColorOrder',mms_colors('matlab'))
   %irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_i^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  irf_legend(hca,{'n_e^{FPI}','n_{H+}^{HPCA}','n_{O+}^{HPCA}\times16'}',[1.02 0.98],'fontsize',fontsize_leg);
+  irf_legend(hca,{'n_e^{fast}','n_{H+}','n_{O+} (m_{O+}/m_p)'}',[1.02 0.98],'fontsize',fontsize_leg);
   hca.YLabel.String = {'n','(cm^{-3})'};
   hca.YLim(1) = 0;
   hca.YLim(2) = 0.26;
@@ -199,7 +199,7 @@ if 1 % i DEF omni
   hca.XMinorGrid = 'off';
   hca.YMinorGrid = 'off';
   hca.Layer = 'top';
-  irf_legend(hca,{'FPI'},[0.02 0.1],'color','k','backgroundcolor','w','fontsize',fontsize_leg)
+  irf_legend(hca,{'FPI'},[0.02 0.1],'color','k','backgroundcolor','w')
 end
 if 1 % hplus DEF omni
   isub = isub + 1;
@@ -222,7 +222,7 @@ if 1 % hplus DEF omni
   hca.XMinorGrid = 'off';
   hca.YMinorGrid = 'off';
   hca.Layer = 'top';
-  irf_legend(hca,{'HPCA'},[0.02 0.1],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{'HPCA'},[0.02 0.1],'color','k')
 end
 if 1 % oplus DEF omni
   isub = isub + 1;
@@ -245,7 +245,7 @@ if 1 % oplus DEF omni
   hca.XMinorGrid = 'off';
   hca.YMinorGrid = 'off';
   hca.Layer = 'top';
-  irf_legend(hca,{'HPCA'},[0.02 0.1],'color','k','fontsize',fontsize_leg)
+  irf_legend(hca,{'HPCA'},[0.02 0.1],'color','k')
 end
 if 0 % oplus DEF omni
   isub = isub + 1;
@@ -297,7 +297,7 @@ h(end).XTickLabelRotation = 0;
 ipref = npanels-2;
 if 1 % link spectrograms
   %%
-  linkprop(h(ipref+(0:2)),{'CLim'});
+  linkprop(h(ipref+(0:2)),{'CLim'})
   h(ipref).CLim = [3.5 5.5];
   h(ipref).YLim = h(ipref+1).YLim;
 end

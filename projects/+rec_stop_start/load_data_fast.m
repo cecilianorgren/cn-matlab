@@ -61,9 +61,11 @@ c_eval('beta?_srvy_fpi = PB?_srvy.resample(Pi?_fast)*3/(Pi?_fast.trace+Pe?_fast.
 %c_eval('betai?_srvy_hpca = PB?_srvy.resample(pOp?_srvy)*3/(pOp?_srvy.trace + pHp?_srvy.trace); betai?_srvy_hpca.name = ''beta op hp'';',ic)
 
 % Energetic particles
+c_eval('eis_omni?_oplus_srvy = mms.get_data(''Omnifluxoxygen_epd_eis_srvy_l2'',tint_epd,?);',1:4)
 c_eval('feeps_ion_omni?_srvy = mms.get_data(''Omnifluxion_epd_feeps_srvy_l2'',tint_fast,?);',ic)
 c_eval('feeps_pa?_srvy = mms.get_data(''Pitchanglefluxion_epd_feeps_srvy_l2'',tint_fast,?);',ic)
 c_eval('feeps_ele_omni?_srvy = mms.get_data(''Omnifluxelectron_epd_feeps_srvy_l2'',tint_fast,?);',ic)
+
 %% Rotated coordinates
 tint_mva = irf.tint('2017-07-25T20:14:08.398745849Z/2017-07-25T21:57:25.093696533Z'); % early
 %tint_mva = irf.tint('2017-07-25T21:36:16.246635253Z/2017-07-25T23:52:59.490427001Z'); % later

@@ -4297,7 +4297,7 @@ doFilt = 1;
 ffilt = 1;
 ic = 1;
 
-npanels = 6;
+npanels = 11;
 h = irf_plot(npanels);
 isub = 1;
 zoomy = [];
@@ -4312,7 +4312,7 @@ if 1 % B gse fast
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z','|B|'},[0.98 0.9],'fontsize',12);  
 end 
-if 0 % B lmn fast
+if 1 % B lmn fast
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('B lmn');
@@ -4342,7 +4342,7 @@ if 0 % E gse fast
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end 
-if 0 % Vi gse
+if 1 % Vi gse
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('Vi gse');
@@ -4392,7 +4392,7 @@ if 0 % E + VixB gse fast
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end 
-if 0 % n
+if 1 % n
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('matlab'))
   %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
@@ -4425,17 +4425,6 @@ if 0 % n log scale, no burst
   hca.YLabel.String = {'n','(cm^{-3})'};
   hca.YScale = 'log';
   hca.YLim(1) = 1e-5;
-end
-if 1 % n lin scale, no burst
-  hca = irf_panel('n lin scale o burst');
-  set(hca,'ColorOrder',mms_colors('matlab'))
-  %c_eval('irf_plot(hca,{ne?,ni?,ne?_fast,ni?_fast,nOp1_srvy,nHp1_srvy},''comp'')',ic)
-  c_eval('irf_plot(hca,{ne?_fast,nOp1_srvy*16,nHp1_srvy},''comp'')',ic)
-  set(hca,'ColorOrder',mms_colors('matlab'))
-  %irf_legend(hca,{'n_e^{brst}','n_i^{brst}','n_e^{fast}','n_i^{fast}','n_{O+}','n_{H+}'},[0.98 0.98])
-  irf_legend(hca,{'n_e^{fast}','n_{O+} (m_{O+}/m_p)','n_{H+}'}',[1.02 0.98])
-  hca.YLabel.String = {'n','(cm^{-3})'};
-  hca.YLim(1) = 0;
 end
 if 0 % nO/nHp
   hca = irf_panel('nOp/nHp log scale');
@@ -4524,7 +4513,7 @@ if 1 % oplus DEF omni
   hca.YMinorGrid = 'off';
   hca.Layer = 'top';
 end
-if 0 % oplus DEF omni
+if 1 % oplus DEF omni
   isub = isub + 1;
   hca = irf_panel('oplus DEF omni EIS');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,eis_omni?_oplus.dpflux(-1).deflux.specrec,''log'');',2)  
@@ -4559,13 +4548,6 @@ end
 irf_zoom(h,'x',tint_fast)
 irf_plot_axis_align
 
-ipref = npanels-2;
-if 1 % link spectrograms
-  %%
-  linkprop(h(ipref+(0:2)),{'CLim'})
-  h(ipref).CLim = [3.5 5.5];
-  h(ipref).YLim = h(ipref+1).YLim;
-end
 %% Figure: Current sheet structure, energetic plasma
 ic = 1;
 

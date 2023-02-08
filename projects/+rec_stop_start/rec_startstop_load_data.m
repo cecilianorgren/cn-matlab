@@ -65,12 +65,12 @@ c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',1:4);
 c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',1:4);
 
 %% HPCA
+ic = 1:4;
 c_eval('nHp?_brst = mms.get_data(''Nhplus_hpca_brst_l2'',tint,?);',ic);
 c_eval('gsmVHp?_brst = mms.get_data(''Vhplus_gsm_hpca_brst_l2'',tint,?);',ic);
 c_eval('gseVHp?_brst = c_coord_trans(''GSM'',''GSE'',gsmVHp?_brst);',ic)
 
 %% Velocity
-ic = 1:4;
 c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',1:4);
 c_eval('gsmVe? = c_coord_trans(''GSE'',''GSM'',gseVe?);',ic)
@@ -115,6 +115,7 @@ c_eval('iPitch?_nobg = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
 
 
 tint_epd = [EpochTT('2017-07-25T22:04:44.822634526Z') EpochTT('2017-07-25T22:11:31.820198151Z')];
+c_eval('eis_omni?_oplus = mms.get_data(''Omnifluxoxygen_epd_eis_brst_l2'',tint_epd,?);',1:4)
 c_eval('eis_omni? = mms.get_data(''Omnifluxproton_epd_eis_brst_l2'',tint_epd,?);',1:4)
 c_eval('eis_pa? = mms.get_data(''Pitchanglefluxproton_epd_eis_brst_l2'',tint_epd,?);',1:4)
 c_eval('feeps_ion_omni? = mms.get_data(''Omnifluxion_epd_feeps_brst_l2'',tint_epd,?);',1:4)
@@ -185,6 +186,7 @@ c_eval('mag_momi? = 0.5*units.me*vti?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom
 % Velocity, FAC
 c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 c_eval('[gseVi?par,gseVi?perp] = irf_dec_parperp(gseB?,gseVi?); gseVi?par.name = ''Vi par''; gseVi?perp.name = ''Vi perp'';',ic)
+
 
 c_eval('[gseVHp?par,gseVHp?perp] = irf_dec_parperp(gseB?,gseVHp?_brst); gseVHp?par.name = ''Vp par''; gseVHp?perp.name = ''Vp perp'';',ic)
 
