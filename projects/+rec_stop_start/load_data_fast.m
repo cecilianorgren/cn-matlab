@@ -61,6 +61,7 @@ c_eval('beta?_srvy_fpi = PB?_srvy.resample(Pi?_fast)*3/(Pi?_fast.trace+Pe?_fast.
 %c_eval('betai?_srvy_hpca = PB?_srvy.resample(pOp?_srvy)*3/(pOp?_srvy.trace + pHp?_srvy.trace); betai?_srvy_hpca.name = ''beta op hp'';',ic)
 
 % Energetic particles
+%c_eval('eis_omni?_oplus      = mms.get_data(''Omnifluxoxygen_epd_eis_brst_l2'',tint_epd,?);',1:4)
 c_eval('eis_omni?_oplus_srvy = mms.get_data(''Omnifluxoxygen_epd_eis_srvy_l2'',tint_epd,?);',1:4)
 c_eval('feeps_ion_omni?_srvy = mms.get_data(''Omnifluxion_epd_feeps_srvy_l2'',tint_fast,?);',ic)
 c_eval('feeps_pa?_srvy = mms.get_data(''Pitchanglefluxion_epd_feeps_srvy_l2'',tint_fast,?);',ic)
