@@ -206,6 +206,7 @@ c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
 [Jcurl,divB,gseB,JxB,gseCurvB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
 % [JxB] = T A/m2
 
+
 gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
 gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
 gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
@@ -220,6 +221,14 @@ c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J
 gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
 gseEav = (gseE1.resample(gseE2) + gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/4; gseEav.name = 'E1234'; % gseE1 not there?
 [gseJcurlpar,gseJcurlperp] = irf_dec_parperp(gseBav,gseJcurl); gseJcurlpar.name = 'J curl par'; gseJcurlperp.name = 'J curl perp';
+
+
+c_eval('gseR?brsttime = gseR?.resample(gseE?);',1:4)
+[Ecurl,~,~,~,~,~] = c_4_j('gseR?brsttime','gseE?');
+Ecurl.data = Ecurl.data;%*(units.mu0);
+dtB = diff(gseBav.time-gseBav.time(1));
+dBdt = diff(gseBav.data,1)./dtB;
+dBdt = irf.ts_vec_xyz(gseBav.time(1:end-1)+0.5*dtB,dBdt);
 
 % 4sc averages
 Peav = (gsePe1.trace.resample(gsePe1) + gsePe2.trace.resample(gseVe1) + gsePe3.trace.resample(gseVe1) + gsePe4.trace.resample(gseVe1))/4/3; gsePeav.name = 'Pe1234';
