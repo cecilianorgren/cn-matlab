@@ -34,8 +34,8 @@ Qleg = cell(0,0);
 if 1
 c_eval('Q(end+1) = {gseB?*rot''};  Qleg(end+1) = {''B''};',ic)
 c_eval('Q(end+1) = {gseE?*rot''};  Qleg(end+1) = {''E''};',ic)
-%c_eval('Q(end+1) = {gseVe?*rot''};  Qleg(end+1) = {''Ve''};',ic)
-%c_eval('Q(end+1) = {gseVi?*rot''};  Qleg(end+1) = {''Vi''};',ic)
+c_eval('Q(end+1) = {gseVe?*rot''};  Qleg(end+1) = {''Ve''};',ic)
+c_eval('Q(end+1) = {gseVi?*rot''};  Qleg(end+1) = {''Vi''};',ic)
 c_eval('Q(end+1) = {gseJ?*rot''};  Qleg(end+1) = {''J''};',ic)
 
 else % different matlab versions?
