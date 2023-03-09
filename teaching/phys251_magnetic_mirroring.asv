@@ -1,0 +1,32 @@
+%% 2D mat of theta2
+theta2 = @(B1,B2,theta1) asind(sqrt(B2./B1).*sind(theta1));
+
+theta1 = 1:1.5:90;
+theta1 = logspace(-1,log10(89):1.5:90;
+b1 = 1;
+b2 = logspace(-1,3,1000);
+b2b1 = b2./b1;
+
+[B2B1,THETA1] = ndgrid(b2b1,theta1);
+THETA2 = real(theta2(b1,b1*B2B1,THETA1));
+THETA2(THETA2==90) = NaN;
+
+hca = subplot(1,1,1);
+pcolor(hca,B2B1,THETA1,THETA2)
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.Label.String = '\theta_2 (deg.)';
+hca.XLabel.String = 'B_2/B_1';
+hca.YLabel.String = '\theta_1 (deg.)';
+hca.FontSize = 14;
+
+%% Line plot of theta2
+theta2 = @(B1,B2,theta1) asind(sqrt(B2./B1).*sind(theta1));
+
+theta1 = 0:90;
+b1 = 1;
+b2 = logspace(-1,3,100);
+b2b1 = b2./b1;
+
+hca = subplot(1,1,1);
+plot(hca,b2b1,theta2(b1,b1*b2b1,theta1))
