@@ -7,6 +7,7 @@ localuser = datastore('local','user');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
 db_info = datastore('mms_db');   
 
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
@@ -29,6 +30,8 @@ fileId = '20170709173053';
 end
 
 tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
+
+%tint = irf.tint('2017-07-09T17:30:00.00Z/2017-07-09T17:35:00.00Z');
 
 
 % Event path
