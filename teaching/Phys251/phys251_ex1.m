@@ -74,13 +74,14 @@ hca.YLabel.String = 'Speed (m/s)';
 hca.XLabel.String = 'Radius (R_E)';
 
 hca = h(isub); isub = isub + 1;
-semilogy(hca,rvec/RE,Ecorot(rvec),...
-  [rmin rmax]/RE,Econv(1)*[1 1],...
-  [rmin rmax]/RE,Econv(2)*[1 1])
+set(hca,'ColorOrder',colors(1:3,:))
+hl = semilogy(hca,rvec/RE,Ecorot(rvec),...
+                  [rmin rmax]/RE,Econv(1)*[1 1],...
+                  [rmin rmax]/RE,Econv(2)*[1 1]);
 hold(hca,'on')
 set(hca,'ColorOrder',colors(2:3,:))
-semilogy(r(2)/RE,Econv(2),'*')
 semilogy(r(1)/RE,Econv(1),'*')
+semilogy(r(2)/RE,Econv(2),'*')
 hold(hca,'off')
 hca.YTick = 10.^(-7:1:10);
 hca.YLabel.String = 'Electric field (V/m)';
