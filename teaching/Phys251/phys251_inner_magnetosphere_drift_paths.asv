@@ -1,0 +1,31 @@
+wE = 2*pi*24*60*60;
+RE = 6371200; % m
+me = 9.1094e-31;
+mp = 1.6726e-27;
+e = 1.6022e-19;
+kB = 1.3806e-23;
+mu0 = 1.2566e-06;
+M = 8.22e22; % A m^2
+
+Er = @(r) -wE*mu0*M/4/pi;
+
+
+r = RE*linspace(1,10,20);
+lon = linspace(0,2*pi,30);
+
+[R,LON] = ndgrid(r,lon);
+
+ER = Er(r)
+
+% transformation matrix between cartesian and spherical
+T = [sin(colat).*cos(lon), sin(colat).*sin(lon), cos(colat);...
+     cos(colat).*cos(lon), cos(colat).*sin(lon), -sin(colat);...
+     -sin(lon)         , cos(lon)        ,  0];
+  
+T_sp2cart = T';
+
+Ecart = T_sp2cart*Bsphere;
+  
+bx = Bcart(1,:);
+by = Bcart(2,:);
+bz = Bcart(3,:);
