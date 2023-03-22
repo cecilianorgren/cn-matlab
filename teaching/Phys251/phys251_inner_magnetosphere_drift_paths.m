@@ -199,4 +199,26 @@ hb(4).Position(1) = hca.Position(1) + hca.Position(3)+0.01;
 c_eval('h(?).YLabel = [];',2:4)
 c_eval('h(?).YTickLabel = [];',2:4)
 
+%% Drift frequencies
+e = 1.6022e-19;
+kB = 1.3806e-23;
+mu0 = 1.2566e-06;
+RE = 6.3712e+06; % m
+M = 8.22e22; % A m^2
+me = 9.1094e-31;
+mp = 1.6726e-27;
+wE = 2*pi/(24*60*60); % Earth's rotation frequency, rad/s
+Econv = 1*[0.5 2]*1e3/(RE); % kV/RE - > V/m (to have V in SI units)
 
+
+E0 = 0.3*1e-3; % V/m
+W_eV = 1000;
+W_J = W_eV*e;
+%v = sqrt(2*W_J/m);
+
+Bz = @(r) mu0*M./(4*pi*r.^3);
+mu = @(r,W_J) W_J./Bz(r);
+
+w_gyro = @(r,m) e*Bz(r)/m;
+
+r_gyro = @(r,W,m) sqrt(2*W*e/m)./w_gyro(r,m);
