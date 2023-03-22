@@ -1,4 +1,4 @@
-wE = 2*pi*24*60*60;
+wE = 2*pi/(24*60*60);
 RE = 6371200; % m
 me = 9.1094e-31;
 mp = 1.6726e-27;
@@ -7,16 +7,53 @@ kB = 1.3806e-23;
 mu0 = 1.2566e-06;
 M = 8.22e22; % A m^2
 
-Er = @(r) -wE*mu0*M/4/pi;
+Er = @(r) -wE*mu0*M./(4*pi*r.^2);
 
 
-r = RE*linspace(1,10,20);
-lon = linspace(0,2*pi,30);
+
+r = RE*linspace(1,15,10);
+lon = linspace(0,2*pi,100);
 
 [R,LON] = ndgrid(r,lon);
 
-ER = Er(r)
+X = R.*cos(LON);
+Y = R.*sin(LON);
 
+ER = Er(R);
+
+EX = ER.*cos(LON);
+EY = ER.*sin(LON);
+
+
+E_conv = 1e7; % V/m
+E_conv_kVRE = 0.5;
+E_conv = E_conv_kVRE*1e3/RE; %*1e3*RE; % kV/RE - > V/m
+EX_conv = 0;
+EY_conv = E_conv;
+
+
+hca = subplot(2,1,1);
+scale = NaN;
+quiver(hca,X/RE,Y/RE,EX,EY)
+hold(hca,'on')
+quiver(hca,X/RE,Y/RE,EX*0+EX_conv,EY*0+EY_conv)
+quiver(hca,X/RE,Y/RE,EX+EX*0+EX_conv,EY+EY*0+EY_conv)
+
+surf(X/RE,Y/RE,X*0-1,EY+EY_conv)
+shading(hca,'flat')
+colormap(pic_colors('blue_red'))
+%hca.CLim = max(abs(hca.CLim))*[-1 1];
+hcb = colorbar(hca);
+
+hold(hca,'off')
+
+hca = subplot(2,1,2);
+rvec = RE*linspace(1,15,100);
+%plot(hca,rvec/RE,Er(rvec),rvec/RE,rvec*0+E_conv)
+semilogy(hca,rvec/RE,abs(Er(rvec)),rvec/RE,rvec*0+abs(E_conv))
+
+
+%%
 % transformation matrix between cartesian and spherical
 T = [sin(colat).*cos(lon), sin(colat).*sin(lon), cos(colat);...
      cos(colat).*cos(lon), cos(colat).*sin(lon), -sin(colat);...
@@ -29,3 +66,134 @@ Ecart = T_sp2cart*Bsphere;
 bx = Bcart(1,:);
 by = Bcart(2,:);
 bz = Bcart(3,:);
+
+%% Potential
+e = 1.6022e-19;
+kB = 1.3806e-23;
+mu0 = 1.2566e-06;
+RE = 6.3712e+06; % m
+M = 8.22e22; % A m^2
+me = 9.1094e-31;
+mp = 1.6726e-27;
+wE = 2*pi/(24*60*60); % Earth's rotation frequency, rad/s
+Econv = 1*[0.5 2]*1e3/(RE); % kV/RE - > V/m (to have V in SI units)
+
+
+E0 = 0.3*1e-3; % V/m
+W_eV = 1000;
+W_J = W_eV*e;
+%v = sqrt(2*W_J/m);
+
+Bz = @(r) mu0*M./(4*pi*r.^3);
+mu = @(r,W_J) W_J./Bz(r);
+%q = -e;
+
+phi = @(r,lon,m,q,mu) mu*Bz(r)/q - wE*mu0*M./(8*pi*r) - E0*r.*sin(lon);
+phi_gradB = @(r,lon,m,q,mu) mu*Bz(r)/q;
+phi_corot = @(r,lon,m,q,W_J) - wE*mu0*M./(8*pi*r);
+phi_conv = @(r,lon,m,q,W_J) - E0*r.*sin(lon);
+
+
+r = RE*linspace(3,15,20);
+r = RE*logspace(log10(2),log10(15),30);
+lon = linspace(0,2*pi,100);
+
+[R,LON] = ndgrid(r,lon);
+
+X = R.*cos(LON);
+Y = R.*sin(LON);
+
+
+
+clear h
+nrows = 1; ncols = 4; ipanel = 0;
+for irow = 1:nrows, for icol = 1:ncols, ipanel = ipanel + 1; h(ipanel) = subplot(nrows,ncols,ipanel); end, end
+isub = 1;
+
+% Define particle parameters
+Ncont = 30;
+R_Bref = 5*RE;
+B_ref = Bz(R_Bref);
+m = me; q = -e; W_eV = 1e3; mu = W_eV*e/B_ref;
+if 1 % phi_gradB
+  hca = h(isub); isub = isub + 1;
+  PHI = phi_gradB(R,LON,m,q,mu);
+  %contourf(hca,X/RE,Y/RE,PHI,Ncont)
+  pcolor(hca,X/RE,Y/RE,PHI)
+  shading(hca,'flat')
+  hca.YLabel.String = 'y^{GSM} (RE)';
+  hca.XLabel.String = 'x^{GSM} (RE)';
+  axis(hca,'equal')
+  hca.Title.String = {'Gradient B drift potential'};%,sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu = %g J/T', m/me, q/e, W_eV,mu)};
+  hcb = colorbar(hca);
+  irf_legend(hca,{sprintf('m = %.0f m_e', m/me),...
+    sprintf('q = %.0f e', q/e),...
+    sprintf('W = %g eV', W_eV),...
+    sprintf('R_{ref for mu} = %.0f R_E', R_Bref/RE),...
+    sprintf('B(R_{ref for mu}) = %g T', B_ref),...
+    sprintf('mu = %g J/T',mu)}',[0.02 0.98],'color','k');
+end 
+if 1 % phi_corot
+  hca = h(isub); isub = isub + 1;
+  PHI = phi_corot(R,LON,m,q,mu);
+  %contourf(hca,X/RE,Y/RE,PHI,Ncont)
+  pcolor(hca,X/RE,Y/RE,PHI)
+  shading(hca,'flat')
+  hca.YLabel.String = 'y^{GSM} (RE)';
+  hca.XLabel.String = 'x^{GSM} (RE)';
+  axis(hca,'equal')
+  hca.Title.String = {'Corotation potential'};%,sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu = %g J/T', m/me, q/e, W_eV,mu)};
+  hcb = colorbar(hca);
+end
+if 1 % phi_conv
+  hca = h(isub); isub = isub + 1;
+  PHI = phi_conv(R,LON,m,q,mu);
+  contourf(hca,X/RE,Y/RE,PHI,Ncont)
+  shading(hca,'flat')
+  hca.YLabel.String = 'y^{GSM} (RE)';
+  hca.XLabel.String = 'x^{GSM} (RE)';
+  axis(hca,'equal')
+  hca.Title.String = {'Convective potential'};%,sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu= %g J/T', m/me, q/e, W_eV,mu)};
+  hcb = colorbar(hca);
+end
+if 1 % phi_gradB + phi_corot + phi_conv
+  hca = h(isub); isub = isub + 1;
+  PHI = phi(R,LON,m,q,mu);
+  contourf(hca,X/RE,Y/RE,PHI,Ncont)
+  %pcolor(hca,X/RE,Y/RE,PHI)
+  shading(hca,'flat')
+  hca.YLabel.String = 'y^{GSM} (RE)';
+  hca.XLabel.String = 'x^{GSM} (RE)';
+  axis(hca,'equal')
+  hca.Title.String = {'Total potential',sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu = %g J/T', m/me, q/e, W_eV,mu)};
+  hcb = colorbar(hca);
+end
+if 0
+hca = h(isub); isub = isub + 1;
+m = mp; q = e; W_eV = 1e9;
+PHI = phi(R,LON,me,-e,W_eV*e);
+contourf(hca,X/RE,Y/RE,PHI,Ncont)
+shading(hca,'flat')
+hca.YLabel.String = 'y^{GSM} (RE)';
+hca.XLabel.String = 'x^{GSM} (RE)';
+axis(hca,'equal')
+hca.Title.String = sprintf('m = %.0f m_e, q = %.0f e, W = %g eV', m/me, q/e, W_eV);
+end
+
+%colormap(pic_colors('candy3'))
+colormap(irf_colormap('waterfall'))
+
+hlinks = linkprop(h,{'CLim'});
+hlinks.Targets(1).CLim = 4e4*[-1 1];
+
+c_eval('axis(h(?),''square'');',1:numel(h))
+c_eval('h(?).FontSize = 14;',1:numel(h))
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+
+hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+delete(hb(1:3));
+compact_panels(0.01,0.01)
+h(=)
+hb(4).Position(1) = hca.Position(1) + hca.Position(3)+0.01;
+
+

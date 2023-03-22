@@ -1,4 +1,4 @@
-
+%%
 mu0 = 1.2566e-06;
 M = 8.22e22; % A m^2
 RE = 6.3712e+03; % km
@@ -36,6 +36,7 @@ th1 = asind(sqrt((RE+h)/RE)*sind(th0));
 
 B2B1 = sind(th1).^6./sqrt(1+3*cosd(th1).^2);
 pa2 = asind(sqrt(B2B1));
+
 
 %% Plasma pause radius
 mu0 = 1.2566e-06;
