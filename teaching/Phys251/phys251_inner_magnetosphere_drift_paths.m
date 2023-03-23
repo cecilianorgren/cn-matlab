@@ -210,4 +210,105 @@ hb(4).Position(1) = hca.Position(1) + hca.Position(3)+0.01;
 c_eval('h(?).YLabel = [];',2:4)
 c_eval('h(?).YTickLabel = [];',2:4)
 
+%% Drift frequencies
+c = 299792458;
+e = 1.6022e-19;
+kB = 1.3806e-23;
+mu0 = 1.2566e-06;
+RE = 6.3712e+06; % m
+M = 8.22e22; % A m^2
+me = 9.1094e-31;
+mp = 1.6726e-27;
+wE = 2*pi/(24*60*60); % Earth's rotation frequency, rad/s
+Econv = 1*[0.5 2]*1e3/(RE); % kV/RE - > V/m (to have V in SI units)
 
+
+
+E0 = 0.3*1e-3; % V/m
+W_eV = 1000;
+W_J = W_eV*e;
+%v = sqrt(2*W_J/m);
+
+Bz = @(r) mu0*M./(4*pi*r.^3);
+mu = @(r,W_J) W_J./Bz(r);
+
+v_rel = @(W,m) c*sqrt(1-1./(W.*e./(m*c^2)+1).^2); 
+v_nonrel = @(W,m) sqrt(2*W.*e./m); 
+
+gamma = @(W,m) 1./sqrt(1-v_rel(W,m).^2/c^2);
+
+w_gyro = @(W,m,r) e*Bz(r)./(m.*gamma(W,m));
+T_gyro = @(W,m,r) 2*pi./w_gyro(W,m,r);
+
+r_gyro = @(W,m,r) sqrt(2*W*e/m)./w_gyro(W,m,r);
+
+clear h
+nrows = 1; ncols = 1; ipanel = 0;
+for irow = 1:nrows, for icol = 1:ncols, ipanel = ipanel + 1; h(ipanel) = subplot(nrows,ncols,ipanel); end, end
+isub = 1;
+
+Wvec = logspace(0,9,100); % eV
+REvec = linspace(1,8,80)*RE;
+[WVEC,REVEC] = ndgrid(Wvec,REvec);
+
+if 1 % Relativistic and non-relativistic speeds
+  V_rel = v_rel(Wvec,me);
+  V_nonrel = v_nonrel(Wvec,me);
+  hca = h(isub); isub = isub + 1;
+  plot(hca,Wvec,V_rel/c,Wvec,V_nonrel/c,Wvec,Wvec*0+1,'k--')
+  %hca.YTick = 10.^(-7:1:10);
+  hca.XScale = 'log';
+  hca.YScale = 'log';
+  hca.XLabel.String = 'Kinetic energy (eV)';
+  hca.YLabel.String = 'Speed (c)';
+  %hcb = colorbar(hca);
+  %hcb.Label.String = 'Relativistic speed, v/c';
+  legend(hca,{'Relativistic','Non-relativsistic','Speed of light'},'box','off')
+end
+%%
+
+if 1 % Larmor frequency
+  V_rel = v_rel(WVEC,me);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,V_rel/c,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Relativistic speed, v/c';
+end
+if 1 % gamma
+  Gamma = gamma(WVEC,me);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,Gamma,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = '\gamma';
+end
+if 1 % Larmor frequency
+  F_L = w_gyro(WVEC,me,REVEC)/(2*pi);
+  hca = h(isub); isub = isub + 1;
+  [C,h] = contourf(hca,REVEC/RE,WVEC,log10(F_L),20);
+  clabel(C,h,'LabelSpacing',200,'Color','k','FontWeight','bold')
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Larmor frequency (Hz)';
+end
+if 1 % Larmor period
+  T_L = T_gyro(WVEC,me,REVEC);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,T_L,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Larmor period (s)';
+end

@@ -94,8 +94,8 @@ phi_corot = @(r,lon,m,q,W_J) - wE*mu0*M./(8*pi*r);
 phi_conv = @(r,lon,m,q,W_J) - E0*r.*sin(lon);
 
 
-r = RE*linspace(3,15,20);
-r = RE*logspace(log10(2),log10(15),30);
+r = RE*linspace(3,15,50);
+r = RE*logspace(log10(2),log10(15),120);
 lon = linspace(0,2*pi,100);
 
 [R,LON] = ndgrid(r,lon);
@@ -114,12 +114,12 @@ isub = 1;
 Ncont = 30;
 R_Bref = 5*RE;
 B_ref = Bz(R_Bref);
-m = me; q = -e; W_eV = 1e3; mu = W_eV*e/B_ref;
+m = me; q = -e; W_eV = 1e4; mu = W_eV*e/B_ref; E_0 = 0.3e-3;
 if 1 % phi_gradB
   hca = h(isub); isub = isub + 1;
   PHI = phi_gradB(R,LON,m,q,mu);
   %contourf(hca,X/RE,Y/RE,PHI,Ncont)
-  pcolor(hca,X/RE,Y/RE,PHI)
+  pcolor(hca,X/RE,Y/RE,PHI*1e-3)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
   hca.XLabel.String = 'x^{GSM} (RE)';
@@ -131,13 +131,14 @@ if 1 % phi_gradB
     sprintf('W = %g eV', W_eV),...
     sprintf('R_{ref for mu} = %.0f R_E', R_Bref/RE),...
     sprintf('B(R_{ref for mu}) = %g T', B_ref),...
-    sprintf('mu = %g J/T',mu)}',[0.02 0.98],'color','k');
+    sprintf('mu = %g J/T = %g MeV/G',mu,mu*1e-3/e*1e-5),...
+    sprintf('E_{conv} = %g V/m ',E0)},[0.05 1.13],'color','k','fontsize',14);
 end 
 if 1 % phi_corot
   hca = h(isub); isub = isub + 1;
   PHI = phi_corot(R,LON,m,q,mu);
   %contourf(hca,X/RE,Y/RE,PHI,Ncont)
-  pcolor(hca,X/RE,Y/RE,PHI)
+  pcolor(hca,X/RE,Y/RE,PHI*1e-3)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
   hca.XLabel.String = 'x^{GSM} (RE)';
@@ -148,7 +149,7 @@ end
 if 1 % phi_conv
   hca = h(isub); isub = isub + 1;
   PHI = phi_conv(R,LON,m,q,mu);
-  contourf(hca,X/RE,Y/RE,PHI,Ncont)
+  contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
   hca.XLabel.String = 'x^{GSM} (RE)';
@@ -159,14 +160,25 @@ end
 if 1 % phi_gradB + phi_corot + phi_conv
   hca = h(isub); isub = isub + 1;
   PHI = phi(R,LON,m,q,mu);
-  contourf(hca,X/RE,Y/RE,PHI,Ncont)
+  contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)
   %pcolor(hca,X/RE,Y/RE,PHI)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
   hca.XLabel.String = 'x^{GSM} (RE)';
   axis(hca,'equal')
-  hca.Title.String = {'Total potential',sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu = %g J/T', m/me, q/e, W_eV,mu)};
+  hca.Title.String = {'Total potential'};%,sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu = %g J/T', m/me, q/e, W_eV,mu)};
   hcb = colorbar(hca);
+  hcb.YLabel.String = 'Potential (kV)';
+
+  % Find saddle point  
+  [nx,ny,nz] = surfnorm(X,Y,PHI);
+  [az,el,rho] = cart2sph(nx,ny,nz);   % find azimuth and elevation
+  [~,ix] = max(el(:));  
+  [~,ind]=max(abs(nz(:)));
+  hold(hca,'on')
+  contour(X/RE,Y/RE,PHI,PHI(ind)*[1 1],'k:','linewidth',2)
+  hold(hca,'off')
+
 end
 if 0
 hca = h(isub); isub = isub + 1;
@@ -184,7 +196,7 @@ end
 colormap(irf_colormap('waterfall'))
 
 hlinks = linkprop(h,{'CLim'});
-hlinks.Targets(1).CLim = 4e4*[-1 1];
+hlinks.Targets(1).CLim = 5e1*[-1 1];
 
 c_eval('axis(h(?),''square'');',1:numel(h))
 c_eval('h(?).FontSize = 14;',1:numel(h))
@@ -193,7 +205,108 @@ c_eval('h(?).LineWidth = 1;',1:numel(h))
 hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
 delete(hb(1:3));
 compact_panels(0.01,0.01)
-h(=)
+
 hb(4).Position(1) = hca.Position(1) + hca.Position(3)+0.01;
+c_eval('h(?).YLabel = [];',2:4)
+c_eval('h(?).YTickLabel = [];',2:4)
+
+%% Drift frequencies
+c = 299792458;
+e = 1.6022e-19;
+kB = 1.3806e-23;
+mu0 = 1.2566e-06;
+RE = 6.3712e+06; % m
+M = 8.22e22; % A m^2
+me = 9.1094e-31;
+mp = 1.6726e-27;
+wE = 2*pi/(24*60*60); % Earth's rotation frequency, rad/s
+Econv = 1*[0.5 2]*1e3/(RE); % kV/RE - > V/m (to have V in SI units)
 
 
+
+E0 = 0.3*1e-3; % V/m
+W_eV = 1000;
+W_J = W_eV*e;
+%v = sqrt(2*W_J/m);
+
+Bz = @(r) mu0*M./(4*pi*r.^3);
+mu = @(r,W_J) W_J./Bz(r);
+
+v_rel = @(W,m) c*sqrt(1-1./(W.*e./(m*c^2)+1).^2); 
+v_nonrel = @(W,m) sqrt(2*W.*e./m); 
+
+gamma = @(W,m) 1./sqrt(1-v_rel(W,m).^2/c^2);
+
+w_gyro = @(W,m,r) e*Bz(r)./(m.*gamma(W,m));
+T_gyro = @(W,m,r) 2*pi./w_gyro(W,m,r);
+
+r_gyro = @(W,m,r) sqrt(2*W*e/m)./w_gyro(W,m,r);
+
+clear h
+nrows = 2; ncols = 2; ipanel = 0;
+for irow = 1:nrows, for icol = 1:ncols, ipanel = ipanel + 1; h(ipanel) = subplot(nrows,ncols,ipanel); end, end
+isub = 1;
+
+Wvec = logspace(0,6,100); % eV
+REvec = linspace(1,8,80)*RE;
+[WVEC,REVEC] = ndgrid(Wvec,REvec);
+
+if 1 % Relativistic and non-relativistic speeds
+  V_rel = v_rel(WVEC,me);
+  V_rel = v_rel(WVEC,me);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,V_rel/c,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Relativistic speed, v/c';
+end
+%%
+
+if 1 % Larmor frequency
+  V_rel = v_rel(WVEC,me);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,V_rel/c,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Relativistic speed, v/c';
+end
+if 1 % gamma
+  Gamma = gamma(WVEC,me);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,Gamma,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = '\gamma';
+end
+if 1 % Larmor frequency
+  F_L = w_gyro(WVEC,me,REVEC)/(2*pi);
+  hca = h(isub); isub = isub + 1;
+  [C,h] = contourf(hca,REVEC/RE,WVEC,log10(F_L),20);
+  clabel(C,h,'LabelSpacing',200,'Color','k','FontWeight','bold')
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Larmor frequency (Hz)';
+end
+if 1 % Larmor period
+  T_L = T_gyro(WVEC,me,REVEC);
+  hca = h(isub); isub = isub + 1;
+  contourf(hca,REVEC/RE,WVEC,T_L,20)
+  %hca.YTick = 10.^(-7:1:10);
+  hca.YScale = 'log';
+  hca.YLabel.String = 'Kinetic energy (eV)';
+  hca.XLabel.String = 'L';
+  hcb = colorbar(hca);
+  hcb.Label.String = 'Larmor period (s)';
+end
