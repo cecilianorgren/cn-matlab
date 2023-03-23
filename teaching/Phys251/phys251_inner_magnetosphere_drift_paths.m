@@ -94,8 +94,8 @@ phi_corot = @(r,lon,m,q,W_J) - wE*mu0*M./(8*pi*r);
 phi_conv = @(r,lon,m,q,W_J) - E0*r.*sin(lon);
 
 
-r = RE*linspace(3,15,20);
-r = RE*logspace(log10(2),log10(15),30);
+r = RE*linspace(3,15,50);
+r = RE*logspace(log10(2),log10(15),120);
 lon = linspace(0,2*pi,100);
 
 [R,LON] = ndgrid(r,lon);
@@ -114,7 +114,7 @@ isub = 1;
 Ncont = 30;
 R_Bref = 5*RE;
 B_ref = Bz(R_Bref);
-m = mp; q = e; W_eV = 0e4; mu = W_eV*e/B_ref;
+m = me; q = -e; W_eV = 1e4; mu = W_eV*e/B_ref; E_0 = 0.3e-3;
 if 1 % phi_gradB
   hca = h(isub); isub = isub + 1;
   PHI = phi_gradB(R,LON,m,q,mu);
@@ -131,7 +131,8 @@ if 1 % phi_gradB
     sprintf('W = %g eV', W_eV),...
     sprintf('R_{ref for mu} = %.0f R_E', R_Bref/RE),...
     sprintf('B(R_{ref for mu}) = %g T', B_ref),...
-    sprintf('mu = %g J/T = %g MeV/G ',mu,mu*1e-3/e*1e-5)},[0.05 1.13],'color','k','fontsize',14);
+    sprintf('mu = %g J/T = %g MeV/G',mu,mu*1e-3/e*1e-5),...
+    sprintf('E_{conv} = %g V/m ',E0)},[0.05 1.13],'color','k','fontsize',14);
 end 
 if 1 % phi_corot
   hca = h(isub); isub = isub + 1;
@@ -168,6 +169,16 @@ if 1 % phi_gradB + phi_corot + phi_conv
   hca.Title.String = {'Total potential'};%,sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu = %g J/T', m/me, q/e, W_eV,mu)};
   hcb = colorbar(hca);
   hcb.YLabel.String = 'Potential (kV)';
+
+  % Find saddle point  
+  [nx,ny,nz] = surfnorm(X,Y,PHI);
+  [az,el,rho] = cart2sph(nx,ny,nz);   % find azimuth and elevation
+  [~,ix] = max(el(:));  
+  [~,ind]=max(abs(nz(:)));
+  hold(hca,'on')
+  contour(X/RE,Y/RE,PHI,PHI(ind)*[1 1],'k:','linewidth',2)
+  hold(hca,'off')
+
 end
 if 0
 hca = h(isub); isub = isub + 1;
