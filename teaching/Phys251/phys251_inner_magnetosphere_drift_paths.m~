@@ -327,9 +327,9 @@ Econv = 1*[0.5 2]*1e3/(RE); % kV/RE - > V/m (to have V in SI units)
 
 
 E0 = 0.3*1e-3; % V/m
-W_eV = [1e2 1e3 1e4 1e5];
+W_eV = [1e3 1e4 1e5];
 W_J = W_eV*e;
-q = e;
+q = -e;
 
 vgradB = @(W,r,q) -W*12*pi.*r.^2/(q*mu0*M);
 vcorot = @(r) -wE*r;
@@ -343,7 +343,7 @@ nrows = 1; ncols = 1; ipanel = 0;
 for irow = 1:nrows, for icol = 1:ncols, ipanel = ipanel + 1; h(ipanel) = subplot(nrows,ncols,ipanel); end, end
 isub = 1;
 
-if 0 % drift speeds
+if 1
   hca = h(isub); isub = isub + 1;
   plot(hca,rvec/RE,vcorot(rvec)*1e-3,'k--','linewidth',1)
   hold(hca,'on')
@@ -355,60 +355,12 @@ if 0 % drift speeds
   hca.XLabel.String = 'L = r_{eq}/R_E';
   hca.YLabel.String = 'Rotation speed (km/s)';
   hca.FontSize = 13;
-  for iW = 1:numel(W_eV), leginp(iW).W = W_eV(iW); leginp(iW).q = q/e; end  
-  legs = arrayfun(@(x)(sprintf('v_{grad-B}: W = %g eV, q = %ge',x.W,x.q)), leginp, 'UniformOutput', false);
+  leginp.W = W_eV;
+  leginp.q = [q q q];
+  legs = arrayfun(@(x)(sprintf('v_{grad-B}, W = %g eV',x)), W_eV, 'UniformOutput', false);
   legs = {'v_{corot}',legs{:}};
-  hleg = legend(hca,legs{:},'box','off','location','best');
+  hleg = legend(hca,legs{:},'box','off','location','northwest');
   hleg.Box = 'off';
-  hca.YTick = -1000:20:1000;
-end
-if 0 % drift frequency
-  hca = h(isub); isub = isub + 1;
-  t_corot = abs(2*pi*rvec./vcorot(rvec));
-  t_gradB = abs(2*pi*R./vgradB(W,R,q));
-  
-  plot(hca,rvec/RE,1./t_corot,'k--','linewidth',1)
-  hold(hca,'on')
-  plot(hca,rvec/RE,1./t_gradB,'linewidth',1)
-  hold(hca,'off')
-  
-  hca.LineWidth = 1;
-  hca.FontWeight = 'bold';
-  hca.XLabel.String = 'L = r_{eq}/R_E';
-  hca.YLabel.String = 'Rotation frequency (Hz)';
-  hca.FontSize = 13;
-  for iW = 1:numel(W_eV), leginp(iW).W = W_eV(iW); leginp(iW).q = q/e; end  
-  legs = arrayfun(@(x)(sprintf('v_{grad-B}: W = %g eV, q = %ge',x.W,x.q)), leginp, 'UniformOutput', false);
-  legs = {'v_{corot}',legs{:}};
-  hleg = legend(hca,legs{:},'box','off','location','best');
-  hleg.Box = 'off';
-  %hca.YTick = -1000:20:1000;
-  hca.XGrid = 'on';
-  hca.YGrid = 'on';
-end
-if 1 % drift periods
-  hca = h(isub); isub = isub + 1;
-  t_corot = abs(2*pi*rvec./vcorot(rvec));
-  t_gradB = abs(2*pi*R./vgradB(W,R,q));
-  
-  plot(hca,rvec/RE,t_corot/60/60,'k--','linewidth',1)
-  hold(hca,'on')
-  plot(hca,rvec/RE,t_gradB/60/60,'linewidth',1)
-  hold(hca,'off')
-  
-  hca.LineWidth = 1;
-  hca.FontWeight = 'bold';
-  hca.XLabel.String = 'L = r_{eq}/R_E';
-  hca.YLabel.String = 'Rotation period (h)';
-  hca.FontSize = 13;
-  for iW = 1:numel(W_eV), leginp(iW).W = W_eV(iW); leginp(iW).q = q/e; end  
-  legs = arrayfun(@(x)(sprintf('v_{grad-B}: W = %g eV, q = %ge',x.W,x.q)), leginp, 'UniformOutput', false);
-  legs = {'v_{corot}',legs{:}};
-  hleg = legend(hca,legs{:},'box','off','location','best');
-  hleg.Box = 'off';
-  %hca.YTick = -1000:20:1000;
-  hca.XGrid = 'on';
-  hca.YGrid = 'on';
 end
 
 

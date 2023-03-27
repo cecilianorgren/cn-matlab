@@ -166,7 +166,7 @@ i_loss_theta = find(r(req,theta)>loss_altitude,1,'first');
 loss_theta = theta(i_loss_theta);
 
 
-nrows = 1; ncols = 2; ipanel = 0;
+nrows = 1; ncols = 3; ipanel = 0;
 h = gobjects(nrows,ncols);
 for irow = 1:nrows; for icols = 1:ncols; ipanel = ipanel + 1; h(ipanel) = subplot(nrows,ncols,ipanel); end; end 
 isub = 1;
@@ -198,8 +198,7 @@ if 1 % r(r0,theta)
   hl2 = plot(hca,theta,theta*0+RE*1e-3+100,'k');
   hold(hca,'off')    
   hca.XLabel.String = '\theta (colatitude)';
-  hca.XLabel.String = 'Colatitude (\theta, deg)';
-  hca.YLabel.String = 'Radial distance (km)';
+  hca.YLabel.String = 'radial distance (km)';
   hca.XLim = theta([1 end]);
   irf_legend(hca,{sprintf('L = %g', req/RE)},[0.02 0.98],'fontsize',fontsize,'color','k') 
   hold(hca,'on')
@@ -207,41 +206,42 @@ if 1 % r(r0,theta)
   hold(hca,'off')
   legend(hca,{'field line','loss cone altitude','loss cone colatitude'},'box','off','location','best')
 end
-if 1 % alpha(r0,theta), mu as lines
+if 1 % r(r0,theta)
   hca = h(isub); isub = isub + 1;
-  
-  plMU = real(MU);
-  plMU = MU;
-  plMU(abs(imag(ALPHA))>0) = NaN;
-  mulev = logspace(-12,-8,10);
-  mulev = 20;
-  
+  hl1 = plot(hca,theta,r(req,theta)*1e-3);
+  hold(hca,'on')
+  hl2 = plot(hca,theta,theta*0+RE*1e-3+100,'k');
+  hold(hca,'off')    
+  hca.XLabel.String = '\theta (colatitude)';
+  hca.YLabel.String = 'radial distance (km)';
+  hca.XLim = theta([1 end]);
+  irf_legend(hca,{sprintf('L = %g', req/RE)},[0.02 0.98],'fontsize',fontsize,'color','k') 
+  hold(hca,'on')
+  plot(hca,loss_theta*[1 1],hca.YLim,'k--')
+  hold(hca,'off')
+  legend(hca,{'field line','loss cone altitude','loss cone colatitude'},'box','off','location','best')
+end
+if 1 % alpha(r0,theta)
+  hca = h(isub); isub = isub + 1;
   plALPHA = real(ALPHA);
   plALPHA = ALPHA;
   plALPHA(abs(imag(plALPHA))>0) = NaN;
-  
-  pcolor(hca,TH,AL0,plALPHA) 
-  shading(hca,'flat')
- 
-  hold(hca,'on')  
-  contour(hca,TH,AL0,plMU,mulev,'k') 
-  plot(hca,loss_theta*[1 1],[0 90],'k--')
-  hold(hca,'off')
-  
+  contourf(hca,TH,AL0,plALPHA,[0:10:90]) 
   shading(hca,'flat')
   hca.XLabel.String = '\theta (colatitude)';
-  hca.XLabel.String = 'Colatitude (\theta, deg)';
-  hca.YLabel.String = 'Equatorial pitch angle (\theta_{eq}, deg)';
+  hca.YLabel.String = 'Equatorial pitch angle (deg)';
   hcb = colorbar(hca);
   hcb.Label.String = '\alpha (pitch angle)';
-  hcb.Label.String = 'Pitch angle (\alpha, deg)';
   hcb.FontSize = fontsize;
   hca.CLim = [0 90];
   colormap(hca,irf_colormap('waterfall'))
   irf_legend(hca,{sprintf('L = %g', req/RE)},[0.02 0.98],'fontsize',fontsize,'color','k')
   hca.XLim = theta([1 end]);
+  hold(hca,'on')
+  plot(hca,loss_theta*[1 1],[0 90],'k--')
+  hold(hca,'off')
 end
-if 0 % mu(r0,theta)
+if 1 % mu(r0,theta)
   hca = h(isub); isub = isub + 1;
   plMU = real(MU);
   plMU = MU;
@@ -268,6 +268,4 @@ if 0 % mu(r0,theta)
   %hcb.Position = [0.4 0.27 0.3 0.02];
 end
 c_eval('h(?).FontSize = fontsize;',1:numel(h))
-c_eval('h(?).Position(2) = 0.20;',1:numel(h))
-c_eval('h(?).Position(4) = 0.7;',1:numel(h))
 %irf_plot_axis_align(h)
