@@ -18,10 +18,10 @@ X = R.*sind(TH);
 %%
 f_r2 = @(r1,th1,th2) r1.*sind(th2).^2./(sind(th1).^2);
 
-h = 150;
-th1 = 30;
-th2 = 30:150;
-r1 = RE + h; % km
+h = 0; % km
+th1 = 90;
+th2 = [10:1:170];
+r1 = 5*RE; % km
 
 r2 = f_r2(r1,th1,th2);
 
@@ -31,11 +31,11 @@ x = r2.*sind(th2);
 
 hca = subplot(1,1,1);
 
-plot(hca,x,z)
+plot(hca,x/RE,z/RE,'-')
 
 
 hold(hca,'on')
-plot(hca,RE*cosd(0:360),RE*sind(0:360),'k')
+plot(hca,RE*cosd(0:360)/RE,RE*sind(0:360)/RE,'k')
 hold(hca,'off')
 
 axis(hca,'equal')

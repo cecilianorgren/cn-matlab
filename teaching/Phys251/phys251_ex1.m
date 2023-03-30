@@ -2,7 +2,7 @@
 mu0 = 1.2566e-06;
 M = 8.22e22; % A m^2
 RE = 6.3712e+03; % km
-h = 100;
+h = 150;
 
 r0 = RE;
 th0 = 90-60; % at field line crossing Earth's surface, from lat to colat
@@ -11,7 +11,7 @@ th2 = 90; % at equatorial plan
 
 % We have r1 = Re+h, th2=90 deg, we need to get th1, r2 
 
-th1 = asind(sqrt((RE+h)/4/RE));
+th1 = asind(sqrt((RE+h)/4/RE)*sind(th0));
 %th1 = 30; % trying to see if assuming th2 = th0 changes anything?
 r2 = r0*sind(th2)^2/sind(th0)^2;
 
@@ -24,18 +24,24 @@ B2 = f_B(r2,th2);
 
 pa1 = 90; % mirroring
 
-pa2 = asind(sqrt(B2/B1)*sind(pa1))
+pa2 = asind(sqrt(B2/B1)*sind(pa1));
 
 B2B1 = (sqrt(1+3*cosd(th2))/sind(th2)^6)/(sqrt(1+3*cosd(th1))/sind(th1)^6);
 B2B1_th90 = (sqrt(1+3*0)/1^6)/(sqrt(1+3*cosd(th1))/sind(th1)^6);
 
-% c
+pa2 = asind(sqrt(B2B1_th90));
+
+%% c
 h = 100; % km
 th0 = 90-[15 30 45 60 70];
+th0 = 90-60;
 th1 = asind(sqrt((RE+h)/RE)*sind(th0));
 
 B2B1 = sind(th1).^6./sqrt(1+3*cosd(th1).^2);
 pa2 = asind(sqrt(B2B1));
+
+pa2_rad = pa2*pi/180;
+losscone_solidangle = (1-cos(pa2_rad))*2*pi; 
 
 
 %% Plasma pause radius
