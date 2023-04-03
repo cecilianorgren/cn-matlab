@@ -240,7 +240,7 @@ mu = @(r,W_J) W_J./Bz(r);
 v_rel = @(W,m) c*sqrt(1-1./(W.*e./(m*c^2)+1).^2); 
 %v_rel2 = @(W,m) c*sqrt(1-(m*c^2/(W.*e + m*c^2)).^2); 
 v_nonrel = @(W,m) sqrt(2*W.*e./m); 
-ode
+%ode
 gamma = @(W,m) 1./sqrt(1-v_rel(W,m).^2/c^2);
 
 w_gyro = @(W,m,r) e*Bz(r)./(m.*gamma(W,m));
@@ -261,7 +261,7 @@ if 1 % Relativistic and non-relativistic speeds
   V_rel = v_rel(Wvec,me);
   V_nonrel = v_nonrel(Wvec,me);
   hca = h(isub); isub = isub + 1;
-  plot(hca,Wvec,V_rel/c,Wvec,V_nonrel/c,Wvec,Wvec*0+1,'k--')
+  plot(hca,Wvec,V_rel/c,Wvec,V_nonrel/c,Wvec,Wvec*0+1,'k--','LineWidth',1)
   %hca.YTick = 10.^(-7:1:10);
   hca.XScale = 'log';
   hca.YScale = 'log';
@@ -269,8 +269,15 @@ if 1 % Relativistic and non-relativistic speeds
   hca.YLabel.String = 'Speed (c)';
   %hcb = colorbar(hca);
   %hcb.Label.String = 'Relativistic speed, v/c';
-  legend(hca,{'Relativistic','Non-relativsistic','Speed of light'},'box','off')
+  legend(hca,{'Relativistic','Non-relativsistic','Speed of light'},'box','off','Location','best')
+  hca.LineWidth = 1;
+  hca.FontWeight = 'bold';
+  hca.XLim = Wvec([1 end]);
+  hca.FontSize = 12;
+  hca.XTick = 10.^(-6:3:10);
+  hca.YTick = 10.^(-6:1:10);
 end
+
 %%
 
 if 1 % Larmor frequency
