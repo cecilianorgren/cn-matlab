@@ -88,14 +88,14 @@ Bz = @(r) mu0*M./(4*pi*r.^3);
 mu = @(r,W_J) W_J./Bz(r);
 %q = -e;
 
-phi = @(r,lon,m,q,mu) mu*Bz(r)/q - wE*mu0*M./(8*pi*r) - E0*r.*sin(lon);
+phi = @(r,lon,m,q,mu,E0) mu*Bz(r)/q - wE*mu0*M./(8*pi*r) - E0*r.*sin(lon);
 phi_gradB = @(r,lon,m,q,mu) mu*Bz(r)/q;
 phi_corot = @(r,lon,m,q,W_J) - wE*mu0*M./(8*pi*r);
-phi_conv = @(r,lon,m,q,W_J) - E0*r.*sin(lon);
+phi_conv = @(r,lon,m,q,W_J,E0) - E0*r.*sin(lon);
 
 
-r = RE*linspace(3,15,50);
-r = RE*logspace(log10(2),log10(15),120);
+r = RE*linspace(1,15,50);
+r = RE*logspace(log10(1),log10(15),120);
 lon = linspace(0,2*pi,100);
 
 [R,LON] = ndgrid(r,lon);
@@ -114,7 +114,7 @@ isub = 1;
 Ncont = 30;
 R_Bref = 5*RE;
 B_ref = Bz(R_Bref);
-m = me; q = -e; W_eV = 1e4; mu = W_eV*e/B_ref; E_0 = 0.3e-3;
+m = me; q = -e; W_eV = 0e4; mu = W_eV*e/B_ref; E0 = 0.8e-3;
 if 1 % phi_gradB
   hca = h(isub); isub = isub + 1;
   PHI = phi_gradB(R,LON,m,q,mu);
@@ -132,7 +132,8 @@ if 1 % phi_gradB
     sprintf('R_{ref for mu} = %.0f R_E', R_Bref/RE),...
     sprintf('B(R_{ref for mu}) = %g T', B_ref),...
     sprintf('mu = %g J/T = %g MeV/G',mu,mu*1e-3/e*1e-5),...
-    sprintf('E_{conv} = %g V/m ',E0)},[0.05 1.13],'color','k','fontsize',14);
+    sprintf('E_{conv} = %g V/m ',E0)},[-0.0 1.13],'color','k','fontsize',14);
+  irf_legend(hca,{sprintf('E_{conv} = %g V/m ',E0)},[-0.0 1.23],'color','k','fontsize',14);
 end 
 if 1 % phi_corot
   hca = h(isub); isub = isub + 1;
@@ -148,7 +149,7 @@ if 1 % phi_corot
 end
 if 1 % phi_conv
   hca = h(isub); isub = isub + 1;
-  PHI = phi_conv(R,LON,m,q,mu);
+  PHI = phi_conv(R,LON,m,q,mu,E0);
   contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
@@ -156,10 +157,11 @@ if 1 % phi_conv
   axis(hca,'equal')
   hca.Title.String = {'Convective potential'};%,sprintf('m = %.0f m_e, q = %.0f e, W = %g eV, mu= %g J/T', m/me, q/e, W_eV,mu)};
   hcb = colorbar(hca);
+  irf_legend(hca,{sprintf('E_{conv} = %g V/m ',E0)},[0.02 0.98],'color','k','fontsize',14,'fontweight','bold');
 end
 if 1 % phi_gradB + phi_corot + phi_conv
   hca = h(isub); isub = isub + 1;
-  PHI = phi(R,LON,m,q,mu);
+  PHI = phi(R,LON,m,q,mu,E0);
   contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)
   %pcolor(hca,X/RE,Y/RE,PHI)
   shading(hca,'flat')
@@ -178,6 +180,7 @@ if 1 % phi_gradB + phi_corot + phi_conv
   hold(hca,'on')
   contour(X/RE,Y/RE,PHI,PHI(ind)*[1 1],'k:','linewidth',2)
   hold(hca,'off')
+  irf_legend(hca,{sprintf('E_{conv} = %g V/m ',E0)},[0.02 0.98],'color','k','fontsize',14,'fontweight','bold');
 
 end
 if 0
@@ -195,8 +198,10 @@ end
 %colormap(pic_colors('candy3'))
 colormap(irf_colormap('waterfall'))
 
-hlinks = linkprop(h,{'CLim'});
+hlinks = linkprop(h,{'CLim','XLim','YLim'});
 hlinks.Targets(1).CLim = 5e1*[-1 1];
+hlinks.Targets(1).XLim = 0.99*10*[-1 1];
+hlinks.Targets(1).YLim = 0.99*10*[-1 1];
 
 c_eval('axis(h(?),''square'');',1:numel(h))
 c_eval('h(?).FontSize = 14;',1:numel(h))
