@@ -1,3 +1,4 @@
+%%
 wE = 2*pi/(24*60*60);
 RE = 6371200; % m
 me = 9.1094e-31;
@@ -79,23 +80,27 @@ wE = 2*pi/(24*60*60); % Earth's rotation frequency, rad/s
 Econv = 1*[0.5 2]*1e3/(RE); % kV/RE - > V/m (to have V in SI units)
 
 
-E0 = 0.3*1e-3; % V/m
-W_eV = 1000;
-W_J = W_eV*e;
+%E0 = 0.3*1e-3; % V/m
+%W_eV = 1e1;
+%W_J = W_eV*e;
 %v = sqrt(2*W_J/m);
 
 Bz = @(r) mu0*M./(4*pi*r.^3);
 mu = @(r,W_J) W_J./Bz(r);
 %q = -e;
 
-phi = @(r,lon,m,q,mu,E0) mu*Bz(r)/q - wE*mu0*M./(8*pi*r) - E0*r.*sin(lon);
+
 phi_gradB = @(r,lon,m,q,mu) mu*Bz(r)/q;
-phi_corot = @(r,lon,m,q,W_J) - wE*mu0*M./(8*pi*r);
-phi_conv = @(r,lon,m,q,W_J,E0) - E0*r.*sin(lon);
+phi_corot = @(r,lon) - wE*mu0*M./(8*pi*r);
+phi_conv = @(r,lon,E0) - E0*r.*sin(lon);
+
+%phi = @(r,lon,m,q,mu,E0) mu*Bz(r)/q - wE*mu0*M./(8*pi*r) - E0*r.*sin(lon);
+
+phi = @(r,lon,m,q,mu,E0) phi_gradB(r,lon,m,q,mu) + phi_corot(r,lon) + phi_conv(r,lon,E0);
 
 
-r = RE*linspace(1,15,50);
-r = RE*logspace(log10(1),log10(15),120);
+r = RE*linspace(2,15,50);
+r = RE*logspace(log10(3),log10(15),120);
 lon = linspace(0,2*pi,100);
 
 [R,LON] = ndgrid(r,lon);
@@ -111,10 +116,10 @@ for irow = 1:nrows, for icol = 1:ncols, ipanel = ipanel + 1; h(ipanel) = subplot
 isub = 1;
 
 % Define particle parameters
-Ncont = 30;
+Ncont = 40;
 R_Bref = 5*RE;
 B_ref = Bz(R_Bref);
-m = me; q = -e; W_eV = 0e4; mu = W_eV*e/B_ref; E0 = 0.8e-3;
+m = me; q = e; W_eV = 1e5; mu = W_eV*e/B_ref; E0 = 0.8e-3;
 if 1 % phi_gradB
   hca = h(isub); isub = isub + 1;
   PHI = phi_gradB(R,LON,m,q,mu);
@@ -137,7 +142,7 @@ if 1 % phi_gradB
 end 
 if 1 % phi_corot
   hca = h(isub); isub = isub + 1;
-  PHI = phi_corot(R,LON,m,q,mu);
+  PHI = phi_corot(R,LON);
   %contourf(hca,X/RE,Y/RE,PHI,Ncont)
   pcolor(hca,X/RE,Y/RE,PHI*1e-3)
   shading(hca,'flat')
@@ -149,7 +154,7 @@ if 1 % phi_corot
 end
 if 1 % phi_conv
   hca = h(isub); isub = isub + 1;
-  PHI = phi_conv(R,LON,m,q,mu,E0);
+  PHI = phi_conv(R,LON,E0);
   contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
@@ -161,9 +166,11 @@ if 1 % phi_conv
 end
 if 1 % phi_gradB + phi_corot + phi_conv
   hca = h(isub); isub = isub + 1;
-  PHI = phi(R,LON,m,q,mu,E0);
-  contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)
-  %pcolor(hca,X/RE,Y/RE,PHI)
+  PHI = phi(R,LON,m,q,mu,E0); % (r,lon,m,q,mu,E0)
+  %Ncont = logspace(log10(min(PHI(:)*1e-3)),log10(mas(PHI(:)*1e-3)),20);  
+  contourf(hca,X/RE,Y/RE,PHI*1e-3,Ncont)  
+  
+  %pcolor(hca,X/RE,Y/RE,PHI*1e-3)
   shading(hca,'flat')
   hca.YLabel.String = 'y^{GSM} (RE)';
   hca.XLabel.String = 'x^{GSM} (RE)';
@@ -200,12 +207,15 @@ colormap(irf_colormap('waterfall'))
 
 hlinks = linkprop(h,{'CLim','XLim','YLim'});
 hlinks.Targets(1).CLim = 5e1*[-1 1];
-hlinks.Targets(1).XLim = 0.99*10*[-1 1];
-hlinks.Targets(1).YLim = 0.99*10*[-1 1];
+%hlinks.Targets(1).CLim = prctile(abs(PHI(:)),70)*[-1 1]*1e-3;
+
+hlinks.Targets(1).XLim = 0.99*15*[-1 1];
+hlinks.Targets(1).YLim = 0.99*15*[-1 1];
 
 c_eval('axis(h(?),''square'');',1:numel(h))
 c_eval('h(?).FontSize = 14;',1:numel(h))
 c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).XDir = ''reverse'';',1:numel(h))
 
 hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
 delete(hb(1:3));
