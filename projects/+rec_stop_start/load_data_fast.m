@@ -3,7 +3,7 @@ tint_fast = irf.tint('2017-07-25T20:00:00.00Z/2017-07-25T24:00:00.00Z');
 
 % Load datastore
 localuser = datastore('local','user');
-%mms.db_init('local_file_db',['/Users/' localuser '/data']);
+%mms.db_init('local_file_db',[' /Users/' localuser '/data']);
 mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 db_info = datastore('mms_db');   
 

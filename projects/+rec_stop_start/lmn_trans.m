@@ -9,6 +9,8 @@ Radjust = [-1 0 0; 0 -1 0;0 0 1]; % early
 %Radjust = [1 0 0; 0 1 0; 0 0 1];
 R = v*Radjust';
 
+%% No transformation
+R = [1 0 0; 0 1 0; 0 0 1];
 %% USE THIS ONE FOR LARGE SCALE
 r1 = [1 -0.3 0]; r1 = r1/norm(r1);
 r3 = cross(cross(r1,[0 0 1]),r1);
@@ -32,6 +34,7 @@ r2 = cross(r3,r1);
 R = [r1;r2;r3];
 
 %%
+
 L = R(1,:);
 M = R(2,:);
 N = R(3,:);

@@ -294,9 +294,13 @@ elim = [200 40000];
 
 
 
-c_eval('if1Dx?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[1 0 0],''vint'',vint);',ic)
-c_eval('if1Dy?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
-c_eval('if1Dz?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[0 0 1],''vint'',vint);',ic)
+%c_eval('if1Dx?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[1 0 0],''vint'',vint);',ic)
+%c_eval('if1Dy?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+%c_eval('if1Dz?_700 = iPDist?.elim([700 Inf]).reduce(''1D'',[0 0 1],''vint'',vint);',ic)
+
+c_eval('if1Dx? = iPDist?.elim([700 Inf]).reduce(''1D'',[1 0 0],''vint'',vint);',ic)
+c_eval('if1Dy? = iPDist?.elim([700 Inf]).reduce(''1D'',[0 1 0],''vint'',vint);',ic)
+c_eval('if1Dz? = iPDist?.elim([700 Inf]).reduce(''1D'',[0 0 1],''vint'',vint);',ic)
 
 %%
 c_eval('if1Dx? = iPDist?.elim(elim).reduce(''1D'',[1 0 0],''vint'',vint);',ic)

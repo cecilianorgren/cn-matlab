@@ -31,7 +31,7 @@ hca.YScale = 'log';
 hca.XLabel.String = '\nu_{en}/\Omega_{e}';
 hca.YLabel.String = '\nu_{in}/\Omega_{i}';
 hcb = colorbar(hca);
-hcb.Label.String = '\sigma_P/(ne/B)';
+hcb.Label.String = '\sigma_H/(ne/B)';
 colormap(hca,pic_colors('blue_red'))
 hca.CLim = [-1 1];
 hold(hca,'on')
@@ -50,7 +50,7 @@ hca.YScale = 'log';
 hca.XLabel.String = '\nu_{en}/\Omega_{e}';
 hca.YLabel.String = '\nu_{in}/\Omega_{i}';
 hcb = colorbar(hca);
-hcb.Label.String = '\sigma_H/(ne/B)';
+hcb.Label.String = '\sigma_P/(ne/B)';
 colormap(hca,pic_colors('blue_red'))
 hca.CLim = [-1 1];
 hold(hca,'on')

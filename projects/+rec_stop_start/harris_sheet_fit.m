@@ -2516,7 +2516,7 @@ mf_L_J = solve(Jy,L);
 options = optimset(); % 'TolFun',0.2
 doPlot = 1;
 
-xx = lmnB1.resample(ni1).tlim(tint_harris).x.data;  
+xx = gseB1.resample(ni1).tlim(tint_harris).x.data;  
 
 ffit = @(x,y0,a) y0*(1-a*x.^3);
 
