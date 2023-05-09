@@ -1,5 +1,5 @@
 %% Load data
-ic = 2;
+ic = 3;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
 % Load datastore
@@ -794,11 +794,9 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:01.800000000Z';...
   '2017-07-11T22:34:02.300000000Z';...
   '2017-07-11T22:34:02.800000000Z';...
-  '2017-07-11T22:34:03.300000000Z';...
-  '2017-07-11T22:34:03.670000000Z';...
-  '2017-07-11T22:34:04.300000000Z']);
+  '2017-07-11T22:34:03.300000000Z']);
 %times = times([2 3 4])+0.25;
-times = times + 0.05 + 0*0.25;
+times = times + 0.25;
 
 
 vint = [-Inf Inf];
@@ -820,8 +818,7 @@ hca = h1(1);
 set(hca,'colororder',mms_colors('12'))
 irf_plot(hca,{mvaPe1.yz,mvaPe3.yz},'comp')
 hold(hca,'on')
-fhigh = 2;
-irf_plot(hca,{mvaPe1.yz.filt(0,fhigh,[],5),mvaPe2.yz.filt(0,fhigh,[],5)},'comp')
+irf_plot(hca,{mvaPe1.yz.filt(0,0.150,[],),mvaPe3.yz},'comp')
 hold(hca,'off')
 
 hca.YLabel.String = 'P_{eMN} (nPa)';
@@ -832,9 +829,9 @@ hmark = irf_pl_mark(hca,times.epochUnix,'k');
 c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
 xtickangle(h1,0)
 h1.Position(4) = 0.16;
-%
+
 isub = 1;
-for ic = [1 2]
+for ic = [1 3]
   for itime = 1:times.length
     %hca = h2(isub); isub = isub + 1;
     time = times(itime);
@@ -871,10 +868,8 @@ for ic = [1 2]
 end
 
 hlinks_all = linkprop(h2,{'XLim','YLim'});
-%hlinks_f = linkprop(h2([1:nt]*[0 2]'),{'CLim'});
-%hlinks_p = linkprop(h2((nt+1):2*nt),{'CLim'});
-hlinks_f = linkprop(h2([1:nt 2*nt+(1:nt)]),{'CLim'});
-hlinks_p = linkprop(h2([(nt+1):2*nt 2*nt+((nt+1):2*nt)]),{'CLim'});
+hlinks_f = linkprop(h2(1:nt),{'CLim'});
+hlinks_p = linkprop(h2((nt+1):2*nt),{'CLim'});
 
 h2(1).XLim = 0.99*vg([1 end])*1e-3;
 h2(1).YLim = 0.99*vg([1 end])*1e-3;
