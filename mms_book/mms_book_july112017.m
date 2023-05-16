@@ -1,5 +1,5 @@
 %% Load data
-ic = 2;
+ic = 1;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
 % Load datastore
@@ -609,7 +609,7 @@ c_eval('h(?).FontSize = 14;',1:numel(h))
 c_eval('axis(h(?),''square'');',1:numel(h))
 
 %% 2D distribution and pressure contributions, MN, X times, with locations shown
-ic = 1;
+ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
 %t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
 times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
@@ -821,7 +821,7 @@ set(hca,'colororder',mms_colors('12'))
 irf_plot(hca,{mvaPe1.yz,mvaPe3.yz},'comp')
 hold(hca,'on')
 fhigh = 2;
-irf_plot(hca,{mvaPe1.yz.filt(0,fhigh,[],5),mvaPe2.yz.filt(0,fhigh,[],5)},'comp')
+irf_plot(hca,{mvaPe1.yz.filt(0,fhigh,[],5),mvaPe3.yz.filt(0,fhigh,[],5)},'comp')
 hold(hca,'off')
 
 hca.YLabel.String = 'P_{eMN} (nPa)';
@@ -834,7 +834,7 @@ xtickangle(h1,0)
 h1.Position(4) = 0.16;
 %
 isub = 1;
-for ic = [1 2]
+for ic = [1 3]
   for itime = 1:times.length
     %hca = h2(isub); isub = isub + 1;
     time = times(itime);
@@ -857,11 +857,12 @@ for ic = [1 2]
     % Reduce distributions
     c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
     c_eval('scpot = scPot?.resample(dist);',ic)  
+    c_eval('ve = mvaVe?;',ic)  
     vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
       
     % Plot
     hca = h2(isub); isub = isub + 1;
-    [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.y.resample(dist),mvaVe1.z.resample(dist));  
+    [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.y.resample(dist),ve.z.resample(dist));  
     hc_.Colorbar.YLabel.String = 'f_e(v_M,v_N)(v_M-v_M^{bulk})(v_N-v_N^{bulk}) (1/m^3)';
     colormap(hca,pic_colors('blue_red'))
     hca.CLim = max(abs(hca.CLim))*[-1 1];
