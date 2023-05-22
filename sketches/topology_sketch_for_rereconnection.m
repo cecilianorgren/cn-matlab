@@ -231,9 +231,9 @@ topology_arr{2} = @(x,y) -1*(2*oline(x,y,-5,0,0.1,0.2) ...
 
 % set up grid
 nx=201; ny=201;
-xlim = 12;
+xlim = 15;
 ylim = 8;
-x=linspace(-xlim,xlim,nx);
+x=linspace(-xlim,5,nx);
 y=linspace(-ylim,ylim,ny);
 [X,Y]=meshgrid(x,y);
 toplot=1:5:nx; 
@@ -245,7 +245,7 @@ t = linspace(1,10,nt);
 % set up figure
 figure(10) %figure('name','x-line')
 ncols = 1;
-nrows = 2;
+nrows = 1;
 npanels = ncols*nrows;
 for ip = 1:npanels
     h(ip) = subplot(nrows,ncols,ip);
@@ -281,16 +281,17 @@ if 1 % By (more than one time step)
 
     hca = h(isub); isub = isub + 1;
     %contour(hca,X(toplot,toplot),Y(toplot,toplot),xline(X(toplot,toplot),Y(toplot,toplot),1,1,t(it))); 
-    pcolor(hca,X(:,:),Y(:,:),By(:,:)); 
+    pcolor(hca,X(:,:),Y(:,:),-By(:,:)); 
     shading(hca,'flat');
     hold(hca,'on')
-    contour(hca,X(:,:),Y(:,:),topology(X(:,:),Y(:,:)),Alev,'k');     
+    contour(hca,X(:,:),Y(:,:),topology(X(:,:),Y(:,:)),Alev+0.093,'k');     
     %quiver(hca,X(toplot,toplot),Y(toplot,toplot),dYx(toplot,toplot),-dXx(toplot,toplot),'k');
     title(hca,'B_z')
     axis(hca,'equal');  
     xlabel(hca,'x'); 
     ylabel(hca,'z');
-    hca.XLim = xlim*[-1 1]; hca.YLim = ylim*[-1 1];
+    %hca.XLim = xlim*[-1 1]; 
+    %hca.YLim = ylim*[-1 1];
     hold(hca,'off')   
     hca.CLim = 0.05*[-1 1];
     colorbar('peer',hca)
