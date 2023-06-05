@@ -1,4 +1,4 @@
-function varargout = divP(R1,R2,R3,R4,P1,P2,P3,P4)
+function out = divP(R1,R2,R3,R4,P1,P2,P3,P4)
 
 % R are TSeries
 % P are 3x3 cell array of TSeries pressure tensos components
@@ -30,11 +30,4 @@ EPeZ = (EPeXZ.data(:,1)+EPeYZ.data(:,2)+EPeZZ.data(:,3));
 EPe = irf.ts_vec_xyz(EPeXX.time,[EPeX EPeY EPeZ]);
 %EPefac = irf_convert_fac(EPe,Bxyzav,Rxyz1);
 %EPe.representation{2} = {'x','y','z'};
-
-if nargout == 1
-  varargout{1} = EPe;
-elseif nargout == 3
-  varargout{1} = EPe;
-  varargout{2} = EPe;
-  varargout{3} = EPe;
-end
+out = EPe;
