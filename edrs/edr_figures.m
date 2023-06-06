@@ -74,7 +74,8 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.x.resample(dist),mvaVe1.y.resample(dist));  
+  %[ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.x.resample(dist),mvaVe1.y.resample(dist));  
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',[],[]);  
   hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
   colormap(hca,pic_colors('blue_red'))
   hca.CLim = max(abs(hca.CLim))*[-1 1];

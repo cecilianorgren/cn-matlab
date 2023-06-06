@@ -105,7 +105,7 @@ c_eval('Dng? = sqrt(8*(facPepp?.xy.data.^2+facPepp?.xz.data.^2+facPepp?.yz.data.
 c_eval('Dng? = irf.ts_scalar(ne?.time,Dng?);',ic);
 
 % Compute agyrotropy Aphi from facPeqq
-c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? = agyro?.abs',ic);
+c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? = agyro?.abs;',ic);
 
 % Compute temperature ratio An
 c_eval('Temprat? = facPepp?.xx/(facPepp?.yy);',ic);
