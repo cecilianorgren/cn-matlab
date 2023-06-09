@@ -1,5 +1,5 @@
-%% US-Japan
-% Load data
+% US-Japan
+%% Load data
 ic = 1;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
@@ -117,6 +117,64 @@ c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
 
 
 c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',ic)
+
+%% Spacecraft constellation
+tt = irf_time('2017-07-11T22:33:58.000000000Z','utc>EpochTT');
+R0 = (mvaR1 + mvaR2.resample(mvaR1) + mvaR3.resample(mvaR1) + mvaR4.resample(mvaR1))/4;
+c_eval('r? = mvaR?-R0;',1:4)
+c_eval('r? = r?.resample(tt).data;',1:4)
+%c_eval('dr(?,!) = dr? - dr!;',1:4,1:4)
+r = [r1;r2;r3;r4];
+
+
+h = subplot(1,1,1);
+isub = 1;
+hca = h(isub);
+symbols = {'o','s','^','<'};
+colors = mms_colors('1234');
+colors(1,:) = [0.2 0.2 0.2];
+linewidth = 3;
+markersize = 20;
+
+holdon = 0;
+for isc = 1:4
+  plot3(hca,r(isc,1),r(isc,2),r(isc,3),'s','markersize',markersize,'linewidth',linewidth,'color',colors(isc,:));
+  if not(holdon)
+    hold(hca,'on')
+  end
+end
+
+hca.XLim = [-15 15];
+hca.YLim = [-15 15];
+hca.ZLim = [-15 15];
+
+xmin = hca.XLim(2);
+ymin = hca.YLim(2);
+zmin = hca.ZLim(1);
+for isc = 1:4
+  plot3(hca,xmin*[1 1],r(isc,2),r(isc,3),'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.5);  
+  plot3(hca,r(isc,1),ymin*[1 1],r(isc,3),'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.5);  
+  plot3(hca,r(isc,1),r(isc,2),zmin*[1 1],'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.5);  
+end
+
+for i1 = 1:4
+  for i2 = 1:4
+    plot3(hca,[r(i1,1) r(i2,1)],[r(i1,2) r(i2,2)],[r(i1,3) r(i2,3)],'linewidth',1,'color',[0 0 0]);
+
+  end
+end
+for i1 = 1:4
+  for i2 = i1:4
+    plot3(hca,[xmin xmin],[r(i1,2) r(i2,2)],[r(i1,3) r(i2,3)],':','linewidth',2,'color',[0.8 0.8 0.8]);
+    plot3(hca,[r(i1,1) r(i2,1)],[ymin ymin],[r(i1,3) r(i2,3)],':','linewidth',2,'color',[0.8 0.8 0.8]);
+    plot3(hca,[r(i1,1) r(i2,1)],[r(i1,2) r(i2,2)],[zmin zmin],':','linewidth',2,'color',[0.8 0.8 0.8]);
+  end
+end
+
+hold(hca,'off')
+
+hca.Box = 'on';
+
 
 %% Figure: Overview 1
 ic = 1;
