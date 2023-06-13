@@ -1,6 +1,6 @@
 % US-Japan
 %% Load data
-ic = 1;
+ic = [4];
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
 % Load datastore
@@ -29,7 +29,7 @@ c_eval('tic; E?par=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_par_epa
 
 % Load spacecraft position
 disp('Loading spacecraft position...')
-c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',ic);
+c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4  );
 
 % Spacecraft potential
 disp('Loading spacecraft potential...')
@@ -116,7 +116,7 @@ c_eval('mvaTe? = lmn*gseTe?*lmn''; mvaTe?.units = gseTe?.units;',ic)
 c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
 
 
-c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',ic)
+c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',1:4)
 
 %% Spacecraft constellation
 tt = irf_time('2017-07-11T22:33:58.000000000Z','utc>EpochTT');
@@ -125,7 +125,8 @@ c_eval('r? = mvaR?-R0;',1:4)
 c_eval('r? = r?.resample(tt).data;',1:4)
 %c_eval('dr(?,!) = dr? - dr!;',1:4,1:4)
 r = [r1;r2;r3;r4];
-
+rmax = max(r);
+rmin = min(r);
 
 h = subplot(1,1,1);
 isub = 1;
@@ -133,7 +134,12 @@ hca = h(isub);
 symbols = {'o','s','^','<'};
 colors = mms_colors('1234');
 colors(1,:) = [0.2 0.2 0.2];
-linewidth = 3;
+
+colors = [0.2000    0.2000    0.2000;
+          0.9000    0.2000         0;
+               0    0.8000         0;
+          0.1000    0.4000    0.9000];
+linewidth = 2;
 markersize = 20;
 
 holdon = 0;
@@ -148,32 +154,48 @@ hca.XLim = [-15 15];
 hca.YLim = [-15 15];
 hca.ZLim = [-15 15];
 
+hca.XLim = [rmin(1) rmax(1)]+[-1 1]*2;
+hca.YLim = [rmin(2) rmax(2)]+[-1 1]*2;
+hca.ZLim = [rmin(3) rmax(3)]+[-1 1]*2;
+
 xmin = hca.XLim(2);
 ymin = hca.YLim(2);
 zmin = hca.ZLim(1);
 for isc = 1:4
-  plot3(hca,xmin*[1 1],r(isc,2),r(isc,3),'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.5);  
-  plot3(hca,r(isc,1),ymin*[1 1],r(isc,3),'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.5);  
-  plot3(hca,r(isc,1),r(isc,2),zmin*[1 1],'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.5);  
+  plot3(hca,xmin*[1 1],r(isc,2),r(isc,3),'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.125);  
+  plot3(hca,r(isc,1),ymin*[1 1],r(isc,3),'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.125);  
+  plot3(hca,r(isc,1),r(isc,2),zmin*[1 1],'s','markersize',10,'linewidth',1,'color',colors(isc,:).^0.125);  
 end
 
 for i1 = 1:4
-  for i2 = 1:4
+  for i2 = i1:4
     plot3(hca,[r(i1,1) r(i2,1)],[r(i1,2) r(i2,2)],[r(i1,3) r(i2,3)],'linewidth',1,'color',[0 0 0]);
-
   end
 end
 for i1 = 1:4
   for i2 = i1:4
-    plot3(hca,[xmin xmin],[r(i1,2) r(i2,2)],[r(i1,3) r(i2,3)],':','linewidth',2,'color',[0.8 0.8 0.8]);
-    plot3(hca,[r(i1,1) r(i2,1)],[ymin ymin],[r(i1,3) r(i2,3)],':','linewidth',2,'color',[0.8 0.8 0.8]);
-    plot3(hca,[r(i1,1) r(i2,1)],[r(i1,2) r(i2,2)],[zmin zmin],':','linewidth',2,'color',[0.8 0.8 0.8]);
+    plot3(hca,[xmin xmin],[r(i1,2) r(i2,2)],[r(i1,3) r(i2,3)],':','linewidth',1,'color',[1 1 1]*0.7);
+    plot3(hca,[r(i1,1) r(i2,1)],[ymin ymin],[r(i1,3) r(i2,3)],':','linewidth',1,'color',[1 1 1]*0.7);
+    plot3(hca,[r(i1,1) r(i2,1)],[r(i1,2) r(i2,2)],[zmin zmin],':','linewidth',1,'color',[1 1 1]*0.7);
   end
 end
 
 hold(hca,'off')
 
+hca.XLabel.String = 'L (km)';
+hca.YLabel.String = 'M (km)';
+hca.ZLabel.String = 'N (km)';
+
+c_eval('h(?).FontSize = 14;',1:numel(h))
+
 hca.Box = 'on';
+%axis(hca,'square');
+
+%daspect(hca,[1 1 1])
+hca.DataAspectRatio = [1 1 1];
+%hca.XLim = [rmin(1) rmax(1)]+[-1 1]*2;
+%hca.YLim = [rmin(2) rmax(2)]+[-1 1]*2;
+%hca.ZLim = [rmin(3) rmax(3)]+[-1 1]*2;
 
 
 %% Figure: Overview 1
@@ -247,7 +269,7 @@ h(end).XTickLabelRotation = 0;
 
 
 %% 2D distribution and pressure contributions, MN, X times, with locations shown
-ic = 1;
+ic = 4;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
 %t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
 times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
@@ -262,6 +284,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:03.300000000Z']);
 %times = times([2 3 4])+0.25;
 times = times + 0.25;
+%times = times + 0.06;
 
 vint = [-Inf Inf];
 vint = [-20000 20000];
@@ -279,7 +302,9 @@ for ip = 1:(nt*2)
 end
 
 hca = h1(1);
-irf_plot(hca,mvaPe1.xy*1e3,'color','k','linewidth',1)
+c_eval('mvaPe = mvaPe?;',ic)  
+irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
+%irf_plot(hca,{mvaPe1.xy*1e3,mvaB1.abs},'comp')
 hca.YLabel.String = 'P_{eLM} (pPa)';
 hca.YLabel.Interpreter = 'tex';
 irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
@@ -342,7 +367,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',mvaVe1.x.resample(dist),mvaVe1.y.resample(dist));  
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.x.resample(dist),ve.y.resample(dist));  
   hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
   colormap(hca,pic_colors('blue_red'))
   hca.CLim = max(abs(hca.CLim))*[-1 1];
@@ -407,3 +432,441 @@ ihsub = [2:nt nt+2:(2*nt)];
 c_eval('h2(?).YLabel.String = [];',ihsub)
 c_eval('h2(?).YTickLabel = [];',ihsub)
 c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
+
+
+%% 2D distribution and pressure contributions, LM, X times, comparing different satellites
+ics = [3 4];
+%t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
+%t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.03;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.4;
+times = times(1):0.5:times(2);
+
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z';...
+  '2017-07-11T22:34:03.670000000Z';...
+  '2017-07-11T22:34:04.300000000Z']);
+%times = times([2 3 4])+0.25;
+times = times + 0.05 + 0*0.25;
+times = times + 0.05 + 2*0.03;
+
+
+vint = [-Inf Inf];
+vint = [-20000 20000];
+vg = -60000:2000:60000;
+elim = [100 Inf];
+%h = setup_subplots(2,times.length,'vertical'); 
+nt = times.length;
+h1_pos = subplot(5,nt,1:nt); position = h1_pos.Position;
+h1 = irf_plot(1); 
+h1.Position = position; 
+
+%delete(h1_pos);
+for ip = 1:(nt*2*2)
+  h2(ip) = subplot(5,nt,nt+ip);
+end
+
+hca = h1(1);
+set(hca,'colororder',mms_colors('12'))
+c_eval('mvape_1 = mvaPe?;',ics(1))  
+c_eval('mvape_2 = mvaPe?;',ics(2))  
+irf_plot(hca,{mvape_1.yz,mvape_2.yz},'comp')
+hold(hca,'on')
+fhigh = 2;
+irf_plot(hca,{mvape_1.yz.filt(0,fhigh,[],5),mvape_2.yz.filt(0,fhigh,[],5)},'comp')
+hold(hca,'off')
+
+hca.YLabel.String = 'P_{eMN} (nPa)';
+hca.YLabel.Interpreter = 'tex';
+irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
+irf_zoom(hca,'y')
+hmark = irf_pl_mark(hca,times.epochUnix,'k');
+c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+xtickangle(h1,0)
+h1.Position(4) = 0.16;
+%
+isub = 1;
+for ic = ics
+  for itime = 1:times.length
+    %hca = h2(isub); isub = isub + 1;
+    time = times(itime);
+    % Reduce distributions
+    c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
+    c_eval('scpot = scPot?.resample(dist);',ic)  
+    vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+      
+    % Plot
+    hca = h2(isub); isub = isub + 1;
+    [ha_,hb_,hc_] = vdf.plot_plane(hca);
+    hc_.Colorbar.YLabel.String = 'log_{10} f_e(v_M,v_N) (s^2/m^5)';
+    colormap(hca,pic_colors('candy4'))   
+    hca.XLabel.String = 'v_M (10^3 km/s)';
+    hca.YLabel.String = 'v_N (10^3 km/s)';
+  end
+  for itime = 1:times.length
+    %hca = h2(isub); isub = isub + 1;
+    time = times(itime);
+    % Reduce distributions
+    c_eval('dist = ePDist?.elim(elim).tlim(time+0.015*[-1 1]*1); dist = dist(:);',ic)
+    c_eval('scpot = scPot?.resample(dist);',ic)  
+    c_eval('ve = mvaVe?;',ic)  
+    vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+      
+    % Plot
+    hca = h2(isub); isub = isub + 1;
+    [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.y.resample(dist),ve.z.resample(dist));  
+    hc_.Colorbar.YLabel.String = 'f_e(v_M,v_N)(v_M-v_M^{bulk})(v_N-v_N^{bulk}) (1/m^3)';
+    colormap(hca,pic_colors('blue_red'))
+    hca.CLim = max(abs(hca.CLim))*[-1 1];
+    hca.XLabel.String = 'v_M (10^3 km/s)';
+    hca.YLabel.String = 'v_N (10^3 km/s)';
+  end
+end
+
+hlinks_all = linkprop(h2,{'XLim','YLim'});
+%hlinks_f = linkprop(h2([1:nt]*[0 2]'),{'CLim'});
+%hlinks_p = linkprop(h2((nt+1):2*nt),{'CLim'});
+hlinks_f = linkprop(h2([1:nt 2*nt+(1:nt)]),{'CLim'});
+hlinks_p = linkprop(h2([(nt+1):2*nt 2*nt+((nt+1):2*nt)]),{'CLim'});
+
+h2(1).XLim = 0.99*vg([1 end])*1e-3;
+h2(1).YLim = 0.99*vg([1 end])*1e-3;
+
+c_eval('h2(?).XTick = -60:20:60; h2(?).YTick = -60:20:60;',1:numel(h2))
+
+c_eval('h2(?).LineWidth = 1;',1:numel(h2))
+c_eval('h2(?).FontSize = 14;',1:numel(h2))
+c_eval('axis(h2(?),''square'');',1:numel(h2))
+
+c_eval('h1(?).LineWidth = 1;',1:numel(h1))
+c_eval('h1(?).FontSize = 14;',1:numel(h1))
+
+%compact_panels(h2,0.0,00)
+compact_panels(h2,0.005,00.005)
+hb = findobj(gcf,'type','colorbar'); 
+c_eval('hb(?).FontSize = 14;',1:numel(h2))
+hb = hb(end:-1:1);
+%
+ihsub = [1:nt-1 nt+1:(2*nt-1) (2*nt-1)+1:(3*nt-1) (3*nt-1)+1:(4*nt-1)];
+delete(hb(ihsub))
+ih = nt;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+ih = nt;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+%hb(3).Position(4) = 0.22; hb(6).Position(4) = 0.22;
+%ihsub = [2 3 5 6];
+%ihsub = [2:nt nt+2:(2*nt)];
+ihsub = [2:nt nt+2:(2*nt) 2*nt+2:(3*nt) 3*nt+2:(4*nt)];
+c_eval('h2(?).YLabel.String = [];',ihsub)
+c_eval('h2(?).YTickLabel = [];',ihsub)
+c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% PIC: example of plots, for explaining
+%no02m = PIC('/Volumes/Fountain/cno062/data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+%ds100 = PICDist('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/dists_new.h5');
+figure(21);
+twpe = 16000;
+%zlim_ds = [-0.25 0.25];
+%xlim_ds = [100.7 104.3];
+
+%xpick = 102.4;
+%xpick = 106.0;
+
+zpick = 0;
+for xpick = 102.4:0.2:106.0
+
+  %ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
+  ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
+  clear h
+  h(1) = subplot(2,1,1);
+  h(2) = subplot(2,1,2);
+  isub = 1;
+  
+  
+  %ispecies = [2 4 6];
+  ispecies = [4];
+  sumdim = 3;
+  fontsize = 14;
+  
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'bline',no02m);
+  hca.CLim = [0 0.002];
+  
+  
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag','bline',no02m);
+  colormap(hca,pic_colors('blue_red'));
+  hca.CLim = 0.04*[-1 1];
+  
+  ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
+  delete(ht)
+  
+  if 1
+    hi = findobj(hca.Children,'type','image');
+    sumf = sum(hi.CData(:));
+    if sumf > 0
+      color = [1 0 0];
+    else
+      color = [0 0 1];
+    end
+    irf_legend(hca,sprintf('%.3f',sumf),[0.02 0.98],'color',color,'fontsize',fontsize)
+    hca.Color = color;
+  end
+  
+  %c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
+  c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
+  
+  
+  for ip = 1:numel(h)
+    axis(h(ip),'square');
+    h(ip).XTick = -10:5:10;
+    h(ip).YTick = -10:5:10;
+    h(ip).XTickLabelRotation = 0;
+  end
+  c_eval('h(?).FontSize = fontsize;',1:numel(h))
+  
+  compact_panels(h,0.02)
+  
+  drawnow
+
+  if 1 % print
+    h(1).Title.String = sprintf('x = %.1f, z = %.1f',xpick,zpick);
+    cn.print(sprintf('ex_fxy_x=%.1f_e4',xpick))
+  
+    
+    h(1).XLabel.String = 'v_L';
+    h(2).XLabel.String = 'v_L';
+    h(1).YLabel.String = 'v_M';
+    h(2).YLabel.String = 'v_M';
+    cn.print(sprintf('ex_fLM_x=%.1f_e4',xpick))
+  end
+end
+
+%% PIC: example of plots, for explaining, plot location of picked boxes
+figure(19);
+twpe = 16000;
+%zlim_ds = [-0.25 0.25];
+%xlim_ds = [100.7 104.3];
+
+xpick = 102.4:0.2:106.0;
+zpick = 0;
+
+pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-4 4]).zlim([-2 2]);
+
+h = pic.plot_map({'pexy'},'A',0.1,'sep');
+h.CLim = 0.012*[-1 1];
+colormap(pic_colors('blue_red'));
+hold(h(1),'on')
+[hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(h(1));
+hold(h(1),'off')
+h(1).Position(2) = 0.18;
+h(1).Position(4) = 0.7;
+h(1).XLabel.String = 'L (d_i)';
+h(1).YLabel.String = 'N (d_i)';
+h(1).FontSize = 14;
+
+hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+hb.YLabel.String = 'P^e_{LM}';
+
+for ii = 1:numel(hdl)
+  c_eval('hdl(?).LineWidth = 1;',1:numel(hdl))
+  c_eval('hdl(?).LineWidth = 2;',ii)
+  cn.print(sprintf('ex_locationboxes_x=%.1f',xpick(ii)))
+end
+
+%% PIC: example of plots, for explaining, combined with location boxes
+%no02m = PIC('/Volumes/Fountain/cno062/data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+%ds100 = PICDist('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/dists_new.h5');
+figure(18);
+twpe = 16000;
+%zlim_ds = [-0.25 0.25];
+%xlim_ds = [100.7 104.3];
+
+%xpick = 102.4;
+%xpick = 106.0;
+
+ispecies = [4 6];
+zpick = 0;
+sumdim = 3;
+fontsize = 14;
+pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-4 4]).zlim([-1.3 1.3]);
+
+xpick_all = 102.4:0.2:106.0;
+for xpick = xpick_all(1)
+
+  %ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
+  ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
+  clear h
+  h(1) = subplot(1,4,[1 2]);
+  h(2) = subplot(1,4,3);
+  h(3) = subplot(1,4,4);
+  
+  h(1).Position(1) = 0.08;
+  
+  isub = 1;
+
+  % Location of boxes
+  hca = h(isub); isub = isub + 1;
+  hh = pic.plot_map(hca,{'pexy'},'A',0.1,'sep');
+  hca.CLim = 0.012*[-1 1];
+  colormap(hca,pic_colors('blue_red'));
+  hold(hca,'on')
+  %[hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
+  [hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
+  hold(hca,'off')
+  hca.Position(2) = 0.18;
+  hca.Position(4) = 0.7;
+  hca.XLabel.String = 'L (d_i)';
+  hca.YLabel.String = 'N (d_i)';
+  hca.FontSize = 14;
+  
+  hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+  hb.YLabel.String = 'P^e_{LM}';
+  
+  
+  
+  hdl.LineWidth = 2;
+  
+  
+  % f
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'bline',no02m);
+  hca.CLim = [0 0.002];
+  
+  % Pressure integrand
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag','bline',no02m);
+  colormap(hca,pic_colors('blue_red'));
+  hca.CLim = 0.04*[-1 1];
+  
+  ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
+  delete(ht)
+  
+  if 1
+    hi = findobj(hca.Children,'type','image');
+    sumf = sum(hi.CData(:));
+    if sumf > 0
+      color = [1 0 0];
+    else
+      color = [0 0 1];
+    end
+    irf_legend(hca,sprintf('%.3f',sumf),[0.02 0.98],'color',color,'fontsize',fontsize)
+    hca.Color = color;
+  end
+  
+  %c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
+  c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
+  
+  
+  for ip = 2:numel(h)
+    axis(h(ip),'square');
+    h(ip).XTick = -10:5:10;
+    h(ip).YTick = -10:5:10;
+    h(ip).XTickLabelRotation = 0;
+  end
+  c_eval('h(?).FontSize = fontsize;',1:numel(h))
+  
+  %compact_panels(h,0.02)
+  
+  drawnow
+
+
+    h(2).XLabel.String = 'v_L';
+    h(3).XLabel.String = 'v_L';
+    h(2).YLabel.String = 'v_M';
+    h(3).YLabel.String = 'v_M';
+
+  if 0 % print
+    %h(1).Title.String = sprintf('x = %.1f, z = %.1f',xpick,zpick);
+  %  cn.print(sprintf('ex_fxy_x=%.1f_comb',xpick))
+  
+    
+    cn.print(sprintf('ex_fLM_x=%.1f_comb',xpick))
+  end
+end
+
+%% PIC: example of plots, for explaining, plot location of picked boxes
+
+
+
+%% PIC: map of pxy
+%no02m = PIC('/Volumes/Fountain/cno062/data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+%ds100 = PICDist('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/dists_new.h5');
+figure(21);
+twpe = 16000;
+%zlim_ds = [-0.25 0.25];
+%xlim_ds = [100.7 104.3];
+xpick = 100.8:0.4:104.2;
+xpick = 100.0:0.4:105.0;
+zpick = -0.3:0.1:0.3;
+
+%ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
+ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
+
+%ispecies = [2 4 6];
+ispecies = [6];
+%h = ds.plot_map(ispecies,1,'off-diag','bline',no02m);
+%h = ds.plot_map(ispecies,3,'bline',no02m);
+h = ds.plot_map(ispecies,1,'ratio',[4 6],'bline',no02m);
+
+compact_panels(h.ax,0.,0.)
+%colormap(pic_colors('blue_red'));
+c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
+
+
+
+
+%
+ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
+delete(ht)
+for ip = 1:numel(h.ax)
+  axis(h.ax(ip),'square');
+  h.ax(ip).XTick = -10:5:10;
+  h.ax(ip).YTick = -10:5:10;
+  h.ax(ip).XTickLabelRotation = 0;
+  
+  % sum of integrand
+  if 0
+    hi = findobj(h.ax(ip).Children,'type','image');
+    sumf = sum(hi.CData(:));
+    if sumf > 0
+      color = [1 0 0];
+    else
+      color = [0 0 1];
+    end
+    irf_legend(h.ax(ip),sprintf('%.3f',sumf),[0.02 0.98],'color',color)
+    h.ax(ip).Color = color;
+  end
+end
+
+%% Plot location of boxes
+figure(22);
+pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-4 4]).zlim([-2 2]);
+
+h = pic.plot_map({'pexy'});
+h.CLim = 0.012*[-1 1];
+colormap(pic_colors('blue_red'));
+hold(h(1),'on')
+ds.plot_boxes(h(1));
+hold(h(1),'off')
