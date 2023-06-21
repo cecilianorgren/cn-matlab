@@ -870,3 +870,81 @@ colormap(pic_colors('blue_red'));
 hold(h(1),'on')
 ds.plot_boxes(h(1));
 hold(h(1),'off')
+
+%% PIC: peij
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 1.5*[-1 1];
+
+varstrs = {'pexy','peyz'}';
+cbarlabels = {'P^e_{LM}','P^e_{MN}'};
+clims = {9.9e-3*[-1 1],9.9e-3*[-1 1]};
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',0,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+c_eval('h(?).FontSize = 14;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+%% PIC: peij, + gradients
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 1.5*[-1 1];
+
+varstrs = {'pexy','peyz';'dxPexy','dzPezy'}';
+cbarlabels = {'P^e_{LM}','P^e_{MN}';'\partial_LP^e_{LM}','\partial_NP^e_{MN}'}';
+%cbarlabels = {'P^e_{LM}','P^e_{MN}';'\partial P^e_{LM}/\partial L','\partial P^e_{MN}/\partial N'}';
+
+clims = {9.9e-3*[-1 1],9.9e-3*[-1 1];0.049*[-1 1],0.049*[-1 1]}';
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',0,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+c_eval('axis(h(?),''equal'');',1:numel(h))
+compact_panels(h,0.01,0.11)
+
+hb = findobj(gcf,'type','colorbar'); ht = ht(end:-1:1);
+c_eval('hb(?).FontSize = 16;',1:numel(hb))
+c_eval('h(?).FontSize = 16;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+% hl = findobj(gcf,'type','contour');
+% c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+
+%% PIC: peij, + gradients divided by density
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 1.5*[-1 1];
+
+varstrs = {'pexy','peyz';'-dxPexy./ne','-dzPezy./ne'}';
+cbarlabels = {'P^e_{LM}','P^e_{MN}';'-\partial_LP^e_{LM}/n','-\partial_NP^e_{MN}/n'}';
+%cbarlabels = {'P^e_{LM}','P^e_{MN}';'\partial P^e_{LM}/\partial L','\partial P^e_{MN}/\partial N'}';
+
+clims = {9.9e-3*[-1 1],9.9e-3*[-1 1];0.199*[-1 1],0.199*[-1 1]}';
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',3,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+c_eval('axis(h(?),''equal'');',1:numel(h))
+compact_panels(h,0.01,0.11)
+
+hb = findobj(gcf,'type','colorbar'); ht = ht(end:-1:1);
+c_eval('hb(?).FontSize = 16;',1:numel(hb))
+c_eval('h(?).FontSize = 16;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+%hl = findobj(gcf,'type','contour');
+%c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+%c_eval('h(?).LineWidth = 1;',1:numel(h))

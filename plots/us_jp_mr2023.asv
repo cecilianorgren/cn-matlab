@@ -593,82 +593,220 @@ twpe = 16000;
 %xpick = 102.4;
 %xpick = 106.0;
 
-for xpick = 102.4:0.2:106.0
 zpick = 0;
+for xpick = 102.4:0.2:106.0
 
-%ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
-ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
-clear h
-h(1) = subplot(2,1,1);
-h(2) = subplot(2,1,2);
-isub = 1;
-
-
-%ispecies = [2 4 6];
-ispecies = [4 6];
-sumdim = 3;
-fontsize = 14;
-
-hca = h(isub); isub = isub + 1;
-htmp = ds.plot_map(hca,ispecies,sumdim,'bline',no02m);
-
-hca = h(isub); isub = isub + 1;
-htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag','bline',no02m);
-colormap(hca,pic_colors('blue_red'));
-
-ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
-delete(ht)
-
-if 1
-  hi = findobj(hca.Children,'type','image');
-  sumf = sum(hi.CData(:));
-  if sumf > 0
-    color = [1 0 0];
-  else
-    color = [0 0 1];
-  end
-  irf_legend(hca,sprintf('%.3f',sumf),[0.02 0.98],'color',color,'fontsize',fontsize)
-  hca.Color = color;
-end
-
-%c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
-c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
-
-
-for ip = 1:numel(h)
-  axis(h(ip),'square');
-  h(ip).XTick = -10:5:10;
-  h(ip).YTick = -10:5:10;
-  h(ip).XTickLabelRotation = 0;
-end
-c_eval('h(?).FontSize = fontsize;',1:numel(h))
-
-compact_panels(h,0.02)
-
-h(1).Title.String = sprintf('x = %.1f, z = %.1f',xpick,zpick);
-
-%%
-ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
-delete(ht)
-for ip = 1:numel(h.ax)
-  axis(h.ax(ip),'square');
-  h.ax(ip).XTick = -10:5:10;
-  h.ax(ip).YTick = -10:5:10;
-  h.ax(ip).XTickLabelRotation = 0;
+  %ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
+  ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
+  clear h
+  h(1) = subplot(2,1,1);
+  h(2) = subplot(2,1,2);
+  isub = 1;
   
-  % sum of integrand
-  if 0
-    hi = findobj(h.ax(ip).Children,'type','image');
+  
+  %ispecies = [2 4 6];
+  ispecies = [4];
+  sumdim = 3;
+  fontsize = 14;
+  
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'bline',no02m);
+  hca.CLim = [0 0.002];
+  
+  
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag','bline',no02m);
+  colormap(hca,pic_colors('blue_red'));
+  hca.CLim = 0.04*[-1 1];
+  
+  ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
+  delete(ht)
+  
+  if 1
+    hi = findobj(hca.Children,'type','image');
     sumf = sum(hi.CData(:));
     if sumf > 0
       color = [1 0 0];
     else
       color = [0 0 1];
     end
-    irf_legend(h.ax(ip),sprintf('%.3f',sumf),[0.02 0.98],'color',color)
-    h.ax(ip).Color = color;
+    irf_legend(hca,sprintf('%.3f',sumf),[0.02 0.98],'color',color,'fontsize',fontsize)
+    hca.Color = color;
+  end
+  
+  %c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
+  c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
+  
+  
+  for ip = 1:numel(h)
+    axis(h(ip),'square');
+    h(ip).XTick = -10:5:10;
+    h(ip).YTick = -10:5:10;
+    h(ip).XTickLabelRotation = 0;
+  end
+  c_eval('h(?).FontSize = fontsize;',1:numel(h))
+  
+  compact_panels(h,0.02)
+  
+  drawnow
+
+  if 1 % print
+    h(1).Title.String = sprintf('x = %.1f, z = %.1f',xpick,zpick);
+    cn.print(sprintf('ex_fxy_x=%.1f_e4',xpick))
+  
+    
+    h(1).XLabel.String = 'v_L';
+    h(2).XLabel.String = 'v_L';
+    h(1).YLabel.String = 'v_M';
+    h(2).YLabel.String = 'v_M';
+    cn.print(sprintf('ex_fLM_x=%.1f_e4',xpick))
   end
 end
+
+%% PIC: example of plots, for explaining, plot location of picked boxes
+figure(19);
+twpe = 16000;
+%zlim_ds = [-0.25 0.25];
+%xlim_ds = [100.7 104.3];
+
+xpick = 102.4:0.2:106.0;
+zpick = 0;
+
+pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-4 4]).zlim([-2 2]);
+
+h = pic.plot_map({'pexy'},'A',0.1,'sep');
+h.CLim = 0.012*[-1 1];
+colormap(pic_colors('blue_red'));
+hold(h(1),'on')
+[hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(h(1));
+hold(h(1),'off')
+h(1).Position(2) = 0.18;
+h(1).Position(4) = 0.7;
+h(1).XLabel.String = 'L (d_i)';
+h(1).YLabel.String = 'N (d_i)';
+h(1).FontSize = 14;
+
+hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+hb.YLabel.String = 'P^e_{LM}';
+
+for ii = 1:numel(hdl)
+  c_eval('hdl(?).LineWidth = 1;',1:numel(hdl))
+  c_eval('hdl(?).LineWidth = 2;',ii)
+  cn.print(sprintf('ex_locationboxes_x=%.1f',xpick(ii)))
+end
+
+%% PIC: example of plots, for explaining, combined with location boxes
+%no02m = PIC('/Volumes/Fountain/cno062/data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+%ds100 = PICDist('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/dists_new.h5');
+figure(18);
+twpe = 16000;
+%zlim_ds = [-0.25 0.25];
+%xlim_ds = [100.7 104.3];
+
+%xpick = 102.4;
+%xpick = 106.0;
+
+ispecies = [4 6];
+zpick = 0;
+sumdim = 3;
+fontsize = 14;
+pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-4 4]).zlim([-1.3 1.3]);
+
+xpick_all = 102.4:0.2:106.0;
+for xpick = xpick_all(1)
+
+  %ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
+  ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
+  clear h
+  h(1) = subplot(1,4,[1 2]);
+  h(2) = subplot(1,4,3);
+  h(3) = subplot(1,4,4);
+  
+  h(1).Position(1) = 0.08;
+  
+  isub = 1;
+
+  % Location of boxes
+  hca = h(isub); isub = isub + 1;
+  hh = pic.plot_map(hca,{'pexy'},'A',0.1,'sep');
+  hca.CLim = 0.012*[-1 1];
+  colormap(hca,pic_colors('blue_red'));
+  hold(hca,'on')
+  %[hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
+  [hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
+  hold(hca,'off')
+  hca.Position(2) = 0.18;
+  hca.Position(4) = 0.7;
+  hca.XLabel.String = 'L (d_i)';
+  hca.YLabel.String = 'N (d_i)';
+  hca.FontSize = 14;
+  
+  hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+  hb.YLabel.String = 'P^e_{LM}';
+  
+  
+  
+  hdl.LineWidth = 2;
+  
+  
+  % f
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'bline',no02m);
+  hca.CLim = [0 0.002];
+  
+  % Pressure integrand
+  hca = h(isub); isub = isub + 1;
+  htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag','bline',no02m);
+  colormap(hca,pic_colors('blue_red'));
+  hca.CLim = 0.04*[-1 1];
+  
+  ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
+  delete(ht)
+  
+  if 1
+    hi = findobj(hca.Children,'type','image');
+    sumf = sum(hi.CData(:));
+    if sumf > 0
+      color = [1 0 0];
+    else
+      color = [0 0 1];
+    end
+    irf_legend(hca,sprintf('%.3f',sumf),[0.02 0.98],'color',color,'fontsize',fontsize)
+    hca.Color = color;
+  end
+  
+  %c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
+  c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
+  
+  
+  for ip = 2:numel(h)
+    axis(h(ip),'square');
+    h(ip).XTick = -10:5:10;
+    h(ip).YTick = -10:5:10;
+    h(ip).XTickLabelRotation = 0;
+  end
+  c_eval('h(?).FontSize = fontsize;',1:numel(h))
+  
+  %compact_panels(h,0.02)
+  
+  drawnow
+
+
+    h(2).XLabel.String = 'v_L';
+    h(3).XLabel.String = 'v_L';
+    h(2).YLabel.String = 'v_M';
+    h(3).YLabel.String = 'v_M';
+
+  if 0 % print
+    %h(1).Title.String = sprintf('x = %.1f, z = %.1f',xpick,zpick);
+  %  cn.print(sprintf('ex_fxy_x=%.1f_comb',xpick))
+  
+    
+    cn.print(sprintf('ex_fLM_x=%.1f_comb',xpick))
+  end
+end
+
+%% PIC: example of plots, for explaining, plot location of picked boxes
 
 
 
@@ -732,3 +870,80 @@ colormap(pic_colors('blue_red'));
 hold(h(1),'on')
 ds.plot_boxes(h(1));
 hold(h(1),'off')
+
+%% PIC: peij
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 1.5*[-1 1];
+
+varstrs = {'pexy','peyz'}';
+cbarlabels = {'P^e_{LM}','P^e_{MN}'};
+clims = {9.9e-3*[-1 1],9.9e-3*[-1 1]};
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',0,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+c_eval('h(?).FontSize = 14;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+%% PIC: peij, + gradients
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 1.5*[-1 1];
+
+varstrs = {'pexy','peyz';'dxPexy','dzPezy'}';
+cbarlabels = {'P^e_{LM}','P^e_{MN}';'\partial_LP^e_{LM}','\partial_NP^e_{MN}'}';
+%cbarlabels = {'P^e_{LM}','P^e_{MN}';'\partial P^e_{LM}/\partial L','\partial P^e_{MN}/\partial N'}';
+
+clims = {9.9e-3*[-1 1],9.9e-3*[-1 1];0.049*[-1 1],0.049*[-1 1]}';
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',0,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+c_eval('axis(h(?),''equal'');',1:numel(h))
+compact_panels(h,0.01,0.11)
+
+hb = findobj(gcf,'type','colorbar'); ht = ht(end:-1:1);
+c_eval('hb(?).FontSize = 16;',1:numel(hb))
+c_eval('h(?).FontSize = 16;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+% hl = findobj(gcf,'type','contour');
+% c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+
+%% PIC: peij, + gradients divided by density
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 1.5*[-1 1];
+
+varstrs = {'pexy','peyz';'-dxPexy./ne','-dzPezy./ne'}';
+cbarlabels = {'P^e_{LM}','P^e_{MN}';'-\partial_LP^e_{LM}/n','-\partial_NP^e_{MN}/n'}';
+%cbarlabels = {'P^e_{LM}','P^e_{MN}';'\partial P^e_{LM}/\partial L','\partial P^e_{MN}/\partial N'}';
+
+clims = {9.9e-3*[-1 1],9.9e-3*[-1 1];0.199*[-1 1],0.199*[-1 1]}';
+cmaps = {pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red'),pic_colors('blue_red')};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',3,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+c_eval('axis(h(?),''equal'');',1:numel(h))
+compact_panels(h,0.01,0.11)
+
+hb = findobj(gcf,'type','colorbar'); ht = ht(end:-1:1);
+c_eval('hb(?).FontSize = 16;',1:numel(hb))
+c_eval('h(?).FontSize = 16;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+% hl = findobj(gcf,'type','contour');
+% c_eval('hl(?).LineWidth = 1;',1:numel(hl))
