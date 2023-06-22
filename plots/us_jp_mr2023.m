@@ -1,6 +1,6 @@
 % US-Japan
 %% Load data
-ic = [4];
+ic = [3];
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 
 % Load datastore
@@ -269,7 +269,7 @@ h(end).XTickLabelRotation = 0;
 
 
 %% 2D distribution and pressure contributions, MN, X times, with locations shown
-ic = 4;
+ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
 %t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
 times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
@@ -314,6 +314,7 @@ irf_zoom(hca,'y')
 %c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
 xtickangle(h1,0)
 h1.Position(4) = 0.16;
+ppsum = [];
 
 times_exact = {};
 isub = 1;
@@ -337,16 +338,17 @@ for itime = 1:times.length
   hca.YLabel.String = 'v_M (10^3 km/s)';
 
   if 1 % plot B direction
+    %%
     xlim = hca.XLim;
-    tlim = hca.YLim;
+    ylim = hca.YLim;
     hold(hca,'on')
     dt_dist = 0.030;
-    B = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
-    B = mean(B.data,1);
-    b = B/norm(B);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
     k = b(2)/b(1);
     if k > 1
-      plot(hca,xlim,xLim*k,'k')
+      plot(hca,xlim,xlim*k,'k')
     else
       plot(hca,xlim/k,ylim,'k')
     end
@@ -373,18 +375,28 @@ for itime = 1:times.length
   hca.CLim = max(abs(hca.CLim))*[-1 1];
   hca.XLabel.String = 'v_L (10^3 km/s)';
   hca.YLabel.String = 'v_M (10^3 km/s)';
+  if 1
+    %%
+    cdata = ha_.CData;
+    xdata = ha_.XData; 
+    dv = xdata(2)-xdata(1);
+    dv = dv*1e3;
+    pptmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
+    ppsum(itime) = pptmp;
+  end
 
   if 1 % plot B direction
+    %%
     xlim = hca.XLim;
-    tlim = hca.YLim;
+    ylim = hca.YLim;
     hold(hca,'on')
     dt_dist = 0.030;
-    B = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
-    B = mean(B.data,1);
-    b = B/norm(B);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
     k = b(2)/b(1);
     if k > 1
-      plot(hca,xlim,xLim*k,'k')
+      plot(hca,xlim,xlim*k,'k')
     else
       plot(hca,xlim/k,ylim,'k')
     end
@@ -433,6 +445,27 @@ c_eval('h2(?).YLabel.String = [];',ihsub)
 c_eval('h2(?).YTickLabel = [];',ihsub)
 c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
 
+h1(1).Title.String = sprintf('MMS %g',ic);
+h1.Position(1) = h1.Position(1) + h1.Position(3)*0.2;
+h1.Position(3) = h1.Position(3)*0.8;
+
+
+if 1
+  %%
+  %for ip = 1:times.length
+  %  hca = h2(ip);
+  %  %cdata = hca.
+  %end
+  %diff(hc_.Surface.XData(1:2))
+  %pp = [-1.483,-0.732,-0.042,0.128,0.513];
+  tsPP = irf.ts_scalar(times,ppsum);
+  hold(h1(1),'on')
+  hpp = irf_plot(h1(1),tsPP,'or');
+  hpp.MarkerFaceColor = 'r';
+  hpp.MarkerEdgeColor = 'k';
+  hpp.MarkerSize = 7;  
+  hold(h1(1),'off')
+end
 
 %% 2D distribution and pressure contributions, LM, X times, comparing different satellites
 ics = [3 4];
@@ -706,37 +739,54 @@ twpe = 16000;
 %xpick = 102.4;
 %xpick = 106.0;
 
+doVertical = 1;
 ispecies = [4 6];
 zpick = 0;
 sumdim = 3;
-fontsize = 14;
-pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-4 4]).zlim([-1.3 1.3]);
+fontsize = 16;
+pic = no02m.twpelim(twpe).xlim(mean(no02m.xi)+[-3 3]).zlim([-0.99 0.99]);
 
 xpick_all = 102.4:0.2:106.0;
-for xpick = xpick_all(1)
+for xpick = xpick_all
 
   %ds = ds100.twpelim(twpe).xlim(xlim_ds).zlim(zlim_ds);
   ds = ds100.twpelim(twpe).xfind(xpick).zfind(zpick);
   clear h
-  h(1) = subplot(1,4,[1 2]);
-  h(2) = subplot(1,4,3);
-  h(3) = subplot(1,4,4);
+  if not(doVertical)
+    h(1) = subplot(1,4,[1 2]);
+    h(2) = subplot(1,4,3);
+    h(3) = subplot(1,4,4);
   
-  h(1).Position(1) = 0.08;
-  
+    h(1).Position(1) = 0.17;
+    h(1).Position(3) = 0.3;
+    
+    %h(1).Position(1) = 0.08;
+  else
+    h(1) = subplot(3,4,[1 2 3 4]);
+    h(2) = subplot(3,4,[5 6 9 10]);
+    h(3) = subplot(3,4,[7 8 11 12]);
+    h(3).Position(1) = h(3).Position(1) - 0.057;
+    
+    %h(1) = axes('Position',[0.1300    0.6593    0.7179    0.2157]);
+    %h(2) = axes('Position',[0.1300    0.1100    0.3025    0.5154]);
+    %h(3) = axes('Position',[0.5225    0.1100    0.3025    0.5154]);
+    %h(1).Position(1) = 0.17;
+    %h(1).Position(3) = 0.3;
+
+  end
   isub = 1;
 
   % Location of boxes
   hca = h(isub); isub = isub + 1;
-  hh = pic.plot_map(hca,{'pexy'},'A',0.1,'sep');
+  hh = pic.plot_map(hca,{'pexy'},'A',0.1,'sep','smooth',3);
   hca.CLim = 0.012*[-1 1];
   colormap(hca,pic_colors('blue_red'));
   hold(hca,'on')
   %[hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
   [hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
   hold(hca,'off')
-  hca.Position(2) = 0.18;
-  hca.Position(4) = 0.7;
+  %hca.Position(2) = 0.18;
+  %hca.Position(4) = 0.7;
   hca.XLabel.String = 'L (d_i)';
   hca.YLabel.String = 'N (d_i)';
   hca.FontSize = 14;
@@ -756,7 +806,7 @@ for xpick = xpick_all(1)
   
   % Pressure integrand
   hca = h(isub); isub = isub + 1;
-  htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag','bline',no02m);
+  htmp = ds.plot_map(hca,ispecies,sumdim,'off-diag',1/100,'bline',no02m);
   colormap(hca,pic_colors('blue_red'));
   hca.CLim = 0.04*[-1 1];
   
@@ -771,7 +821,7 @@ for xpick = xpick_all(1)
     else
       color = [0 0 1];
     end
-    irf_legend(hca,sprintf('%.3f',sumf),[0.02 0.98],'color',color,'fontsize',fontsize)
+    irf_legend(hca,sprintf('%.3f',sumf*1/100),[0.98 0.98],'color',color,'fontsize',fontsize)
     hca.Color = color;
   end
   
@@ -797,16 +847,113 @@ for xpick = xpick_all(1)
     h(2).YLabel.String = 'v_M';
     h(3).YLabel.String = 'v_M';
 
-  if 0 % print
+    if doVertical
+      h(1).Position(2) = h(1).Position(2)-0.05;
+      compact_panels(h(2:3),0,0.01)
+      h(3).YLabel.String = [];
+      h(3).YTickLabels = [];
+    end
+  if 1 % print
     %h(1).Title.String = sprintf('x = %.1f, z = %.1f',xpick,zpick);
   %  cn.print(sprintf('ex_fxy_x=%.1f_comb',xpick))
   
     
-    cn.print(sprintf('ex_fLM_x=%.1f_comb',xpick))
+    cn.print(sprintf('ex_fLM_x=%.1f_comb_vertical',xpick))
   end
 end
 
-%% PIC: example of plots, for explaining, plot location of picked boxes
+%% Map of off-diag PeLM
+% for LM
+xpicks = 102.4:0.4:105.0;
+zpicks = -0.4:0.2:0;
+
+% for MN
+xpicks = 102.4:0.4:105.0;
+zpicks = -0.2:0.1:0;
+
+ds = ds100.twpelim(16000).xfind(xpicks).zfind(zpicks);
+
+
+figure(103)
+clear h
+h(1) = subplot(1,1,1);
+isub = 1;
+hca = h(isub); isub = isub + 1;
+hh = pic.plot_map(hca,{'peyz'},'A',0.1,'sep','smooth',3);
+hca.CLim = 0.012*[-1 1];
+colormap(hca,pic_colors('blue_red'));
+hold(hca,'on')
+%[hd,hdl] = ds100.twpelim(twpe).xfind(xpick).zfind(zpick).plot_boxes(hca);
+[hd,hdl] = ds.plot_boxes(hca);
+hold(hca,'off')
+%hca.Position(2) = 0.18;
+%hca.Position(4) = 0.7;
+hca.XLabel.String = 'L (d_i)';
+hca.YLabel.String = 'N (d_i)';
+hca.FontSize = 14;
+
+hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+hb.YLabel.String = 'P^e_{MN}';
+
+
+%%
+figure(104)
+sumdim = 1;
+
+h = findobj(gcf,'type','axes'); h = h(end:-1:1); delete(h);
+h = ds.plot_map([2 4 6],sumdim,'bline',pic);
+compact_panels(h.ax,0.01,0.01)
+%c_eval('axis(h.ax(?),''equal'');',1:numel(h.ax))
+c_eval('axis(h.ax(?),''square'');',1:numel(h.ax))
+c_eval('h.ax(?).XGrid = ''off''; h.ax(?).YGrid = ''off'';',1:numel(h.ax))
+hlinks = linkprop(h.ax,{'CLim'});
+
+%hlinks.Targets(1).CLim = 0.04*[-1 1];
+hlinks.Targets(1).CLim = 10e-3*[0 1];
+c_eval('h.ax(?).XTick = -10:5:10;',1:numel(h.ax))
+c_eval('h.ax(?).YTick = -10:5:10;',1:numel(h.ax))
+c_eval('h.ax(?).XTickLabelRotation = 90;',1:numel(h.ax))
+
+if sumdim == 3
+  c_eval('h.ax(?).YLabel.String = ''v_M'';',1:numel(zpicks))
+  c_eval('h.ax(?).XLabel.String = ''v_L'';',1:numel(zpicks):numel(h.ax))
+  hb = findobj(gcf,'type','colorbar');
+  hb.YLabel.String = 'f(v_M,v_L)';
+elseif sumdim == 1
+  c_eval('h.ax(?).YLabel.String = ''v_N'';',1:numel(zpicks))
+  c_eval('h.ax(?).XLabel.String = ''v_M'';',1:numel(zpicks):numel(h.ax))
+  hb = findobj(gcf,'type','colorbar');
+  hb.YLabel.String = 'f(v_M,v_N)';
+
+
+end
+ht = findobj(gcf,'type','text'); ht = ht(end:-1:1);
+delete(ht)
+
+compact_panels(h.ax,0.003,0.003)
+
+c_eval('h.ax(?).FontSize = 13;',1:numel(h.ax))
+
+
+for ip = 1:numel(h.ax)
+  hca = h.ax(ip);
+  hi = findobj(hca.Children,'type','image');
+  sumf = sum(hi.CData(:));
+  if sumf > 0
+    color = [1 0 0];
+  else
+    color = [0 0 1];
+  end
+  irf_legend(hca,sprintf('%.3f',sumf*1/100),[0.98 0.98],'color',color,'fontsize',fontsize)
+  hca.Color = color;
+  %colormap(hca,pic_colors('blue_red'))
+  colormap(hca,pic_colors('candy4'))
+  
+end
+
+
+
+
 
 
 
@@ -924,7 +1071,8 @@ pic = no02m;
 
 twpe = 16000;
 xlim = mean(pic.xi) + 3*[-1 1];
-zlim = 1.5*[-1 1];
+%zlim = 1.5*[-1 1];
+zlim = 0.99*[-1 1];
 
 varstrs = {'pexy','peyz';'-dxPexy./ne','-dzPezy./ne'}';
 cbarlabels = {'P^e_{LM}','P^e_{MN}';'-\partial_LP^e_{LM}/n','-\partial_NP^e_{MN}/n'}';
@@ -948,3 +1096,50 @@ c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
 %hl = findobj(gcf,'type','contour');
 %c_eval('hl(?).LineWidth = 1;',1:numel(hl))
 %c_eval('h(?).LineWidth = 1;',1:numel(h))
+%c_eval('h(?).Position(2) = h(?).Position(2) + 0.02;',1:numel(h))
+
+%% PIC: electron ohms law
+pic = no02m;
+
+twpe = 16000;
+xlim = mean(pic.xi) + 3*[-1 1];
+zlim = 0.99*[-1 1];
+
+varstrs = {'Ey','vexBy','-(1/100)*vdvey','-dxPexy./ne','-dzPezy./ne'}';
+cbarlabels = {'E','vxB','-m v\cdot\nabla v','-\partial_LP^e_{LM}/ne','-\partial_NP^e_{MN}/ne','sum'}';
+
+varstrs = {'Ey+vexBy','-(1/100)*vdvey','-dxPexy./ne','-dzPezy./ne'}';
+cbarlabels = {'E+vxB','-m v\cdot\nabla v','-\partial_LP^e_{LM}/ne','-\partial_NP^e_{MN}/ne','sum'}';
+
+%varstrs = {'Ey+vexBy','-(1/100)*vdvey-dxPexy./ne-dzPezy./ne'}';
+%cbarlabels = {'E+vxB','-v\cdot\nabla v - \partial_LP^e_{LM}/n - \partial_NP^e_{MN}/n','sum'}';
+
+
+clims = {0.199*[-1 1],0.199*[-1 1],0.199*[-1 1],0.199*[-1 1],0.199*[-1 1],0.199*[-1 1]}';
+cmapbr = pic_colors('blue_red');
+cmaps = {cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr,cmapbr};
+
+h = pic.twpelim(twpe).xlim(xlim).zlim(zlim).plot_map(varstrs,'A',0.2,'sep','smooth',3,'clim',clims,'cbarlabels',cbarlabels,'cmap',cmaps);
+
+%c_eval('axis(h(?),''equal'');',1:numel(h))
+%compact_panels(h,0.01,0.11)
+
+hb = findobj(gcf,'type','colorbar'); ht = ht(end:-1:1);
+c_eval('hb(?).FontSize = 16;',1:numel(hb))
+c_eval('h(?).FontSize = 16;',1:numel(h))
+
+c_eval('h(?).YLabel.String = ''N (d_i)'';',1:numel(h))
+c_eval('h(?).XLabel.String = ''L (d_i)'';',1:numel(h))
+
+c_eval('h(?).Position(3) = 0.7;',1:numel(h))
+
+if 0
+
+  %%
+  hl = findobj(gcf,'type','contour');
+  c_eval('hl(?).LineWidth = 0.5;',1:numel(hl))
+  c_eval('h(?).LineWidth = 0.5;',1:numel(h))
+end
+
+
+
