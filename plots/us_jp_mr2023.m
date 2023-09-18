@@ -41,6 +41,7 @@ c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l
 % Particle moments
 % Skymap distributions
 if 0
+  %%
 disp('Loading skymaps...')
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
@@ -640,7 +641,7 @@ c_eval('h2(?).YTickLabel = [];',ihsub)
 c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
 
 
-%% 2D distribution and tress contributions, MN, X times, with locations shown
+%% 2D distribution and stress contributions, MN, X times, with locations shown
 ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
 %t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
@@ -676,11 +677,11 @@ for ip = 1:(nt*2)
 end
 
 hca = h1(1);
-c_eval('mvaPe = mvaPe?;',ic)  
+c_eval('mvaSe = mvaSe?;',ic)  
 %irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
-hp = irf_patch(hca,{mvaPe.xy*1e3,0},'color','k','linewidth',1);
+hp = irf_patch(hca,{mvaSe.xy*1e3,0},'color','k','linewidth',1);
 %irf_plot(hca,{mvaPe1.xy*1e3,mvaB1.abs},'comp')
-hca.YLabel.String = 'P_{eLM} (pPa)';
+hca.YLabel.String = 'S_{eLM} (pPa)';
 hca.YLabel.Interpreter = 'tex';
 irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
 irf_zoom(hca,'y')
@@ -835,6 +836,8 @@ c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
 h1(1).Title.String = sprintf('MMS %g',ic);
 h1.Position(1) = h1.Position(1) + h1.Position(3)*0.2;
 h1.Position(3) = h1.Position(3)*0.8;
+
+
 
 
 if 1
@@ -1454,7 +1457,7 @@ if 0
   c_eval('h(?).LineWidth = 0.5;',1:numel(h))
 end
 
-%% PIC:electron anisotropy
+%% PIC: electron anisotropy
 %no02m = PIC('/Volumes/Fountain/cno062/data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
 %ds100 = PICDist('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/dists_new.h5');
 figure(22);
