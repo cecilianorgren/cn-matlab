@@ -40,14 +40,14 @@ c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l
 
 % Particle moments
 % Skymap distributions
-if 0
+if 1
   %%
 disp('Loading skymaps...')
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
-c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
-c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
-c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
+%c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+%c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+%c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
+%c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
 end
 % Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -78,8 +78,14 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 comps = ['x','y','z'];
 c_eval('Se? = gsePe?.data*0;',ic);
 c_eval('Si? = gsePi?.data*0;',ic);
+c_eval('nvve? = gsePe?.data*0;',ic);
+c_eval('nvvi? = gsePi?.data*0;',ic);
 for ic1 = 1:3
   for ic2 = 1:3
+    c_eval('nvve?(:,ic1,ic2) = units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);',ic);
+    c_eval('nvvi?(:,ic1,ic2) = units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);    
+    c_eval('gseNVVe? = irf.ts_tensor_xyz(gsePe?.time,nvve?*1e9); gseNVVe?.name = ''Inertia''; gseNVVe?.units = ''nPa'';',ic)
+    c_eval('gseNVVi? = irf.ts_tensor_xyz(gsePi?.time,nvvi?*1e9); gseNVVi?.name = ''Iertia''; gseNVVi?.units = ''nPa'';',ic)
     
     c_eval('Se?(:,ic1,ic2) = gsePe?.data(:,ic1,ic2)*1e-9 + units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);',ic);
     c_eval('Si?(:,ic1,ic2) = gsePi?.data(:,ic1,ic2)*1e-9 + units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);
@@ -112,8 +118,8 @@ c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? =
 % Compute temperature ratio An
 c_eval('Temprat? = facPepp?.xx/(facPepp?.yy);',ic);
 
-c_eval('Te?par = facPepp?.xx;',ic);
-c_eval('Te?perp = facPepp?.yy;',ic);
+c_eval('Te?par = facTe?.xx;',ic);
+c_eval('Te?perp = (facTe?.yy+facTe?.yy)/2;',ic);
 
 % Rotate things into new coordinate system 
 L = [0.9482,-0.255,-0.1893];
@@ -138,6 +144,10 @@ c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
 c_eval('mvaTi? = lmn*gseTi?*lmn''; mvaTi?.units = gseTi?.units;',ic)
 c_eval('mvaTe? = lmn*gseTe?*lmn''; mvaTe?.units = gseTe?.units;',ic)
 
+
+
+c_eval('mvaNVVi? = lmn*gseNVVi?*lmn''; mvaNVVi?.units = gseNVVi?.units;',ic)
+c_eval('mvaNVVe? = lmn*gseNVVe?*lmn''; mvaNVVe?.units = gseNVVe?.units;',ic)
 
 c_eval('mvaSi? = lmn*gseSi?*lmn''; mvaSi?.units = gseSi?.units;',ic)
 c_eval('mvaSe? = lmn*gseSe?*lmn''; mvaSe?.units = gseSe?.units;',ic)
@@ -247,23 +257,31 @@ if 1 % B LMN
   hca = irf_panel('B LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))  
   c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
-  hca.YLabel.String = {'B','(nT)'};
+  hca.YLabel.String = {'B (nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'}',[1.02 0.9],'fontsize',fontsize);
 end 
 if 1 % Ve
   hca = irf_panel('Ve LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint),mvaVe?.y.tlim(tint),mvaVe?.z.tlim(tint)},''comp'');',ic)  
-  hca.YLabel.String = {'v_e','(km/s)'};
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint)*1e-3,mvaVe?.y.tlim(tint)*1e-3,mvaVe?.z.tlim(tint)*1e-3},''comp'');',ic)  
+  hca.YLabel.String = {'v_e (10^3 km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'}',[1.02 0.9],'fontsize',fontsize);
 end
-if 1 % Pe-off LMN
+if 1 % NVVe-off LMN
+  hca = irf_panel('mnvve off LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaNVVe?.xy.tlim(tint)*1e3,mvaNVVe?.xz.tlim(tint)*1e3,mvaNVVe?.yz.tlim(tint)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'m_env_ev_e (pPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 0 % Pe-diag LMN
   hca = irf_panel('Pe diag LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaPe?.xx.tlim(tint)*1e3,mvaPe?.yy.tlim(tint)*1e3,mvaPe?.zz.tlim(tint)*1e3},''comp'');',ic)  
-  hca.YLabel.String = {'P_e','(pPa)'};
+  hca.YLabel.String = {'P_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'LL','MM','NN'}',[1.02 0.9],'fontsize',fontsize);
 end
@@ -271,15 +289,15 @@ if 1 % Pe-off LMN
   hca = irf_panel('Pe off LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaPe?.xy.tlim(tint)*1e3,mvaPe?.xz.tlim(tint)*1e3,mvaPe?.yz.tlim(tint)*1e3},''comp'');',ic)  
-  hca.YLabel.String = {'P_e','(pPa)'};
+  hca.YLabel.String = {'P_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
-if 1 % Pe-off LMN
-  hca = irf_panel('Pe off LMN');
+if 1 % Se-off LMN
+  hca = irf_panel('Se off LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{mvaPe?.xy.tlim(tint)*1e3,mvaPe?.xz.tlim(tint)*1e3,mvaPe?.yz.tlim(tint)*1e3},''comp'');',ic)  
-  hca.YLabel.String = {'P_e','(pPa)'};
+  c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3,mvaSe?.xz.tlim(tint)*1e3,mvaSe?.yz.tlim(tint)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'S_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
@@ -287,11 +305,11 @@ if 1 % Tpar, Tperp
   hca = irf_panel('Tepar, Teperp');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{Te?par,Te?perp},''comp'');',ic)  
-  hca.YLabel.String = {'T_e','eV'};
+  hca.YLabel.String = {'T_e (eV)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'}',[1.02 0.9],'fontsize',fontsize);
 end
-if 1 % Non-gyro
+if 0 % Non-gyro
   hca = irf_panel('Non-gyrotropies');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{agyro?,Dng?,Q?.tlim(tint)},''comp'');',ic)  
@@ -308,6 +326,11 @@ for ii = 1:npanels
   h(ii).FontSize = fontsize;
 end
 
+time_reversal = irf_time('2017-07-11T22:34:02.641773681Z','utc>EpochTT');
+c_eval('hm(?) = irf_pl_mark(h(?),time_reversal);',1:numel(h))
+c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h))
+c_eval('hm(?).LineStyle = ''--'';',1:numel(h))
+
 %irf_zoom(h(1:iisub),'x',fastTint)
 irf_zoom(h,'x',tint_edr)
 %irf_zoom(h,'x',tint)
@@ -319,6 +342,706 @@ c_eval('hl(?).LineWidth = 1;',1:numel(hl))
 c_eval('h(?).LineWidth = 1;',1:numel(h))
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
 h(end).XTickLabelRotation = 0;
+
+%% 2D distribution and pressure and stress contributions, LM, X times, with locations shown
+ic = 3;
+%t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
+%t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.03;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.4;
+times = times(1):0.5:times(2);
+
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z']);
+%times = times([2 3 4])+0.25;
+%times = times + 0.25;
+times = times + 0.30;
+%times = times + 0.06;
+dt_dist = 4*0.062; % for two distributions
+
+vint = [-Inf Inf];
+vint = [-20000 20000];
+vg = -60000:2000:60000;
+elim = [100 Inf];
+%h = setup_subplots(2,times.length,'vertical'); 
+nt = times.length;
+h1_pos = subplot(4,nt,1:nt); position = h1_pos.Position;
+h1 = irf_plot(2);
+
+h1(1).Position(1) = position(1); 
+h1(2).Position(1) = 0.53; 
+h1(2).Position(3) = 0.32; 
+h1(1).Position(2) = position(2);
+h1(2).Position(2) = position(2);
+h1(1).Position(4) = position(4);
+h1(2).Position(4) = position(4);
+h1(1).Position(3) = 0.32; 
+%delete(h1_pos);
+clear h2
+for ip = 1:(nt*3)
+  h2(ip) = subplot(4,nt,nt+ip);
+end
+
+hca = h1(1);
+c_eval('mvaPe = mvaPe?;',ic)
+c_eval('mvaB = mvaB?;',ic)
+%irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
+%hp = irf_patch(hca,{mvaPe.xy*1e3,0},'color','k','linewidth',1);
+%hp = irf_patch(hca,{mvaB.y,0},'color','k','linewidth',1);
+irf_plot(hca,{mvaB.x,mvaB.y},'comp')
+hca.YLabel.String = 'P_{eLM} (pPa)';
+hca.YLabel.Interpreter = 'tex';
+irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
+irf_zoom(hca,'y')
+%hmark = irf_pl_mark(hca,times.epochUnix,'k');
+%c_eval('hmark(?) = irf_pl_mark(hca,times(?).epochUnix + 0.5*0.03*[-1 1],''k'');',1:times.length)
+%c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+xtickangle(h1,0)
+%h1.Position(4) = 0.16;
+ppsum = [];
+%hp.EdgeColor = [0 0 0];
+%hp.FaceColor = [0.5 0.5 0.5];
+h1(1).YLabel.String = 'P_{e,LM} (pPa)';
+h1(1).YLabel.Interpreter = 'tex';
+
+hca = h1(2);
+c_eval('mvaSe = mvaSe?;',ic)  
+%irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
+hp = irf_patch(hca,{mvaSe.xy*1e3,0},'color','k','linewidth',1);
+%irf_plot(hca,{mvaPe1.xy*1e3,mvaB1.abs},'comp')
+hca.YLabel.String = 'S_{eLM} (pPa)';
+hca.YLabel.Interpreter = 'tex';
+irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
+irf_zoom(hca,'y')
+%hmark = irf_pl_mark(hca,times.epochUnix,'k');
+%c_eval('hmark(?) = irf_pl_mark(hca,times(?).epochUnix + 0.5*0.03*[-1 1],''k'');',1:times.length)
+%c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+xtickangle(h1,0)
+%h1.Position(4) = 0.16;
+ppsum = [];
+hp.EdgeColor = [0 0 0];
+hp.FaceColor = [0.5 0.5 0.5];
+h1(2).YLabel.String = 'S_{e,LM} (pPa)';
+h1(2).YLabel.Interpreter = 'tex';
+h1(2).YLim = h1(1).YLim;
+
+
+times_exact = {};
+isub = 1;
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)  
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+  times_exact{itime} = vdf.time;
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca);
+  hc_.Colorbar.YLabel.String = 'log_{10} f_e (s^2/m^5)';
+  colormap(hca,pic_colors('candy4'))   
+  hca.XLabel.String = 'v_L (10^3 km/s)';
+  hca.YLabel.String = 'v_M (10^3 km/s)';
+
+  if 1 % plot B direction
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
+    k = b(2)/b(1);
+    if k > 1
+      plot(hca,xlim,xlim*k,'k')
+    else
+      plot(hca,xlim/k,ylim,'k')
+    end
+    hold(hca,'off')
+    hca.XLim = xlim;
+    hca.YLim = ylim;
+    %B_
+    irf_legend(hca,sprintf('B = %.1f nT', sqrt(sum(B_.^2))),[0.02 0.98],'color','k','fontsize',14)
+  end
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    hold(hca,'off')    
+  end
+end
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)    
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.x.resample(dist),ve.y.resample(dist));  
+  hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = 'v_L (10^3 km/s)';
+  hca.YLabel.String = 'v_M (10^3 km/s)';
+  
+  if 1
+    %%
+    cdata = ha_.CData;
+    xdata = ha_.XData; 
+    dv = xdata(2)-xdata(1);
+    dv = dv*1e3;
+    pptmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
+    ppsum(itime) = pptmp;
+    
+    if pptmp < 0
+      color = [0 0 1];
+    else
+      color = [1 0 0];
+    end
+    irf_legend(hca,sprintf('p = %.3f pPa',pptmp),[0.98 0.98],'color',color,'fontsize',13)
+  end
+
+  if 1 % plot B direction
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_dist = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
+    k = b(2)/b(1);
+    if k > 1
+      plot(hca,xlim,xlim*k,'k')
+    else
+      plot(hca,xlim/k,ylim,'k')
+    end
+    hold(hca,'off')
+    hca.XLim = xlim;
+    hca.YLim = ylim;
+  end
+  
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    hold(hca,'off')    
+  end
+end
+
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)    
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress');  
+  hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = 'v_L (10^3 km/s)';
+  hca.YLabel.String = 'v_M (10^3 km/s)';
+  
+  if 1
+    %%
+    cdata = ha_.CData;
+    xdata = ha_.XData; 
+    dv = xdata(2)-xdata(1);
+    dv = dv*1e3;
+    sstmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
+    sssum(itime) = sstmp;
+    
+    if sstmp < 0
+      color = [0 0 1];
+    else
+      color = [1 0 0];
+    end
+    irf_legend(hca,sprintf('p = %.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
+  end
+
+  if 1 % plot B direction
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_dist = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
+    k = b(2)/b(1);
+    disp(b)
+    if k > 1
+      plot(hca,xlim,xlim*k,'k')
+    else
+      plot(hca,xlim/k,ylim,'k')
+    end
+    hold(hca,'off')
+    hca.XLim = xlim;
+    hca.YLim = ylim;
+  end
+  
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    hold(hca,'off')    
+  end
+end
+
+c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]);',1:times.length,1:2)
+
+hlinks_all = linkprop(h2,{'XLim','YLim'});
+hlinks_f = linkprop(h2(1:nt),{'CLim'});
+hlinks_p = linkprop(h2((nt+1):2*nt),{'CLim'});
+
+h2(1).XLim = 0.99*vg([1 end])*1e-3;
+h2(1).YLim = 0.99*vg([1 end])*1e-3;
+
+c_eval('h2(?).XTick = -60:20:60; h2(?).YTick = -60:20:60;',1:numel(h2))
+
+c_eval('h2(?).LineWidth = 1;',1:numel(h2))
+c_eval('h2(?).FontSize = 14;',1:numel(h2))
+c_eval('axis(h2(?),''square'');',1:numel(h2))
+
+c_eval('h1(?).LineWidth = 1;',1:numel(h1))
+c_eval('h1(?).FontSize = 14;',1:numel(h1))
+
+%compact_panels(h2,0.0,00)
+compact_panels(h2,0.005,00.005)
+hb = findobj(gcf,'type','colorbar'); 
+c_eval('hb(?).FontSize = 14;',1:numel(h2))
+hb = hb(end:-1:1);
+%
+ihsub = [1:nt-1 nt+1:(2*nt-1) 2*nt+1:(3*nt-1)];
+delete(hb(ihsub))
+ih = nt;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+ih = nt;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+%hb(3).Position(4) = 0.22; hb(6).Position(4) = 0.22;
+%ihsub = [2 3 5 6];
+ihsub = [2:nt nt+2:(2*nt) 2*nt+2:(3*nt)];
+c_eval('h2(?).YLabel.String = [];',ihsub)
+c_eval('h2(?).YTickLabel = [];',ihsub)
+c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
+
+%h1(1).Title.String = sprintf('MMS %g',ic);
+%h1.Position(1) = h1.Position(1) + h1.Position(3)*0.2;
+%h1.Position(3) = h1.Position(3)*0.8;
+
+
+
+
+if 1
+  %%
+  %for ip = 1:times.length
+  %  hca = h2(ip);
+  %  %cdata = hca.
+  %end
+  %diff(hc_.Surface.XData(1:2))
+  %pp = [-1.483,-0.732,-0.042,0.128,0.513];
+  tsPP = irf.ts_scalar(times,ppsum);
+  hold(h1(1),'on')
+  hpp = irf_plot(h1(1),tsPP,'or');
+  hpp.MarkerFaceColor = 'k';
+  hpp.MarkerEdgeColor = 'k';
+  hpp.MarkerSize = 7;  
+  hold(h1(1),'off')
+  
+  
+  tsSS = irf.ts_scalar(times,sssum);
+  hold(h1(2),'on')
+  hpp = irf_plot(h1(2),tsSS,'or');
+  hpp.MarkerFaceColor = 'k';
+  hpp.MarkerEdgeColor = 'k';
+  hpp.MarkerSize = 7;  
+  hold(h1(2),'off')
+  
+  h1(1).YLabel.String = 'P_{e,LM} (pPa)';
+  h1(2).YLabel.String = 'S_{e,LM} (pPa)';
+  h1(1).YLabel.Interpreter = 'tex';
+  h1(2).YLabel.Interpreter = 'tex';
+end
+
+hbb = findobj(gcf,'type','colorbar'); hbb = hbb(end:-1:1);
+
+hbb(2).YLabel.String = 'dP^e_{LM}/dv_Ldv_M (kg/m^3)';
+hbb(3).YLabel.String = 'dS^e_{LM}/dv_Ldv_M (kg/m^3)';
+
+
+%% 2D distribution and pressure and stress contributions, MN, X times, with locations shown
+ic = 3;
+%t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
+%t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.03;
+times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.4;
+times = times(1):0.5:times(2);
+
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z']);
+%times = times([2 3 4])+0.25;
+%times = times + 0.25;
+times = times + 0.30;
+%times = times + 0.06;
+dt_dist = 4*0.062; % for two distributions
+
+vint = [-Inf Inf];
+vint = [-20000 20000];
+vg = -60000:2000:60000;
+elim = [100 Inf];
+%h = setup_subplots(2,times.length,'vertical'); 
+nt = times.length;
+h1_pos = subplot(4,nt,1:nt); position = h1_pos.Position;
+h1 = irf_plot(2);
+
+h1(1).Position(1) = position(1); 
+h1(2).Position(1) = 0.53; 
+h1(2).Position(3) = 0.32; 
+h1(1).Position(2) = position(2);
+h1(2).Position(2) = position(2);
+h1(1).Position(4) = position(4);
+h1(2).Position(4) = position(4);
+h1(1).Position(3) = 0.32; 
+%delete(h1_pos);
+clear h2
+for ip = 1:(nt*3)
+  h2(ip) = subplot(4,nt,nt+ip);
+end
+
+hca = h1(1);
+c_eval('mvaPe = mvaPe?;',ic)
+c_eval('mvaB = mvaB?;',ic)
+%irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
+hp = irf_patch(hca,{mvaPe.yz*1e3,0},'color','k','linewidth',1);
+%hp = irf_patch(hca,{mvaB.y,0},'color','k','linewidth',1);
+%irf_plot(hca,{mvaB.x,mvaB.y},'comp')
+hca.YLabel.String = 'P_{eMN} (pPa)';
+hca.YLabel.Interpreter = 'tex';
+irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
+irf_zoom(hca,'y')
+%hmark = irf_pl_mark(hca,times.epochUnix,'k');
+%c_eval('hmark(?) = irf_pl_mark(hca,times(?).epochUnix + 0.5*0.03*[-1 1],''k'');',1:times.length)
+%c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+xtickangle(h1,0)
+%h1.Position(4) = 0.16;
+ppsum = [];
+%hp.EdgeColor = [0 0 0];
+%hp.FaceColor = [0.5 0.5 0.5];
+h1(1).YLabel.String = 'P_{e,LM} (pPa)';
+h1(1).YLabel.Interpreter = 'tex';
+
+hca = h1(2);
+c_eval('mvaSe = mvaSe?;',ic)  
+%irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
+hp = irf_patch(hca,{mvaSe.yz*1e3,0},'color','k','linewidth',1);
+%irf_plot(hca,{mvaPe1.xy*1e3,mvaB1.abs},'comp')
+hca.YLabel.String = 'S_{eMN} (pPa)';
+hca.YLabel.Interpreter = 'tex';
+irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
+irf_zoom(hca,'y')
+%hmark = irf_pl_mark(hca,times.epochUnix,'k');
+%c_eval('hmark(?) = irf_pl_mark(hca,times(?).epochUnix + 0.5*0.03*[-1 1],''k'');',1:times.length)
+%c_eval('hmark(?).LineWidth = 1;',1:numel(hmark))
+xtickangle(h1,0)
+%h1.Position(4) = 0.16;
+ppsum = [];
+hp.EdgeColor = [0 0 0];
+hp.FaceColor = [0.5 0.5 0.5];
+h1(2).YLabel.String = 'S_{e,LM} (pPa)';
+h1(2).YLabel.Interpreter = 'tex';
+h1(2).YLim = h1(1).YLim;
+
+
+times_exact = {};
+isub = 1;
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)  
+  vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+  times_exact{itime} = vdf.time;
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca);
+  hc_.Colorbar.YLabel.String = 'log_{10} f_e (s^2/m^5)';
+  colormap(hca,pic_colors('candy4'))   
+  hca.XLabel.String = 'v_M (10^3 km/s)';
+  hca.YLabel.String = 'v_N (10^3 km/s)';
+
+  if 1 % plot B direction
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
+    k = b(3)/b(2);
+    if k > 1
+      plot(hca,xlim,xlim*k,'k')
+    else
+      plot(hca,xlim/k,ylim,'k')
+    end
+    hold(hca,'off')
+    hca.XLim = xlim;
+    hca.YLim = ylim;
+    %B_
+    irf_legend(hca,sprintf('B = %.1f nT', sqrt(sum(B_.^2))),[0.02 0.98],'color','k','fontsize',14)
+  end
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.y.data,1)*1e-3,mean(ve.z.data,1)*1e-3,'+k')
+    hold(hca,'off')    
+  end
+end
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)    
+  vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.y.resample(dist),ve.z.resample(dist));  
+  hc_.Colorbar.YLabel.String = 'f_e(v_M,v_N)(v_M-v_M^{bulk})(v_N-v_N^{bulk}) (1/m^3)';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = 'v_M (10^3 km/s)';
+  hca.YLabel.String = 'v_N (10^3 km/s)';
+  
+  if 1
+    %%
+    cdata = ha_.CData;
+    xdata = ha_.XData; 
+    dv = xdata(2)-xdata(1);
+    dv = dv*1e3;
+    pptmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
+    ppsum(itime) = pptmp;
+    
+    if pptmp < 0
+      color = [0 0 1];
+    else
+      color = [1 0 0];
+    end
+    irf_legend(hca,sprintf('p = %.3f pPa',pptmp),[0.98 0.98],'color',color,'fontsize',13)
+  end
+
+  if 1 % plot B direction
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_dist = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
+    k = b(3)/b(2);
+    if k > 1
+      plot(hca,xlim,xlim*k,'k')
+    else
+      plot(hca,xlim/k,ylim,'k')
+    end
+    hold(hca,'off')
+    hca.XLim = xlim;
+    hca.YLim = ylim;
+  end
+  
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.y.data,1)*1e-3,mean(ve.z.data,1)*1e-3,'+k')
+    hold(hca,'off')    
+  end
+end
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)    
+  vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress');  
+  hc_.Colorbar.YLabel.String = 'f_e(v_M,v_N)(v_M-v_M^{bulk})(v_N-v_N^{bulk}) (1/m^3)';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = 'v_M (10^3 km/s)';
+  hca.YLabel.String = 'v_N (10^3 km/s)';
+  
+  if 1
+    %%
+    cdata = ha_.CData;
+    xdata = ha_.XData; 
+    dv = xdata(2)-xdata(1);
+    dv = dv*1e3;
+    sstmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
+    sssum(itime) = sstmp;
+    
+    if sstmp < 0
+      color = [0 0 1];
+    else
+      color = [1 0 0];
+    end
+    irf_legend(hca,sprintf('p = %.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
+  end
+
+  if 1 % plot B direction
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_dist = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B_ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B_.data,1);
+    b = B_/norm(B_);
+    k = b(2)/b(1);
+    disp(b)
+    if k > 1
+      plot(hca,xlim,xlim*k,'k')
+    else
+      plot(hca,xlim/k,ylim,'k')
+    end
+    hold(hca,'off')
+    hca.XLim = xlim;
+    hca.YLim = ylim;
+  end
+  
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    hold(hca,'off')    
+  end
+end
+
+c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]);',1:times.length,1:2)
+
+hlinks_all = linkprop(h2,{'XLim','YLim'});
+hlinks_f = linkprop(h2(1:nt),{'CLim'});
+hlinks_p = linkprop(h2((nt+1):2*nt),{'CLim'});
+
+h2(1).XLim = 0.99*vg([1 end])*1e-3;
+h2(1).YLim = 0.99*vg([1 end])*1e-3;
+
+c_eval('h2(?).XTick = -60:20:60; h2(?).YTick = -60:20:60;',1:numel(h2))
+
+c_eval('h2(?).LineWidth = 1;',1:numel(h2))
+c_eval('h2(?).FontSize = 14;',1:numel(h2))
+c_eval('axis(h2(?),''square'');',1:numel(h2))
+
+c_eval('h1(?).LineWidth = 1;',1:numel(h1))
+c_eval('h1(?).FontSize = 14;',1:numel(h1))
+
+%compact_panels(h2,0.0,00)
+compact_panels(h2,0.005,00.005)
+hb = findobj(gcf,'type','colorbar'); 
+c_eval('hb(?).FontSize = 14;',1:numel(h2))
+hb = hb(end:-1:1);
+%
+ihsub = [1:nt-1 nt+1:(2*nt-1) 2*nt+1:(3*nt-1)];
+delete(hb(ihsub))
+ih = nt;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+ih = nt;
+hb(ih).Position(2) = hb(ih).Position(2)+hb(ih).Position(4)*0.05; 
+hb(ih).Position(4) = hb(ih).Position(4)*0.9; 
+%hb(3).Position(4) = 0.22; hb(6).Position(4) = 0.22;
+%ihsub = [2 3 5 6];
+ihsub = [2:nt nt+2:(2*nt) 2*nt+2:(3*nt)];
+c_eval('h2(?).YLabel.String = [];',ihsub)
+c_eval('h2(?).YTickLabel = [];',ihsub)
+c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
+
+%h1(1).Title.String = sprintf('MMS %g',ic);
+%h1.Position(1) = h1.Position(1) + h1.Position(3)*0.2;
+%h1.Position(3) = h1.Position(3)*0.8;
+
+
+
+
+if 1
+  %%
+  %for ip = 1:times.length
+  %  hca = h2(ip);
+  %  %cdata = hca.
+  %end
+  %diff(hc_.Surface.XData(1:2))
+  %pp = [-1.483,-0.732,-0.042,0.128,0.513];
+  tsPP = irf.ts_scalar(times,ppsum);
+  hold(h1(1),'on')
+  hpp = irf_plot(h1(1),tsPP,'or');
+  hpp.MarkerFaceColor = 'k';
+  hpp.MarkerEdgeColor = 'k';
+  hpp.MarkerSize = 7;  
+  hold(h1(1),'off')
+  
+  
+  tsSS = irf.ts_scalar(times,sssum);
+  hold(h1(2),'on')
+  hpp = irf_plot(h1(2),tsSS,'or');
+  hpp.MarkerFaceColor = 'k';
+  hpp.MarkerEdgeColor = 'k';
+  hpp.MarkerSize = 7;  
+  hold(h1(2),'off')
+  
+  h1(1).YLabel.String = 'P_{e,LM} (pPa)';
+  h1(2).YLabel.String = 'S_{e,LM} (pPa)';
+  h1(1).YLabel.Interpreter = 'tex';
+  h1(2).YLabel.Interpreter = 'tex';
+end
+
+hbb = findobj(gcf,'type','colorbar'); hbb = hbb(end:-1:1);
+
+hbb(2).YLabel.String = 'dP^e_{LM}/dv_Ldv_M (kg/m^3)';
+hbb(3).YLabel.String = 'dS^e_{LM}/dv_Ldv_M (kg/m^3)';
 
 
 %% 2D distribution and pressure contributions, MN, X times, with locations shown
@@ -395,7 +1118,7 @@ for itime = 1:times.length
   hca.XLabel.String = 'v_L (10^3 km/s)';
   hca.YLabel.String = 'v_M (10^3 km/s)';
 
-  if 1 % plot B direction
+  if 0 % plot B direction
     %%
     xlim = hca.XLim;
     ylim = hca.YLim;

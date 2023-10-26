@@ -4,6 +4,7 @@ irf.log('critical')
 ic = 1;
 
 localuser = datastore('local','user');
+localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
@@ -22,6 +23,7 @@ fileId = '20170725220853';
 
 iFile = find(cellfun(@(s) contains(s,fileId),{files.name}));
 
+%%
 if 0
 tint_all = irf.tint('2017-07-09T17:30:00.00Z/2017-07-09T17:35:00.00Z');
 files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
