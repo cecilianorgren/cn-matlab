@@ -1,6 +1,6 @@
 tint = irf.tint('2017-07-25T22:04:44.822634526Z/2017-07-25T22:11:31.820198151Z');
 tint_b = irf.tint('2017-07-25T22:09:00.82Z/2017-07-25T22:11:31.82Z');
-i
+
 tint_c = irf.tint('2017-07-25T22:09:00.82Z/2017-07-25T22:11:00.00Z');
 tint_d = irf.tint('2017-07-25T22:09:30.82Z/2017-07-25T22:11:00.00Z');
 
@@ -10,7 +10,7 @@ tint_cavity = irf.tint('2017-07-25T22:09:46.00Z/2017-07-25T22:09:56.00Z');
 %% Figure: Overview 1
 ic = 1;
 
-npanels = 10;
+npanels = 5;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -38,7 +38,7 @@ if 1 % B gse
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end 
-if 0 % ne
+if 1 % ne
   hca = irf_panel('n');
   set(hca,'ColorOrder',mms_colors('12'))
   c_eval('irf_plot(hca,{ne?},''comp'')',ic)
@@ -375,7 +375,7 @@ if 1 % i DEF omni
   end
   hca.YLabel.String = {'E_i','(eV)'};   
 end
-if 0 % ePDist pa 64
+if 1 % ePDist pa 64
   isub = isub + 1;
   hca = irf_panel('e PA e64 deflux lowe');  
   eint = [100 30000];  
@@ -453,7 +453,7 @@ if 0 % i psd z
   hca.YLabel.String = {'v_{iz}','(km/s)'};  
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i psd x
+if 0 % i psd x
   isub = isub + 1;
   hca = irf_panel('iLine x high');
   c_eval('if1D = if1Dx?_high;',ic)
@@ -467,7 +467,7 @@ if 1 % i psd x
   hca.YLabel.String = {'v_{ix}','(km/s)'}; 
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i psd y
+if 0 % i psd y
   isub = isub + 1;
   hca = irf_panel('iLine y high');
   c_eval('if1D = if1Dy?_high;',ic)
@@ -481,7 +481,7 @@ if 1 % i psd y
   hca.YLabel.String = {'v_{iy}','(km/s)'};  
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i psd z
+if 0 % i psd z
   isub = isub + 1;
   hca = irf_panel('iLine z high');
   c_eval('if1D = if1Dz?_high;',ic)
@@ -495,7 +495,7 @@ if 1 % i psd z
   hca.YLabel.String = {'v_{iz}','(km/s)'};  
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i psd x
+if 0 % i psd x
   isub = isub + 1;
   hca = irf_panel('iLine x low');
   c_eval('if1D = if1Dx?_low;',ic)
@@ -509,7 +509,7 @@ if 1 % i psd x
   hca.YLabel.String = {'v_{ix}','(km/s)'}; 
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i psd y
+if 0 % i psd y
   isub = isub + 1;
   hca = irf_panel('iLine y low');
   c_eval('if1D = if1Dy?_low;',ic)
@@ -523,7 +523,7 @@ if 1 % i psd y
   hca.YLabel.String = {'v_{iy}','(km/s)'};  
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % i psd z
+if 0 % i psd z
   isub = isub + 1;
   hca = irf_panel('iLine z low');
   c_eval('if1D = if1Dz?_low;',ic)
@@ -1424,6 +1424,18 @@ if 0 % Ve perp par av
   hca.YLabel.String = {'v_{e}','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'\perp x','\perp y','\perp z','||'},[0.98 0.9],'fontsize',12);
+end
+
+
+if 1 % ePDist pa 64
+  isub = isub + 1;
+  hca = irf_panel('e PA e64 deflux lowe');  
+  eint = [100 30000];  
+  c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
+  irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1])
+  hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
+  hca.YTick = [45 90 135];   
+  colormap(hca,cmap)
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
@@ -5031,7 +5043,7 @@ end
 %% Figure: Reconnection onset, density cavity
 ic = 1;
 
-npanels = 9;
+npanels = 7;
 h = irf_plot(npanels);  
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -5061,7 +5073,7 @@ if 1 % ne
   irf_legend(hca,{'n_e'},[0.98 0.98])
   hca.YLabel.String = {'n','(cm^{-3})'};
 end
-if 1 % E
+if 0 % E
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E');
@@ -5116,7 +5128,7 @@ if 0 % Ji single sc
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{cs_str(1),cs_str(2),cs_str(3)},[0.98 0.9],'fontsize',12);  
 end
-if 1 % J single sc
+if 0 % J single sc
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('J');
@@ -5151,7 +5163,7 @@ if 0 % JxB single sc
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{cs_str(1),cs_str(2),cs_str(3)},[0.98 0.9],'fontsize',12);  
 end
-if 1 % JxB/ne single sc
+if 0 % JxB/ne single sc
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('JxB/ne');
@@ -5217,7 +5229,7 @@ if 0 % electron mom eq. 3 panels: x,y,z
     irf_legend(hca,{'E','-v_exB','-divPe/ne','-(E+v_exB)'}',[1.02 0.9],'fontsize',12);  
   end
 end
-if 0 % ohm's law, 3 panels: x,y,z
+if 1 % ohm's law, 3 panels: x,y,z
   for comp = ['x','y','z']
     isub = isub + 1;
     zoomy = [zoomy isub];
@@ -5504,7 +5516,7 @@ if 0 % vExB.x , Vi resample
   irf_legend(hca,{'ExB','V_i'},[0.98 0.9],'fontsize',12);
   %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);
 end
-if 1 % vExB.x/y/z , Vi resample, ve, 3 panels
+if 0 % vExB.x/y/z , Vi resample, ve, 3 panels
   for comp = ['x','y','z'] % vExB.x , Vi resample, ve  
     isub = isub + 1;
     zoomy = [zoomy isub];
@@ -5604,10 +5616,10 @@ if 0 % ePDist pa
   hca.YTick = [45 90 135];   
   colormap(hca,cmap)
 end
-if 0 % ePDist pa 
+if 1 % ePDist pa 
   isub = isub + 1;
   hca = irf_panel('e PA deflux highe');  
-  eint = [1000 40000];  
+  eint = [100 40000];  
   c_eval('irf_spectrogram(hca,ePitch?.tlim(tint).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f')],[0.99 0.90],'color',0*[1 1 1])
   hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
@@ -5633,9 +5645,9 @@ irf_plot_axis_align
 %tmark_eis = tint(1):20:tint(2);
 
 %% Plot 2D electron distributions
-ic = 2;
+ic = 1;
 %[h,h2] = initialize_combined_plot(8,3,2,0.5,'vertical');
-h = irf_plot(10);
+h = irf_plot(8);
 
 %tint_figure = tint_cavity + [-135 15];
 tint_figure = tint;
@@ -5657,10 +5669,17 @@ times_dist = EpochTT(['2017-07-25T22:09:30.00Z';...
 cs = 'lmn';
 cs_str = 'LMN';
 
+cs = 'gse';
+cs_str = 'xyz';
+
+
 comps = ['x','y','z'];
 comp_str = 'LMN';
+comp_str = 'xyz';
+
 comps = ['x'];
-comp_str = 'L';
+comps_str = 'x';
+%comp_str = 'L';
 
 if 0
 cs = 'gse';
@@ -5710,18 +5729,19 @@ if 1 % Epar
   set(hca,'ColorOrder',mms_colors('xyza'))  
 end
 if 1 % vExB.x/y/z , Vi resample, ve
+  colors_xyz = [0.6 0.6 0.6; 0 0 0; mms_colors('2')];
   for icomp = 1:numel(comps) % vExB.x , Vi resample, ve  
-    comp = comps(icomp);;
+    comp = comps(icomp);
     isub = isub + 1;
     zoomy = [zoomy isub];
     hca = irf_panel(['V ExB Vi ve',comp]);
-    set(hca,'ColorOrder',mms_colors('123'))
+    set(hca,'ColorOrder',colors_xyz)
     c_eval(sprintf('ve = %sVe?perp.(comp);',cs,cs),ic);
     ve.data(abs(ve.data)>5000) = NaN;
     c_eval(sprintf('irf_plot(hca,{ve,%sVi?perp.(comp),%sVExB?.resample(%sVe?).(comp)},''comp'');',cs,cs,cs),ic)  
     %c_eval('irf_plot(hca,{gsmVExB?.x},''comp'');',ic)  
     hca.YLabel.String = {sprintf('v_{\\perp,(%s)}',comp_str(icomp)),'(km/s)'};
-    set(hca,'ColorOrder',mms_colors('123'))
+    set(hca,'ColorOrder',colors_xyz)
     irf_legend(hca,{'v_e','v_i','ExB'},[0.98 0.9],'fontsize',12);
     %irf_legend(hca,{'x'},[0.98 0.9],'fontsize',12);
   end
@@ -5753,7 +5773,7 @@ if 1 % vepar
   hca.YLabel.String = {'v_{e||}','(km/s)'};
   hca.YLabel.Interpreter = 'tex';
 end
-if 1 % e DEF omni
+if 0 % e DEF omni
   isub = isub + 1;
   hca = irf_panel('e DEF omni');  
   c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.tlim(tint_figure).omni.deflux.specrec,''log'');',ic)  
@@ -5771,12 +5791,12 @@ end
 if 1 % ePDist pa 
   isub = isub + 1;
   hca = irf_panel('e PA deflux 2');  
-  eint = [100 5000];  
+  eint = [100 40000];  
   c_eval('irf_spectrogram(hca,ePitch?.tlim(tint_figure).elim(eint).deflux.specrec(''pa''),''log'');',ic)
   irf_legend(hca,[num2str(eint(1),'%.0f') '<E<' num2str(eint(2),'%.0f') ' eV'],[0.02 0.1],'color',0*[1 1 1],'fontsize',11)  
   hca.YTick = [45 90 135];   
   colormap(hca,cmap)  
- % hca.CLim = [6.2 7];
+  hca.CLim = [6.2 7];
   
   if 1 % plot trap angle
     %%
@@ -5788,7 +5808,7 @@ if 1 % ePDist pa
   
   hca.YLabel.String = {'\theta_{PA,e}','(\circ)'};   
 end
-if 1 % ePDist pa 
+if 0 % ePDist pa 
   isub = isub + 1;
   hca = irf_panel('e PA deflux');  
   eint = [5000 40000];  
@@ -5798,7 +5818,7 @@ if 1 % ePDist pa
   hca.YTick = [45 90 135];   
   colormap(hca,cmap)
   
- % hca.CLim = [6.2 7];
+  hca.CLim = [6.2 7];
   
   if 1 % plot trap angle
     %%
@@ -5812,7 +5832,7 @@ if 1 % ePDist pa
 end
 
 
-if 1 % Teperp, Tepar
+if 0 % Teperp, Tepar
   isub = isub + 1;
   %zoomy = [zoomy isub];
   hca = irf_panel('Te perp par');
@@ -5827,6 +5847,15 @@ if 1 % Teperp, Tepar
   hca.YLim = [0 1e4];
 end
 
+if 1 % JdotE
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('JdotE');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{JdotE?.resample(gseJi?)},''comp'');',ic)    
+  hca.YLabel.String = {'J\cdot E','(...)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+end
 if 0 % fe(vpar)
   isub = isub + 1;
   hca = irf_panel('fe(vpar)');
@@ -5845,11 +5874,16 @@ end
 drawnow
 irf_zoom(h,'x',tint_figure)
 drawnow
-irf_zoom(h(zoomy),'y')
+%irf_zoom(h(zoomy),'y')
 irf_plot_axis_align(h)
 h(1).Title.String = sprintf('L = [%5.2f,%5.2f,%5.2f], M = [%5.2f,%5.2f,%5.2f], N = [%5.2f,%5.2f,%5.2f]',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3));
 drawnow
 
+c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
+irf_zoom(h,'x',tint_cavity)
+irf_zoom(h,'y')
+
+hca = irf_panel('e PA deflux 2');  hca.YLim = [0 180];
 %% Distributions
 if exist('hmark'); delete(hmark); end
 times_dist = EpochTT(['2017-07-09T17:33:17.00Z';...

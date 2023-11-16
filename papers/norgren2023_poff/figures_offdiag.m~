@@ -366,7 +366,7 @@ dt_dist = 4*0.062; % for two distributions
 fontsize_B_amp = 13;
 
 vint = [-Inf Inf];
-%vint = [-20000 20000];
+vint = [-20000 20000];
 vg = -60000:2000:60000;
 elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
@@ -729,11 +729,6 @@ hbb = findobj(gcf,'type','colorbar'); hbb = hbb(end:-1:1);
 %hbb(2).YLabel.String = 'dP^e_{LM}/dv_Ldv_M (kg/m^3)';
 %hbb(3).YLabel.String = 'dS^e_{LM}/dv_Ldv_M (kg/m^3)';
 
-
-c_eval('h2(?).Color = 1*[1 1 1];',1:15)
-c_eval('h2(?).XGrid = ''off''; h2(?).YGrid = ''off'';',1:15)
-color_grid = 0.5*[1 1 1];
-c_eval('hold(h2(?),"on"); plot(h2(?),vg*0,vg,''color'',color_grid); plot(h2(?),vg,vg*0,''color'',color_grid);',1:15)
 %% 2D distribution and pressure and stress contributions, MN, adapted from LM, X times, with locations shown
 ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
@@ -757,7 +752,7 @@ dt_dist = 4*0.062; % for two distributions
 fontsize_B_amp = 13;
 
 vint = [-Inf Inf];
-%vint = [-20000 20000];
+vint = [-20000 20000];
 vg = -60000:2000:60000;
 elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
@@ -899,7 +894,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.(comps(1)).resample(dist),ve.(comps(2)).resample(dist));  
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.x.resample(dist),ve.y.resample(dist));  
   %hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
   hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2)),'(1/m^3)'};
   colormap(hca,pic_colors('blue_red'))
@@ -938,7 +933,7 @@ if 1 % plot B direction
     B_std_inplane = std(B__.data(:,2:3),1);
     B_inplane = sqrt(sum(B_(2:3).^2));
     if B_inplane > 2*norm(B_std_inplane)
-      k = b(3)/b(2);
+      k = b(2)/b(1);
       if k > 1
         plot(hca,xlim,xlim*k,'k')
       else
@@ -947,7 +942,7 @@ if 1 % plot B direction
       hold(hca,'off')
       hca.XLim = xlim;
       hca.YLim = ylim;
-      B_ = B_(2:3);
+      B_ = B_(1:2);
     end
 
     %irf_legend(hca,sprintf('B = %.1f nT', B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
@@ -955,8 +950,8 @@ if 1 % plot B direction
   if 1 % plot bulk speed
     %%
     hold(hca,'on')
-    plot(hca,mean(ve.(comps(1)).data,1)*1e-3,mean(ve.(comps(2)).data,1)*1e-3,'+k')
-    plot(hca,mean(ve.(comps(1)).data,1)*1e-3,mean(ve.(comps(2)).data,1)*1e-3,'ow')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
     hold(hca,'off')    
   end
 end
@@ -968,7 +963,7 @@ for itime = 1:times.length
   c_eval('scpot = scPot?.resample(dist);',ic)  
   c_eval('B = mvaB?.resample(dist);',ic)  
   c_eval('ve = mvaVe?.resample(dist);',ic)    
-  vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
     
   % Plot
   hca = h2(isub); isub = isub + 1;
@@ -1007,10 +1002,10 @@ for itime = 1:times.length
       B_ = mean(B__.data,1);
       B_std = std(B__.data,1);
       b = B_/norm(B_);
-      B_std_inplane = std(B__.data(:,2:3),1);
-      B_inplane = sqrt(sum(B_(2:3).^2));
+      B_std_inplane = std(B__.data(:,1:2),1);
+      B_inplane = sqrt(sum(B_(1:2).^2));
       if B_inplane > 2*norm(B_std_inplane)
-        k = b(3)/b(2);
+        k = b(2)/b(1);
         if k > 1
           plot(hca,xlim,xlim*k,'k')
         else
@@ -1019,15 +1014,15 @@ for itime = 1:times.length
         hold(hca,'off')
         hca.XLim = xlim;
         hca.YLim = ylim;
-        B_ = B_(2:3);
+        B_ = B_(1:2);
     end
       %irf_legend(hca,sprintf('B = %.1f nT', B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
   end
   if 1 % plot bulk speed
     %%
     hold(hca,'on')
-    plot(hca,mean(ve.(comps(1)).data,1)*1e-3,mean(ve.(comps(2)).data,1)*1e-3,'+k')
-    plot(hca,mean(ve.(comps(1)).data,1)*1e-3,mean(ve.(comps(2)).data,1)*1e-3,'ow')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
     hold(hca,'off')    
   end
 end
@@ -1120,10 +1115,6 @@ hbb = findobj(gcf,'type','colorbar'); hbb = hbb(end:-1:1);
 %hbb(2).YLabel.String = 'dP^e_{LM}/dv_Ldv_M (kg/m^3)';
 %hbb(3).YLabel.String = 'dS^e_{LM}/dv_Ldv_M (kg/m^3)';
 
-c_eval('h2(?).Color = 1*[1 1 1];',1:15)
-c_eval('h2(?).XGrid = ''off''; h2(?).YGrid = ''off'';',1:15)
-color_grid = 0.5*[1 1 1];
-c_eval('hold(h2(?),"on"); plot(h2(?),vg*0,vg,''color'',color_grid); plot(h2(?),vg,vg*0,''color'',color_grid);',1:15)
 
 %% 2D distribution and pressure and stress contributions, MN, X times, with locations shown
 ic = 3;

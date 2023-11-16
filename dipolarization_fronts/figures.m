@@ -3,7 +3,7 @@ units = irf_units;
 irf.log('critical')
 ic = 2;
 
-mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 db_info = datastore('mms_db');   
 localuser = datastore('local','user');
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
@@ -15,10 +15,10 @@ files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
 % Time from file name
 fileId = '20170709171633'; %tint = [files(iFile-1).start files(iFile).stop] + [1 -1]; % also load the file before
 %fileId = '20170709173053';
-fileId = '20170611173913';
+%fileId = '20170611173913';
 
 %fileId = '20170724125513';
-fileId = '20170725220853';
+%fileId = '20170725220853';
 %fileId = '20170726065803';
 %fileId = '20170728200013'; %two front with 2 density decrease
  

@@ -32,6 +32,11 @@ Astep = 20;
 dA = Astep/numel(t);
 AYlev0 = -100:Astep:(100 + Astep);
 
+linecolor_top = colors(1,:);
+linecolor_bot = colors(2,:);
+color_background = [0 0 0];
+color_separatrix = [0 0 0];
+
 % Initiate
 if doVideo
   vidObj = VideoWriter([printpath fileName '.mp4'],'MPEG-4');
@@ -42,12 +47,12 @@ if doGif
   iframe = 0;
 end
      
-
+% Advance and collect frames
 for it = 1:numel(t)
   % Draw separatrix
-  plot(hca,x_xline,y_xline,'linewidth',1,'linestyle','--','color',[0,0,0])
+  plot(hca,x_xline,y_xline,'linewidth',1,'linestyle','--','color',color_separatrix)
   hold(hca,'on')
-  plot(hca,x_xline,-y_xline,'linewidth',1,'linestyle','--','color',[0,0,0])
+  plot(hca,x_xline,-y_xline,'linewidth',1,'linestyle','--','color',color_separatrix)
 
   % Draw field lines
   AY = AY0 - dA*t(it);
@@ -55,8 +60,8 @@ for it = 1:numel(t)
   for is = 1:numel(S)
     sx = interp1(1:numel(S(is).X),S(is).X,1:0.5:numel(S(is).X));
     sy = interp1(1:numel(S(is).Y),S(is).Y,1:0.5:numel(S(is).Y));%S(is).Y;
-    plot(hca,sx(sy>=0),sy(sy>=0),'color',[1 0 0],'linewidth',2)
-    plot(hca,sx(sy<=0),sy(sy<=0),'color',[0 0 1],'linewidth',2)
+    plot(hca,sx(sy>=0),sy(sy>=0),'color',linecolor_top,'linewidth',2)
+    plot(hca,sx(sy<=0),sy(sy<=0),'color',linecolor_bot,'linewidth',2)
    
 
 %     if not(holdon)
