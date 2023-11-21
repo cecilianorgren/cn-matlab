@@ -343,6 +343,213 @@ c_eval('h(?).LineWidth = 1;',1:numel(h))
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
 h(end).XTickLabelRotation = 0;
 
+%% 1D distributions for the 5 times
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z']);
+%times = times([2 3 4])+0.25;
+%times = times + 0.25;
+times = times + 0.30;
+%times = times + 0.06;
+dt_dist = 4*0.062; % for X distributions
+
+%elim = [100 Inf];
+
+vint = [-Inf Inf];
+%vint = [-20000 20000];
+vg = -60000:2000:60000;
+
+nrows = 3;
+ncols = 2;
+ip = 0;
+for irow = 1:nrows
+  for icol = 1:ncols
+    ip = ip + 1;
+    h(irow,icol) = subplot(nrows,ncols,ip);
+  end
+end
+
+times_exact = {};
+
+elim = [100 Inf];
+for itime = 1:times.length  
+  isub = 1;
+  icol = 1;
+  if itime == 2
+    c_eval('hold(h(?,icol),''on'')',1:3)
+  end
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)  
+  fL = dist.reduce('1D',L,'vint',vint,'scpot',scpot,'vg',vg);
+  fM = dist.reduce('1D',M,'vint',vint,'scpot',scpot,'vg',vg);
+  fN = dist.reduce('1D',N,'vint',vint,'scpot',scpot,'vg',vg);
+  times_exact{itime} = fL.time;
+    
+  % Plot
+  hca = h(isub,icol); isub = isub + 1;
+  plot(hca,fL.depend{1}(1,:)*1e-3,mean(fL.data,1))
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)','x');
+  hca.YLabel.String = sprintf('f_e (s/m^4)');
+  
+  hca = h(isub,icol); isub = isub + 1;
+  plot(hca,fM.depend{1}(1,:)*1e-3,mean(fN.data,1))
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)','y');
+  hca.YLabel.String = sprintf('f_e (s/m^4)');
+  
+  hca = h(isub,icol); isub = isub + 1;
+  plot(hca,fM.depend{1}(1,:)*1e-3,mean(fN.data,1))
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)','z');
+  hca.YLabel.String = sprintf('f_e (s/m^4)');
+
+  if 0 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
+    hold(hca,'off')    
+  end
+end
+
+elim = [0 Inf];
+for itime = 1:times.length
+  icol = 2;
+  isub = 1;
+  if itime == 2
+    c_eval('hold(h(?,icol),''on'')',1:3)
+  end
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)  
+  fL = dist.reduce('1D',L,'vint',vint,'scpot',scpot,'vg',vg);
+  fM = dist.reduce('1D',M,'vint',vint,'scpot',scpot,'vg',vg);
+  fN = dist.reduce('1D',N,'vint',vint,'scpot',scpot,'vg',vg);
+  times_exact{itime} = fL.time;
+    
+  % Plot
+  hca = h(isub,icol); isub = isub + 1;
+  plot(hca,fL.depend{1}(1,:)*1e-3,mean(fL.data,1))
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)','x');
+  hca.YLabel.String = sprintf('f_e (s/m^4)');
+  
+  hca = h(isub,icol); isub = isub + 1;
+  plot(hca,fM.depend{1}(1,:)*1e-3,mean(fN.data,1))
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)','y');
+  hca.YLabel.String = sprintf('f_e (s/m^4)');
+  
+  hca = h(isub,icol); isub = isub + 1;
+  plot(hca,fM.depend{1}(1,:)*1e-3,mean(fN.data,1))
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)','z');
+  hca.YLabel.String = sprintf('f_e (s/m^4)');
+
+  if 0 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
+    hold(hca,'off')    
+  end
+end
+
+
+c_eval('hold(h(?,1),''off'')',1:3)
+c_eval('hold(h(?,2),''off'')',1:3)
+
+%% 1D distributions for the 5 times, comparing elim with no elim
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z']);
+%times = times([2 3 4])+0.25;
+%times = times + 0.25;
+times = times + 0.30;
+%times = times + 0.06;
+dt_dist = 4*0.062; % for X distributions
+nMC = 500;
+%elim = [100 Inf];
+
+vint = [-Inf Inf];
+%vint = [-20000 20000];
+vg = -60000:1000:60000;
+
+nrows = 3;
+ncols = times.length;
+ip = 0;
+h = gobjects(0);
+for irow = 1:nrows
+  for icol = 1:ncols
+    ip = ip + 1;
+    h(irow,icol) = subplot(nrows,ncols,ip);
+  end
+end
+
+times_exact = {};
+
+elows = [0 50 100 150 200];
+ehigh = Inf;
+
+for itime = 1:times.length  
+  icol = itime;
+  time = times(itime);
+  emin = {};
+  % Reduce distributions
+  for elow = elows
+    isub = 1;
+    elim = [elow ehigh];
+    c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)  
+    emin{end+1} = dist.depend{1}(1,1) - dist.ancillary.delta_energy_minus(1,1);
+    c_eval('scpot = scPot?.resample(dist);',ic)  
+    c_eval('B = mvaB?.resample(dist);',ic)  
+    c_eval('ve = mvaVe?.resample(dist);',ic)  
+    fL = dist.reduce('1D',L,'vint',vint,'scpot',scpot,'vg',vg,'nMC',nMC);
+    fM = dist.reduce('1D',M,'vint',vint,'scpot',scpot,'vg',vg,'nMC',nMC);
+    fN = dist.reduce('1D',N,'vint',vint,'scpot',scpot,'vg',vg,'nMC',nMC);
+    times_exact{itime} = fL.time;
+    
+    % Plot
+    hca = h(isub,icol); isub = isub + 1;
+    plot(hca,fL.depend{1}(1,:)*1e-3,mean(fL.data,1))
+    hca.XLabel.String = sprintf('v_%s (10^3 km/s)','x');
+    hca.YLabel.String = sprintf('f_e(v_%s) (s/m^4)','x');
+
+    hca = h(isub,icol); isub = isub + 1;
+    plot(hca,fM.depend{1}(1,:)*1e-3,mean(fM.data,1))
+    hca.XLabel.String = sprintf('v_%s (10^3 km/s)','y');
+    hca.YLabel.String = sprintf('f_e(v_%s) (s/m^4)','y');
+
+    hca = h(isub,icol); isub = isub + 1;
+    plot(hca,fM.depend{1}(1,:)*1e-3,mean(fN.data,1))
+    hca.XLabel.String = sprintf('v_%s (10^3 km/s)','z');
+    hca.YLabel.String = sprintf('f_e(v_%s) (s/m^4)','z');
+    drawnow
+    c_eval('hold(h(?,icol),''on'')',1:3)     
+  end 
+  legends = cellfun(@(x)sprintf('E>%.0f eV',x),emin,'UniformOutput',false);
+  irf_legend(h(1,1),legends',[0.98 0.98])
+  
+    if 0 % plot bulk speed
+      %%
+      hold(hca,'on')
+      plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+      plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
+      hold(hca,'off')    
+    end
+end
+c_eval('h(?).XGrid = ''on'';',1:numel(h)) 
+c_eval('h(?).YGrid = ''on'';',1:numel(h)) 
+c_eval('h(?).XLim = [-30 30];',1:numel(h)) 
+c_eval('hold(h(?),''off'')',1:numel(h))  
+%compact_panels(0.01,0.01)
+
 %% 2D distribution and pressure and stress contributions, LM, X times, with locations shown
 ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
