@@ -42,12 +42,15 @@ c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l
 % Skymap distributions
 if 1
   %%
+  ic_ = ic;
+  ic = 3;
 disp('Loading skymaps...')
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
 %c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
 %c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 %c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 %c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
+ic = ic_;
 end
 % Pressure and temperature
 disp('Loading pressure and temperature...'); tic
@@ -75,6 +78,7 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 % Calculate stress tensor from pressure, density and speed
 % P_psd(:,1,1) = P_psd(:,1,1)-pmass*n_psd.*V_psd(:,1).*V_psd(:,1);
+
 comps = ['x','y','z'];
 c_eval('Se? = gsePe?.data*0;',ic);
 c_eval('Si? = gsePi?.data*0;',ic);
@@ -86,7 +90,7 @@ for ic1 = 1:3
     c_eval('nvvi?(:,ic1,ic2) = units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);    
     c_eval('gseNVVe? = irf.ts_tensor_xyz(gsePe?.time,nvve?*1e9); gseNVVe?.name = ''Inertia''; gseNVVe?.units = ''nPa'';',ic)
     c_eval('gseNVVi? = irf.ts_tensor_xyz(gsePi?.time,nvvi?*1e9); gseNVVi?.name = ''Iertia''; gseNVVi?.units = ''nPa'';',ic)
-    
+%    
     c_eval('Se?(:,ic1,ic2) = gsePe?.data(:,ic1,ic2)*1e-9 + units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);',ic);
     c_eval('Si?(:,ic1,ic2) = gsePi?.data(:,ic1,ic2)*1e-9 + units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);
     c_eval('gseSe? = irf.ts_tensor_xyz(gsePe?.time,Se?*1e9); gseSe?.name = ''Stress tensor''; gseSe?.units = ''nPa'';',ic)
@@ -94,11 +98,12 @@ for ic1 = 1:3
   end
 end
 %
-
+%
 
 
 
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
+c_eval('gseVexB? = cross(gseVe?,gseB?.resample(gseVe?.time))*1e-3; gseVExB?.units = ''mV/m'';',ic) % km/s
 
 % EDR signatures
 c_eval('facPepp? = mms.rotate_tensor(gsePe?,''fac'',gseB?,''pp'');',ic); % Peperp1 = Peperp2
@@ -121,6 +126,24 @@ c_eval('Temprat? = facPepp?.xx/(facPepp?.yy);',ic);
 c_eval('Te?par = facTe?.xx;',ic);
 c_eval('Te?perp = (facTe?.yy+facTe?.yy)/2;',ic);
 
+
+if 0 % Gradient from 4 sc
+  nsm_pre = 1;
+  c_eval('R? = gseR?.resample(gsePe!);',1:4,ic)
+  c_eval('Pxy? = gsePe?.xy.resample(gsePe!).smooth(nsm_pre);',1:4,ic)
+  gradPexy = c_4_grad('R?','Pxy?','grad');
+
+  c_eval('Sxy? = gseSe?.xy.resample(gseSe!).smooth(nsm_pre);',1:4,ic)
+  gradSexy = c_4_grad('R?','Sxy?','grad');
+
+
+  % Gradient terms
+  %c_eval('gseGrad_Se? = irf.ts_scalar(gseSe?.time,gradient(gseSe?.xy.data,gseSe?.time-gseSe?.time(1))); gseGrad_Se?.name = ''grad(n*vx*vy + Pxy)'';',ic)
+  %c_eval('gseGrad_NVve? = irf.ts_scalar(gseNVVe?.time,gradient(gseNVVe?.xy.data,gseSe?.time-gseSe?.time(1))); gseGrad_NVve?.name = ''grad(n*vx*vy)'';',ic)
+  %c_eval('gseNVgradVe? = ne?*gseVe?.x*irf.ts_scalar(gseVe?.time,gradient(gseVe?.y.data,gseSe?.time-gseSe?.time(1))); gseNVgradVe?.name = ''n*vx*grad(vy)'';',ic)
+  %c_eval('gseVgradNVe? = gseVe?.y*irf.ts_scalar(gseVe?.time,gradient(ne?.data.*gseVe?.x.data,gseSe?.time-gseSe?.time(1))); gseVgradNVe?.name = ''n*vy*grad(n*vx)'';',ic)
+end
+
 % Rotate things into new coordinate system 
 L = [0.9482,-0.255,-0.1893];
 M = [0.1818,0.9245,-0.3350];
@@ -135,6 +158,7 @@ c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
 c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''VExB LMN'';',ic)
+c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''VExB LMN'';',ic)
 %c_eval('mvaJ? = gseJ?*lmn''; mvaJ?.name = ''J LMN'';',ic)
 %c_eval('mvaJe? = gseJe?*lmn''; mvaJe?.name = ''Je LMN'';',ic)
 %c_eval('mvaJi? = gseJi?*lmn''; mvaJi?.name = ''Ji LMN'';',ic)
@@ -143,21 +167,39 @@ c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
 c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
 c_eval('mvaTi? = lmn*gseTi?*lmn''; mvaTi?.units = gseTi?.units;',ic)
 c_eval('mvaTe? = lmn*gseTe?*lmn''; mvaTe?.units = gseTe?.units;',ic)
-
-
-
+%
+try
 c_eval('mvaNVVi? = lmn*gseNVVi?*lmn''; mvaNVVi?.units = gseNVVi?.units;',ic)
+end
 c_eval('mvaNVVe? = lmn*gseNVVe?*lmn''; mvaNVVe?.units = gseNVVe?.units;',ic)
 
-c_eval('mvaSi? = lmn*gseSi?*lmn''; mvaSi?.units = gseSi?.units;',ic)
+%c_eval('mvaSi? = lmn*gseSi?*lmn''; mvaSi?.units = gseSi?.units;',ic)
 c_eval('mvaSe? = lmn*gseSe?*lmn''; mvaSe?.units = gseSe?.units;',ic)
-
 c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
+
+try
+mvaGradPexy = gradPexy*lmn''; mvaGradPexy.units = mvaGradPexy.units;
+mvaGradSexy = gradSexy*lmn''; mvaGradSexy.units = mvaGradSexy.units;
+end
+
+vsc = 10e3;
+c_eval('tt = mvaVe?.time-mvaVe?.time(1);',ic)
+%tt = tt*vsc;
+c_eval('mvaGrad_Se? = irf.ts_scalar(mvaSe?.time,gradient(mvaSe?.xy.data,tt)); mvaGrad_Se?.name = ''grad(n*vx*vy + Pxy)'';',ic)
+c_eval('mvaGrad_Pe? = irf.ts_scalar(mvaPe?.time,gradient(mvaPe?.xy.data,tt)); mvaGrad_Pe?.name = ''grad(Pxy)'';',ic)
+c_eval('mvaGrad_NVve? = irf.ts_scalar(mvaNVVe?.time,gradient(mvaNVVe?.xy.data,tt)); mvaGrad_NVve?.name = ''grad(n*vx*vy)'';',ic)
+c_eval('mvaNVgradVe? = units.me*ne?*1e6*gseVe?.x*1e3*irf.ts_scalar(mvaVe?.time,gradient(mvaVe?.y.data*1e3,tt))*1e9; mvaNVgradVe?.name = ''n*vx*grad(vy,x)'';',ic)
+c_eval('mvaVgradNVe? = units.me*gseVe?.y*1e3*irf.ts_scalar(mvaVe?.time,gradient(ne?.data*1e6.*mvaVe?.x.data*1e3,tt))*1e9; mvaVgradNVe?.name = ''vy*grad(n*vx)'';',ic)
+
+np_smooth = 30;
+c_eval('mvaGrad_Se?_smooth = irf.ts_scalar(mvaSe?.time,gradient(mvaSe?.smooth(np_smooth).xy.data)); mvaGrad_Se?.name = ''grad(n*vx*vy + Pxy)'';',ic)
+c_eval('mvaGrad_NVve?_smooth = irf.ts_scalar(mvaNVVe?.time,gradient(mvaNVVe?.smooth(np_smooth).xy.data)); mvaGrad_NVve?.name = ''grad(n*vx*vy)'';',ic)
+c_eval('mvaNVgradVe?_smooth = units.me*ne?*1e6*gseVe?.x*1e3*irf.ts_scalar(mvaVe?.time,gradient(mvaVe?.smooth(np_smooth).y.data*1e3))*1e9; mvaNVgradVe?.name = ''n*vx*grad(vy,x)'';',ic)
 
 
 c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',1:4)
 
-%% Spacecraft constellation
+% Spacecraft constellation
 tt = irf_time('2017-07-11T22:33:58.000000000Z','utc>EpochTT');
 R0 = (mvaR1 + mvaR2.resample(mvaR1) + mvaR3.resample(mvaR1) + mvaR4.resample(mvaR1))/4;
 c_eval('r? = mvaR?-R0;',1:4)
@@ -240,16 +282,19 @@ hca.DataAspectRatio = [1 1 1];
 %% Figure: Overview 1
 ic = 3;
 
-tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:10.00Z'); %20151112071854
+tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
 
-npanels = 6;
+npanels = 7;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
 fontsize = 16;
+comps = 'xyz';
 
 isub = 0;
 zoomy = [];
+leg_loc = [0.98 0.1];
+%leg_loc = [1.02 0.9];
 
 if 1 % B LMN
   isub = isub + 1;
@@ -259,15 +304,18 @@ if 1 % B LMN
   c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
   hca.YLabel.String = {'B (nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'L','M','N'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
 end 
 if 1 % Ve
   hca = irf_panel('Ve LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint)*1e-3,mvaVe?.y.tlim(tint)*1e-3,mvaVe?.z.tlim(tint)*1e-3},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+  
   hca.YLabel.String = {'v_e (10^3 km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'L','M','N'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
 end
 if 1 % NVVe-off LMN
   hca = irf_panel('mnvve off LMN');
@@ -275,7 +323,8 @@ if 1 % NVVe-off LMN
   c_eval('irf_plot(hca,{mvaNVVe?.xy.tlim(tint)*1e3,mvaNVVe?.xz.tlim(tint)*1e3,mvaNVVe?.yz.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'m_env_ev_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 0 % Pe-diag LMN
   hca = irf_panel('Pe diag LMN');
@@ -283,7 +332,8 @@ if 0 % Pe-diag LMN
   c_eval('irf_plot(hca,{mvaPe?.xx.tlim(tint)*1e3,mvaPe?.yy.tlim(tint)*1e3,mvaPe?.zz.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'P_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'LL','MM','NN'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{comps([1 1]),comps([2 2]),comps([3 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LL','MM','NN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 1 % Pe-off LMN
   hca = irf_panel('Pe off LMN');
@@ -291,15 +341,19 @@ if 1 % Pe-off LMN
   c_eval('irf_plot(hca,{mvaPe?.xy.tlim(tint)*1e3,mvaPe?.xz.tlim(tint)*1e3,mvaPe?.yz.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'P_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 1 % Se-off LMN
   hca = irf_panel('Se off LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3,mvaSe?.xz.tlim(tint)*1e3,mvaSe?.yz.tlim(tint)*1e3},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'S_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 1 % Tpar, Tperp
   hca = irf_panel('Tepar, Teperp');
@@ -307,7 +361,7 @@ if 1 % Tpar, Tperp
   c_eval('irf_plot(hca,{Te?par,Te?perp},''comp'');',ic)  
   hca.YLabel.String = {'T_e (eV)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[0.98 0.15],'fontsize',fontsize);
 end
 if 0 % Non-gyro
   hca = irf_panel('Non-gyrotropies');
@@ -315,7 +369,265 @@ if 0 % Non-gyro
   c_eval('irf_plot(hca,{agyro?,Dng?,Q?.tlim(tint)},''comp'');',ic)  
   hca.YLabel.String = {'','Non-gyrotropy'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'A_{\phi}','Dng','Q^{1/2}'}',[1.02 0.9],'fontsize',fontsize);
+  irf_legend(hca,{'A_{\phi}','Dng','Q^{1/2}'},leg_loc,'fontsize',fontsize);
+end
+if 0 % gradients, comparison  
+  hca = irf_panel('gradients 1');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaGrad_Se?.tlim(tint),mvaGrad_NVve?.tlim(tint),mvaNVgradVe?.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'Gradients (pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'grad(n*vx*vy+Pxy)','grad(n*vx*vy)','n*vx*grad(vy,x)'},leg_loc,'fontsize',fontsize);
+end
+if 1 % gradients, comparison    
+  hca = irf_panel('gradients 1, smoothed after');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaGrad_Se?.tlim(tint).smooth(np_smooth),mvaGrad_NVve?.tlim(tint).smooth(np_smooth),mvaNVgradVe?.tlim(tint).smooth(np_smooth),mvaVgradNVe?.tlim(tint).smooth(np_smooth)},''comp'');',ic)  
+  hca.YLabel.String = {'(pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'\partial_x(mnv_xv_y+P_{xy})'},[0.01 0.15],'fontsize',fontsize);
+  set(hca,'ColorOrder',mms_colors('yza'))
+  irf_legend(hca,{'\partial_x(mnv_xv_y)','mnv_x\partial_x v_y'},[0.99 0.15],'fontsize',fontsize);
+end
+if 0 % gradients, comparison , smoothed
+  hca = irf_panel('gradients 1 smoothed before');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaGrad_Se?_smooth.tlim(tint),mvaGrad_NVve?_smooth.tlim(tint),mvaNVgradVe?_smooth.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'Gradients (pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'\partial_x(nv_xv_y + P_{xy})','\partial_x(nv_xv_y)','nv_x\partial_x v_y'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 0 % Ve x B
+  hca = irf_panel('Ve x B LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVexB?.x.tlim(tint),mvaVexB?.y.tlim(tint),mvaVexB?.z.tlim(tint)},''comp'');',ic)
+  hca.YLabel.String = {'v_e\times{B}','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+end
+if 0 % Ve x B
+  hca = irf_panel('Ve x B LMN, ycomp');
+  set(hca,'ColorOrder',mms_colors('yxz'))
+  c_eval('irf_plot(hca,{mvaVexB?.y.tlim(tint),mvaE?.y.tlim(tint).resample(mvaVe?),mvaVexB?.y.tlim(tint)+mvaE?.y.tlim(tint).resample(mvaVexB?)},''comp'');',ic)
+  hca.YLabel.String = {'v_e\times{B}_y','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('yxz'))
+  irf_legend(hca,{'v_e\times{B}','E_y','v_e\times{B}+E_y'},leg_loc,'fontsize',fontsize);
+end
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
+nInd = 1;
+for ii = 1:npanels
+  irf_legend(h(ii),legends{nInd},[0.01 0.98],'color',[0 0 0],'fontsize',fontsize)
+  nInd = nInd + 1;
+  h(ii).FontSize = fontsize;
+end
+
+time_reversal = irf_time('2017-07-11T22:34:02.641773681Z','utc>EpochTT');
+c_eval('hm(?) = irf_pl_mark(h(?),time_reversal);',1:numel(h))
+c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h))
+c_eval('hm(?).LineStyle = ''--'';',1:numel(h))
+
+%irf_zoom(h(1:iisub),'x',fastTint)
+irf_zoom(h,'x',tint_edr)
+%irf_zoom(h,'x',tint)
+irf_zoom(h,'y')
+irf_plot_axis_align
+%h(1).Title.String = irf_ssub('MMS ?',ic);
+hl = findobj(gcf,'type','line');
+c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
+h(end).XTickLabelRotation = 0;
+
+%% Figure: Gradients
+ic = 3;
+
+tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
+
+npanels = 5;
+h = irf_plot(npanels);
+iisub = 0;
+cmap = colormap(pic_colors('candy4'));
+fontsize = 16;
+comps = 'xyz';
+
+isub = 0;
+zoomy = [];
+leg_loc = [0.98 0.1];
+%leg_loc = [1.02 0.9];
+nsm_base = 10;
+if 1 % ne
+  hca = irf_panel('ne');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{ne?.tlim(tint)},''comp'');',ic)        
+  hca.YLabel.String = {'n_e','(cm^{-3})'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'n_e'},leg_loc,'fontsize',fontsize);
+end
+if 1 % Ve
+  hca = irf_panel('Ve LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint)*1e-3,mvaVe?.y.tlim(tint)*1e-3,mvaVe?.z.tlim(tint)*1e-3},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('b'))
+  %c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+    
+  %yyaxis(hca,'right');
+  %hca2 = gca;
+  %c_eval('irf_plot(hca2,{ne?.tlim(tint)},''comp'',''--'');',ic)  
+  
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+end
+if 1 % Se, Pe, nvv, xy
+  hca = irf_panel('stress x comp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3,mvaPe?.xy.tlim(tint)*1e3,mvaNVVe?.xy.tlim(tint)*1e3},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'Stress','(pPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'S_{xy}','P_{xy}','m_env_xv_y'},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 0 % NVVe-off LMN
+  hca = irf_panel('mnvve off LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaNVVe?.xy.tlim(tint)*1e3,mvaNVVe?.xz.tlim(tint)*1e3,mvaNVVe?.yz.tlim(tint)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'m_env_ev_e (pPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 0 % Pe-off LMN
+  hca = irf_panel('Pe off LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaPe?.xy.tlim(tint)*1e3,mvaPe?.xz.tlim(tint)*1e3,mvaPe?.yz.tlim(tint)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'P_e (pPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 0 % Se-off LMN
+  hca = irf_panel('Se off LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3,mvaSe?.xz.tlim(tint)*1e3,mvaSe?.yz.tlim(tint)*1e3},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'S_e (pPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 0 % n*Ve
+  hca = irf_panel('N*Vex');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('data_pl = mvaVe?*1e3*ne?*1e6;',ic)
+  irf_plot(hca,{data_pl.x,data_pl.x.smooth(nsm)},'comp');
+  set(hca,'ColorOrder',mms_colors('xyza'))    
+  hca.YLabel.String = {'nv_{ex} (...)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'original',sprintf('smoothed, %g',nsm)},leg_loc,'fontsize',fontsize);
+end
+if 0 % gradients, comparison
+  hca = irf_panel('gradients 1');
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  c_eval('data1 = mvaGrad_Se?.tlim(tint);',ic)
+  c_eval('data2 = mvaGrad_Pe?.tlim(tint);',ic)
+  c_eval('data3 = mvaGrad_NVve?.tlim(tint);',ic)
+  c_eval('data4 = mvaNVgradVe?.tlim(tint);',ic)
+  c_eval('data5 = mvaVgradNVe?.tlim(tint);',ic)
+  irf_plot(hca,{data1,data2,data3,data4,data5},'comp');
+  hca.YLabel.String = {'Gradients','(pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
+end
+if 0 % gradients, comparison
+  nsm = 10;
+  hca = irf_panel('gradients 1, smoothed 1');
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  c_eval('data1 = mvaGrad_Se?.tlim(tint).smooth(nsm);',ic)
+  c_eval('data2 = mvaGrad_Pe?.tlim(tint).smooth(nsm);',ic)
+  c_eval('data3 = mvaGrad_NVve?.tlim(tint).smooth(nsm);',ic)
+  c_eval('data4 = mvaNVgradVe?.tlim(tint).smooth(nsm);',ic)
+  c_eval('data5 = mvaVgradNVe?.tlim(tint).smooth(nsm);',ic)
+  irf_plot(hca,{data1,data2,data3,data4,data5},'comp');
+  hca.YLabel.String = {'Gradients','(pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
+  irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.02 0.99],'fontsize',fontsize,'color','k');
+end
+if 1 % gradients, comparison
+  nsm = 30;
+  hca = irf_panel('gradients 1, smoothed 2');
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  c_eval('data1 = mvaGrad_Se?.tlim(tint).smooth(nsm)*1e3;',ic) % nPa -> pPa
+  c_eval('data2 = mvaGrad_Pe?.tlim(tint).smooth(nsm)*1e3;',ic)
+  c_eval('data3 = mvaGrad_NVve?.tlim(tint).smooth(nsm)*1e3;',ic)
+  c_eval('data4 = mvaNVgradVe?.tlim(tint).smooth(nsm)*1e3;',ic)
+  c_eval('data5 = mvaVgradNVe?.tlim(tint).smooth(nsm)*1e3;',ic)
+  irf_plot(hca,{data1,data2,data3,data4,data5},'comp');
+  hca.YLabel.String = {'Gradients','(pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
+  set(hca,'ColorOrder',mms_colors('xy'))
+  irf_legend(hca,{'\partial_t{S_{xy}}','\partial_t{P_{xy}}'},[0.02 leg_loc(2)],'fontsize',fontsize);
+  set(hca,'ColorOrder',mms_colors('z'))
+  irf_legend(hca,{'m_e\partial_t(nv_xv_y)'},[0.98 0.3],'fontsize',fontsize);  
+  set(hca,'ColorOrder',mms_colors('ab'))
+  irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
+  irf_legend(hca,{sprintf('N_{sm}=%g',nsm)},[1.01 0.99],'fontsize',fontsize,'color','k');
+end
+if 1 % gradients, comparison, mV/m
+  % Hasegawa 2018, 320 km - 2.4 s -> 133 km/s
+  vsc = 133e3;10e3; % m/s
+  nsm = 30;
+  hca = irf_panel('gradients 1, smoothed 2, mV/m');
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  c_eval('data1 =   mvaGrad_Se?*1e-9/(ne?*1e6*units.e*vsc);',ic)
+  c_eval('data2 =   mvaGrad_Pe?*1e-9/(ne?*1e6*units.e*vsc);',ic)
+  c_eval('data3 = mvaGrad_NVve?*1e-9/(ne?*1e6*units.e*vsc);',ic)
+  c_eval('data4 =  mvaNVgradVe?*1e-9/(ne?*1e6*units.e*vsc);',ic)
+  c_eval('data5 =  mvaVgradNVe?*1e-9/(ne?*1e6*units.e*vsc);',ic)
+  
+  data1 = data1.tlim(tint).smooth(nsm)*1e3; % mV/m ?
+  data2 = data2.tlim(tint).smooth(nsm)*1e3;
+  data3 = data3.tlim(tint).smooth(nsm)*1e3;
+  data4 = data4.tlim(tint).smooth(nsm)*1e3;
+  data5 = data5.tlim(tint).smooth(nsm)*1e3;
+  
+  irf_plot(hca,{-data1,-data2,-data3,-data4,-data5},'comp');
+  hca.YLabel.String = {'Gradients','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyzab'))
+  %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
+  set(hca,'ColorOrder',mms_colors('xy'))
+  irf_legend(hca,{'-\partial_x{S_{xy}}/ne','-\partial_x{P_{xy}}/ne'},[0.02 leg_loc(2)],'fontsize',fontsize);
+  set(hca,'ColorOrder',mms_colors('z'))
+  irf_legend(hca,{'-m_e\partial_x(nv_xv_y)/ne'},[0.98 0.75],'fontsize',fontsize);  
+  set(hca,'ColorOrder',mms_colors('ab'))
+  irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne','-m_ev_y\partial_x(nv_x)/ne'},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
+  irf_legend(hca,{sprintf('N_{sm}=%g',nsm),sprintf('v=%g{km/s}',vsc*1e-3)}',[1.01 0.99],'fontsize',14,'color','k');
+  irf_legend(hca,{'\partial_x\rightarrow{v_x^{-1}}\partial_t'}',[0.05 0.99],'fontsize',14,'color','k');
+end
+if 0 % gradients, comparison    
+  hca = irf_panel('gradients 1, smoothed after');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaGrad_Se?.tlim(tint).smooth(np_smooth),mvaGrad_NVve?.tlim(tint).smooth(np_smooth),mvaNVgradVe?.tlim(tint).smooth(np_smooth),mvaVgradNVe?.tlim(tint).smooth(np_smooth)},''comp'');',ic)  
+  hca.YLabel.String = {'(pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'\partial_x(mnv_xv_y+P_{xy})'},[0.01 0.15],'fontsize',fontsize);
+  set(hca,'ColorOrder',mms_colors('yza'))
+  irf_legend(hca,{'\partial_x(mnv_xv_y)','mnv_x\partial_x v_y'},[0.99 0.15],'fontsize',fontsize);
+end
+if 0 % gradients, comparison , smoothed
+  hca = irf_panel('gradients 1 smoothed before');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaGrad_Se?_smooth.tlim(tint),mvaGrad_NVve?_smooth.tlim(tint),mvaNVgradVe?_smooth.tlim(tint)},''comp'');',ic)  
+  hca.YLabel.String = {'Gradients','(pPa/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'\partial_x(nv_xv_y + P_{xy})','\partial_x(nv_xv_y)','nv_x\partial_x v_y'}',[1.02 0.9],'fontsize',fontsize);
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
@@ -566,15 +878,15 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:03.300000000Z']);
 %times = times([2 3 4])+0.25;
 %times = times + 0.25;
-times = times + 0.30;
+times = times + 0.30*5;
 %times = times + 0.06;
-dt_dist = 4*0.062; % for two distributions
+dt_dist = 4*0.061; % for two distributions
 
 fontsize_B_amp = 13;
 
 vint = [-Inf Inf];
 %vint = [-20000 20000];
-vg = -60000:2000:60000;
+vg = -100000:2000:100000;
 elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
 nt = times.length;
@@ -654,7 +966,13 @@ for itime = 1:times.length
   c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
   c_eval('scpot = scPot?.resample(dist);',ic)  
   c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('E = mvaE?.resample(dist);',ic)  
   c_eval('ve = mvaVe?.resample(dist);',ic)  
+
+  c_eval('B = mvaB?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic)  
+  c_eval('E = mvaE?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic) 
+  c_eval('ve = mvaVe?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic)   
+  
   vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
   times_exact{itime} = vdf.time;
     
@@ -667,6 +985,17 @@ for itime = 1:times.length
   hca.XLabel.String = sprintf('v_%s (10^3 km/s)',comps(1));
   hca.YLabel.String = sprintf('v_%s (10^3 km/s)',comps(2));
 
+  if 0 % plot E+vxB=0
+    %%
+    hold(hca,'on')
+    B__ = mean(B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]).data,1);
+    E__ = mean(E.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]).data,1);
+    vlimit_x = (E__(2)*1e-3)/(B__(3)*1e-9)*1e-6;
+    vlimit_y = (E__(2)*1e-3)/(B__(1)*1e-9)*1e-6;
+    plot(hca,hca.XLim,vlimit_y*[1 1],'r--')
+    plot(hca,vlimit_x*[1 1],hca.YLim,'b--')    
+    hold(hca,'off')
+  end
   if 1 % plot B direction
     %%
     xlim = hca.XLim;
@@ -703,6 +1032,7 @@ for itime = 1:times.length
     hold(hca,'off')    
   end
 end
+%
 for itime = 1:times.length
   %hca = h2(isub); isub = isub + 1;
   time = times(itime);
@@ -957,15 +1287,15 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:03.300000000Z']);
 %times = times([2 3 4])+0.25;
 %times = times + 0.25;
-times = times + 0.30;
+times = times + 0.30*1;
 %times = times + 0.06;
-dt_dist = 4*0.062; % for two distributions
+dt_dist = 4*0.061; % for two distributions
 
 fontsize_B_amp = 13;
 
 vint = [-Inf Inf];
 %vint = [-20000 20000];
-vg = -60000:2000:60000;
+vg = -100000:2000:100000;
 elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
 nt = times.length;
