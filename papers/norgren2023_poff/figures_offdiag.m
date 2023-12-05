@@ -444,7 +444,7 @@ ic = 3;
 
 tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
 
-npanels = 5;
+npanels = 6;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -582,7 +582,7 @@ end
 if 1 % gradients, comparison, mV/m
   % Hasegawa 2018, 320 km - 2.4 s -> 133 km/s
   vsc = 133e3;10e3; % m/s
-  nsm = 30;
+  nsm = 20;
   hca = irf_panel('gradients 1, smoothed 2, mV/m');
   set(hca,'ColorOrder',mms_colors('xyzab'))
   c_eval('data1 =   mvaGrad_Se?*1e-9/(ne?*1e6*units.e*vsc);',ic)
@@ -628,6 +628,14 @@ if 0 % gradients, comparison , smoothed
   hca.YLabel.String = {'Gradients','(pPa/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'\partial_x(nv_xv_y + P_{xy})','\partial_x(nv_xv_y)','nv_x\partial_x v_y'}',[1.02 0.9],'fontsize',fontsize);
+end
+if 1 % Ve x B
+  hca = irf_panel('Ve x B LMN, ycomp');
+  set(hca,'ColorOrder',mms_colors('yxz'))
+  c_eval('irf_plot(hca,{mvaVexB?.y.tlim(tint),mvaE?.y.tlim(tint).resample(mvaVe?),mvaVexB?.y.tlim(tint)+mvaE?.y.tlim(tint).resample(mvaVexB?)},''comp'');',ic)
+  hca.YLabel.String = {'v_e\times{B}_y','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('yxz'))
+  irf_legend(hca,{'v_e\times{B}','E_y','v_e\times{B}+E_y'},leg_loc,'fontsize',fontsize);
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
