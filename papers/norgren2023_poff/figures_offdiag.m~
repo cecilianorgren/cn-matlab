@@ -462,7 +462,7 @@ zoomy = [];
 leg_loc = [0.95 0.1];
 %leg_loc = [1.02 0.9];
 nsm_base = 10;
-nsm = 30;
+
 
 vsc = 130e3;10e3; % m/s, Nakamura 2019, from Lxline and timescale
 vsc = 133e3;10e3; % m/s, Hasegawa 2018, 320 km - 2.4 s -> 133 km/s
@@ -491,7 +491,7 @@ if 1 % Ve
   
   hca.YLabel.String = {'v_e','(10^3 km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize_leg);
 end
 if 1 % Se, Pe, nvv, xy
   hca = irf_panel('stress x comp');
@@ -501,7 +501,7 @@ if 1 % Se, Pe, nvv, xy
   c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'Stress','(pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'S_{xy}','P_{xy}','m_env_xv_y'},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'S_{xy}','P_{xy}','m_env_xv_y'},leg_loc,'fontsize',fontsize_leg);
   %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 0 % NVVe-off LMN
@@ -562,7 +562,7 @@ if 0 % gradients, comparison
   irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.02 0.99],'fontsize',fontsize,'color','k');
 end
 if 1 % gradients, comparison
-  
+  nsm = 30;
   hca = irf_panel('gradients 1, smoothed 2');
   set(hca,'ColorOrder',mms_colors('xyzab'))
   c_eval('data1 = mvaGrad_Se?.tlim(tint).smooth(nsm)*1e3;',ic) % nPa -> pPa
@@ -575,19 +575,16 @@ if 1 % gradients, comparison
   set(hca,'ColorOrder',mms_colors('xyzab'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('xy'))
-  irf_legend(hca,{'\partial_t{S_{xy}}','\partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize);
+  irf_legend(hca,{'\partial_t{S_{xy}}','\partial_t{P_{xy}}'},[0.02 leg_loc(2)],'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('z'))
-  irf_legend(hca,{'m_e\partial_t(nv_xv_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
+  irf_legend(hca,{'m_e\partial_t(nv_xv_y)'},[0.98 0.3],'fontsize',fontsize_leg);  
   set(hca,'ColorOrder',mms_colors('ab'))
-  irf_legend(hca,{'m_env_x\partial_t{v_y}'},[0.98 0.35],'fontsize',fontsize_leg);
-  set(hca,'ColorOrder',mms_colors('b'))
-  irf_legend(hca,{'m_ev_y\partial_t(nv_x)'},[0.98 0.15],'fontsize',fontsize_leg);
-  %irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},[0.98 0.1],'fontsize',fontsize_leg);
+  irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},leg_loc,'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
-  %irf_legend(hca,{sprintf('N_{sm}=%g',nsm)},[1.01 0.99],'fontsize',fontsize_leg,'color','k');
-  irf_legend(h(1),{sprintf('Gradients: N_{sm}=%g',nsm)},[0.1 1.1],'fontsize',fontsize_leg,'color','k');
+  irf_legend(hca,{sprintf('N_{sm}=%g',nsm)},[1.01 0.99],'fontsize',fontsize_leg,'color','k');
 end
-if 1 % gradients, comparison, mV/m  
+if 1 % gradients, comparison, mV/m
+  nsm = 20;
   hca = irf_panel('gradients 1, smoothed 2, mV/m');
   set(hca,'ColorOrder',mms_colors('xyzab'))
   c_eval('data1 =   mvaGrad_Se?*1e-9/(ne?*1e6*units.e*vsc);',ic)
@@ -609,18 +606,12 @@ if 1 % gradients, comparison, mV/m
   set(hca,'ColorOrder',mms_colors('xy'))
   irf_legend(hca,{'-\partial_x{S_{xy}}/ne','-\partial_x{P_{xy}}/ne'},[0.02 leg_loc(2)],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('z'))
-  irf_legend(hca,{'-m_e\partial_x(nv_xv_y)/ne'},[0.98 0.98],'fontsize',fontsize_leg);  
+  irf_legend(hca,{'-m_e\partial_x(nv_xv_y)/ne'},[0.98 0.75],'fontsize',fontsize_leg);  
   set(hca,'ColorOrder',mms_colors('ab'))
-  %irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne','-m_ev_y\partial_x(nv_x)/ne'},leg_loc,'fontsize',fontsize_leg);
-  irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne'},[0.98 0.75],'fontsize',fontsize_leg);
-  set(hca,'ColorOrder',mms_colors('b'))
-  irf_legend(hca,{'-m_ev_y\partial_x(nv_x)/ne'},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne','-m_ev_y\partial_x(nv_x)/ne'},leg_loc,'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
-  set(hca,'ColorOrder',mms_colors('1111'))
-  %irf_legend(hca,{sprintf('N_{sm}=%g',nsm),sprintf('v=%g{km/s}',vsc*1e-3)}',[1.01 0.99],'fontsize',14,'color','k');
-  
+  irf_legend(hca,{sprintf('N_{sm}=%g',nsm),sprintf('v=%g{km/s}',vsc*1e-3)}',[1.01 0.99],'fontsize',14,'color','k');
   irf_legend(hca,{'\partial_x\rightarrow{v_x^{-1}}\partial_t'}',[0.05 0.99],'fontsize',14,'color','k');
-  irf_legend(hca,{sprintf('v_x=%g {km/s}',vsc*1e-3)}',[0.02 0.75],'fontsize',14,'color','k');
 end
 if 0 % gradients, comparison    
   hca = irf_panel('gradients 1, smoothed after');
@@ -703,10 +694,7 @@ if 1 % n*Ve, grad_x(nVe) with two yaxes
   set(hca,'ColorOrder',mms_colors('xyza'))    
   hca.YLabel.String = {'nv_{ex}',sprintf('(10^{%g} cm^{-2}s^{-1})',log10(scaling))};
   
-  hca.YLim = [-29 39];
-  
   %set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
-  ax1 = hca;
   yyaxis(hca,'right')
   ax2 = gca;
   %ax2.Color = 'none';
@@ -723,7 +711,7 @@ if 1 % n*Ve, grad_x(nVe) with two yaxes
   set(hca,'ColorOrder',[mms_colors('1');color_ax])
   irf_legend(hca,{'nv_{ex}','\partial_x(nv_{ex})'},[0.98 0.95],'fontsize',fontsize_leg);
   %set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
-  ax2.YLim = [-29 39]*4/39;
+  ax2.YLim = [-2 5];
 end
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
@@ -753,13 +741,7 @@ c_eval('hh(?).LineWidth = 1;',1:numel(h))
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
 h(end).XTickLabelRotation = 0;
 
-ylim_gradnvex = [-1.5 3.99];
-ax2.YLim = ylim_gradnvex*vsc/130e3;
-ax2.YLim = [-29 39]*ylim_gradnvex(2)/39;
-
-hca = irf_panel('stress x comp');
-hca.YLim = [-4.49 2.99];
-
+ax2.YLim = [-2 5];
 %% 1D distributions for the 5 times
 times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:01.800000000Z';...
