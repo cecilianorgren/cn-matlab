@@ -983,7 +983,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:03.300000000Z']);
 %times = times([2 3 4])+0.25;
 %times = times + 0.25;
-times = times + 0.30*5;
+times = times + 0.30*1;
 %times = times + 0.06;
 dt_dist = 4*0.061; % for two distributions
 
@@ -1150,6 +1150,78 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress');  
+  hc_.Colorbar.YLabel.String = sprintf('f_e(v_%s,v_%s)v_%s v_%s (1/m^3)',comps(1),comps(2),comps(1),comps(2));
+  hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)v_%s v_%s',comps(1),comps(2),comps(1),comps(2)),'(1/m^3)'};
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = sprintf('v_%s (10^3 km/s)',comps(1));
+  hca.YLabel.String = sprintf('v_%s (10^3 km/s)',comps(2));
+  
+  if 1 % Intgrate data to compare with moments
+    %%
+    cdata = ha_.CData;
+    xdata = ha_.XData; 
+    dv = xdata(2)-xdata(1);
+    dv = dv*1e3;
+    sstmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
+    sssum(itime) = sstmp;
+    
+    if sstmp < 0
+      color = [0 0 1];
+    else
+      color = [1 0 0];
+    end
+    irf_legend(hca,sprintf('p = %.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
+  end
+  if 1 % plot B direction
+      %%
+      xlim = hca.XLim;
+      ylim = hca.YLim;
+      hold(hca,'on')
+      %dt_distx = 0.030;
+      %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+      B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+      B_ = mean(B__.data,1);
+      B_std = std(B__.data,1);
+      b = B_/norm(B_);
+      B_std_inplane = std(B__.data(:,1:2),1);
+      B_inplane = sqrt(sum(B_(1:2).^2));
+      if B_inplane > 2*norm(B_std_inplane)
+        k = b(2)/b(1);
+        if k > 1
+          plot(hca,xlim,xlim*k,'k')
+        else
+          plot(hca,xlim/k,ylim,'k')
+        end
+        hold(hca,'off')
+        hca.XLim = xlim;
+        hca.YLim = ylim;
+        B_ = B_(1:2);
+    end
+      %irf_legend(hca,sprintf('B = %.1f nT', B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
+  end
+  if 1 % plot bulk speed
+    %%
+    hold(hca,'on')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
+    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
+    hold(hca,'off')    
+  end
+end
+
+for itime = 1:times.length
+  %hca = h2(isub); isub = isub + 1;
+  time = times(itime);
+  % Reduce distributions
+  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+  c_eval('scpot = scPot?.resample(dist);',ic)  
+  c_eval('B = mvaB?.resample(dist);',ic)  
+  c_eval('ve = mvaVe?.resample(dist);',ic)    
+  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
+    
+  % Plot
+  hca = h2(isub); isub = isub + 1;
   [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.x.resample(dist),ve.y.resample(dist));  
   %hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
   hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2)),'(1/m^3)'};
@@ -1211,77 +1283,6 @@ if 1 % plot B direction
     hold(hca,'off')    
   end
 end
-for itime = 1:times.length
-  %hca = h2(isub); isub = isub + 1;
-  time = times(itime);
-  % Reduce distributions
-  c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
-  c_eval('scpot = scPot?.resample(dist);',ic)  
-  c_eval('B = mvaB?.resample(dist);',ic)  
-  c_eval('ve = mvaVe?.resample(dist);',ic)    
-  vdf = dist.reduce('2D',L,M,'vint',vint,'scpot',scpot,'vg',vg);
-    
-  % Plot
-  hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress');  
-  hc_.Colorbar.YLabel.String = sprintf('f_e(v_%s,v_%s)v_%s v_%s (1/m^3)',comps(1),comps(2),comps(1),comps(2));
-  hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)v_%s v_%s',comps(1),comps(2),comps(1),comps(2)),'(1/m^3)'};
-  colormap(hca,pic_colors('blue_red'))
-  hca.CLim = max(abs(hca.CLim))*[-1 1];
-  hca.XLabel.String = sprintf('v_%s (10^3 km/s)',comps(1));
-  hca.YLabel.String = sprintf('v_%s (10^3 km/s)',comps(2));
-  
-  if 1 % Intgrate data to compare with moments
-    %%
-    cdata = ha_.CData;
-    xdata = ha_.XData; 
-    dv = xdata(2)-xdata(1);
-    dv = dv*1e3;
-    sstmp = nansum(cdata(:))*dv*dv*units.me*1e9*1e9;
-    sssum(itime) = sstmp;
-    
-    if sstmp < 0
-      color = [0 0 1];
-    else
-      color = [1 0 0];
-    end
-    irf_legend(hca,sprintf('p = %.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
-  end
-  if 1 % plot B direction
-      %%
-      xlim = hca.XLim;
-      ylim = hca.YLim;
-      hold(hca,'on')
-      %dt_distx = 0.030;
-      %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
-      B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
-      B_ = mean(B__.data,1);
-      B_std = std(B__.data,1);
-      b = B_/norm(B_);
-      B_std_inplane = std(B__.data(:,1:2),1);
-      B_inplane = sqrt(sum(B_(1:2).^2));
-      if B_inplane > 2*norm(B_std_inplane)
-        k = b(2)/b(1);
-        if k > 1
-          plot(hca,xlim,xlim*k,'k')
-        else
-          plot(hca,xlim/k,ylim,'k')
-        end
-        hold(hca,'off')
-        hca.XLim = xlim;
-        hca.YLim = ylim;
-        B_ = B_(1:2);
-    end
-      %irf_legend(hca,sprintf('B = %.1f nT', B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
-  end
-  if 1 % plot bulk speed
-    %%
-    hold(hca,'on')
-    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
-    plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
-    hold(hca,'off')    
-  end
-end
 
 c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]);',1:times.length,1:2)
 
@@ -1326,7 +1327,10 @@ c_eval('h2(?).XTickLabelRotation = 0;',(nt+1):2*nt)
 %h1.Position(1) = h1.Position(1) + h1.Position(3)*0.2;
 %h1.Position(3) = h1.Position(3)*0.8;
 
+c_eval('h2(?).XLim = 0.99*[-60 60];',1:numel(h2))
+c_eval('h2(?).YLim = 0.99*[-60 60];',1:numel(h2))
 c_eval('h2(?).CLim = 0.99*[-5000 5000];',6:15)
+c_eval('h2(?).Layer = ''top'';',1:numel(h2))
 
 if 0 % Change units of data from m^-3 to kg*m^-3
 for ip = 6:15 
