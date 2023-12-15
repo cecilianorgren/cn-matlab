@@ -18,7 +18,7 @@ scpot_lim = scPot1.resample(eDist)*scpot_margin;
 eLine = dmpaB1.resample(eDist).norm;
 iLine = dmpaB1.resample(iDist).norm;
 
-tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim',); toc % reduced distribution along B
+tic; ef1D = eDist.reduce('1D',eLine,'vint',vint,'scpot',scpot_lim,'lowerelim',0); toc % reduced distribution along B
 tic; if1D = iDist.reduce('1D',iLine,'vint',vint); toc % reduced distribution along B
 lineVe = ve.dot(eLine); % projection of Vi on B
 lineVi = vi.dot(iLine); % projection of Vi on B
