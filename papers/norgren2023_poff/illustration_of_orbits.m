@@ -1,4 +1,5 @@
-%% Define magnetic field
+%% xy
+% Define magnetic field
 a = 5;
 b = 1;
 xvec = a*linspace(-10.1,10,500);
@@ -436,5 +437,421 @@ h(2).Children = h(2).Children(end:-1:1);
   
 end
 
-
 %% Add distributions (?)
+
+
+%% yz
+% Define magnetic field
+a = 5*1e3;
+b = 1*1e3;
+xvec = a*linspace(-10.1,10,500);
+zvec = b*linspace(-10,10,100);
+yvec = linspace(-0,0,1);
+
+[X,Y,Z] = ndgrid(xvec,yvec,zvec);
+%dx = x(2) - x(1);
+%dy = y(2) - y(1);
+%dz = z(2) - z(1);
+%x_xline = x;
+%y_xline = x*b/a;
+
+Ay = @(x,y,z) (x/a).^2 - (z/b).^2;
+AY0 = Ay(X,Y,Z);
+
+Bx = @(x,y,z) 2*z/b^2;
+Bz = @(x,y,z) 2*x/a^2;
+%contour(X,Z,Ay(X,Z))
+%hold on
+%BX = Bx(X,Z);
+%BZ = Bz(X,Z);
+%quiver(X,Z,BX,BZ)
+
+% Integrate orbits
+B0 = 1;
+E0 = 1;
+m = 2;
+q = -1;
+lz = 3;
+
+units = irf_units;
+B0 = 10e-9;
+E0 = 0.3e-3;
+m = units.me;
+q = -units.e;
+lz = b;
+
+Bx = @(x,y,z) B0*2*z/b^2;
+Bx = @(x,y,z) B0*tanh(z/b);
+By = @(x,y,z) B0*x*0;
+Bz = @(x,y,z) B0*2*x/a^2;
+Ex = @(x,y,z) E0*x*0;
+Ey = @(x,y,z) E0*x*0 + E0;
+Ez = @(x,y,z) 1*E0*-1*(z/lz).*exp(-(z/lz).^2);
+
+options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
+                 'AbsTol',1e-6);
+options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,0.01*a*[-1 1]),...
+                 'RelTol',1e-12,'AbsTol',1e-12);
+EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
+tstart = 0;
+tstop = 1;
+
+vz0 = E0/B0;
+vt = 1*vz0;
+x_init_all = [0.1*lz 0 -2*lz 0 vt vz0 + vt;...
+              %0.5 0 -4 0 0.0002 -0.0125;...
+              ];
+
+
+clear p
+for ip = 1:size(x_init_all,1)
+  x_init = x_init_all(ip,:);
+  [t,x_sol] = ode45(EoM,[tstart tstop],x_init,options); % 
+  p(ip).t = t;
+  p(ip).x = x_sol(:,1);
+  p(ip).y = x_sol(:,2);
+  p(ip).z = x_sol(:,3);
+  p(ip).vx = x_sol(:,4);
+  p(ip).vy = x_sol(:,5);
+  p(ip).vz = x_sol(:,6);
+end
+
+colors = pic_colors('matlab');
+%colors = [colors(2)];
+colors(3,:) = colors(1,:);
+%colors(3,:) = colors(5,:).^0.5;
+colors(1,:) = colors(1,:).^0.2;
+linewidth = 1.5;
+
+if 0 % Figure 1
+  S = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[-105:10:110]);
+  SX = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[0 0]); 
+  %[C,H] = contour3()
+  h1(1) = subplot(3,2,1);
+  h1(2) = subplot(3,2,3);
+  h1(3) = subplot(3,2,5);
+  h2 = subplot(3,2,[2 4 6]);
+
+
+  for ip = 1:numel(p)
+    hca = h1(1);
+    plot(hca,p(ip).t,p(ip).x)
+    hold(hca,'on')
+
+    hca = h1(2);
+    plot(hca,p(ip).t,p(ip).y)
+    hold(hca,'on')
+
+    hca = h1(3);
+    plot(hca,p(ip).t,p(ip).z)
+    hold(hca,'on')
+  end
+
+  hold(h1(1),'off')
+  hold(h1(2),'off')
+  hold(h1(3),'off')
+
+  hca = h2(1);
+  %plot3(hca,1,1,1);
+  plot3(hca,SX(1).X,SX(1).X*0,SX(1).Y,'--k',SX(2).X,SX(2).X*0,SX(2).Y,'--k');
+  hold(hca,'on')
+
+  for il = 1:numel(S)
+    plot3(hca,S(il).X,S(il).X*0,S(il).Y,'color',[0.5 0.5 0.5])
+  end
+  for ip = 1:numel(p)
+    plot3(hca,p(ip).x,p(ip).y,p(ip).z)
+  end
+  hold(hca,'off')
+  view(hca,[0 -1 0])
+  %view(hca,[0 0 1])
+  %axis(hca,'equal')
+end
+
+if 1 % Figure 2
+  %%
+  
+  
+  color_topbot = [colors(3,:); [.9 .9 .9]];
+  %color_topbot = colormap(hca,[colors([3 2],:)]);
+  %color_topbot = colormap(hca,[colors(3,:); colors(2,:).^0.2]);
+    
+    
+  xmark = -4.58;
+  %xlim = [-20 20];
+  %zlim = [-5 5];
+  S = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[-105:10:110]);
+  SX = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[0 0]-0.01); 
+  %[C,H] = contour3()
+  nrows = 3;
+  ncols = 1;
+  clear h
+  h(1) = subplot(nrows,ncols,1);
+  h(2) = subplot(nrows,ncols,2);
+  h(3) = subplot(nrows,ncols,3);
+  
+
+  isub = 1;
+  
+  if 0 % (x,y,z)
+    hca = h(isub); isub = isub + 1;  
+    
+    plot3(hca,0,0,0);
+    hold(hca,'on')
+ 
+    for ip = 1:numel(p)
+      plot3(hca,p(ip).x(1),p(ip).y(1),p(ip).z(1),'Marker','o','color',colors(ip,:))
+      plot3(hca,p(ip).x(end),p(ip).y(end),p(ip).z(end),'Marker','x','color',colors(ip,:))
+      plot3(hca,p(ip).x,p(ip).y,p(ip).z,'color',colors(ip,:),'linewidth',linewidth)
+    end
+    hold(hca,'off')
+    %view(hca,[0 -1 0])
+    %view(hca,[0 0 1])
+    %axis(hca,'equal')
+  end
+  
+  if 1 % (x,y)
+    hca = h(isub); isub = isub + 1;
+    % Neutral plane
+    %ylim = [min(p(1).y), max(p(1).y)];
+    %plot(hca,ylim,[0 0],'k--');
+    plot(hca,0,0)
+    hold(hca,'on')
+
+ 
+    for ip =[]% 1:numel(p)
+      plot(hca,p(ip).x(1),p(ip).y(1),'Marker','o','color',colors(ip,:))
+      plot(hca,p(ip).x(end),p(ip).y(end),'Marker','x','color',colors(ip,:))
+      plot(hca,p(ip).x,p(ip).y,'color',colors(ip,:),'linewidth',linewidth)
+    end
+    for ip = 1:numel(p)
+      plot(hca,p(ip).x(1),p(ip).y(1),'Marker','o','color',colors(ip,:))
+      plot(hca,p(ip).x(end),p(ip).y(end),'Marker','x','color',colors(ip,:))
+      scatter(hca,p(ip).x,p(ip).y,1,sign(p(ip).z),'Marker','.','linewidth',linewidth)
+    end
+    colormap(hca,colors([3 2],:))
+    colormap(hca,color_topbot)
+    hold(hca,'off')  
+    %hca.XLim = xlim;
+    %hca.YLim = zlim;
+    hca.XLabel.String = 'x';
+    hca.YLabel.String = 'y';
+  end
+  
+  if 1 % (y,z)
+    hca = h(isub); isub = isub + 1;
+    % Neutral plane
+    ylim = [min(p(1).y), max(p(1).y)];
+    plot(hca,ylim,[0 0],'k--');
+    hold(hca,'on')
+
+ 
+    for ip =[]% 1:numel(p)
+      plot(hca,p(ip).y(1),p(ip).z(1),'Marker','o','color',colors(ip,:))
+      plot(hca,p(ip).y(end),p(ip).z(end),'Marker','x','color',colors(ip,:))
+      plot(hca,p(ip).y,p(ip).z,'color',colors(ip,:),'linewidth',linewidth)
+    end
+    for ip = 1:numel(p)
+      plot(hca,p(ip).y(1),p(ip).z(1),'Marker','o','color',colors(ip,:))
+      plot(hca,p(ip).y(end),p(ip).z(end),'Marker','x','color',colors(ip,:))
+      scatter(hca,p(ip).y,p(ip).z,1,sign(p(ip).z),'Marker','.','linewidth',linewidth)
+    end
+    colormap(hca,colors([3 2],:))
+    colormap(hca,color_topbot)
+    hold(hca,'off')  
+    %hca.XLim = xlim;
+    %hca.YLim = zlim;
+    hca.XLabel.String = 'y';
+    hca.YLabel.String = 'z';
+  end
+  
+  if 1 % phase space (vx,vy)
+    hca = h(isub); isub = isub + 1;  
+    holdon = 0;
+    plot(hca,0,0)
+    hold(hca,'on');
+    for ip = 1:numel(p)
+      plot(hca,p(ip).vy(1),   p(ip).vz(1),   'Marker','o','color',colors(ip,:))
+      plot(hca,p(ip).vy(end), p(ip).vz(end), 'Marker','x','color',colors(ip,:))
+      %plot(hca,p(ip).vy,      p(ip).vz,                   'color',colors(ip,:),'linewidth',linewidth)
+      scatter(hca,p(ip).vy,p(ip).vz,1,(p(ip).z),'Marker','.','linewidth',linewidth)
+    end
+    colormap(hca,pic_colors('blue_red'))
+    colormap(hca,color_topbot)
+    hcb = colorbar(hca);
+    hcb.YLabel.String = 'z';
+    hca.CLim = max(abs(hca.CLim))*[-1 1]*0.1;
+    %plot(hca,[0 0],hca.YLim,'--k')
+    for ip = []%1:numel(p)
+      xq = xmark;
+      yq = -0.7854;
+      [ix] = find(p(ip).x>-10);
+      [~,iy] = min(abs(p(ip).y(ix)-yq));
+      %ind = intersect(ix,iy);
+      ind = ix(iy);
+      vs = 10;
+      quiver(hca,p(ip).x(ind),p(ip).y(ind),vs*p(ip).vx(ind),vs*p(ip).vy(ind),0,'color',colors(ip,:),'linewidth',1.5*linewidth)
+    end
+
+    hold(hca,'off')  
+    axis(hca,'equal')
+    %hca.XLim = xlim; 
+    hca.XLabel.String = 'v_y';
+    hca.YLabel.String = 'v_z';
+  end
+  %hl = findobj(gcf,'type','line');
+  for ip = []%1:numel(h)
+    hold(h(ip),'on')
+    plot(h(ip),xmark*[1 1],hca.YLim,':k')
+    hold(h(ip),'off')
+  end
+  %c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+  
+
+  
+  %c_eval('h(?).XTickLabels = []; h(?).YTickLabels = [];',1:numel(h))
+  c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
+  %c_eval('h(?).XTick = -40:5:40;',1:numel(h))
+  c_eval('h(?).FontSize = 14;',1:numel(h))
+  c_eval('h(?).LineWidth = 1;',1:numel(h))
+end
+
+if 0 % Figure 3
+  %%
+  xmark = -4.58;
+  xlim = [-20 20];
+  zlim = [-5 5];
+  S = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[-105:10:110]);
+  SX = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[0 0]-0.01); 
+  %[C,H] = contour3()
+  nrows = 3;
+  ncols = 1;
+  clear h
+  h(1) = subplot(nrows,ncols,1);
+  h(2) = subplot(nrows,ncols,2);
+  h(3) = subplot(nrows,ncols,3);
+  
+
+  isub = 1;
+  
+  if 0
+    hca = h(1); isub = isub + 1;  
+    plot3(hca,SX(1).X,SX(1).X*0,SX(1).Y,'--k',SX(2).X,SX(2).X*0,SX(2).Y,'--k');
+    hold(hca,'on')
+
+    for il = 1:numel(S)
+      plot3(hca,S(il).X,S(il).X*0,S(il).Y,'color',[0.5 0.5 0.5])
+    end
+    for ip = 1:numel(p)
+
+      plot3(hca,p(ip).x(1),p(ip).y(1),p(ip).z(1),'Marker','o','color',colors(ip,:))
+      plot3(hca,p(ip).x(end),p(ip).y(end),p(ip).z(end),'Marker','x','color',colors(ip,:))    
+      plot3(hca,p(ip).x,p(ip).y,p(ip).z,'color',colors(ip,:))
+    end
+    hold(hca,'off')
+    %view(hca,[0 -1 0])
+    %view(hca,[0 0 1])
+    %axis(hca,'equal')
+  end
+  
+  hca = h(isub); isub = isub + 1;
+  plot(hca,SX(1).X,SX(1).Y,'--k',SX(2).X,SX(2).Y,'--k');
+  hold(hca,'on')
+
+  for il = 1:numel(S)
+    plot(hca,S(il).X,S(il).Y,'color',[0.5 0.5 0.5])
+  end
+  for ip = 1:numel(p)
+    plot(hca,p(ip).x(1),p(ip).z(1),'Marker','o','color',colors(ip,:),'MarkerFaceColor',colors(ip,:))
+    plot(hca,p(ip).x(end),p(ip).z(end),'Marker','x','color',colors(ip,:))
+    plot(hca,p(ip).x,p(ip).z,'color',colors(ip,:),'linewidth',linewidth)
+  end
+  hold(hca,'off')  
+  hca.XLim = xlim;
+  hca.YLim = zlim;
+  %axis(hca,'equal')
+  
+  hca = h(isub); isub = isub + 1;  
+  
+  plot(hca,0,0)
+  hold(hca,'on');
+  for ip = 1:numel(p)    
+    plot(hca,p(ip).x(1),p(ip).y(1),'Marker','o','color',colors(ip,:),'MarkerFaceColor',colors(ip,:))
+    plot(hca,p(ip).x(end),p(ip).y(end),'Marker','x','color',colors(ip,:))
+    plot(hca,p(ip).x,p(ip).y,'color',colors(ip,:),'linewidth',linewidth)
+  end
+  plot(hca,[0 0],hca.YLim,'--k')
+  for ip = 1:numel(p)
+    xq = xmark;
+    yq = -0.7854;
+    [ix] = find(p(ip).x>-10);
+    [~,iy] = min(abs(p(ip).y(ix)-yq));
+    %ind = intersect(ix,iy);
+    ind = ix(iy);
+    vs = 10;
+    quiver(hca,p(ip).x(ind),p(ip).y(ind),vs*p(ip).vx(ind),vs*p(ip).vy(ind),0,'color',colors(ip,:),'linewidth',1.5*linewidth)
+  end
+  
+  hold(hca,'off')  
+  %axis(hca,'equal')
+  hca.XLim = xlim;  
+  
+  irf_legend(hca,'X line',[0.65 0.9],'color',[0.5 0.5 0.5],'fontsize',14);
+  
+ 
+  
+  
+  hca = h(isub); isub = isub + 1;  
+ 
+  
+  plot(hca,[0 0],0.90*[-2 2],'--k')
+ 
+  hold(hca,'on')
+  
+  for ip = 1:numel(p)
+    %xq = xmark;
+    yq = -0.7854;
+    [ix] = find(p(ip).x>-10);
+    [~,iy] = min(abs(p(ip).y(ix)-yq));
+    %ind = intersect(ix,iy);
+    ind = ix(iy);
+    ind = ind + 0;
+    %ind = length(p(ip).x);
+    
+    tBx = Bx(p(ip).x,p(ip).y,p(ip).z);
+    vxBz = p(ip).vx.*Bz(p(ip).x,p(ip).y,p(ip).z);
+    vzBx = -p(ip).vz.*Bx(p(ip).x,p(ip).y,p(ip).z);
+    
+    vyBx = -p(ip).vy.*Bx(p(ip).x,p(ip).y,p(ip).z);
+    tEy = Ey(p(ip).x,p(ip).y,p(ip).z);
+    
+    toplot = 1*vxBz+1*vzBx;
+    hh=plot(hca,p(ip).x(1),toplot(1),'Marker','o','color',colors(ip,:),'linewidth',linewidth,'MarkerFaceColor',colors(ip,:));  
+    plot(hca,p(ip).x(1:ind),toplot(1:ind),'color',colors(ip,:),'linewidth',linewidth,'linestyle','-');
+        
+    toplot = 1*vxBz+0*vzBx;
+    %plot(hca,p(ip).x(1),toplot(1),'Marker','o','color',colors(ip,:),'linewidth',linewidth);   
+    plot(hca,p(ip).x(1:ind),toplot(1:ind),'color',colors(ip,:),'linewidth',linewidth,'linestyle','-');
+    
+    
+    plot(hca,xlim,-tEy(1)*[1 1],'color',[0.5 0.5 0.5],'linewidth',linewidth);
+    %plot(hca,p(ip).t,vyBx,'color',colors(ip,:).^0.8,'linewidth',linewidth);   
+    grid(hca,'on')
+    
+  end
+  hca.XLabel.String = 'x';
+  hca.YLabel.String = '-(v_zB_x-v_xB_z)';
+  set(hca,'ColorOrder',[0.5 0.5 0.5])
+  irf_legend(hca,'-E_y',[0.29 0.72],'color',[0.5 0.5 0.5],'fontsize',14);
+  hold(hca,'off')
+  
+  %hl = findobj(gcf,'type','line');
+  for ip = 1:numel(h)
+    hold(h(ip),'on')
+    plot(h(ip),xmark*[1 1],h(ip).YLim,':k')
+    hold(h(ip),'off')
+  end
+  %c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+
+end
+
