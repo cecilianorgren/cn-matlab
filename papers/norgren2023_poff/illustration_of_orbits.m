@@ -488,13 +488,13 @@ By = @(x,y,z) B0*x*0;
 Bz = @(x,y,z) B0*2*x/a^2;
 Ex = @(x,y,z) E0*x*0;
 Ey = @(x,y,z) E0*x*0 + E0;
-Ez = @(x,y,z) 1*E0*-1*(z/lz).*exp(-(z/lz).^2);
+Ez = @(x,y,z) 1*E0*-1*(z/(2*lz)).*exp(-(z/(2*lz)).^2);
 
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
                  'AbsTol',1e-6);
 %options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,0.1*a*[-1 1]),...
 %                 'RelTol',1e-6,'AbsTol',1e-6);
-options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,0.9*xvec([1 end])),...
+options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,0.5*xvec([1 end])),...
                  'RelTol',1e-12,'AbsTol',1e-12);
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
@@ -672,6 +672,26 @@ if 0 % Figure 1
 end
 if 1 % Figure 2, illustration of twisted crescent for paper 
   %%
+  if 0 % load data required for distribution
+    %%
+    tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
+    ic = 3;
+    c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
+    c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+    c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+    c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)    
+    c_eval('dbcsVe? = mms.get_data(''Ve_dbcs_fpi_brst_l2'',tint,?);',ic)
+    c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint); toc;',ic);
+    
+    L = [0.9482,-0.255,-0.1893];
+    M = [0.1818,0.9245,-0.3350];
+    N = [0.2604,0.2832,0.9230];
+    lmn = [L;M;N];
+    
+    c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
+    c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';',ic)
+    
+  end
   figure(28)
   
   color_topbot = [colors(3,:); [.9 .9 .9]];
@@ -686,17 +706,17 @@ if 1 % Figure 2, illustration of twisted crescent for paper
   S = contourcs(xvec,zvec,squeeze(Ay(squeeze(X),squeeze(Y),squeeze(Z)))',[-105:10:110]);
   SX = contourcs(xvec,zvec,squeeze(Ay(squeeze(X),squeeze(Y),squeeze(Z)))',[0 0]-0.01); 
   %[C,H] = contour3()
-  nrows = 1;
-  ncols = 3;
+  nrows = 2;
+  ncols = 2;
   clear h
   ip = 0;
   for irow = 1:nrows
     for icols = 1:ncols
       ip = ip + 1;
-      h(ip) = subplot(nrows,ncols,ip);
+      h(irow,icols) = subplot(nrows,ncols,ip);
     end
   end
-  
+  h = h;
 
   isub = 1;
   
@@ -871,8 +891,8 @@ if 1 % Figure 2, illustration of twisted crescent for paper
     end
     colormap(hca,pic_colors('blue_red'))
     colormap(hca,color_topbot)
-    hcb = colorbar(hca);
-    hcb.YLabel.String = 'z';
+    %hcb = colorbar(hca);
+    %hcb.YLabel.String = 'z';
     hca.CLim = max(abs(hca.CLim))*[-1 1]*0.1;
     %plot(hca,[0 0],hca.YLim,'--k')
     for ip = []%1:numel(p)
@@ -900,6 +920,95 @@ if 1 % Figure 2, illustration of twisted crescent for paper
     plot(hca,[0 0],hca.YLim,'k--')
     hold(hca,'off')
   end
+  
+  if 1 % add distribution from observations 
+    times = EpochTT([...
+      '2017-07-11T22:34:02.800000000Z';...
+      '2017-07-11T22:34:03.300000000Z']);
+    times = times(2) + 0.30*1;    
+    dt_dist = 4*0.061; % for two distributions
+    vint = [-Inf Inf];
+    vint = [-20000 0000];
+    %vint = [0000 20000];
+    vg = -100000:2000:100000;
+    elim = [100 Inf];
+    
+    for itime = 1:times.length
+      hca = h(isub); isub = isub + 1;
+      time = times(itime);
+      % Reduce distributions
+      
+      c_eval('dist = ePDist?.elim(elim).tlim(time+0.5*dt_dist*[-1 1]*1); dist = dist(:);',ic)
+      c_eval('scpot = scPot?.resample(dist);',ic)  
+      c_eval('B = mvaB?.resample(dist);',ic)  
+      c_eval('ve = mvaVe?.resample(dist);',ic)  
+      vdf = dist.reduce('2D',M,N,'vint',vint,'scpot',scpot,'vg',vg);
+      times_exact{itime} = vdf.time;
+
+      % Plot
+      %hca = h2(isub); isub = isub + 1;
+      [ha_,hb_,hc_] = vdf.plot_plane(hca);      
+      hc_.Colorbar.YLabel.String = sprintf('log_{10} f_e(v_%s,v_%s) (s^2/m^5)','y','z');
+      hc_.Colorbar.YLabel.String = {sprintf('log_{10} f_e(v_%s,v_%s)','x','y'),'(s^2/m^5)'};
+      colormap(hca,pic_colors('candy4'))   
+      hca.XLabel.String = sprintf('v_%s (10^3 km/s)','y');
+      hca.YLabel.String = sprintf('v_%s (10^3 km/s)','z');
+      
+     
+      colormap(hca,pic_colors('candy4'))   
+      axis(hca,'square');
+      hca.XLim = [-60 60]*0.99;
+      hca.YLim = [-60 60]*0.99;
+      hca.XTick = -200:20:200;      
+      hca.YTick = -200:20:200;   
+      
+      hca.CLim = [-14.8 -9.8];
+      if 1 % add lines marking 0.
+        %%
+        hca.Color = 1*[1 1 1];
+        hca.XGrid = 'off'; hca.YGrid = 'off';
+        color_grid = 0.5*[1 1 1];
+        hold(hca,"on"); plot(hca,vg*0,vg,'color',color_grid); plot(hca,vg,vg*0,'color',color_grid);
+
+      end
+      
+      if 0 % plot B direction
+        %%
+        xlim = hca.XLim;
+        ylim = hca.YLim;
+        hold(hca,'on')
+        %dt_distx = 0.030;
+        %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+        B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+        B_ = mean(B__.data,1);
+        B_std = std(B__.data,1);
+        b = B_/norm(B_);
+        B_std_inplane = std(B__.data(:,2:3),1);
+        B_inplane = sqrt(sum(B_(2:3).^2));
+        if B_inplane > 2*norm(B_std_inplane)
+          k = b(3)/b(2);
+          if k > 1
+            plot(hca,xlim,xlim*k,'k')
+          else
+            plot(hca,xlim/k,ylim,'k')
+          end
+          hold(hca,'off')
+          hca.XLim = xlim;
+          hca.YLim = ylim;
+          B_ = B_(2:3);
+      end
+        irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
+
+      end
+      if 0 % plot bulk speed
+        %%
+        hold(hca,'on')
+        plot(hca,mean(ve.(comps(1)).data,1)*1e-3,mean(ve.(comps(2)).data,1)*1e-3,'+k')
+        plot(hca,mean(ve.(comps(1)).data,1)*1e-3,mean(ve.(comps(2)).data,1)*1e-3,'ow')
+        hold(hca,'off')    
+      end
+     end
+  end
   %hl = findobj(gcf,'type','line');
   for ip = []%1:numel(h)
     hold(h(ip),'on')
@@ -913,8 +1022,15 @@ if 1 % Figure 2, illustration of twisted crescent for paper
   %c_eval('h(?).XTickLabels = []; h(?).YTickLabels = [];',1:numel(h))
   %c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
   %c_eval('h(?).XTick = -40:5:40;',1:numel(h))
+  c_eval('h(?).XTickLabels = []; h(?).YTickLabels = [];',1:3)
   c_eval('h(?).FontSize = 14;',1:numel(h))
   c_eval('h(?).LineWidth = 1;',1:numel(h))
+  
+  h(1).Position = [0.1218    0.5925    0.3347    0.3412];
+  h(2).Position = [0.1218    0.1535    0.3347    0.3412];
+  h(3).Position = [0.5403    0.5925    0.1605    0.3412];
+  h(4).Position = [0.5403    0.1535    0.1605    0.3412];
+  
 end
 
 
