@@ -39,8 +39,8 @@ c_eval('gseE?dce2d = mms_dsl2gse(dslE?dce2d,defatt?);',ic)
 c_eval('gseE?dce = mms_dsl2gse(dslE?dce,defatt?);',ic)
 c_eval('gseE? = gseE?dce;',ic)
 %c_eval('gseE? = mms_dsl2gse(dslEdB0?,defatt?);')
-
-
+%%
+defatt = mms.db_get_variable('mms3_ancillary_defatt','zra',tint);
 %% Load spacecraft position, not brst
 disp('Loading spacecraft position...')
 R  = mms.get_data('R_gse',tint);

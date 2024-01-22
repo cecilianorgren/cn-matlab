@@ -1295,14 +1295,6 @@ hold(hca,'off')
 hca.Visible = 'off';
 hca.Position = [0 0 1 1];
 
-
-
-
-
-
-
-
-
 %% PIC: map of pxy
 %no02m = PIC('/Volumes/Fountain/cno062/data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
 %ds100 = PICDist('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/dists_new.h5');

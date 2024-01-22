@@ -971,8 +971,7 @@ for itime = 1:times.length
     else
       color = [1 0 0];
     end
-    %irf_legend(hca,sprintf('p = %.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
-    irf_legend(hca,sprintf('%.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
+    irf_legend(hca,sprintf('p = %.3f pPa',sstmp),[0.98 0.98],'color',color,'fontsize',13)
   end
   if 1 % change units
     newdata = ha_.CData;
@@ -983,7 +982,7 @@ for itime = 1:times.length
     ha_.CData = newdata;
     %hc_.Colorbar.YLabel.String = {sprintf('m_ef_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)dv_%sdv_%s',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2),comps(1),comps(2)),'(1/m^3)'};
     %hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (10^{%.0f} pPa)',comps(1),comps(2),log10(data_scale_num))};
-    hc_.Colorbar.YLabel.String = {sprintf('dS_{e%s%s}(v_x,v_y)',comps(1),comps(2)),'(pPa)'};
+    hc_.Colorbar.YLabel.String = {sprintf('d\Pi _{e%s%s} (pPa)',comps(1),comps(2))};
     hca.CLim = dp_clim;
     1;    
   end
@@ -1066,8 +1065,7 @@ for itime = 1:times.length
     else
       color = [1 0 0];
     end
-    %irf_legend(hca,sprintf('p = %.3f pPa',pptmp),[0.98 0.98],'color',color,'fontsize',13)
-    irf_legend(hca,sprintf('%.3f pPa',pptmp),[0.98 0.98],'color',color,'fontsize',13)
+    irf_legend(hca,sprintf('p = %.3f pPa',pptmp),[0.98 0.98],'color',color,'fontsize',13)
   end
 
   if 1 % change units
@@ -1079,8 +1077,7 @@ for itime = 1:times.length
     ha_.CData = newdata;
     %hc_.Colorbar.YLabel.String = {sprintf('m_ef_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)dv_%sdv_%s',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2),comps(1),comps(2)),'(1/m^3)'};
     %hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (10^{%.0f} pPa)',comps(1),comps(2),log10(data_scale_num))};
-    %hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (pPa)',comps(1),comps(2))};
-    hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s}(v_x,v_y)',comps(1),comps(2)),'(pPa)'};
+    hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (pPa)',comps(1),comps(2))};
     hca.CLim = dp_clim;
     1;    
   end
@@ -1121,8 +1118,20 @@ if 1 % plot B direction
   end
 end
 
-
-%
+%%
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)','m)'};
+nInd = 1;
+for ii = 1:2
+  irf_legend(h1(ii),legends{nInd},[0.01 0.98],'color',[0 0 0],'fontsize',14)
+  nInd = nInd + 1;
+  h1(ii).FontSize = 14;
+end
+for ii = 1:numel(h2)
+  irf_legend(h2(ii),legends{nInd},[0.02 0.99],'color',[0 0 0],'fontsize',14)
+  nInd = nInd + 1;
+  h2(ii).FontSize = 14;
+end
+%%
 
 c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]);',1:times.length,1:2)
 
@@ -1220,20 +1229,6 @@ c_eval('h2(?).Color = 1*[1 1 1];',1:15)
 c_eval('h2(?).XGrid = ''off''; h2(?).YGrid = ''off'';',1:15)
 color_grid = 0.5*[1 1 1];
 c_eval('hold(h2(?),"on"); plot(h2(?),vg*0,vg,''color'',color_grid); plot(h2(?),vg,vg*0,''color'',color_grid);',1:15)
-
-%
-legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)','p)','q)','r)'};
-nInd = 1;
-for ii = 1:2
-  irf_legend(h1(ii),legends{nInd},[0.01 0.98],'color',[0 0 0],'fontsize',14)
-  nInd = nInd + 1;
-  h1(ii).FontSize = 14;
-end
-for ii = 1:numel(h2)
-  irf_legend(h2(ii),legends{nInd},[0.02 0.99],'color',[0 0 0],'fontsize',14)
-  nInd = nInd + 1;
-  h2(ii).FontSize = 14;
-end
 
 %% 2D distribution and pressure and stress contributions, MN, adapted from LM, X times, with locations shown
 ic = 3;
