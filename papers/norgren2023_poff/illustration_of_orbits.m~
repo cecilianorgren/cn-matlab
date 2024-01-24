@@ -1426,10 +1426,10 @@ m = 2;
 q = -1;
 Bx = @(x,y,z) 2*z/b^2;
 By = @(x,y,z) -3*x.*z/(a.^2*b.^2);
-By = @(x,y,z) -1e1*(z/2/b).*exp(-(z/(2*b)).^2).*(x/3/a).*exp(-(x/(3*a)).^2);
+By = @(x,y,z) -1*(z/2/b).*exp(-(z/(2*b)).^2).*(x/2/a).*exp(-(x/(2*a)).^2);
 Bz = @(x,y,z) 2*x/a^2;
 Ex = @(x,y,z) x*0;
-Ey = @(x,y,z) x*0 + 0.2;
+Ey = @(x,y,z) x*0 + 0.5;
 Ez = @(x,y,z) x*0;
 Ez = @(x,y,z) 1e4*E0*-1*(z/2/b).*exp(-(z/(2*b)).^2);
 
@@ -1440,7 +1440,7 @@ options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
 options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
-tstop = 104;
+tstop = 50;
 % Good for y, but do not cross at the same z.
 x_init_all = [-1 5 4 0 0 0;
               -18.1 0 -3.5 1 0 0
@@ -1459,7 +1459,7 @@ x_init_all = [-2 0 0.1 -1 -1 0;
 end
 
 x_init_all = [-17.81 0 -3.5 1 0 0;
-              -0.0001 5 -4 0 0 0;              
+              -0.1 5 -4 0 0 0;              
               18.1 -1.8 3.9 -1.18 0 0];
 x_init_all = x_init_all(2,:);
 
@@ -1530,7 +1530,6 @@ end
 
 if 1 % Figure 2
   %%
-  colors = [0.6 0.6 0.6];
   xlim = [-20 20];
   zlim = [-5 5];
   S = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[-105:10:110]);
@@ -1723,35 +1722,6 @@ if 1 % Figure 2
     hca.XGrid = 'on';
     hca.YGrid = 'on';
   end
-  if 1 % (vy,vz)
-    hca = h(isub); isub = isub + 1;
-    plot(hca,0,0)
-    hold(hca,'on')
-    
-    for ip = 1:numel(p) % Particle trajectories
-      % Forces
-      by = By(p(ip).x,p(ip).y,p(ip).z);
-      qvzBy = -q*p(ip).vz.*by;
-      qvxBy = q*p(ip).vx.*by;
-      hs = scatter(hca,p(ip).vy,p(ip).vz,30,qvxBy,'filled');
-      colormap(hca,pic_colors('blue_red'))
-      
-      % Trajectory
-      plot(hca,p(ip).vy(1),p(ip).vz(1),'Marker','o','color',colors(ip,:))
-      plot(hca,p(ip).vy(end),p(ip).vz(end),'Marker','x','color',colors(ip,:))
-      plot(hca,p(ip).vy,p(ip).vz,'color',colors(ip,:),'linewidth',0.5)
-      
-      
-      
-    end
-    hca.CLim = max(abs(hca.CLim))*[-1 1];
-    hold(hca,'off')
-    axis(hca,'equal')
-    hca.XGrid = 'on';
-    hca.YGrid = 'on';
-  end
-  
-  
   %hl = findobj(gcf,'type','line');
   for ip = 1:numel(h)
  
