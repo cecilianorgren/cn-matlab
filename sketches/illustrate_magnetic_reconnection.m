@@ -21,7 +21,8 @@ AY0 = Ay(X,Y);
 
 %[FX,FY] = gradient(AY,dx,dy);
 %Bx = -FX;
-%By = FY;
+%By = FY;1
+
 
 colors = pic_colors('matlab');
 colors = [colors; colors(end:-1:1,:)];
