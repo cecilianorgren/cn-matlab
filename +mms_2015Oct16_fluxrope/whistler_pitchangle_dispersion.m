@@ -23,16 +23,19 @@ for it = 1:times.length
   c_eval('scpot = scPot?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
   
   C = @(vperp,vpar,n,wce,wk0,kpar0,vg0) vperp.^2 + n*wce./(n*wce-wk0+kpar0*vg0).*(vpar-vg0).^2;
+  C = @(vperp,vpar,n,wce,wk0,kpar0,vg0) vperp.^2 + (vpar-vg0).^2;
     
   c_eval('fce = fce?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic); 
   fce = mean(fce.data); wce = fce*2*pi;
   c_eval('re = re?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic); 
-  re = mean(re.data); kre = re/(2*pi);
-  n = 1;
+  re = mean(re.data)*1e3; % m
+  kre = (2*pi)/re;
+  n = -1;
   wk0 = 0.25*wce;
   kpar0 = 0.4*kre;
-  vg0 = (wk0/kpar0)*1e3; % m/s
-  %vg0 = 1e6;
+  vg0 = 0.5*(wk0/kpar0); % m/s, roughly from dispersion surfaces
+  vg0 = 2e6;
+  Eg0 = units.me*vg0.^2/2/units.eV; % m/s
   energy = pitch.depend{1} - mean(scpot.data);
   energy(energy<0) = 0;
   energy = [0.0 energy];
@@ -49,7 +52,7 @@ for it = 1:times.length
 
   
   
-  pitch = pdist.pitchangles(b,[0:5:180]);
+  pitch = pdist.deflux.pitchangles(b,[0:5:180]);
 
   hca = h(it);
   pitch.plot_pad_polar(hca,'scpot',scpot)
@@ -68,13 +71,13 @@ for it = 1:times.length
   hca.CLim = clim;
 end
 
-c_eval('shading(h(?),''flat'')',1:5)
+c_eval('shading(h(?),''flat'')',1:numel(h))
 hlinks = linkprop(h,{'CLim','XLim','YLim'});
 colormap(pic_colors('candy4'))
 hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
-delete(hb(1:4))
+delete(hb(1:end-1))
 
-hb = hb(5);
+hb = hb(end);
 hb.Location = 'manual';
 drawnow
 hb.Position(1) = h(end).Position(1) + h(end).Position(3) + 0.005;

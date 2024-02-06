@@ -1,16 +1,16 @@
 % illustrate_reconnection_trajectories
 
 %% Define magnetic field
-a = 5;
+a = 5; % a and b defines the aspect ratio of the magnetic field
 b = 1;
-%xvec = a*linspace(-10.1,10,500);
-%zvec = b*linspace(-10,10,100);
-%yvec = linspace(-0,0,1);
 
-%[X,Y,Z] = ndgrid(xvec,yvec,zvec);
-
+% Used for plotting magnetic field lines with A 
+xvec = a*linspace(-10.1,10,500);
+zvec = b*linspace(-10,10,100);
+yvec = linspace(-0,0,1);
+[X,Y,Z] = ndgrid(xvec,yvec,zvec);
 Ay = @(x,y,z) (x/a).^2 - (z/b).^2;
-%AY0 = Ay(X,Y,Z);
+AY0 = Ay(X,Y,Z);
 
 % Integrate orbits
 m = 2;
@@ -67,7 +67,7 @@ colors = pic_colors('matlab');
 linewidth = 1.5;
 
 
-if 1 % Figure 3
+if 1 % Figure
   %%  
   xlim = [-20 20];
   zlim = [-5 5];
