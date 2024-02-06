@@ -122,6 +122,7 @@ c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? =
 
 c_eval('beta? = (re?/Le?).^2;',ic)
 c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
+c_eval('betae? = PB?.resample(gsePe?)/(gsePe?.trace/3);',ic)
 
 % Magnetic moment
 c_eval('mag_mom? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom?.units = ''nAm^2''; mag_mom?.name = ''magnetic moment'';',ic)
