@@ -1,7 +1,7 @@
 units = irf_units;
 time = irf_time('2015-10-16T10:33:45.238Z','utc>epochtt');
 times = time + [-2:1:2]*0.03*4;
-times = times(1);
+times = times(5);
 ic = 1;
 nrows = 1;
 ncols = times.length;
@@ -117,3 +117,287 @@ clabel(c,h)
 %C = @(vperp,n,wce,wk0,kpar0,vg0,vpar) vperp.^2 + n*wce./(n*wce-wk0+kpar0*vg0).*(vpar-vg0).^2;
 
 %vperp2 = linspace(-);
+
+%% Diffusion time
+% Diffusion coefficient
+units = irf_units;
+dB = 0.1*1e-9; % T
+fce = 555; % Hz, from local data
+re = 1.0877e+03; % m, from local data
+kre = (2*pi)/re; % from whamp, assuming k-normalization to be rho_e
+wk0 = 0.25*wce; % from whamp
+kpar0 = 0.4*kre;
+vg0 = 0.5*(wk0/kpar0); % m/s, roughly from dispersion surfaces
+df = 300; % eyed from spectra, but varies with time
+n = -1;
+vres = (wk0-wce*n)/kpar0;
+Dth = (units.e/units.me)^2*dB^2/(df)*vg0/vres;
+
+%% Diffusion time from pitchangle distribution
+% dfdt = 1/sin(th)*d/dth(D*sin(th)*df/dth)
+
+time = irf_time('2015-10-16T10:33:45.238Z','utc>epochtt');
+times = time + [-2:1:2]*0.03*4;
+time = times(5);
+c_eval('pdist = ePDist?.resample(time,''nearest'');',ic)
+c_eval('b = dmpaB?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
+c_eval('scpot = scPot?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
+  
+
+%pdist = pdist.elim([0 1e4]);
+dt = 10;
+th_edges = 0:dt:180;
+dth = diff(th_edges);
+th = th_edges(1:end-1) + 0.5*dth;
+pitch = pdist.pitchangles(b.norm,th_edges);
+%pitch = pitch.convertto('s^3/m^6');
+energy = pitch.depend{1};
+energy_edges = [energy(1)-pitch.ancillary.delta_pitchangle_minus(1) energy+pitch.ancillary.delta_energy_plus];
+[E,TH] = ndgrid(energy,th);
+
+f = squeeze(pitch.data);
+dfdth = f*0; 
+dfdth(:,2:end-1) = (f(:,3:end)-f(:,1:end-2))/(2*dt);
+dfdth(:,1) = (f(:,2)-f(:,1))/(dt);
+dfdth(:,end) = (f(:,end)-f(:,end-1))/(dt);
+%[~,dfdth_] = gradient(f',E,TH);
+Dsinthdfdth = Dth*sind(TH).*dfdth;
+%imagesc(dfdth')
+
+%[~,dfdt__] = gradient(Dsinthdfdth,E',TH');
+
+dfdt__ = dfdth*0; 
+dfdt__(:,2:end-1) = (Dsinthdfdth(:,3:end)-Dsinthdfdth(:,1:end-2))/(2*dt);
+dfdt__(:,1) = diff(Dsinthdfdth(:,1:2),1,2)/(dt);
+dfdt__(:,end) = diff(Dsinthdfdth(:,end-1:end),1,2)/(dt);
+dfdt = dfdt__./sind(TH);
+
+dist_df = pitch;
+dist_df.data = reshape(dfdt,[1 size(dfdt)]);
+pitch_dfdt = pitch.pitchangle_diffusion(Dth);
+
+nrows = 4;
+ncols = 2;
+ip = 0;
+h = gobjects([nrows,ncols]);
+for irow = 1:nrows
+  for icol = 1:ncols
+    ip = ip + 1;
+    h(ip) = subplot(nrows,ncols,ip);
+  end
+end
+
+isub = 1;
+cmap = irf_colormap('waterfall');
+if 1
+  hca = h(isub); isub = isub + 1;
+  pitch.deflux.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s')
+  %hca.XScale = 'log';
+  %hca.YScale = 'log';
+  hca.XLim = [0 20];
+  hca.YLim = [-10 10];
+  shading(hca,'flat')
+  colormap(hca,cmap)
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,energy,th,log10(f)')
+  hca.XScale = 'log';
+  shading(hca,'flat')
+  hca.XLabel.String = 'E';
+  hca.YLabel.String = '\theta';
+  hb = colorbar(hca);
+  hb.YLabel.String = 'log_{10}f';
+  colormap(hca,cmap)
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,energy,th,f')
+  hca.XScale = 'log';
+  shading(hca,'flat')
+  hca.XLabel.String = 'E';
+  hca.YLabel.String = '\theta';
+  hb = colorbar(hca);
+  hb.YLabel.String = 'f';
+  colormap(hca,cmap)
+  %hca.CLim = prctile(abs(hca.Children.CData(:)),99)*[0 1];
+  %hca.CLim = max(abs(hca.Children.CData(:)))*[-0 1];
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,energy,th,dfdth')
+  hca.XScale = 'log';
+  shading(hca,'flat')
+  hca.XLabel.String = 'E';
+  hca.YLabel.String = '\theta';
+  hb = colorbar(hca);
+  hb.YLabel.String = 'df/dth';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.Children.CData(:)))*[-1 1];
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,energy,th,Dsinthdfdth')
+  hca.XScale = 'log';
+  shading(hca,'flat')
+  hca.XLabel.String = 'E';
+  hca.YLabel.String = '\theta';
+  hb = colorbar(hca);
+  hb.YLabel.String = 'D*sin(th)*df/dth';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.Children.CData(:)))*[-1 1];
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,energy,th,dfdt')
+  hca.XScale = 'log';
+  shading(hca,'flat')
+  hca.XLabel.String = 'E';
+  hca.YLabel.String = '\theta';
+  hb = colorbar(hca);
+  hb.YLabel.String = 'df/dt';
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = max(abs(hca.Children.CData(:)))*[-1 1];
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  [~,~,hh] = dist_df.plot_pad_polar(hca,'scpot',scpot,'nolog10','flim',[-Inf Inf],'10^3 km/s');
+  hb = hh.Colorbar;
+  %hca.XScale = 'log';
+  %hca.YScale = 'log';
+  hca.XLim = [0 20];
+  hca.YLim = [-10 10];
+  shading(hca,'flat')
+  hb.YLabel.String = 'df/dt';
+  hca.CLim = prctile(abs(hca.Children.CData(:)),95.)*[-1 1];
+  %hca.CLim = max(abs(hca.Children.CData(:)))*[-1 1];
+  colormap(hca,pic_colors('blue_red'))
+  hold(hca,'on')
+  plot(hca,hca.XLim,vres*1e-6*[1 1],'k--')
+  hold(hca,'off')
+end
+if 0
+  hca = h(isub); isub = isub + 1;
+  toplot = (f./dfdt)';
+  %toplot(isnan(toplot)) = 0;
+  pcolor(hca,energy,th,toplot)
+  hca.XScale = 'log';
+  shading(hca,'flat')
+  hca.XLabel.String = 'E';
+  hca.YLabel.String = '\theta';
+  hb = colorbar(hca);
+  hb.YLabel.String = 'f/(df/dt)';
+  colormap(hca,pic_colors('blue_red'))
+  %hca.CLim = max(abs(hca.Children.CData(:)))*[-1 1];
+  hca.CLim = prctile(abs(hca.Children.CData(:)),95.)*[-1 1];
+  hold(hca,'on')
+  contour(hca,energy,th,smooth2((f),3)','k')
+  hold(hca,'off')
+end
+
+if 1
+  hca = h(isub); isub = isub + 1;
+  pitch_dfdt.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s','flim',[-inf inf],'nolog10')
+  %hca.XScale = 'log';
+  %hca.YScale = 'log';
+  hca.XLim = [0 20];
+  hca.YLim = [-10 10];
+  shading(hca,'flat')
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = prctile(abs(hca.Children.CData(:)),95.)*[-1 1];
+end
+
+
+
+
+%hlinks = linkprop(h([1 2]),{'CLim'});
+%h(1).CLim = [-31 -25];
+
+hlinks = linkprop(h([1 7]),{'XLim','YLim'});
+%h(1).CLim = [-31 -25];
+
+hlinks = linkprop(h([6 7]),{'CLim'});
+
+%% Diffusion time from pitchangle distribution
+% dfdt = 1/sin(th)*d/dth(D*sin(th)*df/dth)
+
+time = irf_time('2015-10-16T10:33:45.238Z','utc>epochtt');
+times = time + [-2:1:2]*0.03*4+0.03*4*2;
+
+nrows = 3;
+ncols = times.length;
+ip = 0;
+h = gobjects([nrows,ncols]);
+for irow = 1:nrows
+  for icol = 1:ncols
+    ip = ip + 1;
+    h(irow,icol) = subplot(nrows,ncols,ip);
+  end
+end
+
+for it = 1:times.length
+  time = times(it);
+  c_eval('pdist = ePDist?.resample(time,''nearest'');',ic)
+  c_eval('b = dmpaB?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
+  c_eval('scpot = scPot?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
+  
+  pitch = pdist.pitchangles(b.norm,th_edges);
+  pitch_dfdt = pitch.pitchangle_diffusion(Dth);
+
+  isub = 1;
+  cmap = irf_colormap('waterfall');
+  if 1 % def
+    hca = h(isub,it); isub = isub + 1;
+    pitch.deflux.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [0 20];
+    hca.YLim = [-10 10];
+    shading(hca,'flat')
+    colormap(hca,cmap)
+    hca.Title.String = pdist.time.utc('yyyy-mm-ddTHH:MM:SS.mmm');
+  end
+  if 1 % f
+    hca = h(isub,it); isub = isub + 1;
+    pitch.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [0 20];
+    hca.YLim = [-10 10];
+    shading(hca,'flat')
+    colormap(hca,cmap)
+  end
+  if 1 % df/dt
+    hca = h(isub,it); isub = isub + 1;
+    pitch_dfdt.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s','flim',[-inf inf],'nolog10')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [0 20];
+    hca.YLim = [-10 10];
+    shading(hca,'flat')
+    colormap(hca,pic_colors('blue_red'))
+    hca.CLim = prctile(abs(hca.Children.CData(:)),95.)*[-1 1];
+  end
+end
+
+
+
+c_eval('hlinks? = linkprop(h(?,:),{''CLim''});',1:nrows)
+hlinks_all = linkprop(h(:),{'XLim','YLim'});
+h(1).XLim = [0 10];
+
+for ip = 1:numel(h)
+  hca = h(ip);
+  hold(hca,'on')
+  plot(hca,hca.XLim,vres*1e-6*[1 1],'k--')
+  hold(hca,'off')
+end
+drawnow
+compact_panels(h,0.01,0.005)
+hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+delete(hb(1:end-4))
+for ip = 4:numel(h)
+  hca = h(ip);
+  hca.YLabel = [];
+  hca.YTick = [];
+end

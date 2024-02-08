@@ -1,0 +1,4 @@
+% Diffusion coefficient
+units = irf_units;
+dB ´0.1
+Dth = (units.e/units.me)^2*

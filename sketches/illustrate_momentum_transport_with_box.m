@@ -18,8 +18,15 @@ SX = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',(-40:40:40)-0.01);  % X line
 colors = pic_colors('matlab');
 color_sep = colors(1,:);
 color_sep = [0.8 0.8 0.8];
+color_sep = [0.8 0.7 0.6];
+color_sep = [0.9 0.7 0.3];
+%color_sep = colors(3,:);
 color_box = colors(3,:);
-%color_box = [0.5 0.5 0.5];
+color_box = colors(2,:);
+color_box = [0.6 0.3 0.8];
+
+color_sep = [0.6 0.3 0.8];
+color_box = [0.9 0.7 0.3];
 facealpha_sep = 0.95;
 facealpha_box = 0.7;
 
@@ -83,3 +90,7 @@ hca.XDir = 'reverse';
 hca.View = [-33.1000   14.8000];
 
 hold(hca,'off')
+
+hp = findobj(gcf,'type','patch'); hp = hp(end:-1:1);
+c_eval('hp(?).LineWidth = 1.5;',1:numel(hp))
+% export transparent background with export_fig from matlab central user library 
