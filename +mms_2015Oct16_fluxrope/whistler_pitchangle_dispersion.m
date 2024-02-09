@@ -145,7 +145,7 @@ c_eval('scpot = scPot?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
   
 
 %pdist = pdist.elim([0 1e4]);
-dt = 10;
+dt = 5;
 th_edges = 0:dt:180;
 dth = diff(th_edges);
 th = th_edges(1:end-1) + 0.5*dth;
@@ -322,10 +322,17 @@ hlinks = linkprop(h([6 7]),{'CLim'});
 % dfdt = 1/sin(th)*d/dth(D*sin(th)*df/dth)
 
 time = irf_time('2015-10-16T10:33:45.238Z','utc>epochtt');
-times = time + [-2:1:2]*0.03*4+0.03*4*2;
+%times = time + [-2:1:2]*0.03*4+0.03*4*2;
+times = time + [-2:1:2]*0.03*4;
+%time = times(5);
 
-nrows = 3;
+
+%times = times(4);
+nrows = 4;
 ncols = times.length;
+%nrows = times.length;
+%ncols = 4;
+
 ip = 0;
 h = gobjects([nrows,ncols]);
 for irow = 1:nrows
@@ -334,21 +341,60 @@ for irow = 1:nrows
     h(irow,icol) = subplot(nrows,ncols,ip);
   end
 end
+h = h;
+dt = 7.5;
+th_edges = 0:dt:180;
 
 for it = 1:times.length
   time = times(it);
   c_eval('pdist = ePDist?.resample(time,''nearest'');',ic)
   c_eval('b = dmpaB?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
   c_eval('scpot = scPot?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
+  z = mean(b.norm.data,1);
+  x = cross(z,cross([1 0 0],x)); x = x/norm(x);
+  y = cross(z,x); y = y/norm(y);
+  vg = -15000:500:15000;
   
   pitch = pdist.pitchangles(b.norm,th_edges);
   pitch_dfdt = pitch.pitchangle_diffusion(Dth);
+  pdist_red = pdist.reduce('2D',x,z,'vg',vg);
+  
+  
+  vz = -3000; % km/s
+  vshift = z*vz;
+  
+  new_E = logspace(-1,log10(40e3),50);
+  new_az = 0:11.25:360;
+  new_pol = 0:11.25:180;
+  
+  %new_E = [pdist.depend{1}(1)-pdist.ancillary.delta_energy_minus(1) pdist.depend{1}-+pdist.ancillary.delta_energy_minus];
+  %new_az = pdist.depend{2};
+  %new_pol = pdist.depend{3};
+  pdist_shift = pdist.shift(vshift,1000,[1 0 0; 0 1 0; 0 0 1],'','new_grid',new_E,new_pol,new_az);
+  %pdist_shift = pdist.shift(vshift,1000,[1 0 0; 0 1 0; 0 0 1],'');
+  pdist_shift = pdist_shift.convertto('s^3/cm^6');
+  
+  
+  pitch_vres = pdist_shift.pitchangles(b.norm,th_edges);
+  pitch_vres_dfdt = pitch_vres.pitchangle_diffusion(Dth);
+  pdist_vres_red = pdist_shift.reduce('2D',x,z,'vg',vg);
 
   isub = 1;
   cmap = irf_colormap('waterfall');
-  if 1 % def
+  if 0 % def
     hca = h(isub,it); isub = isub + 1;
-    pitch.deflux.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s')
+    pitch.deflux.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s','nolog10')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [0 20];
+    hca.YLim = [-10 10];
+    shading(hca,'flat')
+    colormap(hca,cmap)
+    hca.Title.String = pdist.time.utc('yyyy-mm-ddTHH:MM:SS.mmm');
+  end
+  if 0 % def shift
+    hca = h(isub,it); isub = isub + 1;
+    pitch_vres.deflux.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s','nolog10')
     %hca.XScale = 'log';
     %hca.YScale = 'log';
     hca.XLim = [0 20];
@@ -359,45 +405,115 @@ for it = 1:times.length
   end
   if 1 % f
     hca = h(isub,it); isub = isub + 1;
-    pitch.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s')
+    pitch.deflux.plot_pad_polar(hca,'scpot',scpot.resample(pitch),'10^3 km/s','nolog10')
     %hca.XScale = 'log';
     %hca.YScale = 'log';
-    hca.XLim = [0 20];
+    hca.XLim = [0 10];
     hca.YLim = [-10 10];
     shading(hca,'flat')
     colormap(hca,cmap)
+    
+    hold(hca,'on')
+    plot(hca,hca.XLim,(vres*1e-6-0)*[1 1],'k-')
+    plot(hca,hca.XLim,(vz*1e-3-0)*[1 1],'k--')
+    hold(hca,'off')
+  end
+  if 1 % f shift
+    hca = h(isub,it); isub = isub + 1;
+    pitch_vres.plot_pad_polar(hca,'10^3 km/s','nolog10')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [-0 10];
+    hca.YLim = [-10 10];
+    shading(hca,'flat')
+    colormap(hca,cmap)
+    hold(hca,'on')
+    plot(hca,hca.XLim,(vres*1e-6-vz*1e-3)*[1 1],'k-')
+    plot(hca,hca.XLim,(vz*1e-3-vz*1e-3)*[1 1],'k--')
+    hold(hca,'off')
+  end
+  if 0 % f reduced
+    hca = h(isub,it); isub = isub + 1;
+    pdist_red.plot_plane(hca,'log10',1);
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [-0 15];
+    hca.YLim = [-15 15];
+    shading(hca,'flat')
+    colormap(hca,cmap)
+    hca.XGrid = 'on';
+    hca.YGrid = 'on';
+    hca.Layer = 'top';
+  end
+  if 0 % f reuced shifted
+    hca = h(isub,it); isub = isub + 1;
+    pdist_vres_red.plot_plane(hca,'log10',1);
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [-0 15];
+    hca.YLim = [-15 15];
+    shading(hca,'flat')
+    colormap(hca,cmap)
+    hca.XGrid = 'on';
+    hca.YGrid = 'on';
+    hca.Layer = 'top';
   end
   if 1 % df/dt
     hca = h(isub,it); isub = isub + 1;
     pitch_dfdt.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s','flim',[-inf inf],'nolog10')
     %hca.XScale = 'log';
     %hca.YScale = 'log';
-    hca.XLim = [0 20];
+    hca.XLim = [-0 10];
     hca.YLim = [-10 10];
     shading(hca,'flat')
     colormap(hca,pic_colors('blue_red'))
     hca.CLim = prctile(abs(hca.Children.CData(:)),95.)*[-1 1];
+    hold(hca,'on')
+    plot(hca,hca.XLim,(vres*1e-6-0)*[1 1],'k-')
+    plot(hca,hca.XLim,(vz*1e-3-0)*[1 1],'k--')
+    hold(hca,'off')
+  end
+  if 1 % df/dt
+    hca = h(isub,it); isub = isub + 1;
+    pitch_vres_dfdt.plot_pad_polar(hca,'scpot',scpot,'10^3 km/s','flim',[-inf inf],'nolog10')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+    hca.XLim = [-0 10];
+    hca.YLim = [-10 10];
+    shading(hca,'flat')
+    colormap(hca,pic_colors('blue_red'))
+    hca.CLim = prctile(abs(hca.Children.CData(:)),95.)*[-1 1];
+    hold(hca,'on')
+    plot(hca,hca.XLim,(vres*1e-6-vz*1e-3)*[1 1],'k-')
+    plot(hca,hca.XLim,(vz*1e-3-vz*1e-3)*[1 1],'k--')
+    hold(hca,'off')
   end
 end
 
 
 
 c_eval('hlinks? = linkprop(h(?,:),{''CLim''});',1:nrows)
-hlinks_all = linkprop(h(:),{'XLim','YLim'});
-h(1).XLim = [0 10];
+%hlinks_all = linkprop(h(:),{'XLim','YLim'});
+%h(1).XLim = [0 10];
+%hlinks_all = linkprop(h(1:2),{'XLim','YLim','CLim'});
+hlinks_1a = linkprop(h(1,:),{'XLim','YLim','CLim'});
+hlinks_1b = linkprop(h(2,:),{'XLim','YLim','CLim'});
+%h(1).CLim = [0 7]*1e-26;
+hlinks_2 = linkprop(h(3:4),{'XLim','YLim','CLim'});
 
-for ip = 1:numel(h)
-  hca = h(ip);
-  hold(hca,'on')
-  plot(hca,hca.XLim,vres*1e-6*[1 1],'k--')
-  hold(hca,'off')
-end
+% for ip = 1:numel(h)
+%   hca = h(ip);
+%   hold(hca,'on')
+%   plot(hca,hca.XLim,vres*1e-6*[1 1],'k--')
+%   plot(hca,hca.XLim,-vshift(3)*1e-3*[1 1],'k--')
+%   hold(hca,'off')
+% end
 drawnow
-compact_panels(h,0.01,0.005)
-hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
-delete(hb(1:end-4))
-for ip = 4:numel(h)
-  hca = h(ip);
-  hca.YLabel = [];
-  hca.YTick = [];
-end
+%compact_panels(h,0.01,0.005)
+%hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
+%delete(hb(1:end-4))
+%for ip = (ncols):numel(h)
+%  hca = h(ip);
+%  hca.YLabel = [];
+%  hca.YTick = [];
+%end
