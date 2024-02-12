@@ -36,7 +36,7 @@ Ez = @(x,y,z) x*0;
 
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
                  'AbsTol',1e-6);
-options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,[-40 40]),...
+options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,[-40 40]),...
                  'AbsTol',1e-12);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
@@ -125,6 +125,7 @@ if 0 % Figure 1
 end
 
 if 1 % Figure 2
+  %%
   xmark = -4.58;
   xlim = [-20 20];
   zlim = [-5 5];
@@ -233,7 +234,7 @@ if 1 % Figure 2
   %h(2).Position(2) = 0.15;
   %compact_panels(0.01)
   h(1).Position(2) = h(2).Position(2)+h(2).Position(4)+0.01;
-  h(1).Position(4) = 0.2;
+  h(1).Position(4) = 0.3;
   
   c_eval('h(?).XTickLabels = []; h(?).YTickLabels = [];',1:numel(h))
   c_eval('h(?).XTick = -40:5:40;',1:numel(h))
