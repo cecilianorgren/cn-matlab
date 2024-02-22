@@ -6,7 +6,6 @@ tint_d = irf.tint('2017-07-25T22:09:30.82Z/2017-07-25T22:11:00.00Z');
 
 tint_action = irf.tint('2017-07-25T22:09:40.00Z/2017-07-25T22:10:50.00Z');
 tint_cavity = irf.tint('2017-07-25T22:09:46.00Z/2017-07-25T22:09:56.00Z');
-tint_hall = irf.tint('2017-07-25T22:09:40.00Z/2017-07-25T22:10:00.00Z');
 
 %% Figure: Overview 1
 ic = 1;
@@ -2172,9 +2171,8 @@ plot_sc_constellation(h2,gseR1.resample(tint_hall(1)),gseR2.resample(tint_hall(1
 
 %% Electric field quality
 tint_hall = irf.tint('2017-07-25T22:09:40.00Z/2017-07-25T22:10:00.00Z');
-tint_hall = irf.tint('2017-07-25T22:09:40.00Z/2017-07-25T22:10:40.00Z');
 
-npanels = 3;
+npanels = 10;
 h = irf_plot(npanels);
 
 fontsize = 10;
@@ -2189,20 +2187,15 @@ if 1 % B dmpa
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',12);  
 end
-if 1 % B angle
+if 1 % B dmpa
   hca = irf_panel('B ang');
-  c_eval('var = B?ang2.tlim(tint_hall);',ic)
   set(hca,'ColorOrder',mms_colors('xyza'))  
-  hp1 = irf_patch(hca,{var,10},'smaller'); hp1.FaceColor = 'r'; hp1.EdgeColor = 'k';
-  hold(hca,'on') 
-  hp2 = irf_patch(hca,{var,10},'larger');  hp2.FaceColor = 'g'; hp2.EdgeColor = 'k';
-  hold(hca,'off') 
+  c_eval('irf_plot(hca,{Bang?},''comp'');',ic)
   hca.YLabel.String = {'\theta','(deg)'};
-  hca.YLabel.Interpreter = 'tex';
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'angle between B_{DMPA} and spin plane'},[0.98 0.9],'fontsize',fontsize,'color','k');  
+  irf_legend(hca,{'angle between B_{DMPA and z_{DMPA }'},[0.98 0.9],'fontsize',12,'color','k');  
 end
-if 0 % E dsl
+if 1 % E dsl
   c_eval('var = dslE?;',ic)
   hca = irf_panel(var.name);
   set(hca,'ColorOrder',mms_colors('xyza'))  
@@ -2213,7 +2206,7 @@ if 0 % E dsl
   hl = irf_legend(hca,{var.userData.GlobalAttributes.Logical_source{1},var.name}',[0.05 0.98],'fontsize',fontsize,'color','k'); 
   c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
 end 
-if 0 % E dsl
+if 1 % E dsl
   c_eval('var = dslE?_l2pre_dce_edp;',ic)
   hca = irf_panel([var.name '__']);
   set(hca,'ColorOrder',mms_colors('xyza'))  
@@ -2224,11 +2217,11 @@ if 0 % E dsl
   hl = irf_legend(hca,{var.userData.GlobalAttributes.Logical_source{1},var.name}',[0.05 0.98],'fontsize',fontsize,'color','k'); 
   c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
 end 
-if 0 % E dslE?_l2pre_edp
+if 1 % E dslE?_l2pre_edp
   c_eval('var = dslE?_l2pre_dce2d_edp;',ic)
   hca = irf_panel(var.name);
   set(hca,'ColorOrder',mms_colors('xyza'))  
-  irf_plot(hca,{var.x,var.y,var.z},'comp');
+  c_eval('irf_plot(hca,{dslE?_l2pre_edp.x,dslE?_l2pre_edp.y,dslE?_l2pre_edp.z},''comp'');',ic)
   hca.YLabel.String = {'E_{DSL}','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'x','y','z'},[0.98 0.9],'fontsize',fontsize); 
@@ -2239,46 +2232,13 @@ if 0 % E dslE?_l2pre_adp
   var = eval(sprintf('dslE%g_l2pre_%s_adp;',ic,mode));
   hca = irf_panel('E dslE?_l2pre_adp');
   set(hca,'ColorOrder',mms_colors('1'))  
-  irf_plot(hca,{var});
+  c_eval('irf_plot(hca,{dslE?_l2pre_adp},''comp'');',ic)
   hca.YLabel.String = {'E','(mV/m)'};
   set(hca,'ColorOrder',mms_colors('111'))    
   hl = irf_legend(hca,{var.userData.GlobalAttributes.Logical_source{1},var.name}',[0.05 0.98],'fontsize',fontsize,'color','k'); 
   c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
 end 
-if 1 % E comparison of dsl z
-  var1 = eval(sprintf('dslE%g_l2pre_%s_adp;',ic,mode));
-  c_eval('var2 = dslE?_l2pre_dce2d_edp;',ic)
-  c_eval('var3 = dslE?_l2pre_dce_edp;',ic)
-  hca = irf_panel('comp adp edp');
-  set(hca,'ColorOrder',mms_colors('123'))  
-  irf_plot(hca,{var1,var2.z,var3.z},'comp');
-  hca.YLabel.String = {'E_z','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('123'))    
-  hl = irf_legend(hca,{var1.userData.GlobalAttributes.Logical_source{1},var1.name}',[0.05 0.98],'fontsize',fontsize,'color',mms_colors('1')); 
-  c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
-  hl = irf_legend(hca,{var2.userData.GlobalAttributes.Logical_source{1},var2.name}',[0.98 0.98],'fontsize',fontsize,'color',mms_colors('2')); 
-  c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
-  hl = irf_legend(hca,{var3.userData.GlobalAttributes.Logical_source{1},var3.name}',[0.05 0.05],'fontsize',fontsize,'color',mms_colors('3')); 
-  c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
-end 
-if 0 % E comparison of dsl z, smoothed
-  var1 = eval(sprintf('dslE%g_l2pre_%s_adp;',ic,mode));
-  c_eval('var2 = dslE?_l2pre_dce2d_edp;',ic)
-  c_eval('var3 = dslE?_l2pre_dce_edp;',ic)
-  hca = irf_panel('comp adp edp smooth');
-  set(hca,'ColorOrder',mms_colors('123'))    
-  nsm = 301;
-  irf_plot(hca,{var1.smooth(nsm),var2.z.smooth(nsm),var3.z.smooth(nsm)},'comp');
-  hca.YLabel.String = {'E_z','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('123'))    
-  hl = irf_legend(hca,{var1.userData.GlobalAttributes.Logical_source{1},var1.name}',[0.05 0.98],'fontsize',fontsize,'color',mms_colors('1')); 
-  c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
-  hl = irf_legend(hca,{var2.userData.GlobalAttributes.Logical_source{1},var2.name}',[0.98 0.98],'fontsize',fontsize,'color',mms_colors('2')); 
-  c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
-  hl = irf_legend(hca,{var3.userData.GlobalAttributes.Logical_source{1},var3.name}',[0.05 0.05],'fontsize',fontsize,'color',mms_colors('3')); 
-  c_eval('hl(?).Interpreter = ''none'';',1:numel(hl))  
-end 
-if 0 % E dslE?_l2pre_quality
+if 1 % E dslE?_l2pre_quality
   var = eval(sprintf('dslE%g_l2pre_%s_quality;',ic,mode));
   %c_eval(['var = dslE?_l2pre_' mode '_quality;'],ic)
   hca = irf_panel(var.name);  
