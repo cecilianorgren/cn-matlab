@@ -1,0 +1,54 @@
+
+
+gas_consumption_per_10km = 0.0:0.1:1.5;
+gas_consumption_per_km = gas_consumption_per_10km/10; % per km
+
+distance_to_town = 0:1:20;
+trips_per_year = 45*5*2;
+distance_travelled = distance_to_town*trips_per_year;
+
+
+[C_km,D_travelled] = meshgrid(gas_consumption_per_km,distance_travelled);
+gas_consumption = C_km.*D_travelled;
+
+gas_price_per_L = 21; % sek
+
+hca = subplot(1,2,1);
+[c,h] = contour(hca,distance_to_town,gas_consumption_per_km,gas_consumption',30);
+clabel(c,h)
+shading(hca,'flat')
+hca.XLabel.String = 'distance per trip single way';
+hca.YLabel.String = 'gas per km';
+hca.YTick = (0:0.2:2)/10;
+hca.XGrid = 'on';
+hca.YGrid = 'on';
+
+hca = subplot(1,2,2);
+[c,h] = contour(hca,distance_to_town,gas_consumption_per_km,gas_price_per_L*gas_consumption',30);
+clabel(c,h)
+shading(hca,'flat')
+hca.XLabel.String = 'distance per trip single way';
+hca.YLabel.String = 'gas per km';
+hca.YTick = (0:0.2:2)/10;
+hca.XGrid = 'on';
+hca.YGrid = 'on';
+
+
+%%
+milage = linspace(0,8000,100);
+gas_price_per_L = 25; % sek
+
+cost = @(car_price,gas_consumption) car_price + gas_consumption*distance_travelled_10km*gas_price_per_L;
+cost_ = @(car) car.price + car.gas_per_10km*distance_travelled_10km*gas_price_per_L;
+
+car(1).price = 30000-15000;
+car(1).gas_per_10km = 0.7*1.2;
+
+car(2).price = 89000-50000;
+car(2).gas_per_10km = 0.47;
+
+hca = subplot(1,1,1);
+plot(hca,distance_travelled_10km,cost(car(1).price,car(1).gas_per_10km),distance_travelled_10km,cost(car(2).price,car(2).gas_per_10km))
+%plot(hca,distance_travelled_10km,cost_(car),distance_travelled_10km,cost_(car))
+hca.YLim(1) = 0;
+hca.XLabel.String = 'Mil';
