@@ -56,7 +56,7 @@ al = irf.ts_scalar(irf_time(omni_index_min(:,1),'epoch>EpochTT'),omni_index_min(
 au = irf.ts_scalar(irf_time(omni_index_min(:,1),'epoch>EpochTT'),omni_index_min(:,4)); au.name = 'AU';
 end
 
-%% Fields
+%% Magnetic field
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',1:4);
@@ -64,23 +64,6 @@ c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',ti
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',1:4);
 c_eval('dslE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',1:4);
 c_eval('gsmE? = c_coord_trans(''GSE'',''GSM'',gseE?);',1:4)
-
-c_eval('dslE?fast = mms.db_get_ts(''mms?_edp_fast_ql_dce2d'',''mms?_edp_dce_xyz_dsl'',tint);');
-
-
-
-c_eval('dslE?_l2pre_dce_edp =                mms.db_get_ts(''mms?_edp_brst_l2pre_dce'',''mms?_edp_dce_dsl_brst_l2pre'',tint);');
-
-
-c_eval('dslE?_l2pre_dce2d_edp =                mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_dce_dsl_brst_l2pre'',tint);');
-c_eval('dslE?_l2pre_dce2d_adp =                mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_adp_brst_l2pre'',tint);');
-c_eval('dslE?_l2pre_dce2d_quality =            mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_quality_brst_l2pre'',tint);');
-c_eval('dslE?_l2pre_dce2d_phase =              mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_phase_brst_l2pre'',tint);');
-c_eval('dslE?_l2pre_dce2d_adc_offset =         mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_adc_offset_brst_l2pre'',tint);');
-c_eval('dslE?_l2pre_dce2d_edp_swwake_residue = mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_swwake_residue_brst_l2pre'',tint);');
-c_eval('dslE?_l2pre_dce2d_spin_residue =       mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_spin_residue_brst_l2pre'',tint);');
-
-
 % Spacecraft potential
 c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 % Density
@@ -119,7 +102,6 @@ c_eval('Pi?par = facPi?.xx;',ic)
 % Spacecraft position
 c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
 
-%return
 %% Distributions
 ic = 1;
 % Distributions, FPI
@@ -187,10 +169,6 @@ eis_pa1234.units = eis_pa3.units;
 eis_pa1234.species = eis_pa3.species;
 
 %% Derived quantities, par/perp, mag mom, beta, J, 
-% Angle between B and spacecraft spin plane, for EdotB
-c_eval('ang_tmp = acosd(dmpaB?.z.data./dmpaB?.abs.data); B?ang = irf.ts_scalar(dmpaB?.time,ang_tmp); B?ang.name = ''acosd(Bz/Babs)'';',ic)
-c_eval('ang_tmp = acosd(sqrt(dmpaB?.x.data.^2 + dmpaB?.y.data.^2)./dmpaB?.abs.data); B?ang2 = irf.ts_scalar(dmpaB?.time,ang_tmp); B?ang2.name = ''acosd(Bz/Babs)'';',ic)
-
 ic = 1:4;
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 % vExB
@@ -289,7 +267,7 @@ gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
 
 c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',ic)
 %gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
-
+%%
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
 c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
 c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',1:4)

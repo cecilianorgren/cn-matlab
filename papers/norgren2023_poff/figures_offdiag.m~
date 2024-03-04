@@ -81,26 +81,27 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 % Calculate stress tensor from pressure, density and speed
 % P_psd(:,1,1) = P_psd(:,1,1)-pmass*n_psd.*V_psd(:,1).*V_psd(:,1);
-%%
+
 comps = ['x','y','z'];
 c_eval('Se? = gsePe?.data*0;',1:4);
-%c_eval('Si? = gsePi?.data*0;',1:4);
+c_eval('Si? = gsePi?.data*0;',1:4);
 c_eval('nvve? = gsePe?.data*0;',1:4);
-%c_eval('nvvi? = gsePi?.data*0;',1:4);
+c_eval('nvvi? = gsePi?.data*0;',1:4);
 for ic1 = 1:3
   for ic2 = 1:3
-    c_eval('nvve?(:,ic1,ic2) = units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);');
-    %c_eval('nvvi?(:,ic1,ic2) = units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);    
-    c_eval('gseNVVe? = irf.ts_tensor_xyz(gsePe?.time,nvve?*1e9); gseNVVe?.name = ''Inertia''; gseNVVe?.units = ''nPa'';')
-    %c_eval('gseNVVi? = irf.ts_tensor_xyz(gsePi?.time,nvvi?*1e9); gseNVVi?.name = ''Iertia''; gseNVVi?.units = ''nPa'';',ic)
+    c_eval('nvve?(:,ic1,ic2) = units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);',ic);
+    c_eval('nvvi?(:,ic1,ic2) = units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);    
+    c_eval('gseNVVe? = irf.ts_tensor_xyz(gsePe?.time,nvve?*1e9); gseNVVe?.name = ''Inertia''; gseNVVe?.units = ''nPa'';',ic)
+    c_eval('gseNVVi? = irf.ts_tensor_xyz(gsePi?.time,nvvi?*1e9); gseNVVi?.name = ''Iertia''; gseNVVi?.units = ''nPa'';',ic)
 %    
-    c_eval('Se?(:,ic1,ic2) = gsePe?.data(:,ic1,ic2)*1e-9 + units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);');
-    %c_eval('Si?(:,ic1,ic2) = gsePi?.data(:,ic1,ic2)*1e-9 + units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);
-    c_eval('gseSe? = irf.ts_tensor_xyz(gsePe?.time,Se?*1e9); gseSe?.name = ''Stress tensor''; gseSe?.units = ''nPa'';')
-    %c_eval('gseSi? = irf.ts_tensor_xyz(gsePi?.time,Si?*1e9); gseSi?.name = ''Stress tensor''; gseSi?.units = ''nPa'';',ic)
+    c_eval('Se?(:,ic1,ic2) = gsePe?.data(:,ic1,ic2)*1e-9 + units.me*1e6*1e3*1e3*ne?.data.*gseVe?.data(:,ic1).*gseVe?.data(:,ic2);',ic);
+    c_eval('Si?(:,ic1,ic2) = gsePi?.data(:,ic1,ic2)*1e-9 + units.mp*1e6*1e3*1e3*ni?.data.*gseVi?.data(:,ic1).*gseVi?.data(:,ic2);',ic);
+    c_eval('gseSe? = irf.ts_tensor_xyz(gsePe?.time,Se?*1e9); gseSe?.name = ''Stress tensor''; gseSe?.units = ''nPa'';',ic)
+    c_eval('gseSi? = irf.ts_tensor_xyz(gsePi?.time,Si?*1e9); gseSi?.name = ''Stress tensor''; gseSi?.units = ''nPa'';',ic)
   end
 end
-%%
+%
+%
 
 
 
@@ -143,8 +144,6 @@ if 0 % Gradient from 4 sc
 
   c_eval('Sxy? = gseSe?.xy.resample(gseSe!).smooth(nsm_pre);',1:4,ic)
   gradSexy_4sc = c_4_grad('R?','Sxy?','grad');
-  gradSexy_ne_4sc = gradSexy_4sc*(1e-9*1e-3)/(ne*1e6)/units.e*1e3; % mV/m
-  gradSexy_ne_4sc.name = 'div Sexy/ne';
 
 
   % Gradient terms
@@ -160,8 +159,6 @@ M = [0.1818,0.9245,-0.3350];
 N = [0.2604,0.2832,0.9230];
 lmn = [L;M;N];
 
-doDefatt = 0;
-if doDefatt
 tt = irf_time('2017-07-11T22:34:02.00Z','utc>EpochTT'); %20151112071854
 tint_defatt = tt + [-2 2];
 zra = mms.db_get_variable('mms2_ancillary_defatt','zra',tint_defatt);
@@ -174,7 +171,7 @@ L_dsl = mms_dsl2gse(tsL, defatt, -1); L_dsl = L_dsl.data;
 M_dsl = mms_dsl2gse(tsM, defatt, -1); M_dsl = M_dsl.data;
 N_dsl = mms_dsl2gse(tsN, defatt, -1); N_dsl = N_dsl.data;
 lmn_dsl = [L_dsl; M_dsl; N_dsl];
-end
+
 
 % Rotate data
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
@@ -189,7 +186,7 @@ c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''VExB LMN'';',ic)
 %c_eval('mvaJi? = gseJi?*lmn''; mvaJi?.name = ''Ji LMN'';',ic)
 %mvaJcurl = gseJcurl*lmn'; mvaJcurl.name = 'J LMN CURL';
 c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
-c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;')
+c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
 c_eval('mvaTi? = lmn*gseTi?*lmn''; mvaTi?.units = gseTi?.units;',ic)
 c_eval('mvaTe? = lmn*gseTe?*lmn''; mvaTe?.units = gseTe?.units;',ic)
 %
@@ -208,16 +205,11 @@ mvaGradSexy = gradSexy*lmn''; mvaGradSexy.units = mvaGradSexy.units;
 end
 
 
-if doDefatt
-  c_eval('mvaVe?_dsl = mms_dsl2gse(mvaVe?,defatt,-1); mvaVe?_dsl.name = ''Ve LMN dsl'';',ic)
-  c_eval('mvaE?_dsl = mms_dsl2gse(mvaE?,defatt,-1); mvaE?_dsl.name = ''E LMN dsl'';',ic)
-  c_eval('mvaB?_dsl = mms_dsl2gse(mvaB?,defatt,-1); mvaB?_dsl.name = ''B LMN dsl'';',ic)
-  c_eval('mvaE?_dsl2 = dslE?*lmn_dsl''; mvaE?_dsl2.name = ''E LMN DSL2'';',ic)
-end
+c_eval('mvaVe?_dsl = mms_dsl2gse(mvaVe?,defatt,-1); mvaVe?_dsl.name = ''Ve LMN dsl'';',ic)
+c_eval('mvaE?_dsl = mms_dsl2gse(mvaE?,defatt,-1); mvaE?_dsl.name = ''E LMN dsl'';',ic)
+c_eval('mvaB?_dsl = mms_dsl2gse(mvaB?,defatt,-1); mvaB?_dsl.name = ''B LMN dsl'';',ic)
 
-mvaGradSe_4sc = gradPexy_4sc*lmn'; mvaGradSe_4sc.units = gradSexy_4sc.units;
-mvaGradPe_4sc = gradPexy_4sc*lmn'; mvaGradPe_4sc.units = gradPexy_4sc.units;
-
+c_eval('mvaE?_dsl2 = dslE?*lmn_dsl''; mvaE?_dsl2.name = ''E LMN DSL2'';',ic)
 
 %vsc = 10e3;
 c_eval('tt = mvaVe?.time-mvaVe?.time(1);',ic)
