@@ -181,6 +181,72 @@ colormap([0.8 0.8 0.8; pic_colors('candy4')])
 
 
 
+%% Plot isosurfaces of distribution
+units = irf_units;
+ic = 4;
+times_utc = ['2015-10-16T13:07:02.160Z';...
+             '2015-10-16T13:07:02.190Z';...
+             '2015-10-16T13:07:02.220Z';...
+             '2015-10-16T13:07:02.250Z';...
+             '2015-10-16T13:07:02.280Z'];
+times = irf_time(times_utc,'utc>EpochTT');
+times = times + 0.090;
+nt = times.length;
+
+vint_red = [-1000 1000];
+vint = [3500 5000];
+vint = [3000 5000] + 500;
+eint = [50 90];
+vlim_red = [-10 10];
+eint = units.me*(vint*1e3).^2/2/units.eV;
+c_eval('PDist = ePDist?;',ic)
+c_eval('dmpaB = dmpaB?;',ic)
+c_eval('dslE = dslE?;',ic)
+c_eval('scPot = scPot?;',ic)
+
+
+nrows = 5;
+ncols = 1;
+h = setup_subplots(nrows,ncols,'vertical');
+isub = 1;
+
+for it = 1:nt % par perp
+  hca = h(isub); isub = isub + 1;
+  time = times(it);
+  pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
+  %scP = scPot.tlim(time+0.5*0.03*[-1 1]); scP = mean(scP.data,1);
+  B = dmpaB.tlim(time+0.5*0.03*[-1 1]); B = mean(B.data,1); B = B/norm(B);
+  E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); E = E/norm(E);
+  Eperp = cross(B,cross(E,B));
+  ExB = cross(E,B);
+
+  F = squeeze(pdist.data);
+  Flev = prctile(F(:),95);
+  [faces,verts] = extractIsosurface(F,Flev);
+
+  figure
+  p = patch(Faces=faces,Vertices=verts);
+  isonormals(V,p)
+  view(3)
+  set(p,FaceColor=[0.5 1 0.5])
+  set(p,EdgeColor="none")
+  camlight
+  lighting gouraud
+
+  colormap(hca,irf_colormap('waterfall'))
+  %hca.XLim = vlim_red;
+  %hca.YLim = vlim_red;
+  %hca.XLabel.String = 'v_{B}';
+  %hca.YLabel.String = 'v_{ExB}';
+
+  axis(hca,'square')
+end
+
+
+
+
+
+
 
 
 
