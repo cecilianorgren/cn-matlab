@@ -214,7 +214,7 @@ h = setup_subplots(nrows,ncols,'vertical');
 isub = 1;
 %nt = 1;
 
-for it = 1:nt % 3D isosurface
+for it = 1:2%nt % 3D isosurface
     
   hca = h(isub); isub = isub + 1;
   time = times(it);
@@ -370,16 +370,16 @@ for it = 1:nt % 3D isosurface
   if 1 % plot LMN (obs in GSE!!)
     %%
     hold(hca,'on')
-    colors_quiv_LMN = [0.5 0.5 0.5];
-    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_LMN,'linewidth',2)
-    text(hca,qmax*L(1)*1,qmax*L(2)*1,qmax*L(3)*1,'L','color',colors_quiv_LMN,'fontweight',fontweight,'fontsize',fontsize)
 
-    quiver3(hca,qmax*M(1)*-1,qmax*M(2)*-1,qmax*M(3)*-1,qmax*M(1)*2,qmax*M(2)*2,qmax*M(3)*2,'color',colors_quiv_LMN,'linewidth',2)
-    text(hca,qmax*M(1)*1,qmax*M(2)*1,qmax*M(3)*1,'M','color',colors_quiv_LMN,'fontweight',fontweight,'fontsize',fontsize)
+    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_B,'linewidth',2)
+    text(hca,qmax*nB(1)*1,qmax*nB(2)*1,qmax*nB(3)*1,'L','color',colors_quiv_B,'fontweight',fontweight,'fontsize',fontsize)
 
-    quiver3(hca,qmax*N(1)*-1,qmax*N(2)*-1,qmax*N(3)*-1,qmax*N(1)*2,qmax*N(2)*2,qmax*N(3)*2,'color',colors_quiv_LMN,'linewidth',2)
-    text(hca,qmax*N(1)*1,qmax*N(2)*1,qmax*N(3)*1,'N','color',colors_quiv_LMN,'fontweight',fontweight,'fontsize',fontsize)
-
+    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_B,'linewidth',2)
+    text(hca,qmax*nB(1)*1,qmax*nB(2)*1,qmax*nB(3)*1,'L','color',colors_quiv_B,'fontweight',fontweight,'fontsize',fontsize)
+    
+    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_B,'linewidth',2)
+    text(hca,qmax*nB(1)*1,qmax*nB(2)*1,qmax*nB(3)*1,'L','color',colors_quiv_B,'fontweight',fontweight,'fontsize',fontsize)
+    
     hold(hca,'off')
 
   end
