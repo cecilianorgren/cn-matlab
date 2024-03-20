@@ -1,7 +1,7 @@
 %% Load data
 % units = irf_units;
 irf.log('critical')
-ic = 2;
+ic = 3;
 
 localuser = 'cno062';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
@@ -43,7 +43,7 @@ c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some 
 toc
 
 %% Plot distributions
-ic = 2;
+ic = 1;
 times_utc = ['2015-10-16T13:07:02.160Z';...
              '2015-10-16T13:07:02.190Z';...
              '2015-10-16T13:07:02.220Z';...
@@ -51,13 +51,12 @@ times_utc = ['2015-10-16T13:07:02.160Z';...
              '2015-10-16T13:07:02.280Z'];
 times = irf_time(times_utc,'utc>EpochTT');
 %times = times + 0.090;
-times = times(2:end);
+%times = times(1);
 nt = times.length;
 
-vint_red = [-2000 2000];
+vint_red = [-1000 1000];
 vint = [3500 5000];
-vint = [4000 5000] - 500;
-vint = [3000 6000];
+vint = [3000 5000] + 500;
 eint = [50 90];
 vlim_red = [-10 10];
 eint = units.me*(vint*1e3).^2/2/units.eV;
@@ -66,42 +65,10 @@ c_eval('dmpaB = dmpaB?;',ic)
 c_eval('dslE = dslE?;',ic)
 c_eval('scPot = scPot?;',ic)
 
-nrows = 3;
+nrows = 5;
 ncols = 4;
-h = setup_subplots(nrows,ncols,'horizontal');
+h = setup_subplots(nrows,ncols,'vertical');
 isub = 1;
-
-for it = 1:nt % perp perp
-  hca = h(isub); isub = isub + 1;
-  time = times(it);
-  pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
-  %scP = scPot.tlim(time+0.5*0.03*[-1 1]); scP = mean(scP.data,1);
-  B = dmpaB.tlim(time+0.5*0.03*[-1 1]); B = mean(B.data,1); B = B/norm(B);
-  E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); E = E/norm(E);
-  Eperp = cross(B,cross(E,B));
-  ExB = cross(E,B);
-  fred = pdist.reduce('2D',ExB,Eperp,'scpot',scPot,'vint',vint_red,'vg',-30000:500:30000);
-  fred.plot_plane(hca);
-  %colormap(hca,irf_colormap('waterfall'))
-  hca.XLim = vlim_red;
-  hca.YLim = vlim_red;
-  hca.YLabel.String = 'v_{E_\perp}';
-  hca.XLabel.String = 'v_{ExB}';
-  if 1 % plot vint
-    hold(hca,'on')
-    plot(hca,1e-3*vint(1)*cosd(0:360),1e-3*vint(1)*sind(0:360),'k')
-    plot(hca,1e-3*vint(2)*cosd(0:360),1e-3*vint(2)*sind(0:360),'k')
-    hold(hca,'off')    
-  end
-  if 1 % plot vint_red
-    hold(hca,'on')
-    plot(hca,1e-3*vint_red(1)*[1 1],[-30 30],'k')
-    plot(hca,1e-3*vint_red(2)*[1 1],[-30 30],'k')
-    hold(hca,'off')    
-  end
-  axis(hca,'square')
-end
-
 for it = 1:nt % par perp
   hca = h(isub); isub = isub + 1;
   time = times(it);
@@ -113,7 +80,7 @@ for it = 1:nt % par perp
   ExB = cross(E,B);
   fred = pdist.reduce('2D',B,ExB,'scpot',scPot,'vint',vint_red,'vg',-30000:500:30000);
   fred.plot_plane(hca);
-  %colormap(hca,irf_colormap('waterfall'))
+  colormap(hca,irf_colormap('waterfall'))
   hca.XLim = vlim_red;
   hca.YLim = vlim_red;
   hca.XLabel.String = 'v_{B}';
@@ -133,7 +100,38 @@ for it = 1:nt % par perp
   axis(hca,'square')
 end
 
-for it = []%1:nt % spherical skymap
+for it = 1:nt % perp perp
+  hca = h(isub); isub = isub + 1;
+  time = times(it);
+  pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
+  %scP = scPot.tlim(time+0.5*0.03*[-1 1]); scP = mean(scP.data,1);
+  B = dmpaB.tlim(time+0.5*0.03*[-1 1]); B = mean(B.data,1); B = B/norm(B);
+  E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); E = E/norm(E);
+  Eperp = cross(B,cross(E,B));
+  ExB = cross(E,B);
+  fred = pdist.reduce('2D',Eperp,ExB,'scpot',scPot,'vint',vint_red,'vg',-30000:500:30000);
+  fred.plot_plane(hca);
+  colormap(hca,irf_colormap('waterfall'))
+  hca.XLim = vlim_red;
+  hca.YLim = vlim_red;
+  hca.XLabel.String = 'v_{E_\perp}';
+  hca.YLabel.String = 'v_{ExB}';
+  if 1 % plot vint
+    hold(hca,'on')
+    plot(hca,1e-3*vint(1)*cosd(0:360),1e-3*vint(1)*sind(0:360),'k')
+    plot(hca,1e-3*vint(2)*cosd(0:360),1e-3*vint(2)*sind(0:360),'k')
+    hold(hca,'off')    
+  end
+  if 1 % plot vint_red
+    hold(hca,'on')
+    plot(hca,1e-3*vint_red(1)*[1 1],[-30 30],'k')
+    plot(hca,1e-3*vint_red(2)*[1 1],[-30 30],'k')
+    hold(hca,'off')    
+  end
+  axis(hca,'square')
+end
+
+for it = 1:nt
   hca = h(isub); isub = isub + 1;
   time = times(it);
   pdist = PDist.elim(eint).tlim(time+0.499*0.03*[-1 1]);
@@ -144,8 +142,7 @@ for it = []%1:nt % spherical skymap
   [ax,hcb] = mms.plot_skymap(hca,pdist,'vectors',{B,'B';E,'E';Eperp,'E_\perp';ExB,'ExB'},'smooth',1);
   colormap(hca,irf_colormap('waterfall'))
 end
-
-for it = 1:nt % flat skymap
+for it = 1:nt
   %%  
   hca = h(isub); isub = isub + 1;
   time = times(it);
@@ -154,28 +151,19 @@ for it = 1:nt % flat skymap
   E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); E = E/norm(E);
   Eperp = cross(B,cross(E,B));
   ExB = cross(E,B);
-  [ax,hcb] = mms.plot_skymap(hca,pdist,'flat','vectors',{B,'B';E,'E';Eperp,'E_\perp';ExB,'ExB'},'smooth',2,'pitchangle',B,[45 90 135]);
+  [ax,hcb] = mms.plot_skymap(hca,pdist,'flat','vectors',{B,'B';E,'E';Eperp,'E_\perp';ExB,'ExB'},'smooth',1,'pitchangle',B,[45 90 135]);
   colormap(hca,irf_colormap('waterfall'))
 end
 
-if 1
-  hlinks1 = linkprop(h(1:2*ncols),{'CLim'});
-  h(1).CLim = [-9 -7.];
-  hlinks2 = linkprop(h(2*ncols+1:end),{'CLim'});
-  hlinks3 = linkprop(h(2*ncols+(1:ncols)),{'View'});
-else
-  hlinks1 = linkprop(h(1:2*nrows),{'CLim'});
-  h(1).CLim = [-9 -7.];
-  hlinks2 = linkprop(h(2*nrows+1:end),{'CLim'});
-  hlinks3 = linkprop(h(2*nrows+(1:nrows)),{'View'});
-
-end
-
+hlinks1 = linkprop(h(1:2*nrows),{'CLim'});
+h(1).CLim = [-9 -7.];
+hlinks2 = linkprop(h(2*nrows+1:end),{'CLim'});
+hlinks3 = linkprop(h(2*nrows+(1:5)),{'View'});
 %c_eval('h(?).XLim = 15*[-1 1]; h(?).YLim = 15*[-1 1];',1:nrows)
 %c_eval('h(?).XLim = 15*[-1 1]; h(?).YLim = 15*[-1 1];',1:nrows)
-h(end).CLim = [0 2]*1e-26;
-drawnow
-colormap([0.8 0.8 0.8; pic_colors('candy4')])
+h(11).CLim = [0 1.5]*1e-26;
+
+
 
 
 

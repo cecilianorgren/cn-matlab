@@ -9,7 +9,7 @@ localuser = 'cecilia';
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
-db_info = datastore('mms_db');   
+db_info = datastore('mms_db'); 
 
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
 files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
