@@ -1,12 +1,12 @@
-localuser = 'cecilia';
+localuser 'cecilia';
 %time_table = readtable('/Users/cno062/Data/MMS/Richard_DB/mms_bbfsdb_2017-2021.csv');
 time_table = readtable(['/Users/' localuser '/Data/MMS/Richard_DB/mms_bbfsdb_2017-2021.csv']);
 t1 = irf_time(convertTo(time_table.Var1,'epochtime'),'epoch>EpochTT');
 t2 = irf_time(convertTo(time_table.Var2,'epochtime'),'epoch>EpochTT');
 
-time = ncread(['/Users/' localuser '/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.nc'],'time');
-vec_tot = ncread(['/Users/' localuser '/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.nc'],'represent_vec_tot');
-xarray = ncread(['/Users/' localuser '/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.nc'],'__xarray_dataarray_variable__');
+time = ncread('/Users/cno062/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.nc','time');
+vec_tot = ncread('/Users/cno062/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.nc','represent_vec_tot');
+xarray = ncread('/Users/cno062/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.nc','__xarray_dataarray_variable__');
 
 
 
@@ -17,19 +17,19 @@ xarray = ncread(['/Users/' localuser '/Data/MMS/Richard_DB/mms_b_gsm_2017-2021.n
 %gsmR1 = irf.geocentric_coordinate_transformation(gseR1,'gse>gsm');
 
 units = irf_units;
-path_nc_bffs = ['/Users/' localuser '/Data/MMS/Richard_DB/mms_bbfsdb_2017-2021.nc'];
-finfo_bbfs = ncinfo(path_nc_bffs);
+path_nc_bffs = '/Users/cno062/Data/MMS/Richard_DB/mms_bbfsdb_2017-2021.nc';
+finfo = ncinfo(path_nc_bffs);
 
-varstrs = {finfo_bbfs.Variables.Name};
+varstrs = {finfo.Variables.Name};
 for ivar = 1:numel(varstrs)
   varstr = varstrs{ivar};
   var = ncread(path_nc_bffs,varstr);
   eval(sprintf('%s = var;',varstr))
 end
 %%
-path_nc_r_gsm = ['/Users/' localuser '/Data/MMS/Richard_DB/mms_r_gsm_betai_2017-2021.nc'];
-finfo_betai = ncinfo(path_nc_r_gsm);
-varstrs = {finfo_betai.Variables.Name};
+path_nc_r_gsm = '/Users/cno062/Data/MMS/Richard_DB/mms_r_gsm_betai_2017-2021.nc';
+finfo = ncinfo(path_nc_r_gsm);
+varstrs = {finfo.Variables.Name};
 for ivar = 1:numel(varstrs)
   varstr = varstrs{ivar};
   var = ncread(path_nc_r_gsm,varstr);

@@ -214,128 +214,144 @@ h = setup_subplots(nrows,ncols,'vertical');
 isub = 1;
 %nt = 1;
 
-for it = 1:2%nt % 3D isosurface
+set(gcf,'defaultLegendAutoUpdate','off');
+
+for it = 1:nt % 3D isosurface
     
   hca = h(isub); isub = isub + 1;
   time = times(it);
   elimit = 40;
   elimit = 35;
-  pdist = PDist.elim([elimit Inf]).tlim(time+0.499*0.03*[-1 1]);  
-  %scP = scPot.tlim(time+0.5*0.03*[-1 1]); scP = mean(scP.data,1);
+  %pdist = PDist.elim([elimit Inf]).tlim(time+0.499*0.03*[-1 1]);  
+  pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
+  pdist.data(:,1:5,:,:) = 2e-27;
+
+
+  scP = scPot.tlim(time+0.5*0.03*[-1 1]); scP = mean(scP.data,1);
   B = dmpaB.tlim(time+0.5*0.03*[-1 1]); B = mean(B.data,1); B = B/norm(B);
   E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); E = E/norm(E);
   Eperp = cross(B,cross(E,B));
   ExB = cross(E,B);
   
-  F = squeeze(pdist.data);
-  [VX,VY,VZ] = pdist.v;
-  VX = squeeze(VX);
-  VY = squeeze(VY);
-  VZ = squeeze(VZ);
-  if 1 % make circular in azimuth
-    %F = cat(2,[F(:,end,:),F,F(:,1,:)]);
-    %VX = cat(2,[VX(:,end,:),VX,VX(:,1,:)]);
-    %VY = cat(2,[VY(:,end,:),VY,VY(:,1,:)]);
-    %VZ = cat(2,[VZ(:,end,:),VZ,VZ(:,1,:)]);
-    F = cat(2,[F,F(:,1,:)]);
-    VX = cat(2,[VX,VX(:,1,:)]);
-    VY = cat(2,[VY,VY(:,1,:)]);
-    VZ = cat(2,[VZ,VZ(:,1,:)]);
-  end
-  if 0 % interpolate to close circle
-    
-  end
-  
-  % Rebin to square grid, for smoothing purposes
-  if 0
-    MP = pdist.macroparticles('skipzero',1,'ntot',1e6);
-    vmax = 100e3;
-    dv = 1000;
-    vx = -vmax:dv:vmax;
-    vy = -vmax:dv:vmax;
-    vz = -vmax:dv:vmax;
-    [VXg,VYg,VZg] = ndgrid(vx,vy,vz);
-    %[count edges mid loc] = histcn([VX(:),VY(:),VZ(:)],vx,vy,vz,'fun',@sum,'accumdata',MP.dn);  
-    [count edges mid loc] = histcn([MP.vx,MP.vy,MP.vz],vx,vy,vz,'fun',@sum,'accumdata',MP.dn);  
-  
-    F = count;
-    VX = mid{1};
-    VY = mid{2};
-    VZ = mid{3};
-  end
-%
-  nsmooth = 3;
-  F = smooth3(F,'box',nsmooth);
-  Flev = prctile(F(:),85);
-  Flev = 1e-26;
-  
-  Flev = 1e-27;
-  Flev = prctile(F(:),85);
-  Flev = 6e-27;
-  s = isosurface(VX,VY,VZ,F,Flev);
-  %s = isocaps(VX,VY,VZ,F,Flev);
-  p = patch(hca,Faces=s.faces,Vertices=s.vertices);
-  set(p,FaceColor=[0.5 1 0.5])
-  set(p,EdgeColor="none")
-  set(p,FaceAlpha=0.8)
-  camlight(hca,0,-45)
-  lighting(hca,'gouraud')
-
+  nSmooth = 3;
   if 1
-    hold(hca,'on')
-    Flev2 = 1e-27;
-    s2 = isosurface(VX,VY,VZ,F,Flev2);
-    p2 = patch(hca,Faces=s2.faces,Vertices=s2.vertices);
-    set(p2,FaceColor=[1 0.5 0.5])
-    set(p2,EdgeColor="none")
-    set(p2,FaceAlpha=0.3)  
-    hold(hca,'off')
-  end
-  set(hca,'colororder',[0.5 1 0.5; 1 0.5 0.5])
-  irf_legend(hca,{sprintf('f = %g',Flev),sprintf('f = %g',Flev2)}',[0.98 0.98],'backgroundcolor',[1 1 1],'fontsize',12)
-
-  if 0
-    pdist_low = PDist.elim([0 elimit]).tlim(time+0.499*0.03*[-1 1]);  
-    F = squeeze(pdist_low.data);
-    F = smooth3(F,'box',nsmooth);
-    [VX,VY,VZ] = pdist_low.v;
+    iso_values = [1e-27, 6e-27];    
+    hs = pdist.plot_isosurface(hca,'val',iso_values(1),'smooth',nSmooth,'fill');
+    hs = pdist.plot_isosurface(hca,'val',iso_values(2),'smooth',nSmooth,'fill');
+    
+    legs = arrayfun(@(x)sprintf('%g',x),iso_values,'UniformOutput',false);
+    hleg = legend(hs.Patch,legs,'location','northeast');
+    hleg.Title.String = sprintf('f_%s (%s)',pdist.species(1),pdist.units);
+  else
+    F = squeeze(pdist.data);
+    [VX,VY,VZ] = pdist.v('scpot',scP*0);
     VX = squeeze(VX);
     VY = squeeze(VY);
     VZ = squeeze(VZ);
-    hold(hca,'on')
-    s2 = isosurface(VX,VY,VZ,F,1e-27);
-    p2 = patch(hca,Faces=s2.faces,Vertices=s2.vertices);
-    set(p2,FaceColor=[0.5 0.5 1])
-    set(p2,EdgeColor="none")
-    set(p2,FaceAlpha=1)  
-    hold(hca,'off')
+    if 1 % make circular in azimuth
+      %F = cat(2,[F(:,end,:),F,F(:,1,:)]);
+      %VX = cat(2,[VX(:,end,:),VX,VX(:,1,:)]);
+      %VY = cat(2,[VY(:,end,:),VY,VY(:,1,:)]);
+      %VZ = cat(2,[VZ(:,end,:),VZ,VZ(:,1,:)]);
+      F = cat(2,[F,F(:,1,:)]);
+      VX = cat(2,[VX,VX(:,1,:)]);
+      VY = cat(2,[VY,VY(:,1,:)]);
+      VZ = cat(2,[VZ,VZ(:,1,:)]);
+    end
+    if 0 % interpolate to close circle
+      
+    end
+  
+    % Rebin to square grid, for smoothing purposes
+    if 0
+      MP = pdist.macroparticles('skipzero',1,'ntot',1e6);
+      vmax = 100e3;
+      dv = 1000;
+      vx = -vmax:dv:vmax;
+      vy = -vmax:dv:vmax;
+      vz = -vmax:dv:vmax;
+      [VXg,VYg,VZg] = ndgrid(vx,vy,vz);
+      %[count edges mid loc] = histcn([VX(:),VY(:),VZ(:)],vx,vy,vz,'fun',@sum,'accumdata',MP.dn);  
+      [count edges mid loc] = histcn([MP.vx,MP.vy,MP.vz],vx,vy,vz,'fun',@sum,'accumdata',MP.dn);  
+    
+      F = count;
+      VX = mid{1};
+      VY = mid{2};
+      VZ = mid{3};
+    end
+  %    
+    F = smooth3(F,'box',nSmooth);
+    Flev = prctile(F(:),85);
+    Flev = 1e-26;
+    
+    Flev = 1e-27;
+    Flev = prctile(F(:),85);
+    Flev = 6e-27;
+    s = isosurface(VX,VY,VZ,F,Flev);
+    %s = isocaps(VX,VY,VZ,F,Flev);
+    p = patch(hca,Faces=s.faces,Vertices=s.vertices);
+    set(p,FaceColor=[0.5 1 0.5])
+    set(p,EdgeColor="none")
+    set(p,FaceAlpha=0.8)
+    camlight(hca,0,-45)
+    lighting(hca,'gouraud')
+
+    if 1
+      hold(hca,'on')
+      Flev2 = 1e-27;
+      s2 = isosurface(VX,VY,VZ,F,Flev2);
+      p2 = patch(hca,Faces=s2.faces,Vertices=s2.vertices);
+      set(p2,FaceColor=[1 0.5 0.5])
+      set(p2,EdgeColor="none")
+      set(p2,FaceAlpha=0.3)  
+      hold(hca,'off')
+    end
+    set(hca,'colororder',[0.5 1 0.5; 1 0.5 0.5])
+    irf_legend(hca,{sprintf('f = %g',Flev),sprintf('f = %g',Flev2)}',[0.98 0.98],'backgroundcolor',[1 1 1],'fontsize',12)
+
+    if 0
+      pdist_low = PDist.elim([0 elimit]).tlim(time+0.499*0.03*[-1 1]);  
+      F = squeeze(pdist_low.data);
+      F = smooth3(F,'box',nSmooth);
+      [VX,VY,VZ] = pdist_low.v;
+      VX = squeeze(VX);
+      VY = squeeze(VY);
+      VZ = squeeze(VZ);
+      hold(hca,'on')
+      s2 = isosurface(VX,VY,VZ,F,1e-27);
+      p2 = patch(hca,Faces=s2.faces,Vertices=s2.vertices);
+      set(p2,FaceColor=[0.5 0.5 1])
+      set(p2,EdgeColor="none")
+      set(p2,FaceAlpha=1)  
+      hold(hca,'off')
+    end
+  
+    %[faces,verts] = extractIsosurface(F,Flev);
+  
+
+    view(hca,[1 1 1])
+    %%
+    % figure
+    % p = patch(Faces=faces,Vertices=verts);
+    % isonormals(V,p)
+    % view(3)
+    % set(p,FaceColor=[0.5 1 0.5])
+    % set(p,EdgeColor="none")
+    % camlight
+    % lighting gouraud
+  
+    %colormap(hca,irf_colormap('waterfall'))
+    %hca.XLim = vlim_red;
+    %hca.YLim = vlim_red;
+    hca.XLabel.String = 'v_{x} (km/s)';
+    hca.YLabel.String = 'v_{y} (km/s)';
+    hca.ZLabel.String = 'v_{z} (km/s)';  
+  
+    axis(hca,'square')
+    axis(hca,'equal')
+    grid(hca,'on')
+    hca.Title.String = {'Box averaged over',sprintf('%g (spherical) datapoints',nSmooth),pdist.time.utc};
   end
-  
-  %[faces,verts] = extractIsosurface(F,Flev);
-  
-
-  view(hca,[1 1 1])
-  %%
-  % figure
-  % p = patch(Faces=faces,Vertices=verts);
-  % isonormals(V,p)
-  % view(3)
-  % set(p,FaceColor=[0.5 1 0.5])
-  % set(p,EdgeColor="none")
-  % camlight
-  % lighting gouraud
-
-  %colormap(hca,irf_colormap('waterfall'))
-  %hca.XLim = vlim_red;
-  %hca.YLim = vlim_red;
-  hca.XLabel.String = 'v_{x} (km/s)';
-  hca.YLabel.String = 'v_{y} (km/s)';
-  hca.ZLabel.String = 'v_{z} (km/s)';  
-
-  axis(hca,'square')
-  axis(hca,'equal')
-  grid(hca,'on')
-  hca.Title.String = {'Box averaged over',sprintf('%g (spherical) datapoints',nsmooth),pdist.time.utc};
   if 1 % plot E, ExB, B
     %%
     hold(hca,'on')
@@ -370,16 +386,16 @@ for it = 1:2%nt % 3D isosurface
   if 1 % plot LMN (obs in GSE!!)
     %%
     hold(hca,'on')
+    colors_quiv_LMN = [0.5 0.5 0.5];
+    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_LMN,'linewidth',2)
+    text(hca,qmax*L(1)*1,qmax*L(2)*1,qmax*L(3)*1,'L','color',colors_quiv_LMN,'fontweight',fontweight,'fontsize',fontsize)
 
-    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_B,'linewidth',2)
-    text(hca,qmax*nB(1)*1,qmax*nB(2)*1,qmax*nB(3)*1,'L','color',colors_quiv_B,'fontweight',fontweight,'fontsize',fontsize)
+    quiver3(hca,qmax*M(1)*-1,qmax*M(2)*-1,qmax*M(3)*-1,qmax*M(1)*2,qmax*M(2)*2,qmax*M(3)*2,'color',colors_quiv_LMN,'linewidth',2)
+    text(hca,qmax*M(1)*1,qmax*M(2)*1,qmax*M(3)*1,'M','color',colors_quiv_LMN,'fontweight',fontweight,'fontsize',fontsize)
 
-    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_B,'linewidth',2)
-    text(hca,qmax*nB(1)*1,qmax*nB(2)*1,qmax*nB(3)*1,'L','color',colors_quiv_B,'fontweight',fontweight,'fontsize',fontsize)
-    
-    quiver3(hca,qmax*L(1)*-1,qmax*L(2)*-1,qmax*L(3)*-1,qmax*L(1)*2,qmax*L(2)*2,qmax*L(3)*2,'color',colors_quiv_B,'linewidth',2)
-    text(hca,qmax*nB(1)*1,qmax*nB(2)*1,qmax*nB(3)*1,'L','color',colors_quiv_B,'fontweight',fontweight,'fontsize',fontsize)
-    
+    quiver3(hca,qmax*N(1)*-1,qmax*N(2)*-1,qmax*N(3)*-1,qmax*N(1)*2,qmax*N(2)*2,qmax*N(3)*2,'color',colors_quiv_LMN,'linewidth',2)
+    text(hca,qmax*N(1)*1,qmax*N(2)*1,qmax*N(3)*1,'N','color',colors_quiv_LMN,'fontweight',fontweight,'fontsize',fontsize)
+
     hold(hca,'off')
 
   end
