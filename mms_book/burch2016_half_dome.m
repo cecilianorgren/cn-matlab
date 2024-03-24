@@ -4,11 +4,12 @@ irf.log('critical')
 ic = 2;
 
 localuser = 'cno062';
+%localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
-mms.db_init('local_file_db',['/Volumes/mms']);
+%mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
 
 tint_all = irf.tint('2015-10-16T13:05:24.00Z/2015-10-16T13:07:30.00Z');
@@ -45,7 +46,16 @@ toc
 Lgse = [0.3665, -0.1201, 0.9226];
 Mgse = [0.5694, -0.7553, -0.3245];
 Ngse = [0.7358, 0.6443, -0.2084];
+Tgse = [Lgse; Mgse; Ngse];
+c_eval('tsLgse? = irf.ts_vec_xyz(ePDist?.time,repmat(Lgse,ePDist?.length,1));',ic)
+c_eval('tsMgse? = irf.ts_vec_xyz(ePDist?.time,repmat(Mgse,ePDist?.length,1));',ic)
+c_eval('tsNgse? = irf.ts_vec_xyz(ePDist?.time,repmat(Ngse,ePDist?.length,1));',ic)
 
+c_eval('defatt = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
+c_eval('defatt.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
+c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt,-1);',ic)
+c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt,-1);',ic)
+c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt,-1);',ic)
 
 %% Plot distributions
 ic = 2;
@@ -483,20 +493,27 @@ if 0
 end
 %% Plot isosurfaces of distribution, PDist, cleaned
 units = irf_units;
-ic = 2;
+ic = 3;
 times_utc = ['2015-10-16T13:07:02.160Z';...
              '2015-10-16T13:07:02.190Z';...
              '2015-10-16T13:07:02.220Z';...
              '2015-10-16T13:07:02.250Z';...
              '2015-10-16T13:07:02.280Z'];
 times = irf_time(times_utc,'utc>EpochTT');
+
+times = EpochTT(['2017-07-11T22:34:01.300000000Z';
+  '2017-07-11T22:34:01.800000000Z';...
+  '2017-07-11T22:34:02.300000000Z';...
+  '2017-07-11T22:34:02.800000000Z';...
+  '2017-07-11T22:34:03.300000000Z']);
 %times = times + 0.090;
-times = times(1:3);
+times = times(3:5);
 nt = times.length;
 
 vint_red = [-1000 1000];
 vint = [3500 5000];
 vint = [3000 5000] + 500;
+eint = [50 90];
 eint = [50 90];
 vlim_red = [-10 10];
 eint = units.me*(vint*1e3).^2/2/units.eV;
@@ -523,38 +540,41 @@ for it = 1:nt % 3D isosurface
   time = times(it);
   elimit = 40;
   elimit = 35;
-  %pdist = PDist.elim([elimit Inf]).tlim(time+0.499*0.03*[-1 1]);  
-  pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
-  pdist.data(:,1:5,:,:) = 3e-27;
+  elimit = 30;
+  pdist = PDist.elim([elimit Inf]).tlim(time+0.499*0.03*[-1 1]);  
+  %pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
+  %pdist.data(:,1:5,:,:) = 3e-27;
 
 
   scP = scPot.tlim(time+0.5*0.03*[-1 1]); scP = mean(scP.data,1);
   B = dmpaB.tlim(time+0.5*0.03*[-1 1]); B = mean(B.data,1); Bn = B/norm(B);
   E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); En = E/norm(E);
-  E = gseE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); En = E/norm(E);
+  %E = gseE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); En = E/norm(E);
   Eperp = cross(Bn,cross(E,Bn)); Eperpn = Eperp\norm(Eperp);
   ExB = cross(E,B); ExBn = Eperp\norm(Eperp);
   
   nSmooth = 3;
   
-  iso_values = [2e-27, 6e-27];
-  iso_values = iso_values(2); 
+  iso_values = [0.5e-27, 6e-27];
+  iso_values = [1.5e-30 22e-30];
+  %iso_values = iso_values(2); 
   set(hca,'colororder',[1 0.5 0.5; 0.5 1 0.5]) 
   set(hca,'colororder',[0.2 0.5 1; 1 0.5 0.5; 0.5 1 0.5]) 
-  T = [L;M;N];
-  hs = pdist.plot_isosurface(hca,'val',iso_values,'smooth',nSmooth,'fill','rotate',T);
+  %Tgse = [Lgse;Mgse;Ngse];
+  c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
+  hs = pdist.plot_isosurface(hca,'val',iso_values,'smooth',nSmooth,'fill','rotate',Tdsl);
+  %hs = pdist.plot_isosurface(hca,'smooth',nSmooth,'fill','rotate',Tdsl);
   
-  hs.Patch(1).FaceAlpha = 0.9;
-%  hs.Patch(1).FaceAlpha = 0.3;
-%  hs.Patch(2).FaceAlpha = 0.9;
+  %hs.Patch(1).FaceAlpha = 0.9;
+  %hs.Patch(1).FaceAlpha = 0.3;
+  %hs.Patch(2).FaceAlpha = 0.9;
   
-  legs = arrayfun(@(x)sprintf('%g',x),iso_values,'UniformOutput',false);
+  legs = arrayfun(@(x)sprintf('%g',x),hs.Values,'UniformOutput',false);
   hleg = legend(hs.Patch,legs,'location','northeast');
   hleg.Title.String = sprintf('f_%s (%s)',pdist.species(1),pdist.units);
   
   
-  if 1 % plot E, ExB, B
-    %%
+  if 1 % plot E, ExB, B    
     hold(hca,'on')
     qmax = 10000; 
     nE = E/norm(E);
@@ -625,6 +645,7 @@ for ip = 1:numel(h)
   h(ip).YLabel.String = 'v_M (km/s)';
   h(ip).ZLabel.String = 'v_N (km/s)';
   vlim = [-9 9]*1e3;
+  vlim = 31*[-1 1]*1e3;
   h(ip).XLim = vlim;
   h(ip).YLim = vlim;
   h(ip).ZLim = vlim;

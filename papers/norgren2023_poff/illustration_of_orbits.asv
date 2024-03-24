@@ -543,7 +543,7 @@ colors = pic_colors('matlab');
 colors(3,:) = colors(1,:);
 %colors(3,:) = colors(5,:).^0.5;
 colors(1,:) = colors(1,:).^0.2;
-linewidth = 2;
+linewidth = 1.5;
 
 if 0 % Figure 1
   S = contourcs(xvec,zvec,squeeze(Ay(X,Y,Z))',[-105:10:110]);
@@ -653,8 +653,8 @@ if 1 % Figure 2
     plot(hca,S(il).X*1e-3,S(il).Y*1e-3,'color',[0.5 0.5 0.5])
   end
   for ip = 1:numel(p)
-    plot(hca,p(ip).x(1)*1e-3,p(ip).z(1)*1e-3,'Marker','o','color',colors(ip,:),'MarkerSize',10,'MarkerFaceColor',colors(ip,:))
-    plot(hca,p(ip).x(end)*1e-3,p(ip).z(end)*1e-3,'Marker','x','color',colors(ip,:),'MarkerSize',10)
+    plot(hca,p(ip).x(1)*1e-3,p(ip).z(1)*1e-3,'Marker','o','color',colors(ip,:))
+    plot(hca,p(ip).x(end)*1e-3,p(ip).z(end)*1e-3,'Marker','x','color',colors(ip,:))
     plot(hca,p(ip).x*1e-3,p(ip).z*1e-3,'color',colors(ip,:),'linewidth',linewidth)
   end
   hold(hca,'off')  
@@ -670,9 +670,9 @@ if 1 % Figure 2
   for ip = 1:numel(p)    
     plot(hca,p(ip).x(1)*1e-3,p(ip).y(1)*1e-3,'Marker','o','color',colors(ip,:),'MarkerSize',10,'MarkerFaceColor',colors(ip,:))
     plot(hca,p(ip).x(end)*1e-3,p(ip).y(end)*1e-3,'Marker','x','color',colors(ip,:),'MarkerSize',10)
-    plot(hca,p(ip).x*1e-3,p(ip).y*1e-3,'color',colors(ip,:),'linewidth',linewidth)
+    plot(hca,p(ip).x*1e-3,p(ip).y*1e-3,'color',colors(ip,:),'linewidth',linewidth,'MarkerSize',10)
   end
-  plot(hca,[0 0],hca.YLim,'--k','linewidth',1)
+  plot(hca,[0 0],hca.YLim,'--k')
   for ip = 1:numel(p)
     xq = xmark;
     yq = 16.8;
@@ -700,7 +700,7 @@ if 1 % Figure 2
   %hl = findobj(gcf,'type','line');
   for ip = 1:numel(h)
     hold(h(ip),'on')
-    plot(h(ip),xmark*[1 1],hca.YLim,':k','linewidth',1)
+    plot(h(ip),xmark*[1 1],hca.YLim,':k')
     hold(h(ip),'off')
   end
   %c_eval('hl(?).LineWidth = 1;',1:numel(hl))
@@ -735,8 +735,8 @@ if 1 % Figure 2
   h(2).XLabel.String = 'x (km)';
   h(2).YLabel.String = 'y (km)';
   h(1).YLabel.String = 'z (km)';
-  c_eval('h(?).FontSize = 18;',1:numel(h))
-  c_eval('h(?).LineWidth = 1.5;',1:numel(h))
+  c_eval('h(?).FontSize = 14;',1:numel(h))
+  c_eval('h(?).LineWidth = 1;',1:numel(h))
 end
 
 if 0 % Figure 3

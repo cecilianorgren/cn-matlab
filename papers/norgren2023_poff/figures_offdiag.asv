@@ -504,7 +504,7 @@ npanels = 6;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
-fontsize = 16;
+fontsize = 14;
 fontsize_leg = 13;
 comps = 'xyz';
 
@@ -552,7 +552,7 @@ if 1 % Se, Pe, nvv, xy
   c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'Stress','(pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'X_{xy}','P_{xy}','m_enu_xu_y'},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'\Pi_{xy}','P_{xy}','m_env_xv_y'},[0.98 0.15],'fontsize',fontsize_leg);
   %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 0 % NVVe-off LMN
@@ -626,13 +626,13 @@ if 1 % gradients, comparison
   set(hca,'ColorOrder',mms_colors('xyzab'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('xy'))
-  irf_legend(hca,{'\partial_t{X_{xy}}','  \partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'\partial_t{\Pi_{xy}}','\partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('z'))
-  irf_legend(hca,{'m_e\partial_t(nu_xu_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
+  irf_legend(hca,{'m_e\partial_t(nv_xv_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
   set(hca,'ColorOrder',mms_colors('ab'))
-  irf_legend(hca,{'m_enu_x\partial_t{u_y}'},[0.98 0.35],'fontsize',fontsize_leg);
+  irf_legend(hca,{'m_env_x\partial_t{v_y}'},[0.98 0.35],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('b'))
-  irf_legend(hca,{'m_eu_y\partial_t(nu_x)'},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'m_ev_y\partial_t(nv_x)'},[0.98 0.15],'fontsize',fontsize_leg);
   %irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},[0.98 0.1],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
   %irf_legend(hca,{sprintf('N_{sm}=%g',nsm)},[1.01 0.99],'fontsize',fontsize_leg,'color','k');
@@ -658,14 +658,14 @@ if 1 % gradients, comparison, mV/m
   set(hca,'ColorOrder',mms_colors('xyzab'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('xy'))
-  irf_legend(hca,{'-\partial_x{X_{xy}}/ne','  -\partial_x{P_{xy}}/ne'},[0.02 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'-\partial_x{\Pi_{xy}}/ne','-\partial_x{P_{xy}}/ne'},[0.02 leg_loc(2)],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('z'))
-  irf_legend(hca,{'-m_e\partial_x(nu_xu_y)/ne'},[0.98 0.98],'fontsize',fontsize_leg);  
+  irf_legend(hca,{'-m_e\partial_x(nv_xv_y)/ne'},[0.98 0.98],'fontsize',fontsize_leg);  
   set(hca,'ColorOrder',mms_colors('ab'))
   %irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne','-m_ev_y\partial_x(nv_x)/ne'},leg_loc,'fontsize',fontsize_leg);
-  irf_legend(hca,{'-m_enu_x\partial_x{u_y}/ne'},[0.98 0.75],'fontsize',fontsize_leg);
+  irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne'},[0.98 0.75],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('b'))
-  irf_legend(hca,{'-m_eu_y\partial_x(nu_x)/ne'},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'-m_ev_y\partial_x(nv_x)/ne'},[0.98 0.15],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
   set(hca,'ColorOrder',mms_colors('1111'))
   %irf_legend(hca,{sprintf('N_{sm}=%g',nsm),sprintf('v=%g{km/s}',vsc*1e-3)}',[1.01 0.99],'fontsize',14,'color','k');
@@ -752,7 +752,7 @@ if 1 % n*Ve, grad_x(nVe) with two yaxes
   scaling = 1e6;
   irf_plot(hca,{data_pl.x*1e-4/scaling},'comp'); % 1e-4 to do: m-2  ->  cm-2
   set(hca,'ColorOrder',mms_colors('xyza'))    
-  hca.YLabel.String = {'nu_{ex}',sprintf('(10^{%g} cm^{-2}s^{-1})',log10(scaling))};
+  hca.YLabel.String = {'nv_{ex}',sprintf('(10^{%g} cm^{-2}s^{-1})',log10(scaling))};
   
   hca.YLim = [-29 39];
   
@@ -769,10 +769,10 @@ if 1 % n*Ve, grad_x(nVe) with two yaxes
   set(ax2,'ColorOrder',color_ax)
   irf_plot(ax2,{data_pl2.smooth(nsm)},'comp');
   %ax2.Visible = 'off';
-  ax2.YLabel.String = {'\partial_x(nu_{ex}) (cm^{-3}s^{-1})'};
+  ax2.YLabel.String = {'\partial_x(nv_{ex}) (cm^{-3}s^{-1})'};
   
   set(hca,'ColorOrder',[mms_colors('1');color_ax])
-  irf_legend(hca,{'nu_{ex}','\partial_x(nu_{ex})'},[0.98 0.95],'fontsize',fontsize_leg);
+  irf_legend(hca,{'nv_{ex}','\partial_x(nv_{ex})'},[0.98 0.95],'fontsize',fontsize_leg);
   %set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
   ax2.YLim = [-29 39]*4/39;
 end
