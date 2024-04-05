@@ -7,11 +7,11 @@ localuser = 'cno062';
 localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
 mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
-
+%%
 tint_all = irf.tint('2015-10-16T13:05:24.00Z/2015-10-16T13:07:30.00Z');
 files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
 iFile = 1;
@@ -23,6 +23,7 @@ c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
 
 % Electric field
+c_eval('gseE?fast = mms.get_data(''E_gse_edp_fast_l2'',tint,?);',ic);
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
 c_eval('dslE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
 
@@ -66,7 +67,7 @@ times_utc = ['2015-10-16T13:07:02.160Z';...
              '2015-10-16T13:07:02.280Z'];
 times = irf_time(times_utc,'utc>EpochTT');
 %times = times + 0.090;
-times = times(2:end);
+times = times(1:end);
 nt = times.length;
 
 vint_red = [-2000 2000];
@@ -82,7 +83,7 @@ c_eval('dslE = dslE?;',ic)
 c_eval('scPot = scPot?;',ic)
 
 nrows = 3;
-ncols = 4;
+ncols = 5;
 h = setup_subplots(nrows,ncols,'horizontal');
 isub = 1;
 
@@ -169,7 +170,7 @@ for it = 1:nt % flat skymap
   E = dslE.tlim(time+0.5*0.03*[-1 1]); E = mean(E.data,1); E = E/norm(E);
   Eperp = cross(B,cross(E,B));
   ExB = cross(E,B);
-  [ax,hcb] = mms.plot_skymap(hca,pdist,'flat','vectors',{B,'B';E,'E';Eperp,'E_\perp';ExB,'ExB'},'smooth',2,'pitchangle',B,[45 90 135]);
+  [ax,hcb] = mms.plot_skymap(hca,pdist,'flat','vectors',{B,'B';E,'E';Eperp,'E_\perp';ExB,'ExB'},'smooth',1,'pitchangle',B,[45 90 135]);
   colormap(hca,irf_colormap('waterfall'))
 end
 
@@ -549,7 +550,7 @@ c_eval('plE = gseE?*Tgse'';',ic)
 irf_plot(hca,plE)
 set(hca,'ColorOrder',mms_colors('xyz'))
 hold(hca,'on')
-irf_plot(hca,plE.resample(PDist,'mean'))
+%irf_plot(hca,plE.resample(PDist,'mean'))
 hold(hca,'off')
 hca.YLabel.String = 'E_{LMN} (mV/m)';  hca.YLabel.Interpreter = 'tex';
 set(hca,'ColorOrder',mms_colors('xyz'))
@@ -557,9 +558,16 @@ irf_legend(hca,{'L','M','N'},[0.98 0.98])
 
 hca = h1(isub); isub = isub + 1;
 set(hca,'ColorOrder',mms_colors('xyz'))
-c_eval('plE = gseE?*Tgse'';',ic)
-irf_plot(hca,plE.resample(PDist.time+0.015))
-hca.YLabel.String = 'E_{LMN} (mV/m)';  hca.YLabel.Interpreter = 'tex';
+c_eval('plE = gseE?fast*Tgse'';',ic)
+c_eval('plE_alt = gseE?*Tgse'';',ic)
+plE = plE.resample(PDist.time+0.015);
+plE_alt = plE_alt.resample(plE,'mean');
+irf_plot(hca,plE)
+hold(hca,'on')
+set(hca,'ColorOrder',mms_colors('xyz'))
+irf_plot(hca,plE_alt)
+hold(hca,'off')
+hca.YLabel.String = 'E_{LMN}^{fast} (mV/m)';  hca.YLabel.Interpreter = 'tex';
 set(hca,'ColorOrder',mms_colors('xyz'))
 irf_legend(hca,{'L','M','N'},[0.98 0.98])
 
@@ -581,7 +589,7 @@ for it = 1:nt % mark locations of distributions
   for ip = 1:numel(h1)
     c_eval('tcenter = ePDist?.tlim(times(it)+0.03*0.49*[-1 1]).time;',ic)
     time_int = tcenter+0.03*0.5*[-1 1];
-    irf_pl_mark(h1(ip),time_int',colors(it,:))
+    hmark = irf_pl_mark(h1(ip),time_int',colors(it,:),'facealpha',0.5);
   end
 end
 
@@ -610,7 +618,7 @@ for it = 1:nt % 3D isosurface
   Eperp = cross(Bn,cross(E,Bn)); Eperpn = Eperp\norm(Eperp);
   ExB = cross(E,B); ExBn = Eperp\norm(Eperp);
   
-  nSmooth = 3;
+  nSmooth = 1;
   
   iso_values = [0.5e-27, 6e-27];
   %iso_values = [1.5e-30 22e-30];
