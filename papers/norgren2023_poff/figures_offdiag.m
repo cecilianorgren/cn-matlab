@@ -6,14 +6,12 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
 units = irf_units;
-
-defatt = mms.db_get_variable('mms2_ancillary_defatt','zra',tint);
 
 % Magnetic field
 disp('Loading magnetic field...')
@@ -46,7 +44,7 @@ c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l
 if 1
   %%
   ic_ = ic;
-  ic = 3;
+  %ic = 3;
 disp('Loading skymaps...')
 c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
 %c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
@@ -81,7 +79,7 @@ c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
 
 % Calculate stress tensor from pressure, density and speed
 % P_psd(:,1,1) = P_psd(:,1,1)-pmass*n_psd.*V_psd(:,1).*V_psd(:,1);
-%%
+%
 comps = ['x','y','z'];
 c_eval('Se? = gsePe?.data*0;',1:4);
 %c_eval('Si? = gsePi?.data*0;',1:4);
@@ -100,9 +98,7 @@ for ic1 = 1:3
     %c_eval('gseSi? = irf.ts_tensor_xyz(gsePi?.time,Si?*1e9); gseSi?.name = ''Stress tensor''; gseSi?.units = ''nPa'';',ic)
   end
 end
-%%
-
-
+%
 
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
 c_eval('gseVexB? = cross(gseVe?,gseB?.resample(gseVe?.time))*1e-3; gseVExB?.units = ''mV/m'';',ic) % km/s
@@ -164,11 +160,11 @@ c_eval('tsLgse? = irf.ts_vec_xyz(ePDist?.time,repmat(L,ePDist?.length,1));',ic)
 c_eval('tsMgse? = irf.ts_vec_xyz(ePDist?.time,repmat(M,ePDist?.length,1));',ic)
 c_eval('tsNgse? = irf.ts_vec_xyz(ePDist?.time,repmat(N,ePDist?.length,1));',ic)
 
-c_eval('defatt = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
-c_eval('defatt.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
-c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt,-1);',ic)
-c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt,-1);',ic)
-c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt,-1);',ic)
+c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
+c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
+c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt?,-1);',ic)
+c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt?,-1);',ic)
+c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt?,-1);',ic)
 
 doDefatt = 0;
 if doDefatt
@@ -772,7 +768,7 @@ if 1 % n*Ve, grad_x(nVe) with two yaxes
   ax2.YLabel.String = {'\partial_x(nu_{ex}) (cm^{-3}s^{-1})'};
   
   set(hca,'ColorOrder',[mms_colors('1');color_ax])
-  irf_legend(hca,{'nu_{ex}','\partial_x(nu_{ex})'},[0.98 0.95],'fontsize',fontsize_leg);
+  irf_legend(hca,{'nu_{x}','\partial_x(nu_{x})'},[0.98 0.95],'fontsize',fontsize_leg);
   %set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
   ax2.YLim = [-29 39]*4/39;
 end
@@ -912,6 +908,7 @@ end
 
 dp_clim = 0.01999*[-1 1];
 ds_clim = 0.01999*[-1 1];
+contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.75);
 
 times_exact = {};
 isub = 1;
@@ -929,8 +926,9 @@ for itime = 1:times.length
   c_eval('B = mvaB?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic)  
   c_eval('E = mvaE?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic) 
   c_eval('ve = mvaVe?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic)   
-
-  c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
+  
+  t_dist_center = dist.time.start + (dist.time.stop-dist.time.start)/2;
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data;tsMdsl?.resample(t_dist_center).data;tsNdsl?.resample(t_dist_center).data];',ic)
   Ldsl = Tdsl(2,:);
   Mdsl = Tdsl(2,:);
   Ndsl = Tdsl(3,:);
@@ -945,7 +943,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca);
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'contour',contour_levels);
   hc_.Colorbar.YLabel.String = sprintf('log_{10} f_e(v_%s,v_%s) (s^2/m^5)',comps(1),comps(2));
   hc_.Colorbar.YLabel.String = {sprintf('log_{10} f_e(v_%s,v_%s)',comps(1),comps(2)),'(s^2/m^5)'};
   colormap(hca,pic_colors('candy4'))   
@@ -1010,7 +1008,9 @@ for itime = 1:times.length
   c_eval('B = mvaB?.resample(dist);',ic)  
   c_eval('ve = mvaVe?.resample(dist);',ic)   
 
-  c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
+  t_dist_center = dist.time.start + (dist.time.stop-dist.time.start)/2;
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data;tsMdsl?.resample(t_dist_center).data;tsNdsl?.resample(t_dist_center).data];',ic)  
+  %c_eval('Tdsl = [tsLdsl?.resample(dist).data;tsMdsl?.resample(dist).data;tsNdsl?.resample(dist).data];',ic)
   Ldsl = Tdsl(2,:);
   Mdsl = Tdsl(2,:);
   Ndsl = Tdsl(3,:);
@@ -1024,7 +1024,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress');  
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress','contour',contour_levels);  
   hc_.Colorbar.YLabel.String = sprintf('f_e(v_%s,v_%s)v_%s v_%s (1/m^3)',comps(1),comps(2),comps(1),comps(2));
   hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)v_%s v_%s',comps(1),comps(2),comps(1),comps(2)),'(1/m^3)'};
   colormap(hca,pic_colors('blue_red'))
@@ -1058,7 +1058,7 @@ for itime = 1:times.length
     ha_.CData = newdata;
     %hc_.Colorbar.YLabel.String = {sprintf('m_ef_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)dv_%sdv_%s',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2),comps(1),comps(2)),'(1/m^3)'};
     %hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (10^{%.0f} pPa)',comps(1),comps(2),log10(data_scale_num))};
-    hc_.Colorbar.YLabel.String = {['d\Pi',sprintf('_{e%s%s}(v_%s,v_%s)',comps(1),comps(2),comps(1),comps(2))],'(pPa)'};
+    hc_.Colorbar.YLabel.String = {['dX',sprintf('_{e%s%s}(v_%s,v_%s)',comps(1),comps(2),comps(1),comps(2))],'(pPa)'};
     hca.CLim = dp_clim;
     1;    
   end
@@ -1107,7 +1107,12 @@ for itime = 1:times.length
   c_eval('scpot = scPot?.resample(dist);',ic)  
   c_eval('B = mvaB?.resample(dist);',ic)  
   c_eval('ve = mvaVe?.resample(dist);',ic)    
-  c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
+  t_dist_center = dist.time.start + (dist.time.stop-dist.time.start)/2;
+  t_center{itime} = t_dist_center;
+
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data;tsMdsl?.resample(t_dist_center).data;tsNdsl?.resample(t_dist_center).data];',ic)
+  
+  %c_eval('Tdsl = [tsLdsl?.resample(dist).data;tsMdsl?.resample(dist).data;tsNdsl?.resample(dist).data];',ic)
   Ldsl = Tdsl(2,:);
   Mdsl = Tdsl(2,:);
   Ndsl = Tdsl(3,:);
@@ -1127,7 +1132,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.y.resample(dist),ve.z.resample(dist)); 
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.y.resample(dist),ve.z.resample(dist),'contour',contour_levels); 
  
   %hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
   hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2)),'(1/m^3)'};
@@ -1209,7 +1214,16 @@ for itime = 1:times.length
 end
 
 % Formatting
-c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]);',1:times.length,1:2)
+% c_eval('tmark = [times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1]; hmark = irf_pl_mark(h1(!),tmark,[0.5 0.5 0.5]); hmark.FaceAlpha = 0.4;',1:times.length,1:2)
+for ip = 1:2
+  for it = 1:numel(times_exact)
+    axes(h1(ip))
+    tmark = [times_exact{it}(1).epochUnix times_exact{it}(end).epochUnix] + 0.5*0.03*[-1 1]; 
+    hmark = irf_pl_mark(h1(ip),tmark,[0.5 0.5 0.5]); 
+    hmark.FaceAlpha = 0.5;
+  end
+end
+
 
 hlinks_all = linkprop(h2,{'XLim','YLim'});
 hlinks_f = linkprop(h2(1:nt),{'CLim'});
@@ -1230,7 +1244,7 @@ c_eval('h1(?).FontSize = 14;',1:numel(h1))
 %compact_panels(h2,0.0,00)
 compact_panels(h2,0.005,00.005)
 hb = findobj(gcf,'type','colorbar'); 
-c_eval('hb(?).FontSize = 14;',1:numel(h2))
+c_eval('hb(?).FontSize = 14;',1:numel(hb))
 hb = hb(end:-1:1);
 %
 ihsub = [1:nt-1 nt+1:(2*nt-1) 2*nt+1:(3*nt-1)];
@@ -1281,7 +1295,7 @@ if 1 % make TSeries of integrated dP, dS
   %diff(hc_.Surface.XData(1:2))
   %pp = [-1.483,-0.732,-0.042,0.128,0.513];
   isub = 2;
-  tsPP = irf.ts_scalar(times,ppsum);
+  tsPP = irf.ts_scalar([t_center{:}],ppsum);
   hold(h1(isub),'on')
   hpp = irf_plot(h1(isub),tsPP,'or');
   hpp.MarkerFaceColor = 'k';
@@ -1290,7 +1304,7 @@ if 1 % make TSeries of integrated dP, dS
   hold(h1(isub),'off')
   
   isub = 1;
-  tsSS = irf.ts_scalar(times,sssum);
+  tsSS = irf.ts_scalar([t_center{:}],sssum);
   hold(h1(isub),'on')
   hpp = irf_plot(h1(isub),tsSS,'or');
   hpp.MarkerFaceColor = 'k';
@@ -1314,6 +1328,7 @@ hbb = findobj(gcf,'type','colorbar'); hbb = hbb(end:-1:1);
 
 c_eval('h2(?).Color = 1*[1 1 1];',1:15)
 c_eval('h2(?).XGrid = ''off''; h2(?).YGrid = ''off'';',1:15)
+c_eval('h1(?).XGrid = ''off''; h1(?).YGrid = ''off'';',1:numel(h1))
 color_grid = 0.5*[1 1 1];
 c_eval('hold(h2(?),"on"); plot(h2(?),vg*0,vg,''color'',color_grid); plot(h2(?),vg,vg*0,''color'',color_grid);',1:15)
 
@@ -1440,7 +1455,8 @@ end
 
 dp_clim = 0.01999*[-1 1];
 ds_clim = 0.01999*[-1 1];
-
+contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.5);
+%contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.75);
 
 
 times_exact = {};
@@ -1460,7 +1476,8 @@ for itime = 1:times.length
   c_eval('ve = mvaVe?.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);',ic)   
 
 
-  c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
+  t_dist_center = dist.time.start + (dist.time.stop-dist.time.start)/2;
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data;tsMdsl?.resample(t_dist_center).data;tsNdsl?.resample(t_dist_center).data];',ic)
   Ldsl = Tdsl(1,:);
   Mdsl = Tdsl(2,:);
   Ndsl = Tdsl(3,:);
@@ -1475,7 +1492,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca);
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'contour',contour_levels);
   hc_.Colorbar.YLabel.String = sprintf('log_{10} f_e(v_%s,v_%s) (s^2/m^5)',comps(1),comps(2));
   hc_.Colorbar.YLabel.String = {sprintf('log_{10} f_e(v_%s,v_%s)',comps(1),comps(2)),'(s^2/m^5)'};
   colormap(hca,pic_colors('candy4'))   
@@ -1541,7 +1558,8 @@ for itime = 1:times.length
   c_eval('ve = mvaVe?.resample(dist);',ic)    
 
 
-  c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
+  t_dist_center = dist.time.start + (dist.time.stop-dist.time.start)/2;
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data;tsMdsl?.resample(t_dist_center).data;tsNdsl?.resample(t_dist_center).data];',ic)
   Ldsl = Tdsl(1,:);
   Mdsl = Tdsl(2,:);
   Ndsl = Tdsl(3,:);
@@ -1555,7 +1573,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress');  
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'stress','contour',contour_levels);  
   hc_.Colorbar.YLabel.String = sprintf('f_e(v_%s,v_%s)v_%s v_%s (1/m^3)',comps(1),comps(2),comps(1),comps(2));
   hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)v_%s v_%s',comps(1),comps(2),comps(1),comps(2)),'(1/m^3)'};
   colormap(hca,pic_colors('blue_red'))
@@ -1647,7 +1665,8 @@ for itime = 1:times.length
 
 
 
-  c_eval('Tdsl = [tsLdsl?.resample(pdist).data; tsMdsl?.resample(pdist).data; tsNdsl?.resample(pdist).data];',ic)
+  t_dist_center = dist.time.start + (dist.time.stop-dist.time.start)/2;
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data;tsMdsl?.resample(t_dist_center).data;tsNdsl?.resample(t_dist_center).data];',ic)
   Ldsl = Tdsl(1,:);
   Mdsl = Tdsl(2,:);
   Ndsl = Tdsl(3,:);
@@ -1661,7 +1680,7 @@ for itime = 1:times.length
     
   % Plot
   hca = h2(isub); isub = isub + 1;
-  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.x.resample(dist),ve.y.resample(dist)); 
+  [ha_,hb_,hc_] = vdf.plot_plane(hca,'off-diag-pres-cont',ve.x.resample(dist),ve.y.resample(dist),'contour',contour_levels); 
  
   %hc_.Colorbar.YLabel.String = 'f_e(v_L,v_M)(v_L-v_L^{bulk})(v_M-v_M^{bulk}) (1/m^3)';
   hc_.Colorbar.YLabel.String = {sprintf('f_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2)),'(1/m^3)'};
@@ -1741,9 +1760,17 @@ for itime = 1:times.length
 end
 
 
-%
+% Formatting
 
-c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]);',1:times.length,1:2)
+% for ip = 1:2
+%   for it = 1:numel(times_exact)
+%     axes(h1(ip))
+%     tmark = [times_exact{it}(1).epochUnix times_exact{it}(end).epochUnix] + 0.5*0.03*[-1 1]; 
+%     hmark = irf_pl_mark(h1(ip),tmark,[0.5 0.5 0.5]); 
+%     %hmark.FaceAlpha = 0.5;
+%   end
+% end
+c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]); hmark(?).FaceAlpha = 0.5;',1:times.length,1:2)
 
 hlinks_all = linkprop(h2,{'XLim','YLim'});
 hlinks_f = linkprop(h2(1:nt),{'CLim'});
@@ -1841,6 +1868,7 @@ hbb = findobj(gcf,'type','colorbar'); hbb = hbb(end:-1:1);
 %hbb(2).YLabel.String = 'dP^e_{LM}/dv_Ldv_M (kg/m^3)';
 %hbb(3).YLabel.String = 'dS^e_{LM}/dv_Ldv_M (kg/m^3)';
 
+c_eval('h1(?).XGrid = ''off''; h1(?).YGrid = ''off'';',1:2)
 
 c_eval('h2(?).Color = 1*[1 1 1];',1:15)
 c_eval('h2(?).XGrid = ''off''; h2(?).YGrid = ''off'';',1:15)
