@@ -252,10 +252,13 @@ gseCurvB.name = 'curv B'; gseCurvB.units = '...';
 gseJxB = JxB; gseJxB.name = 'JxB'; gseJxB.data = gseJxB.data; gseJxB.units = 'Am^-2 T';
 
 c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J par''; gseJ?perp.name = ''J perp'';',ic)
-[gseEpar,gseEperp] = irf_dec_parperp(gseBav,gseEav); gseEpar.name = 'E par'; gseEperp.name = 'E perp';
 
 gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
 gseEav = (gseE1.resample(gseE2) + gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/4; gseEav.name = 'E1234'; % gseE1 not there?
+
+
+[gseEpar,gseEperp] = irf_dec_parperp(gseBav,gseEav); gseEpar.name = 'E par'; gseEperp.name = 'E perp';
+
 [gseJcurlpar,gseJcurlperp] = irf_dec_parperp(gseBav,gseJcurl); gseJcurlpar.name = 'J curl par'; gseJcurlperp.name = 'J curl perp';
 
 
@@ -287,9 +290,6 @@ gseJxBne_mVm = (gseJxB)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.na
 gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
 %gseJxBne_mVm.data(abs(neav.data)<0.02,:) = NaN;
 
-c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',ic)
-%gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
-
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
 c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
 c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',1:4)
@@ -297,6 +297,10 @@ c_eval('gseJyBz? =    gseJ?.y*gseB?.z.resample(gseJ?); gseJyBz?.name = ''Jy*Bz''
 c_eval('gseJzBy? = -1*gseJ?.z*gseB?.y.resample(gseJ?); gseJzBy?.name = ''-Jz*By''; gseJzBy?.units = ''nA/m^2 nT'';',1:4)
 c_eval('gseJzBx? =    gseJ?.z*gseB?.x.resample(gseJ?); gseJzBx?.name = ''Jz*Bx''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
 c_eval('gseJxBz? = -1*gseJ?.x*gseB?.z.resample(gseJ?); gseJxBz?.name = ''-Jx*Bz''; gseJxBz?.units = ''nA/m^2 nT'';',1:4)
+
+c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',ic)
+%gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
+
 
 % FPI
 c_eval('gseJxBy?ne_mVm = gseJxBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBy?ne_mVm.units = ''mV/m'';',ic)
@@ -337,7 +341,7 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %gseGradPine.data(abs(gseGradPine.data)>100) = NaN;
 %%
 
-c_eval('iPitch? = iPDist1.pitchangles(dmpaB?,12);',ic)
+c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,12);',ic)
 
 disp('Done loading data.')
 

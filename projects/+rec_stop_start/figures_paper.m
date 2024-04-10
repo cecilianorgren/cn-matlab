@@ -4466,12 +4466,13 @@ if 0 % vExB.x/y/z , Vi resample, 3 panels
   end
 end
 
-
+%%
 if 1 % i psd x,y,z, 3 panels
   for comp = ['x']
     isub = isub + 1;
     hca = irf_panel(['f1D ' comp]);
-    c_eval(sprintf('if1D = if1D%s?_700;',comp),ic)
+    c_eval(sprintf('if1D = if1D%s?;',comp),ic)
+    %c_eval(sprintf('if1D = if1D%s?_700;',comp),ic)
     irf_spectrogram(hca,if1D.specrec('velocity_1D'));  
     hca.YLim = if1D.depend{1}(1,[1 end]);  
     if 0 % % Vi, VExB

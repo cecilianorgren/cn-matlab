@@ -5940,8 +5940,8 @@ doResample = 0;
 isub = 0;
 zoomy = [];
 
-cs = 'lmn';
-cs_str = 'LMN';
+cs = 'gse';
+cs_str = 'GSE';
 if 1 % B
   isub = isub + 1;
   zoomy = [zoomy isub];
