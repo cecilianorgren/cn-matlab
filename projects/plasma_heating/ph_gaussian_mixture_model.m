@@ -163,5 +163,7 @@ X = [X1(:) X2(:)];
 p = mvnpdf(X, mu, Sigma);
 surf(X1,X2,reshape(p,25,25));
 
-%%
+%% Test on MMS distribution
+
+
  
