@@ -1,10 +1,12 @@
 %% Get list of magnetosheath time intervals
 localuser = 'cecilia';
-table_ubmshc = readtable('/Users/cecilia/MATLAB/cn-matlab/projects/plasma_heating/data/mms_unbiased_magnetosheath_campaign.txt');
+localuser = 'cno062';
+table_ubmshc = readtable(['/Users/' localuser '/MATLAB/cn-matlab/projects/plasma_heating/data/mms_unbiased_magnetosheath_campaign.txt']);
 region_prob = load(['/Users/' localuser '/Data/MMS/DB_Lalti/Proba_full.mat']);
 
 %% Load data, unbiased magnetosheath campaign
-mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS/']);
 db_info = datastore('mms_db');
 
 nIntervals = size(table_ubmshc,1);
@@ -20,10 +22,14 @@ for iInterval = 1:nIntervals
   files = cat(1,files,files_tmp');
 end
 
+%% Get local file list
+tint_all = irf.tint('2015-01-01T00:00:00.00Z/2024-01-01T00:00:00.00Z');
+files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
+
 %% Go through burst intervals to identify current sheets
 
 nFiles = size(files,1);
-for iFile = nFiles-3%:nFiles
+for iFile = 1%nFiles-3%:nFiles
   tint = [files(iFile).start files(iFile).stop];
   
   % Load data  
@@ -80,6 +86,7 @@ end
 %% Get the Gaussian Mixture Model for a FPI distribution
 %c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
 %c_eval('scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+units = irf_units;
 
 Threshold = 10e-9;
 MinPeakProminence = 20e-9;
@@ -108,7 +115,7 @@ zvec = linspace(-vmax,vmax,103);
 XYZ = [X(:) Y(:) Z(:)];
 
 % Fit model
-nComp = 2;
+nComp = 3;
 gm = fitgmdist(R,nComp);
 
 % The pdf function only works 1D data, so to be able to plot N-dimensional
@@ -127,7 +134,9 @@ clusterR = cluster(gm,R);
 %
 if 0
   %%
-  eva = evalclusters(R,'gmdistribution','silhouette','KList',1:6);
+  tic;
+  eva = evalclusters(R,'gmdistribution','silhouette','KList',1:3);
+  toc
   
 end
 
@@ -137,6 +146,7 @@ n1 = sum(mParticles.dn)*gm.ComponentProportion(1);
 n2 = sum(mParticles.dn)*gm.ComponentProportion(2);
 n3 = sum(mParticles.dn)*gm.ComponentProportion(3);
 
+if 0
 f1 = sum(mParticles.df)*gm.ComponentProportion(1);
 f2 = sum(mParticles.df)*gm.ComponentProportion(2);
 f3 = sum(mParticles.df)*gm.ComponentProportion(3);
@@ -148,7 +158,7 @@ f3_b = sum(mParticles.df(clusterR==3));
 f1_c = mean(mParticles.df(clusterR==1));
 f2_c = mean(mParticles.df(clusterR==2));
 f3_c = mean(mParticles.df(clusterR==3));
-
+end
 %n = sum(mParticles.dn);
 %n1 = sum(mParticles.dn)*gm.ComponentProportion(1);
 %n2 = sum(mParticles.dn)*gm.ComponentProportion(2);

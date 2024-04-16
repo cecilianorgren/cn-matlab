@@ -26,4 +26,4 @@ c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
 
 tint_cs = irf.tint('2017-07-03T05:26:41.00Z/2017-07-03T05:26:44.00Z');
 
-results = ph_dev_energy_partition(ePDist1.tlim(tint_cs),dmpaB1.tlim(tint_cs),dbcsVe1.tlim(tint_cs),facTe1.tlim(tint_cs));
+%results = ph_dev_energy_partition(ePDist1.tlim(tint_cs),dmpaB1.tlim(tint_cs),dbcsVe1.tlim(tint_cs),facTe1.tlim(tint_cs));

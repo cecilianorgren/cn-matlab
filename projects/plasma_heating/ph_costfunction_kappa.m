@@ -1,0 +1,1 @@
+function out = ph_constfunction_kappa()
