@@ -1,0 +1,177 @@
+%
+units = irf_units;
+m = 1;
+vperp = @(W,vpar) sqrt(2*W/m-vpar.^2);
+
+vparvec = linspace(-5,5,50);
+
+h = setup_subplots(1,1);
+isub = 1;
+
+hca = h(isub); isub = isub + 1;
+plot(hca,vparvec,vperp(5,vparvec))
+
+%% Egedal 2016 mapping, trying to understand, spherical coordinates
+% Model
+EH = 1;
+f_phi = @(x) x*EH;
+phi = f_phi(2);
+f = @(vpar,vperp) exp(-vperp.^2-vpar.^2);
+%f = @(W) exp(-W);
+B1 = 1;
+B2 = 3;
+m = 1;
+q = -1;
+%f_gamma = (v) 1./sqrt(1-v.^2);
+
+% Mapping
+vmax = 3;
+
+
+vpar = linspace(-vmax,vmax,101);
+vperp = linspace(0,vmax,51);
+azim = linspace(0,359,105);
+
+[VPAR,VPERP,AZ] = ndgrid(vpar,vperp,azim);
+VPERP1 = -VPERP.*sind(AZ);
+VPERP2 = -VPERP.*cosd(AZ);
+
+MU1 = m*VPERP.^2/(2*B1);
+MU2 = MU1;
+
+% Original distribution in the magnetosheath
+EK1 = (VPAR.^2 + VPERP1.^2 + VPERP2.^2)*m/2;
+EKpar1 = (VPAR.^2)*m/2;
+EKperp1 = (VPERP1.^2 + VPERP2.^2)*m/2;
+
+%VPAR1 = sqrt(2*EKpar1/m);
+%VPERP1 = sqrt(2*EKperp1/m);
+
+% Distribution in the magnetoshpere
+EK2 = EK1 + q*phi;
+EKperp2 = EKperp1 + q*phi + MU2*B2;
+EKpar2 = EK2 - EKperp2;
+VPAR2 = sqrt(2*EKpar2/m);
+VPERP2 = sqrt(2*EKperp2/m);
+
+
+
+% Plot
+h = setup_subplots(2,2,'horizontal');
+isub = 1;
+
+hca = h(isub); isub = isub + 1;
+F = EK1;
+F = squeeze(mean(F,3));
+pcolor(hca,vpar,vperp,(F)')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'E_{k}^{MSH}';
+
+hca = h(isub); isub = isub + 1;
+F = EK2;
+F = squeeze(mean(F,3));
+pcolor(hca,vpar,vperp,(F)')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'E_{k}^{MSP}';
+
+
+hca = h(isub); isub = isub + 1;
+F = f(VPAR,VPERP);
+F = squeeze(mean(F,3));
+pcolor(hca,vpar,vperp,real(F)')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'f^{MSH}';
+
+hca = h(isub); isub = isub + 1;
+%F = f(EK2).*heaviside(EK2).*heaviside(EKperp2);
+F = f(VPAR2,VPERP2).*heaviside(EK2).*heaviside(EKperp2);
+F = squeeze(mean(F,3));
+pcolor(hca,vpar,vperp,F')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'f^{MSP}';
+axis(hca,'equal')
+
+
+%linkprop(h(1:2),{'CLim'})
+
+
+
+
+%% Egedal 2016 mapping, trying to understand
+% Model
+EH = 1;
+f_phi = @(x) x*EH;
+phi = f_phi(1);
+f = @(vpar,vperp) exp(-vperp.^2-vpar.^2);
+f = @(W) exp(-W);
+B1 = 1;
+B2 = 1;
+m = 1;
+q = -1;
+%f_gamma = (v) 1./sqrt(1-v.^2);
+
+% Mapping
+vmax = 3;
+
+
+vpar = linspace(-vmax,vmax,101);
+vperp1 = linspace(-vmax,vmax,103);
+vperp2 = linspace(-vmax,vmax,105);
+
+% Original distribution in the magnetosheath
+[VPAR,VPERP1,VPERP2] = ndgrid(vpar,vperp1,vperp2);
+VABS = sqrt(VPAR.^2 + VPERP1.^2 + VPERP2.^2);
+EK1 = (VPAR.^2 + VPERP1.^2 + VPERP2.^2)*m/2;
+EKpar1 = (VPAR.^2)*m/2;
+EKperp1 = (VPERP1.^2 + VPERP2.^2)*m/2;
+
+VPAR1 = sqrt(2*EKpar1/m);
+VPERP1 = sqrt(2*EKperp1/m);
+
+% Distribution in the magnetoshpere
+EK2 = EK1 + q*phi;
+EKperp2 = EKperp1*1.2 + q*phi;
+
+% Plot
+h = setup_subplots(4,1,'horizontal');
+isub = 1;
+
+hca = h(isub); isub = isub + 1;
+F = EK1;
+F = squeeze(F(:,:,round(numel(vperp1)/2)));
+pcolor(hca,vpar,vperp1,(F)')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'E_{k}^{MSH}';
+
+hca = h(isub); isub = isub + 1;
+F = EK2;
+F = squeeze(F(:,:,round(numel(vperp1)/2)));
+pcolor(hca,vpar,vperp1,(F)')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'E_{k}^{MSP}';
+
+hca = h(isub); isub = isub + 1;
+F = f(EK2).*heaviside(EK2).*heaviside(EKperp2);
+F = squeeze(F(:,:,round(numel(vperp1)/2)));
+pcolor(hca,vpar,vperp1,F')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'f^{MSH}';
+
+
+hca = h(isub); isub = isub + 1;
+F = f(EK1);
+F = squeeze(F(:,:,round(numel(vperp1)/2)));
+pcolor(hca,vpar,vperp1,real(F)')
+shading(hca,'flat')
+hb = colorbar(hca);
+hb.YLabel.String = 'f^{MSP}';
+
+%linkprop(h(1:2),{'CLim'})
+
