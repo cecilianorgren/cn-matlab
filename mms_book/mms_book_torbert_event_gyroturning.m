@@ -273,7 +273,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
   '2017-07-11T22:34:03.300000000Z';...
   '2017-07-11T22:34:07.300000000Z']);
 times = times + 0.30*1;
-
+%times = times + 3;
 dt_dist = 4*0.061; % for two distributions
 
 fontsize_B_amp = 13;
@@ -285,7 +285,8 @@ elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
 nt = times.length;
 
-[h1,h2] = initialize_combined_plot('topbottom',2,2,times.length/2,0.5,'horizontal');
+%[h1,h2] = initialize_combined_plot('topbottom',2,2,times.length/2,0.5,'horizontal');
+[h1,h2] = initialize_combined_plot('topbottom',2,1,times.length,0.5,'horizontal');
 
 
 comps = 'xy';
@@ -320,6 +321,7 @@ irf_zoom(h1,'x',irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.000Z'))
 irf_zoom(h1,'y')
 irf_plot_axis_align(h1)
 c_eval('xtickangle(h1(?),0)',1:numel(h1))
+%c_eval('h1(?).Position(1) = h1(?).Position(1) + 0.1; h1(?).Position(3) = h1(?).Position(3) - 0.2;',1:numel(h1))
 
 
 
@@ -363,8 +365,8 @@ for itime = 1:times.length
   % Plot
   hca = h2(isub); isub = isub + 1;
   [ha_,hb_,hc_] = vdf.plot_plane(hca,'contour',contour_levels);
-  hc_.Colorbar.YLabel.String = sprintf('log_{10} f_e(v_%s,v_%s) (s^2/m^5)',comps(1),comps(2));
-  hc_.Colorbar.YLabel.String = {sprintf('log_{10} f_e(v_%s,v_%s)',comps(1),comps(2)),'(s^2/m^5)'};
+  hc_.Colorbar.YLabel.String = sprintf('log_{10}f_e(v_%s,v_%s) (s^2/m^5)',comps(1),comps(2));
+  %hc_.Colorbar.YLabel.String = {sprintf('log_{10}f_e(v_%s,v_%s)',comps(1),comps(2)),'(s^2/m^5)'};
   colormap(hca,pic_colors('candy4'))   
   hca.XLabel.String = sprintf('v_%s (10^3 km/s)',comps(1));
   hca.YLabel.String = sprintf('v_%s (10^3 km/s)',comps(2));
@@ -477,17 +479,19 @@ c_eval('h2(?).XGrid = ''off''; h2(?).YGrid = ''off'';',1:numel(h2))
 color_grid = 0.5*[1 1 1];
 c_eval('hold(h2(?),"on"); plot(h2(?),vg*0,vg,''color'',color_grid); plot(h2(?),vg,vg*0,''color'',color_grid);',1:numel(h2))
 
-%%
+
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)','n)','o)','p)','q)','r)'};
 nInd = 1;
-for ii = 1:2
+for ii = 1:numel(h1)
   irf_legend(h1(ii),legends{nInd},[0.02 0.98],'color',[0 0 0],'fontsize',14)
   nInd = nInd + 1;
   h1(ii).FontSize = 14;
 end
-
 for ii = 1:numel(h2)
   irf_legend(h2(ii),legends{nInd},[0.04 0.97],'color',[0 0 0],'fontsize',14)
   nInd = nInd + 1;
   h2(ii).FontSize = 14;
 end
+
+
+c_eval('h1(?).Position(1) = h1(?).Position(1) + 0.1; h1(?).Position(3) = h1(?).Position(3) - 0.2;',1:numel(h1))
