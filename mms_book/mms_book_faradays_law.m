@@ -3,8 +3,8 @@ B0 = 1.0;
 L = 0.25;
 
 E0 = 0.2;
-Lx = 0.3;
-Lz = 0.4;
+Lx = 0.25;
+Lz = 0.3;
 
 %B0 = 1;
 %L = 0.25;
@@ -57,7 +57,7 @@ cmap = flipdim(pic_colors('thermal'),1);
 %cmap = flipdim(colormap('gray'),1);
 colors = pic_colors('matlab');
 lwidth = 1;
-Bwidth = 1;
+Bwidth = 1.5;
 %Eqwidth = 2;
 alev = -10:0.15:10;
 Ecolor = 0*[.6 0.1 0.1]+0*colors(3,:).^2;
@@ -135,8 +135,8 @@ legs = {};
 
 if 1 % Ey
   hold(hca,'on')
-  %hE = surf(hca,X,Z,X*0,squeeze(EY2));
-  hcont = contourf(hca,X,Z,EY2,'linewidth',1.0,'color','k');
+  hE = surf(hca,X,Z,X*0,squeeze(EY2));
+  %hcont = contourf(hca,X,Z,EY2,'linewidth',1.0,'color','k');
   shading(hca,'flat')
   hca.XGrid = 'off';
   hca.YGrid = 'off';
@@ -198,3 +198,7 @@ hca.YLabel.String = 'N';
 hca.LineWidth = 1;
 hca.FontSize = 20;
 compact_panels(0.02,0.005)
+
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+h(1).Title.String = 'Uniform magnetic field';
+h(2).Title.String = 'Reversing magnetic field';
