@@ -6,10 +6,10 @@ ic = 3;
 localuser = 'cno062';
 localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 %mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
-mms.db_init('local_file_db',['/Volumes/mms']);
+%mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
 %%
 tint_all = irf.tint('2015-10-16T13:05:24.00Z/2015-10-16T13:07:30.00Z');

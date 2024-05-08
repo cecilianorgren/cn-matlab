@@ -1134,7 +1134,7 @@ tintQuivers = irf.tint('2015-10-16T10:33:45.50Z/2015-10-16T10:33:50.00Z');
 %tintQuivers = irf.tint('2015-10-16T10:33:47.50Z/2015-10-16T10:33:50.00Z');
   
   times = mvaVe1.tlim(tintQuivers).time;  
-  vel_selection = 2;
+  vel_selection = 1;
   clear timesVUTC gseVdata
   switch vel_selection
     case 1 % do velocities manually    
