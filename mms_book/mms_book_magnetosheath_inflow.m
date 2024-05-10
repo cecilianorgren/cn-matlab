@@ -1,17 +1,17 @@
 %% Load data
-% units = irf_units;
+units = irf_units;
 irf.log('critical')
 ic = 1:4;
 
 localuser = 'cno062';
-localuser = 'cecilia';
+%localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
 %mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
-%%
+
 tint = irf.tint('2015-10-16T10:32:30.00Z/2015-10-16T10:34:10.00Z'); % magnetosphere-magnetosheath-magnetosphere
 
 tic
@@ -64,6 +64,7 @@ c_eval('mvaVe?par = gseVe?par;')
 c_eval('mvaVe?perp = irf.ts_vec_xyz(gseVe?perp.time,[gseVe?perp.dot(Lgse).data gseVe?perp.dot(Mgse).data gseVe?perp.dot(Ngse).data]);')
 c_eval('mvaVe? = irf.ts_vec_xyz(gseVe?.time,[gseVe?.dot(Lgse).data gseVe?.dot(Mgse).data gseVe?.dot(Ngse).data]);')
 c_eval('mvaB? = irf.ts_vec_xyz(gseB?.time,[gseB?.dot(Lgse).data gseB?.dot(Mgse).data gseB?.dot(Ngse).data]);')
+c_eval('mvaE? = irf.ts_vec_xyz(gseE?.time,[gseE?.dot(Lgse).data gseE?.dot(Mgse).data gseE?.dot(Ngse).data]);')
 c_eval('mvaR? = irf.ts_vec_xyz(gseR?.time,[gseR?.dot(Lgse).data gseR?.dot(Mgse).data gseR?.dot(Ngse).data]);')
 
 mvaR0 = (mvaR1.resample(mvaR1.time)+mvaR2.resample(mvaR1.time)+mvaR3.resample(mvaR1.time)+mvaR4.resample(mvaR1.time))/4;
@@ -153,6 +154,10 @@ if 0
   axis(hca,'square')
   hca.XGrid = 'on';
   hca.YGrid = 'on';
+end
+
+if 0 % 2D
+
 end
 if 1 % 3D
    
@@ -261,7 +266,7 @@ if 1 % 3D
   c_eval('posV? = mvaVe?.resample(times).data*0.6;')
   %c_eval('posJ? = mvaJ?.resample(times).data;')
   %c_eval('posB? = mvaB?.resample(times).data;')
-  %c_eval('posE? = mvaE?.resample(times).data;')
+  c_eval('posE? = mvaE?.resample(times).data;')
   %c_eval('posRe? = mvaEVexB?.resample(times).data;')
   
   hca = h3(isub); isub = isub +1;
@@ -274,15 +279,19 @@ if 1 % 3D
 
   % panel lying down
   c_eval('plot_quivers(hca,[posV?(:,1) posV?(:,2) posV?(:,3)],[posR?(:,1) posR?(:,2) posR?(:,3)],mms_colors(''?''))',sclist)
+  hq = findobj(gcf,'type','quiver'); hq = hq(end:-1:1);
+  c_eval('hq(?).LineWidth = 1.5;',1:numel(hq))
+  c_eval('hq(?).Marker = ''.'';',1:numel(hq))
+  c_eval('hq(?).MarkerSize = 5;',1:numel(hq))
 
   c_eval('color? = mms_colors(''?''); color?=(color? + [1 1 1]*2)/3;',sclist)
   %c_eval('plot_quivers(hca,[posE?(:,3) -posE?(:,2) posE?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],color?)',sclist)
   %c_eval('plot_quivers(hca,[posB?(:,3) -posB?(:,2) posB?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],mms_colors(''b''))',sclist)
   hold(hca,'off')
 
-  hca.XLabel.String = 'N (km)';
+  hca.XLabel.String = 'L (km)';
   hca.YLabel.String = 'M (km)';
-  hca.ZLabel.String = 'L (km)';
+  hca.ZLabel.String = 'N (km)';
   hca.ZDir = 'normal';
   hca.YDir = 'normal';
   hca.XDir = 'reverse';
@@ -311,13 +320,16 @@ if 1 % 3D
   hca.Title.FontSize = fontsize;
   hca.FontSize = fontsize;
   hleg.FontSize = 10;
+
+
+  
   if 0 % plot electric field arrows
     hca = h2(isub); isub = isub +1;
     hold(hca,'on')
     %c_eval('plot_quivers(hca,[posV?(:,3) posV?(:,1)],[posR?(:,3) posR?(:,1)],mms_colors(''?''))')
-    c_eval('plot_quivers(hca,[posE?(:,3) -posE?(:,2) posE?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],mms_colors(''?''))',sclist)
+    c_eval('plot_quivers(hca,[posE?(:,1) posE?(:,2) posE?(:,3)],[posR?(:,1) posR?(:,2) posR?(:,3)],mms_colors(''?''))',sclist)
     c_eval('color? = mms_colors(''?''); color?=(color? + [1 1 1]*2)/3;',sclist)
-    c_eval('plot_quivers(hca,[posJ?(:,3) -posJ?(:,2) posJ?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],mms_colors(''b''))',sclist)
+    %c_eval('plot_quivers(hca,[posJ?(:,3) -posJ?(:,2) posJ?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],mms_colors(''b''))',sclist)
     %c_eval('plot_quivers(hca,[posB?(:,3) -posB?(:,2) posB?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],mms_colors(''b''))',1:4)
     %c_eval('plot_quivers(hca,[posRe?(:,3) -posRe?(:,2) posRe?(:,1)],[posR?(:,3) -posR?(:,2) posR?(:,1)],color?)',sclist)
     hold(hca,'off')
@@ -387,8 +399,9 @@ if 1 % 3D
    
     hold(hca,'on')
     if 1 % panel lying down
+      Nshift = 2;
       hmshN1 = plot3(hca,x+70,x*0,funZ(x,y,mshN),'k-.');
-      hmspN1 = plot3(hca,x,x*0,funZ(x,y,mspN)-2.8,'k-');
+      hmspN1 = plot3(hca,x,x*0,funZ(x,y,mspN)-2.8-Nshift,'k-');
     elseif 0 % oanel standing up
       hmshN1 = plot3(hca,funZ(x,y,mshN),x*0,x+70,'k-.');
       hmspN1 = plot3(hca,funZ(x,y,mspN)-2.8,x*0,x,'k-');
