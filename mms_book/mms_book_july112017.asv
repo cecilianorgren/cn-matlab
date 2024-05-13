@@ -193,7 +193,7 @@ if 1 % E+vexB
   hca.LineStyleOrder = {'-','-','-','-','-'};
   hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
   %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
-  hp = irf_patch(hca,{mvaEVexB3.y.smooth(nsm),0},'larger');
+  hp = irf_patch(hca,{mvaEVexB3.smooth(nsm),0},'larger');
   hp.FaceColor = mms_colors('y');
   hp.EdgeColor = [0.6 0.6 0.6];
   hca.NextPlot = "add";
@@ -204,20 +204,20 @@ if 1 % E+vexB
   hca.YLabel.Interpreter = 'tex';
   hca.NextPlot = "replacechildren";
   irf_legend(hca,{'MMS 3'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
-end 
-if 0 % curl(E+vexB)
+end
+if 1 % curl(E+vexB)
   hca = irf_panel('curl(E+vexB)');
   hca.LineStyleOrder = {'-','-','-','-','-'};
   hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
   %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
   scale = 1e6;
-  hp = irf_patch(hca,{mvaCurlEVexB.smooth(nsm)*scale,0});
-  %hp.FaceColor = mms_colors('y');
-  %hp.EdgeColor = [0.6 0.6 0.6];
+  hp = irf_patch(hca,{mvaCurlEVexB.z.smooth(nsm)*scale,0},'larger');
+  hp.FaceColor = mms_colors('y');
+  hp.EdgeColor = [0.6 0.6 0.6];
   hca.NextPlot = "add";
-  %hp = irf_patch(hca,{mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
-  %hp.FaceColor = mms_colors('x');
-  %hp.EdgeColor = [0.6 0.6 0.6];
+  hp = irf_patch(hca,{mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
+  hp.FaceColor = mms_colors('x');
+  hp.EdgeColor = [0.6 0.6 0.6];
   hca.YLabel.String = {'\nabla\times(E+v_e\times B)_N','(10^6 nT/s)'};
   hca.YLabel.Interpreter = 'tex';
   hca.NextPlot = "replacechildren";
@@ -229,14 +229,14 @@ if 1 % curl(E+vexB)
   hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
   %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
   scale = 1e6;
-  hp = irf_patch(hca,{-1*mvaCurlEVexB.z.smooth(nsm)*scale,0},'larger');
+  hp = irf_patch(hca,{mvaCurlEVexB.z.smooth(nsm)*scale,0},'larger');
   hp.FaceColor = mms_colors('y');
   hp.EdgeColor = [0.6 0.6 0.6];
   hca.NextPlot = "add";
-  hp = irf_patch(hca,{-1*mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
+  hp = irf_patch(hca,{mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
   hp.FaceColor = mms_colors('x');
   hp.EdgeColor = [0.6 0.6 0.6];
-  hca.YLabel.String = {'-\nabla\times(E+v_e\times B)_N','(10^6 nT/s)'};
+  hca.YLabel.String = {'\nabla\times(E+v_e\times B)_N','(10^6 nT/s)'};
   hca.YLabel.Interpreter = 'tex';
   hca.NextPlot = "replacechildren";
   irf_legend(hca,{'MMS 1-4'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
