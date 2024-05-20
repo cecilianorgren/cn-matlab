@@ -91,14 +91,18 @@ c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? =
 % Compute temperature ratio An
 c_eval('Temprat? = facPepp?.xx/(facPepp?.yy);',ic);
 
-c_eval('gseEVexB? = gseE?.resample(gseVexB?)+gseVexB?''; gseEVexB?.name = ''E+VexB gse'';',1:4)
+c_eval('gseEVexB? = gseE?.resample(gseVexB?) + gseVexB?''; gseEVexB?.name = ''E+VexB gse'';',1:4)
 
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
-[gseCurlEvexB,gseDivEvexB,mvaEvexB,~,~,~] = c_4_j('gseR?brsttime','gseEVexB?');
+[gseCurlEvexB,gseDivEvexB,gseEvexB,~,~,~] = c_4_j('gseR?brsttime','gseEVexB?');
 gseCurlEvexB = gseCurlEvexB*1e-6*1e9; % nT/s
 
+nsm = 5;
+[gseCurlEvexB_smo,gseDivEvexB_smo,gseEvexB_smo,~,~,~] = c_4_j(gseR1brsttime,gseR2brsttime,gseR3brsttime,gseR4brsttime,gseEVexB1.smooth(nsm),gseEVexB2.smooth(nsm),gseEVexB3.smooth(nsm),gseEVexB4.smooth(nsm));
+gseCurlEvexB_smo = gseCurlEvexB_smo*1e-6*1e9; % nT/s
+
 disp('Done.')
-% Rotate things into new coordinate system 
+%% Rotate things into new coordinate system 
 L = [0.9482,-0.255,-0.1893];
 M = [0.1818,0.9245,-0.3350];
 N = [0.2604,0.2832,0.9239];
@@ -115,11 +119,12 @@ c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''VExB LMN'';',ic)
 c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''VexB LMN'';',1:4)
 c_eval('mvaEVexB? = mvaE?.resample(mvaVexB?)+mvaVexB?''; mvaEVexB?.name = ''E+VexB LMN'';',1:4)
 mvaCurlEVexB = gseCurlEvexB*lmn''; gseCurlEvexB.name = 'curl(E+VexB) LMN';
+mvaCurlEVexB_smo = gseCurlEvexB_smo*lmn''; gseCurlEvexB_smo.name = 'curl(E+VexB) LMN';
 %c_eval('mvaJ? = gseJ?*lmn''; mvaJ?.name = ''J LMN'';',ic)
 %c_eval('mvaJe? = gseJe?*lmn''; mvaJe?.name = ''Je LMN'';',ic)
 %c_eval('mvaJi? = gseJi?*lmn''; mvaJi?.name = ''Ji LMN'';',ic)
 %mvaJcurl = gseJcurl*lmn'; mvaJcurl.name = 'J LMN CURL';
-c_eval('mvaPi? –= lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
+c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
 c_eval('mvaPe? = lmn*gsePe?*lmn''; mvaPe?.units = gsePe?.units;',ic)
 c_eval('mvaTi? = lmn*gseTi?*lmn''; mvaTi?.units = gseTi?.units;',ic)
 c_eval('mvaTe? = lmn*gseTe?*lmn''; mvaTe?.units = gseTe?.units;',ic)
@@ -134,16 +139,172 @@ c_eval('vte? = 1e-3*sqrt(2*units.eV*gseTe?.trace/3/units.me);',ic)
 
 c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',ic)
 
-%% Overview plot
+%% Overview plot, induction
 
 tint_edr = irf.tint('2017-07-11T22:34:00.000Z/2017-07-11T22:34:06.000Z'); %20151112071854
 tint_overview = irf.tint('2017-07-11T22:33:29.700Z/2017-07-11T22:34:20.000Z'); %20151112071854
 tint_overview = tint_edr + 30*[-1 1]; %20151112071854
+tint_dist = irf.tint('2017-07-11T22:34:02.367Z/2017-07-11T22:34:02.397Z');
 h = irf_plot(5);
 
 fontsize = 14;
-fontsize_leg = 12;
+fontsize_leg = 14;
 nsm = 1;
+
+if 1 % vi
+  hca = irf_panel('vi');
+  hca.LineStyleOrder = {'-','-','-','-','-'};
+  hca.ColorOrder = [mms_colors('xyz'); 0 0 0; 0.6 0.6 0.6];
+  vscale = 1;
+  irf_plot(hca,{mvaVi3.x*vscale,mvaVi3.y*vscale,mvaVi3.z*vscale},'comp')
+  %hca.YLabel.String = 'v_i (km/s)';
+  hca.YLabel.String = {'v_i','(km/s)'};
+  irf_legend(hca,{'v_{iL}','v_{iM}','v_{iN}'},[0.02 0.98],'fontsize',fontsize_leg)
+  irf_legend(hca,{'MMS 3'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
+end
+h_del = irf_panel('delete');
+
+if 1 % ve
+  hca = irf_panel('B');
+  hca.LineStyleOrder = {'-','-','-','-','--'};
+  hca.ColorOrder = mms_colors('xyz');
+  irf_plot(hca,{mvaB3.x,mvaB3.y,mvaB3.z},'comp')
+  hca.NextPlot = "add";
+  hp = irf_patch(hca,{mvaB3.z,0}); hp.FaceColor = mms_colors('z'); hp.EdgeColor = mms_colors('z');
+   
+  hca.NextPlot = "replacechildren";               
+  hca.YLabel.String = {'B','(nT)'};
+  hca.YLabel.Interpreter = 'tex';
+  hca.NextPlot = "replacechildren";
+  hca.ColorOrder = [mms_colors('xyz'); 0.4 0.4 0.4; 0.6 0.6 0.6];
+  irf_legend(hca,{'B_{L}','B_{M}','B_{N}'},[0.02 0.98],'fontsize',fontsize_leg)
+  %irf_legend(hca,{'MMS 3'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
+end
+
+if 1 % ve
+  hca = irf_panel('ve 2');
+  hca.LineStyleOrder = {'-','-','-','-','--'};
+  hca.ColorOrder = [mms_colors('xyz'); 0.4 0.4 0.4; 0.6 0.6 0.6];
+  vscale = 1e-3;
+  hca.NextPlot = "add";
+  hp = irf_patch(hca,{mvaVe3.y.smooth(nsm)*vscale,0}); hp.FaceColor = mms_colors('y'); hp.EdgeColor = mms_colors('y');
+  hca.NextPlot = "add";  
+  hp = irf_patch(hca,{mvaVe3.x.smooth(nsm)*vscale,0}); hp.FaceColor = mms_colors('x'); hp.EdgeColor = mms_colors('x');
+  hca.NextPlot = "add";
+  hp = irf_patch(hca,{mvaVe3.z.smooth(nsm)*vscale,0}); hp.FaceColor = mms_colors('z'); hp.EdgeColor = mms_colors('z');
+  hca.NextPlot = "add";
+  hca.ColorOrder = [0.4 0.4 0.4; 0.6 0.6 0.6];
+  irf_plot(hca,{-1*vAe3.smooth(20)*vscale,-1*vte3.smooth(20)*vscale},'comp')  
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};
+  hca.YLabel.Interpreter = 'tex';
+  hca.NextPlot = "replacechildren";
+  hca.ColorOrder = [mms_colors('xyz'); 0.4 0.4 0.4; 0.6 0.6 0.6];
+  %irf_legend(hca,{'v_{eL}','v_{eM}','v_{eN}','v_{Ae}','v_{te}'},[0.02 0.98],'fontsize',fontsize_leg)
+  irf_legend(hca,{'v_{eL}','v_{eM}','v_{eN}'},[0.02 0.98],'fontsize',fontsize_leg)
+  hca.ColorOrder = [0.4 0.4 0.4; 0.6 0.6 0.6; 0.6 0.6 0.6];
+  irf_legend(hca,{'v_{Ae}',' ','v_{te}'}',[0.02 0.53],'fontsize',fontsize_leg)
+  %irf_legend(hca,{'MMS 3'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
+end
+
+if 0 % ve
+  hca = irf_panel('ve');
+  hca.LineStyleOrder = {'-','-','-','-','-'};
+  hca.ColorOrder = [mms_colors('xyz'); 0 0 0; 0.6 0.6 0.6];
+  vscale = 1e-3;
+  irf_plot(hca,{mvaVe3.x*vscale,mvaVe3.y*vscale,mvaVe3.z*vscale,-1*vAe3.smooth(nsm)*vscale,-1*vte3.smooth(nsm)*vscale},'comp')
+  %hca.YLabel.String = 'v_e (10^3 km/s)';
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};
+end
+if 1 % E+vexB
+  hca = irf_panel('E+vexB');
+  hca.LineStyleOrder = {'-','-','-','-','-'};
+  hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
+  %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
+  hp = irf_patch(hca,{mvaEVexB3.y.smooth(nsm),0},'larger');
+  hp.FaceColor = mms_colors('y');
+  hp.EdgeColor = [0.6 0.6 0.6];
+  hca.NextPlot = "add";
+  hp = irf_patch(hca,{mvaEVexB3.y.smooth(nsm),0},'smaller');
+  hp.FaceColor = mms_colors('x');
+  hp.EdgeColor = [0.6 0.6 0.6];
+  hca.YLabel.String = {'(E+v_e\times B)_M','(mV/m)'};
+  hca.YLabel.Interpreter = 'tex';
+  hca.NextPlot = "replacechildren";
+  %irf_legend(hca,{'MMS 3'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
+end 
+if 0 % curl(E+vexB)
+  hca = irf_panel('curl(E+vexB)');
+  hca.LineStyleOrder = {'-','-','-','-','-'};
+  hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
+  %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
+  scale = 1e6;
+  hp = irf_patch(hca,{mvaCurlEVexB.smooth(nsm)*scale,0});
+  %hp.FaceColor = mms_colors('y');
+  %hp.EdgeColor = [0.6 0.6 0.6];
+  hca.NextPlot = "add";
+  %hp = irf_patch(hca,{mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
+  %hp.FaceColor = mms_colors('x');
+  %hp.EdgeColor = [0.6 0.6 0.6];
+  hca.YLabel.String = {'\nabla\times(E+v_e\times B)_N','(10^6 nT/s)'};
+  hca.YLabel.Interpreter = 'tex';
+  hca.NextPlot = "replacechildren";
+  irf_legend(hca,{'MMS 1-4'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
+end
+if 0 % curl(E+vexB)
+  hca = irf_panel('curl(E+vexB)');
+  hca.LineStyleOrder = {'-','-','-','-','-'};
+  hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
+  %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
+  scale = 1e6;
+  hp = irf_patch(hca,{-1*mvaCurlEVexB.z.smooth(nsm)*scale,0},'larger');
+  hp.FaceColor = mms_colors('y');
+  hp.EdgeColor = [0.6 0.6 0.6];
+  hca.NextPlot = "add";
+  hp = irf_patch(hca,{-1*mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
+  hp.FaceColor = mms_colors('x');
+  hp.EdgeColor = [0.6 0.6 0.6];
+  hca.YLabel.String = {'-\nabla\times(E+v_e\times B)_N','(10^6 nT/s)'};
+  hca.YLabel.Interpreter = 'tex';
+  hca.NextPlot = "replacechildren";
+  irf_legend(hca,{'MMS 1-4'},[0.98 0.98],'fontsize',fontsize_leg,'color','k')  
+end
+
+
+
+c_eval('h(?).FontSize = fontsize;',1:numel(h))
+hl = findobj(gcf,'type','line'); hl = hl(end:-1:1); c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
+hp = findobj(gcf,'type','patch'); 
+hp = hp(end:-1:1); c_eval('hp(?).LineWidth = 1.0;',1:numel(hp))
+hp = hp(end:-1:1); c_eval('hp(?).FaceAlpha = 0.3;',1:numel(hp))
+irf_zoom(h(1),'x',tint_overview)
+irf_zoom(h(3:end),'x',tint_edr)
+irf_zoom(h,'y')
+c_eval('h(?).XTickLabelRotation = 0;',1:numel(h))
+c_eval('h(?).LineWidth = 1.0;',1:numel(h))
+delete(h_del)
+c_eval('h(?).Position(2) = h(?).Position(2)+0.12;',3:numel(h))
+[hline1,hline2] = irf_plot_zoomin_lines_between_panels(h(1),h(3));
+h(1).XLabel = [];
+
+irf_pl_mark(h(1),tint_edr(1),'k')
+irf_pl_mark(h(1),tint_edr(2),'k')
+
+irf_pl_mark(h(3:5),tint_dist','k')
+
+c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',[1 3:numel(h)])
+irf_plot_axis_align(h([1 3:5]))
+
+%% Overview plot, induction + rotation of ve
+
+tint_edr = irf.tint('2017-07-11T22:34:00.000Z/2017-07-11T22:34:06.000Z'); %20151112071854
+tint_overview = irf.tint('2017-07-11T22:33:29.700Z/2017-07-11T22:34:20.000Z'); %20151112071854
+tint_overview = tint_edr + 30*[-1 1]; %20151112071854
+%h = irf_plot(5);
+[h,h2] = initialize_combined_plot('leftright',5,2,1,0.6,'horizontal');
+
+fontsize = 14;
+fontsize_leg = 12;
+nsm = 5;
 
 if 1 % vi
   hca = irf_panel('vi');
@@ -172,7 +333,7 @@ if 1 % ve
   hca.NextPlot = "add";
   hca.ColorOrder = [0.4 0.4 0.4; 0.6 0.6 0.6];
   irf_plot(hca,{-1*vAe3.smooth(20)*vscale,-1*vte3.smooth(20)*vscale},'comp')  
-  hca.YLabel.String = 'v_e (10^3 km/s)';
+  hca.YLabel.String = {'v_e','(10^3 km/s)'};
   hca.YLabel.Interpreter = 'tex';
   hca.NextPlot = "replacechildren";
   hca.ColorOrder = [mms_colors('xyz'); 0.4 0.4 0.4; 0.6 0.6 0.6];
@@ -229,10 +390,12 @@ if 1 % curl(E+vexB)
   hca.ColorOrder = [mms_colors('xxzz'); 0 0 0; 0.6 0.6 0.6];
   %hca.ColorOrder = [mms_colors('1'); 0.4 0.4 0.4; 0.6 0.6 0.6];  
   scale = 1e6;
+  %hp = irf_patch(hca,{-1*mvaCurlEVexB_smo.z.smooth(nsm)*scale,0},'larger');
   hp = irf_patch(hca,{-1*mvaCurlEVexB.z.smooth(nsm)*scale,0},'larger');
   hp.FaceColor = mms_colors('y');
   hp.EdgeColor = [0.6 0.6 0.6];
   hca.NextPlot = "add";
+  %hp = irf_patch(hca,{-1*mvaCurlEVexB_smo.z.smooth(nsm)*scale,0},'smaller');
   hp = irf_patch(hca,{-1*mvaCurlEVexB.z.smooth(nsm)*scale,0},'smaller');
   hp.FaceColor = mms_colors('x');
   hp.EdgeColor = [0.6 0.6 0.6];
@@ -254,6 +417,7 @@ irf_zoom(h(3:end),'x',tint_edr)
 irf_zoom(h,'y')
 c_eval('h(?).XTickLabelRotation = 0;',1:numel(h))
 c_eval('h(?).LineWidth = 1.0;',1:numel(h))
+c_eval('h(?).Position(1) = 0.1;',1:numel(h))
 delete(h_del)
 c_eval('h(?).Position(2) = h(?).Position(2)+0.12;',3:numel(h))
 [hline1,hline2] = irf_plot_zoomin_lines_between_panels(h(1),h(3));
@@ -263,6 +427,59 @@ irf_pl_mark(h(1),tint_edr(1),'k')
 irf_pl_mark(h(1),tint_edr(2),'k')
 
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',[1 3:numel(h)])
+
+%%
+isub = 1; 
+hca = h2(isub); isub = isub + 1;
+
+tint_hodo = tint_edr + 3*[-1 1];
+for ic = 1:4
+  c_eval('ve = mvaVe?.tlim(tint_hodo).smooth(5)*1e-3;',ic)
+  plot(hca,ve.x.data,ve.y.data,'color',mms_colors(num2str(ic)))
+  if ic == 1; hca.NextPlot = 'add'; end
+end
+hca.NextPlot = 'replacechildren';
+hca.XLim = 1e-3*[-10000 10000]*0.99;
+hca.YLim = 1e-3*[-18000 2000]*0.99;
+hca.XTick = -20:2:20;
+axis(hca,'square');
+hca.Box = 'on';
+hca.FontSize = fontsize;
+hca.XLabel.String = 'v_{eL} (10^3 km/s)';
+hca.YLabel.String = 'v_{eM} (10^3 km/s)';
+hca.ColorOrder = mms_colors('1234');
+irf_legend(hca,{'MMS 1','MMS 2','MMS 3','MMS 4'},[0.02 1.01],'fontsize',fontsize_leg);
+
+hl = findobj(gcf,'type','line'); hl = hl(end:-1:1); c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
+
+hca.NextPlot = 'add';
+rx = 0;
+ry = -9;
+rr = 7.5;
+%plot(hca,rx+rr*cosd(0:360),ry+rr*sind(0:360),'--','color',[0.5 0.5 0.5])
+angles = 135:405;
+vecx = [rx+rr*cosd(angles) rx];
+vecy = [ry+rr*sind(angles) ry];
+%patch(hca,vecx,vecy,[0.5 0.5 0.5],'facealpha',0.05)
+plot(hca,hca.XLim,[0 0],'color',[0.5 0.5 0.5])
+plot(hca,[0 0],hca.YLim,'color',[0.5 0.5 0.5])
+hca.NextPlot = 'replacechildren';
+
+hca.NextPlot = 'add';
+rx = 0;
+ry = 0;
+rr = 17;
+%plot(hca,rx+rr*cosd(0:360),ry+rr*sind(0:360),'--','color',[0.5 0.5 0.5])
+angles = 135:405;
+vecx = [rx+rr*cosd(angles)];
+vecy = [ry+rr*sind(angles)];
+%patch(hca,vecx,vecy,[0.5 0.5 0.5],'facealpha',0.05)
+plot(hca,vecx,vecy,'color',[0.5 0.5 0.5])
+hca.NextPlot = 'replacechildren';
+
+
+h2 = h2(1);
+c_eval('h2(?).FontSize = fontsize;',1:numel(h2))
 
 
 %% Make reduced distributions

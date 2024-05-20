@@ -25,16 +25,16 @@ M = [0.1818,0.9245,-0.3350];
 N = [0.2604,0.2832,0.9230];
 lmn = [L;M;N];
 
+L_vi = -[-0.8906    0.4548    0.0045];
+M_vi = [ 0.4539    0.8893   -0.0559];
+N_vi = -[-0.0294   -0.0477   -0.9984];
+lmn_vi = [L_vi; M_vi; N_vi];
 c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
 c_eval('mvaVi?_2 = gseVi?*lmn_vi''; mvaVi?.name = ''Vi LMN'';',ic)
 
-L_vi = -[-0.8906    0.4548    0.0045];
-M_vi = [ 0.4539    0.8893   -0.0559];
-N_vi = -[-0.0294   -0.0477   -0.9984];
-lmn_vi = [L_vi; M_vi; N_vi];
 
 %%
 %h = setup_subplots(2,2);

@@ -1,7 +1,7 @@
 %% Load data
 % units = irf_units;
 irf.log('critical')
-ic = 2;
+ic = 2:3;
 
 localuser = 'cno062';
 %localuser = 'cecilia';
@@ -11,7 +11,7 @@ mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
 %mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
-%%
+%
 tint_all = irf.tint('2015-10-16T13:00:24.00Z/2015-10-16T13:09:30.00Z');
 files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
 iFile = 1;
@@ -1087,12 +1087,16 @@ times = irf_time(times_utc,'utc>EpochTT');
 %  '2017-07-11T22:34:02.300000000Z';...
 %  '2017-07-11T22:34:02.800000000Z';...
 %  '2017-07-11T22:34:03.300000000Z']);
-times = times + 0*0.120;
-times = times(1:3);
+times = times + 0*0.030;
+times = times(1:5);
 
 tint_plot = [times.start times.stop] + [-0.5 0.5];
 nt = times.length;
 
+
+colors = pic_colors('matlab');
+colors_dists = [0.99 0.6 0.5; 0.6 0.8 0.6];
+colors = colors([2 5],:);
 
 
 %if exist('h','var'); delete(h)
@@ -1111,20 +1115,20 @@ plB = cell([]);
 c_eval('lmnB? = gseB?*Tgse''; plB{end+1} = lmnB?.x;',ic)
 irf_plot(hca,plB,'comp')
 hca.YLabel.String = 'B_{LMN} (nT)';  hca.YLabel.Interpreter = 'tex';
-set(hca,'ColorOrder',mms_colors(ic_str))
+set(hca,'ColorOrder',colors)
 %irf_legend(hca,{'L','M','N'},[0.98 0.98])
 
 hca = h1(isub); isub = isub + 1;
-set(hca,'ColorOrder',mms_colors(ic_str))
+set(hca,'ColorOrder',colors)
 plE = cell([]);
 c_eval('lmnE? = gseE?*Tgse''; plE{end+1} = lmnE?.abs;',ic)
 irf_plot(hca,plE,'comp')
-set(hca,'ColorOrder',mms_colors(ic_str))
+set(hca,'ColorOrder',colors)
 hold(hca,'on')
 %irf_plot(hca,plE.resample(PDist,'mean'))
 hold(hca,'off')
 hca.YLabel.String = 'E_{LMN} (mV/m)';  hca.YLabel.Interpreter = 'tex';
-set(hca,'ColorOrder',mms_colors(ic_str))
+set(hca,'ColorOrder',colors)
 %irf_legend(hca,{'L','M','N'},[0.98 0.98])
 
 irf_zoom(h1,'x',tint_plot)
@@ -1146,8 +1150,11 @@ isub = 1;
 set(gcf,'defaultLegendAutoUpdate','off');
 
 for it = 1:nt % 3D isosurface    
-  for iic = ic    
+  ic_count = 0;
+  for iic = ic
+    ic_count = ic_count + 1;
     color = mms_colors(string(iic));
+    color = colors_dists(ic_count,:);
 
     vint_red = [-1000 1000];
     vint = [3500 5000];
@@ -1167,7 +1174,7 @@ for it = 1:nt % 3D isosurface
     time = time;
     elimit = 40;
     elimit = 35;
-    elimit = 30;
+    elimit = 00;
     %pdist = PDist.elim([elimit Inf]).tlim(time+0.499*0.03*[-1 1]);  
     pdist = PDist.tlim(time+0.499*0.03*[-1 1]);  
     pdist.data(:,1:5,:,:) = 3e-27;
@@ -1183,19 +1190,19 @@ for it = 1:nt % 3D isosurface
     nSmooth = 3;
     
     iso_values = [0.5e-27, 6e-27];
-    iso_values = [0.5e-27, 5e-27];
+    iso_values = [0.5e-27, 6e-27];
     %iso_values = [1.5e-30 22e-30];
     iso_values = iso_values(2); 
     set(hca,'colororder',[1 0.5 0.5; 0.5 1 0.5]) 
-    set(hca,'colororder',[0.2 0.5 1; 1 0.5 0.5; 0.5 1 0.5]) 
+    set(hca,'colororder',colors) 
     %set(hca,'colororder',colors(it,:)) 
     %Tgse = [Lgse;Mgse;Ngse];
     c_eval('Tdsl = [tsLdsl?.resample(pdist).data;tsMdsl?.resample(pdist).data;tsNdsl?.resample(pdist).data];',ic)
     hs = pdist.plot_isosurface(hca,'val',iso_values,'smooth',nSmooth,'fill','rotate',Tdsl);
     %hs = pdist.plot_isosurface(hca,'smooth',nSmooth,'fill','rotate',Tdsl);
     
-    hs.Patch(1).FaceColor = color.^3;
-    hs.Patch(1).FaceAlpha = 0.8;  
+    hs.Patch(1).FaceColor = color.^1;
+    hs.Patch(1).FaceAlpha = 1.0;  
     %hs.Patch(1).FaceAlpha = 0.3;
     %hs.Patch(2).FaceAlpha = 0.9;
     
@@ -1271,13 +1278,13 @@ for it = 1:nt % 3D isosurface
 
   end
 end
-
+%%
 for ip = 1:numel(h)
   h(ip).XLabel.String = 'v_L (km/s)';
   h(ip).YLabel.String = 'v_M (km/s)';
   h(ip).ZLabel.String = 'v_N (km/s)';
-  vlim = [-9 9]*1e3;
-  vlim = 10*[-1 1]*1e3;
+  vlim = [-8 8]*1e3;
+  vlim = 7*[-1 1]*1e3;
   h(ip).XLim = vlim;
   h(ip).YLim = vlim;
   h(ip).ZLim = vlim;
@@ -1294,7 +1301,7 @@ hlinks = linkprop(h,{'view'});
 c_eval('h(?).FontSize = 12;',1:numel(h))
 
 %view([0 0 1])
-
+%%
 if 1 % Reset camlight
   %%
   hlight = findobj(h,'type','light');

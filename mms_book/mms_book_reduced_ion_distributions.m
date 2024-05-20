@@ -1,0 +1,254 @@
+no02m = PIC('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+ds100 = PICDist('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/data_h5/dists_mms_book.h5');
+
+%%
+fid = fopen('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/inputmp_t24000.dat');
+d1 = fscanf(fid,'%f',1);
+d2 = fscanf(fid,'%f',1);
+boxes = fscanf(fid,'%f %f %f %f',[4,inf]);
+%boxes = reshape(boxes(3:end),[numel(boxes(3:end))/4,4]);
+boxes = boxes';
+fclose(fid)
+
+
+ind = 543:989;
+
+iz0 = 543:691;
+iz2 = 692:840;
+iz4 = 841:989;
+ind = iz4;
+pl = boxes(ind,:);
+plot(pl(:,2),pl(:,4),'*')
+%%
+timestep = 24000;
+dirData = sprintf('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/distributions/%05.0f/',timestep);
+h5FilePath = '/Users/cno062/Data/PIC/no_hot_bg_n02_m100/data_h5/dists_mms_book__.h5';
+distIndRead = 543:989;
+%distIndRead = 543:569;
+%distIndRead = 1:542;
+
+tags = arrayfun(@(s)sprintf('',s),1:2000,'UniformOutput',false);
+nSpecies = 6; iteration = 1; mass = [100 1 100 1 100 1]; charge = [1 -1 1 -1 1 -1];
+h5write_dists(dirData,h5FilePath,distIndRead,nSpecies,mass,charge,timestep,timestep*2,'line horizontal');
+
+%% Prepare reduced distributions
+twpe = 24000; xlim = [50 155]; zlim = [-15 15];
+sep = no02m.twpelim(twpe).separatrix_location;
+for zpick = 0
+  ds = ds100.twpelim(twpe).zfind(zpick).xlim(xlim).findtag({'line horizontal'});
+  
+  xdist = (ds.xi1{1}+ds.xi2{1})/2;
+  zdist = (ds.zi1{1}+ds.zi2{1})/2;
+  tdist = repmat(twpe,size(xdist));
+  vExBx_tmp = no02m.twpelim(twpe).get_points(xdist,zdist,tdist,[-0.25 0.25],'vExBx'); eval(sprintf('vExBx_z%g = vExBx_tmp;',zpick))
+  vExBy_tmp = no02m.twpelim(twpe).get_points(xdist,zdist,tdist,[-0.25 0.25],'vExBy'); eval(sprintf('vExBy_z%g = vExBy_tmp;',zpick))
+  vExBz_tmp = no02m.twpelim(twpe).get_points(xdist,zdist,tdist,[-0.25 0.25],'vExBz'); eval(sprintf('vExBz_z%g = vExBz_tmp;',zpick))
+  pic_lim = no02m.xlim(xlim).zlim(zlim).twpelim(twpe);
+  pic = no02m.twpelim(twpe);
+  Bx_ = pic.Bx;
+  By_ = pic.By;
+  Bz_ = pic.Bz;
+  Bx = interpfield(pic.xi,pic.zi,Bx_,xdist,zdist); 
+  By = interpfield(pic.xi,pic.zi,By_,xdist,zdist); 
+  Bz = interpfield(pic.xi,pic.zi,Bz_,xdist,zdist); 
+  %fred5_tmp = ds.reduce_1d_new('x',[5],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz}); eval(sprintf('fred5_z%g = fred5_tmp;',zpick))
+  %fred3_tmp = ds.reduce_1d_new('x',[3],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz}); eval(sprintf('fred3_z%g = fred3_tmp;',zpick))
+  fred35_tmp = ds.reduce_1d_new('x',[3 5],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz}); eval(sprintf('fred35_z%g = fred35_tmp;',zpick))
+  fxyz = ds.reduce_1d_new('x',[3 5],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz});
+  %fy = ds.reduce_1d_new('x',[3 5],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz}); eval(sprintf('fred35_z%g = fred35_tmp;',zpick))
+  %fz = ds.reduce_1d_new('x',[3 5],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz}); eval(sprintf('fred35_z%g = fred35_tmp;',zpick))
+  %fred46_tmp = ds.reduce_1d_new('x',[4 6],[],'vpar',{Bx,By,Bz},'pitch',{Bx,By,Bz}); eval(sprintf('fred46_z%g = fred46_tmp;',zpick))    
+end
+
+%%
+ic = 3;
+units = irf_units;
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
+
+% Load datastore
+%mms.db_init('local_file_db','/Volumes/Nexus/data');
+%mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+db_info = datastore('mms_db');
+
+c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
+c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',1:4);
+
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
+c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
+
+[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new, ...
+  Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist3);
+
+
+c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic); toc
+%c_eval('dbcsVe? = mms.get_data(''Ve_dbcs_fpi_brst_l2'',tint,?);',ic)
+c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic); toc
+
+L_vi = -[-0.8906    0.4548    0.0045];
+M_vi = [ 0.4539    0.8893   -0.0559];
+N_vi = -[-0.0294   -0.0477   -0.9984];
+lmn_vi = [L_vi; M_vi; N_vi];
+
+
+
+c_eval('mvaB? = gseB?*lmn_vi''; mvaB?.name = ''B LMN'';',ic)
+c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
+c_eval('mvaVi?_vi = gseVi?*lmn_vi''; mvaVi?.name = ''Vi LMN'';',ic)
+
+if 1 % ion LMN, ielim
+  tint_ifred =  irf.tint('2017-07-11T22:32:00.00Z/2017-07-11T22:35:20.00Z');
+  ielim = [1000 40000];
+  c_eval('if1DL?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',L_vi);',ic)
+  c_eval('if1DM?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',M_vi);',ic)
+  c_eval('if1DN?_elim = iPDist?.elim(ielim).tlim(tint_ifred).reduce(''1D'',N_vi);',ic)
+  c_eval('if1DL?_nobg = iPDist?_nobg.elim(ielim).tlim(tint_ifred).reduce(''1D'',L_vi);',ic)
+  c_eval('if1DM?_nobg = iPDist?_nobg.elim(ielim).tlim(tint_ifred).reduce(''1D'',M_vi);',ic)
+  c_eval('if1DN?_nobg = iPDist?_nobg.elim(ielim).tlim(tint_ifred).reduce(''1D'',N_vi);',ic)
+end
+
+%% Make plot
+tint_figure = irf.tint('2017-07-11T22:33:10.00Z/2017-07-11T22:35:10.00Z');
+h = setup_subplots(4,2,'vertical');
+isub = 1;
+
+compact_panels(h,0.01)
+
+scale = 'log';
+
+if 1 % Magentic field
+  hca = h(isub); isub = isub + 1;
+  twpe = 24000; 
+  xlim = [50 155]; 
+  zlim = [-1 1];
+  pic = no02m.twpelim(twpe).xlim(xlim).zlim(zlim).twpelim(twpe);
+  Bx = mean(pic.Bx,2);
+  By = mean(pic.By,2);
+  Bz = mean(pic.Bz,2);
+  x = pic.xi;
+  hca.ColorOrder = mms_colors('xyz');
+  hpl = plot(hca,x,Bx,x,By,x,Bz);
+  hpl(1).Color = mms_colors('x');
+  hpl(2).Color = mms_colors('y');
+  hpl(3).Color = mms_colors('z');
+  hca.XLabel.String = 'x (d_i)';
+  hca.YLabel.String = 'B (B_0)';
+end
+if 1 % f(vx)
+  hca = h(isub); isub = isub + 1;
+  if strcmp(scale,'lin'); fplot = fxyz.fvx;
+  else fplot = log10(fxyz.fvx); end
+  pcolor(hca,fxyz.x,fxyz.v,fplot')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x (d_i)';
+  hca.YLabel.String = 'v_x (v_{A})';
+  %hcb = colorbar(hca);
+  %hcb.YLabel.String = 'f_i(v_L)';
+end
+if 1 % f(vy)
+  hca = h(isub); isub = isub + 1;
+  if strcmp(scale,'lin'); fplot = fxyz.fvy;
+  else fplot = log10(fxyz.fvy); end
+  pcolor(hca,fxyz.x,fxyz.v,fplot')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x (d_i)';
+  hca.YLabel.String = 'v_y (v_{A})';
+  %hcb = colorbar(hca);
+  %hcb.YLabel.String = 'f_i(v_M)';
+end
+if 1 % f(vz)
+  hca = h(isub); isub = isub + 1;
+  if strcmp(scale,'lin'); fplot = fxyz.fvz;
+  else fplot = log10(fxyz.fvz); end
+  pcolor(hca,fxyz.x,fxyz.v,fplot')
+  shading(hca,'flat')
+  hca.XLabel.String = 'x (d_i)';
+  hca.YLabel.String = 'v_z (v_{A})';
+  %hcb = colorbar(hca);
+  %hcb.YLabel.String = 'f_i(v_N)';
+end
+
+
+if 1 % B
+  hca = h(isub); isub = isub + 1;
+  hca.ColorOrder = mms_colors('xyz');
+  irf_plot(hca,{mvaB3.x,mvaB3.y,mvaB3.z},'comp')    
+  hca.YLabel.String = 'B (nT)';
+end
+if 1 % vx
+  hca = h(isub); isub = isub + 1;
+  pos = hca.Position;
+  [~,hcb] = irf_spectrogram(hca,if1DL3_elim.specrec,scale);
+  %irf_spectrogram(hca,if1DL3_nobg.specrec)
+  hca.Position(3) = pos(3);
+  hcb.Position(1) = hca.Position(1) + hca.Position(3)+0.01; 
+  hcb.YLabel.String = 'f_i(v_L) (s/m^4)';
+end
+if 1 % vy
+  hca = h(isub); isub = isub + 1;
+  pos = hca.Position;
+  [~,hcb] = irf_spectrogram(hca,if1DM3_elim.specrec,scale);
+  %irf_spectrogram(hca,if1DM3_nobg.specrec)  
+  hca.Position(3) = pos(3);
+  hcb.Position(1) = hca.Position(1) + hca.Position(3)+0.01; 
+  hcb.YLabel.String = 'f_i(v_M) (s/m^4)';
+end
+if 1 % B
+  hca = h(isub); isub = isub + 1;
+  pos = hca.Position;
+  [~,hcb] = irf_spectrogram(hca,if1DN3_elim.specrec,scale);
+  %irf_spectrogram(hca,if1DN3_nobg.specrec)  
+  hca.Position(3) = pos(3);
+  hcb.Position(1) = hca.Position(1) + hca.Position(3)+0.01; 
+  hcb.YLabel.String = 'f_i(v_N) (s/m^4)';  
+end
+
+colormap(pic_colors('candy4'))
+compact_panels(h,0.01)
+
+
+hlinks_sim = linkprop(h(2:4),{'XLim'});
+hlinks_sim_dist = linkprop(h(2:4),{'CLim','YLim'});
+
+hlinks_obs = linkprop(h(6:8),{'CLim','YLim','XLim'});
+
+h(2).YLim = [-3 3];
+c_eval('h(?).XLim = [75 130];',1:4)
+c_eval('h(?).YLim = 2.99*[-1 1];',2:4)
+
+%c_eval('h(?).YLim = [-2 2];',6:8)
+h(1).YLim = [-0.4 0.4];
+
+h(5).YLim = [-11 11];
+
+h(6).YLim = 1999*[-1 1];
+
+irf_zoom(h(5:8),'x',tint_figure)
+
+h(end).XTickLabelRotation = 0;
+
+%hcb = colorbar(hca,'location','west'); hcb.Position(1) = hca.Position(1) + hca.Position(3)+0.01; 
+
+%hb = findobj(gcf,'type','colorbar');
+%for ihb = 1:numel(hb)
+  %hcb.Position(4) = hcb.Parent.Position(4);
+%end
+
+
+if strcmp(scale,'lin')
+  h(2).CLim = [0 0.6];
+  h(6).CLim = [0 0.15];  
+else 
+  h(2).CLim = [-6 0];
+  h(6).CLim = [-4 -0.9];
+end
+
+
+
+
+
+
+
