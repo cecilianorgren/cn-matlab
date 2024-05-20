@@ -6,8 +6,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
@@ -29,7 +29,7 @@ c_eval('tic; E?par=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_par_epa
 %c_eval('tic; dslE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_dsl_brst_l2'',tint); toc',ic);
 %c_eval('tic; gseE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_gse_brst_l2'',tint); toc',ic);
 %c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_par_epar_brst_l2'',tint); toc',ic);
-
+%%
 % Load spacecraft position
 disp('Loading spacecraft position...')
 c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4);
