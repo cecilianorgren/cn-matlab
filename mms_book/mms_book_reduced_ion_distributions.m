@@ -1,6 +1,8 @@
 no02m = PIC('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
 ds100 = PICDist('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/data_h5/dists_mms_book.h5');
 
+%load('/Users/cno062/MATLAB/mms_book_reduced_ion_distributions.mat')
+
 %%
 fid = fopen('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/inputmp_t24000.dat');
 d1 = fscanf(fid,'%f',1);
