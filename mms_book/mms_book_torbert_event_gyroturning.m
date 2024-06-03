@@ -159,7 +159,7 @@ N = [0.2604,0.2832,0.9230];
 lmn = [L;M;N];
 
 % Torbert
-lmn = [0.971, 0.216, -0.106; -0.234, 0.948, -0.215; 0.054, 0.233, 0.971]; % gse
+%lmn = [0.971, 0.216, -0.106; -0.234, 0.948, -0.215; 0.054, 0.233, 0.971]; % gse
 
 
 c_eval('tsLgse? = irf.ts_vec_xyz(ePDist?.time,repmat(L,ePDist?.length,1));',ic)
@@ -296,9 +296,9 @@ nt = times.length;
 [h1,h2] = initialize_combined_plot('topbottom',2,1,times.length,0.5,'horizontal');
 
 
-comps = 'xy';
-comps_ts = 'xy';
-comps_str = ["x","y"];
+comps = 'LM';
+comps_ts = 'LM';
+comps_str = ["L","M"];
 %fig = gcf; fig.Position = [343     1   938   496];
 
 isub = 1;
@@ -308,6 +308,8 @@ irf_plot(hca,{mvaB3.x,mvaB3.y,mvaB3.z},'comp')
 hca.YLabel.String = sprintf('B (nT)');
 hca.YLabel.String = {'B','(nT)'};
 hca.YLabel.Interpreter = 'tex';
+set(hca,'ColorOrder',mms_colors('xyz'))
+irf_legend(hca,{'L','M','N'},[0.98 0.98])
 
 
 if 0 % E
@@ -323,6 +325,8 @@ set(hca,'ColorOrder',mms_colors('xyz'))
 irf_plot(hca,{mvaVe3.x*1e-3,mvaVe3.y*1e-3,mvaVe3.z*1e-3},'comp')
 hca.YLabel.String = {'v_{e}','(10^3 km/s)'};
 hca.YLabel.Interpreter = 'tex';
+set(hca,'ColorOrder',mms_colors('xyz'))
+irf_legend(hca,{'L','M','N'},[0.98 0.5])
 
 irf_zoom(h1,'x',irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.000Z'))
 irf_zoom(h1,'y')
@@ -414,7 +418,7 @@ for itime = 1:times.length
       hca.YLim = ylim;
       B_ = B_(1:2);
   end
-    irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.98 0.98],'color','k','fontsize',fontsize_B_amp)
+    irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.02 0.07],'color','k','fontsize',fontsize_B_amp)
     
   end
   if 1 % plot bulk speed
@@ -422,7 +426,7 @@ for itime = 1:times.length
     hold(hca,'on')
     %plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+k')
     %plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ow')
-    hbulk = plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'ok','MarkerFaceColor','w','markersize',markersize);
+    hbulk = plot(hca,mean(ve.x.data,1)*1e-3,mean(ve.y.data,1)*1e-3,'+w','MarkerFaceColor','w','markersize',markersize,'linewidth',2);
     hold(hca,'off')    
   end
 end
@@ -502,7 +506,20 @@ end
 
 
 c_eval('h1(?).Position(1) = h1(?).Position(1) + 0.1; h1(?).Position(3) = h1(?).Position(3) - 0.2;',1:numel(h1))
+%c_eval('h1(?).Position(1) = h2(1).Position(1);',1:numel(h1))
 
+c_eval('h2(?).YDir = ''reverse'';',1:numel(h2))
+hb = findobj(gcf,'type','colorbar');
+hb.Location = 'northoutside';
+hb.Position = [ 0.6355    0.4495    0.1113    0.0227];
+hb.Ticks = [-15 -13 -11];
+
+h2(3).Title.String = 'X line';
+h2(6).Title.String = 'Gyrotropic exhaust';
+h2(1).Title.String = 'Towards inflow';
+h2(2).Title.String = '<- Tailward';
+h2(4).Title.String = 'Earthward ->';
+c_eval('h2(?).Title.FontWeight = ''light'';',1:numel(h2))
 
 %% Plot: Short overview and 3D distribution with locations shown
 ic = 3;
