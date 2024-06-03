@@ -1842,6 +1842,7 @@ Gamma = @(z,py,px,B0,Bg,d,phi0,Lphi) 0.5/m*((py-q*Ay(z,B0,d)).^2+(px-q*Ax(z,Bg))
 colors = [0 0 1; 0.5 0.5 1; 0 0 0.5; 0 0 0.2];
 colors_matlab = pic_colors('matlab');
 colors = [0 0 0; colors_matlab(1:3,:)];
+colors_BE = [colors_matlab([1 5],:); 0 0 0; colors(3,:)];
 fontsize = 12;
 
 % Define our different current sheets and particles
@@ -2244,9 +2245,9 @@ for ics = 1:numel(cs)
   hca = h(isub); isub = isub + 1;
   zz = linspace(-5*d,5*d,200);
   if 1 % Bx, By, Ez
-    set(hca,'ColorOrder',[colors(1:2,:); 0 0 0; colors(3,:)])
-    plot(hca,zz*1e-3,[Bx(0,0,zz,B0,d); By(0,0,zz,Bg)]*1e9,zz*1e-3,sqrt(sum([Bx(0,0,zz,B0,d); By(0,0,zz,Bg); Bz(0,0,zz,Bn)].^2,1))*1e9,'k',zz*1e-3,Ez(0,0,zz,phi0,Lphi)*1e3);
-    set(hca,'ColorOrder',[colors(1:2,:); 0 0 0; colors(3,:)])
+    set(hca,'ColorOrder',colors_BE)
+    plot(hca,zz*1e-3,[Bx(0,0,zz,B0,d); By(0,0,zz,Bg)]*1e9,zz*1e-3,sqrt(sum([Bx(0,0,zz,B0,d); By(0,0,zz,Bg); Bz(0,0,zz,Bn)].^2,1))*1e9,':',zz*1e-3,Ez(0,0,zz,phi0,Lphi)*1e3);
+    set(hca,'ColorOrder',colors_BE)
     %axes(hca)
     %yyaxis right;
     %ax2 = gca;
@@ -2264,13 +2265,29 @@ for ics = 1:numel(cs)
     hca.YLabel.String = 'B (nT), E (mV/m)';
   else
     plot(hca,zz*1e-3,[Bx(0,0,zz,B0,d); By(0,0,zz,Bg); Bz(0,0,zz,Bn)]*1e9,zz*1e-3,sqrt(sum([Bx(0,0,zz,B0,d); By(0,0,zz,Bg); Bz(0,0,zz,Bn)].^2,1))*1e9,'k');
-    irf_legend(hca,{'B_x','B_y','B_z'},[0.98 0.98])
+    irf_legend(hca,{'B_L','B_M','B_N'},[0.98 0.98])
   hca.YLabel.String = 'B (nT)';
   end
   %hca.YTick = 0;
-  hca.XLabel.String = 'z (km)';
+  hca.XLabel.String = 'N (km)';
   %hca.Title.String = cs(ics).str_title;
   
+  
+  % Plot particles
+  hca = h(isub); isub = isub + 1;  
+  for ip = 1:numel(particles)
+    z = particles{ip}.z;
+    y = particles{ip}.y;
+    horb = plot(hca,z*1e-3,y*1e-3,'color',colors(ip,:));
+    
+    if ip == 1, hold(hca,'on'); end
+    plot(hca,z(1)*1e-3,y(1)*1e-3,'go',...
+             z(end)*1e-3,y(end)*1e-3,'rx'); % plot in km's
+    xlabel(hca,'N (km)')
+    ylabel(hca,'M (km)')         
+  end
+  hold(hca,'off')
+
 
   % Plot generalized spotential
   hca = h(isub); isub = isub + 1;
@@ -2323,28 +2340,12 @@ for ics = 1:numel(cs)
       hca.XLabel.String = 'z';      
     end
     
-    hca.XLabel.String = 'z (km)';  
+    hca.XLabel.String = 'N (km)';  
     hca.YLabel.String = '\Lambda (eV)';     
   end
   hold(hca,'off')
   
   
-  
-  % Plot particles
-  hca = h(isub); isub = isub + 1;
-  
-  for ip = 1:numel(particles)
-    z = particles{ip}.z;
-    y = particles{ip}.y;
-    horb = plot(hca,z*1e-3,y*1e-3,'color',colors(ip,:));
-    
-    if ip == 1, hold(hca,'on'); end
-    plot(hca,z(1)*1e-3,y(1)*1e-3,'go',...
-             z(end)*1e-3,y(end)*1e-3,'rx'); % plot in km's
-    xlabel(hca,'z (km)')
-    ylabel(hca,'y (km)')         
-  end
-  hold(hca,'off')
 
   % Plot phase space separatrix  
   if 1
@@ -2364,14 +2365,20 @@ for ics = 1:numel(cs)
     Gamma_0 = Gamma(0,Py0,Px0,B0,Bg,d,phi0,Lphi);
 
     
+
     Uk = 0.5*m*(VX.^2 + VY.^2 + VZ.^2);
     Up = -Phi(z0,phi0,Lphi)*units.e;
+
+    H = Uk + Up;
+
+    Pxy2 = (Px0.^2 + Py0.^2)/2/m;
     Gamma_0_Uk = Gamma_0 - 1*Uk - Up;
+    Gamma_0_Uk = H - Pxy2;
     [C,hc] = contour(hca,squeeze(VY)*1e-3,squeeze(VZ)*1e-3,squeeze(Gamma_0_Uk)/units.eV,[0 0],'k--','linewidth',1);
     %[C,hc] = contourf(hca,squeeze(VY)*1e-3,squeeze(VZ)*1e-3,squeeze(Uk)/units.eV);
     %clabel(C,hc)
-    hca.XLabel.String = 'v_y (km/s)';
-    hca.YLabel.String = 'v_z (km/s)';
+    hca.XLabel.String = 'v_M (km/s)';
+    hca.YLabel.String = 'v_N (km/s)';
 
     hold(hca,'on')
     for ip = 1:numel(particles)
@@ -2408,7 +2415,7 @@ for ii = 1:numel(h)
 end
 %c_eval('h(?).XLim = [-13 13];',1:numel(h))
 %c_eval('h(?).YLim = [00 600];',2:3:numel(h))
-c_eval('h(?).YLim(2) = 180;',2:nRows:numel(h))
+c_eval('h(?).YLim(2) = 180;',3:nRows:numel(h))
 
 hl = findobj(gcf,'type','line');
 
@@ -2418,7 +2425,7 @@ hx = [1:3 nRows+(1:3) 2*nRows+(1:3)];
 for ip = hx
   h(ip).XLim = [-12 12];
 end
-irf_legend(h(nRows*(nCols-1)+1),{'B_x','B_y','|B|','E_z'}',[1.05 0.98],'fontsize',fontsize)
+irf_legend(h(nRows*(nCols-1)+1),{'B_L','B_M','|B|','E_N'}',[1.05 0.98],'fontsize',fontsize)
 %compact_panels(h(hx),0.04,0.06)
 %h(1).Title.String = 'Only';
 %compact_panels(h([1:3 nRows+(1:3) 2*nRows+(1:3)]),0.01,0.01)
@@ -2429,10 +2436,16 @@ c_eval('h(?).YLim = [-11 11];',[1 nRows+1 2*nRows+1])
 %c_eval('h(?).YLabel = [];',[nRows+1:nRows*nCols])
 %c_eval('h(?).YTickLabel = [];',[nRows+1:nRows*nCols])
 
-c_eval('h(?).YLim = [-30 100];',2+nRows*[0:2])
+c_eval('h(?).YLim = [-30 100];',3+nRows*[0:2])
 
-c_eval('h(?).Box = "on"; h(?).XAxisLocation = "origin"; h(?).YAxisLocation = "origin";',1:12)
+c_eval('h(?).Box = "off"; h(?).XAxisLocation = "origin"; h(?).YAxisLocation = "origin";',1:12)
 c_eval('h(?).XLabel.VerticalAlignment = "middle"; h(?).XLabel.VerticalAlignment = "bottom"; h(?).YLabel.HorizontalAlignment = "center"; h(?).YLabel.VerticalAlignment = "bottom";',1:12)
+%%
+legs = {'a1','a2','a3','a4','b1','b2','b3','b4','c1','c2','c3','c3'};
+legs = {'a1','b1','c1','d1','a2','b2','c3','d2','a3','b3','c3','d3'};
+for ip = 1:numel(h)
+  hleg(ip) = irf_legend(h(ip),[legs{ip} ,')'],[-0.01 1.01],'color',[0 0 0],'fontsize',12);
+end
 
 %% Including phase space separatrix
 units = irf_units;

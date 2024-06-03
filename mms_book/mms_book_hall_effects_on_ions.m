@@ -313,3 +313,119 @@ end
 hca.XLabel.String = 'L';
 hca.YLabel.String = 'M';
 hca.ZLabel.String = 'N';
+
+
+%% Colored line for illustration
+pictmp = pic(it).xlim(mean(pic.xi)+[-10 10]);
+pictmp = pic(it);
+Ay = pictmp.A;
+By = pictmp.By;
+Bx = pictmp.Bx;
+Bz = pictmp.Bz;
+x = pictmp.xi;
+z = pictmp.zi;
+[X,Z] = ndgrid(x,z);
+
+AYlev = 10.5:.05:11.34;
+AYlev = 10.5:.05:11.09;
+S = contourcs(x,z,Ay',AYlev);
+
+Fx = griddedInterpolant(X,Z,Bx);
+Fy = griddedInterpolant(X,Z,By);
+Fz = griddedInterpolant(X,Z,Bz);
+
+clear B
+for iLine = 1:numel(S)
+  dx = diff(S(iLine).X);
+  dz = diff(S(iLine).Y);
+
+  bx = Fx(S(iLine).X,S(iLine).Y);
+  by = Fy(S(iLine).X,S(iLine).Y);
+  bz = Fz(S(iLine).X,S(iLine).Y);
+  
+  dy = dx.*by(2:end)./bx(2:end);
+  y = cumsum(dy);
+
+  %dbx = diff(bx);
+  %dby = diff(by);
+  %dbz = diff(bz);
+  
+  B(iLine).bx = bx;
+  B(iLine).by = by;
+  B(iLine).bz = bz;
+  
+
+  B(iLine).x = S(iLine).X(2:end);
+  B(iLine).y = y;
+  B(iLine).z = S(iLine).Y(2:end);
+  
+end
+
+
+
+
+h = setup_subplots(1,1);
+isub = 1;
+
+if 0
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,x,z,Fy(X,Z)')
+  shading(hca,'flat')
+  hcb = colorbar(hca);
+  hold(hca,'on')
+  for iLine = 1:numel(S)
+    plot(hca,S(iLine).X,S(iLine).Y,'k')  
+  end
+  hold(hca,'off')
+end
+
+if 0
+  hca = h(isub); isub = isub + 1;
+  pcolor(hca,x,z,By')
+  shading(hca,'flat')
+  hold(hca,'on')
+end
+
+hca = h(isub); isub = isub + 1;
+for iLine = 1:numel(S)
+  plx = B(iLine).x;
+  ply = B(iLine).y;
+  plz = B(iLine).z;
+  irem = find(plz<-10);
+  plx(irem) = [];
+  ply(irem) = [];
+  plz(irem) = [];
+  plot3(hca,plx,ply,plz,'linewidth',1,'color',[0 0 0])
+  hold(hca,'on')
+end
+hold(hca,'off')
+if 0 % add particles
+  hold(hca,'on')
+  for ip = 1:numel(particles)
+    part = particles(ip);
+    %plot3(hca,out.x,out.y,out.z,'k')
+    plot3(hca,part.x,part.y,part.z,'k')
+    hold(hca,'on')
+  end
+  hold(hca,'off')
+end
+
+hca.XLabel.String = 'L';
+hca.YLabel.String = 'M';
+hca.ZLabel.String = 'N';
+
+axis(hca,'equal')
+hca.Visible = 'off';
+hl = findobj(gcf,'type','line'); c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+c_eval('hl(?).LineWidth = 2;',1:numel(hl))
+
+hl(2).Color = [1 0 0];
+
+hca.XLim = mean(pic.xi)+[-10 10];
+
+
+
+
+
+
+

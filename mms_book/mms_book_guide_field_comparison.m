@@ -3,8 +3,8 @@
 irf.log('critical')
 ic = 2;
 
-localuser = 'cno062';
-%localuser = 'cecilia';
+%localuser = 'cno062';
+localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 %mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
@@ -14,6 +14,7 @@ db_info = datastore('mms_db');
 
 %% Specify events and load data
 % Specify events
+% save('/Users/cecilia/Data/MMS/Matlab/bifurcation.mat')
 clear events
 iEvent = 0;
 
@@ -37,9 +38,20 @@ if 1 % Norgren 2018
   events(iEvent).sc_id = [1 2 3 4];
   events(iEvent).lmn = [0.14, -0.71, 0.69; -0.54, -0.62, -0.54; 0.81, -0.29, -0.47];  
 end
+if 1 % Li 2019 
+  iEvent = iEvent + 1;
+  events(iEvent).paper = 'Li et al. (2019)';
+  events(iEvent).tint = irf.tint('2017-08-10T12:18:20.00Z/2017-08-10T12:18:45.00Z');
+  events(iEvent).t_center = irf_time('2017-10-05T03:55:18.00Z','utc>EpochTT');
+  events(iEvent).dt_center = [0.6000    0.0500   -0.3500   -0.8200];
+  events(iEvent).v_norm = 220;
+  events(iEvent).sc_id = [1 2 3 4];
+  events(iEvent).lmn = [-0.0003, 0.997, 0.0632; 0.774, -0.0395, 0.631; 0.632, 0.0486, -0.772];  
+end
+
 if 1 % Wang 2020 - Event 1
   iEvent = iEvent + 1;
-  events(iEvent).paper = {'Wang et al. (2020)','Event I'};
+  events(iEvent).paper = {'Wang et al. (2020)','     Event I        '};
   events(iEvent).tint = irf.tint('2017-06-17T20:24:03.00Z/2017-06-17T20:24:11.00Z');
   events(iEvent).t_center = irf_time('2017-06-17T20:24:07.00Z','utc>EpochTT');
   events(iEvent).dt_center = [0.4 0.08 0 0.08];
@@ -52,12 +64,12 @@ if 1 % Zhou 2019 (also Wang 2020 - Event 2, who has slightly different numbers)
   events(iEvent).paper = 'Zhou et al. (2019)';
   events(iEvent).tint = irf.tint('2017-08-10T12:18:25.00Z/2017-08-10T12:18:40.00Z');
   events(iEvent).t_center = irf_time('2017-08-10T12:18:33.00Z','utc>EpochTT');
-  events(iEvent).dt_center = [-0.2 0.2 -0.1 0.1];
+  events(iEvent).dt_center = [-0.2 0.2 -0.1 0.1]-0.3;
   events(iEvent).v_norm = 35;
   events(iEvent).sc_id = [1 2 3 4];
   events(iEvent).lmn = [0.985, -0.141, 0.097; 0.152, 0.982, -0.109; -0.080, 0.122, 0.989];    
 end
-if 1 % Tang 2022
+if 0 % Tang 2022
   iEvent = iEvent + 1;
   events(iEvent).paper = 'Tang et al. (2022)';
   events(iEvent).tint = irf.tint('2018-08-27T12:15:36.00Z/2018-08-27T12:15:50.00Z');
@@ -67,11 +79,21 @@ if 1 % Tang 2022
   events(iEvent).sc_id = [1 2 3];
   events(iEvent).lmn = [0.99, -0.12, -0.11; 0.15, 0.96, 0.25; 0.08, -0.26, 0.96];    
 end
+if 1 % Ergun 2022
+  iEvent = iEvent + 1;
+  events(iEvent).paper = 'Ergun et al. (2022)';
+  events(iEvent).tint = irf.tint('2018-08-27T12:15:36.00Z/2018-08-27T12:15:50.00Z');
+  events(iEvent).t_center = irf_time('2018-08-27T12:15:43.50Z','utc>EpochTT');
+  events(iEvent).dt_center = [0 0 0.5 -0.5]-0.4;
+  events(iEvent).v_norm = 25;
+  events(iEvent).sc_id = [1 2 3 4];
+  events(iEvent).lmn = [0.910, -0.385,-0.155; 0.415, 0.848, 0.331; 0.004, -0.365, 0.931];
+end
 
 nEvents = numel(events);
 
 % Load data
-for iEvent = 1:nEvents
+for iEvent = 1%:nEvents
   tint = events(iEvent).tint;
   ic = events(iEvent).sc_id;
   gseB = cell(1,4);
@@ -79,11 +101,21 @@ for iEvent = 1:nEvents
   ne = cell(1,4);
   c_eval('gseB{?} = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
   c_eval('gseVe{?} = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic)
+  c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',ic)  
   c_eval('ne{?} = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic)
+
+  c_eval('gseR? = gseR?.resample(gseB{?});',1:4)
+  c_eval('gseB? = gseB{?};',1:4)
+  [Jcurl,divBbrst,Bbrst,JxBbrst,divTshearbrst,divPbbrst] = c_4_j('gseR?','gseB?');
+  Jcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data);
+  Jcurl.data = Jcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
+  Jcurl.time = EpochTT(Jcurl.time); Jcurl.name = '4sc current density';
 
   events(iEvent).gseB = gseB;
   events(iEvent).gseVe = gseVe;
   events(iEvent).ne = ne;
+  events(iEvent).gseJ = Jcurl;
+  events(iEvent).gseBav = Bbrst;
 end
 disp('Done loading data.')
 
@@ -100,12 +132,12 @@ isub = 1;
 
 if 1 % BL
   hca = h(isub); isub = isub + 1;
-  for iEvent = 4%1:nEvents
+  for iEvent = 1:nEvents
     event = events(iEvent);
     dy = (1-iEvent)*1; % nT
     t_center = event.t_center;
     dt = event.dt_center;
-    dt = dt-0.0;
+    dt = dt;
     vnorm = event.v_norm;
     lmn = event.lmn;
     
@@ -291,11 +323,14 @@ end
 c_eval('h(?).FontSize = fontsize;',1:numel(h))
 c_eval('h(?).YLabel.FontSize = fontsize + 8;',1:numel(h))
 c_eval('h(?).XTick = -100:10:100;',1:numel(h))
+c_eval('h(?).XMinorTick = ''on'';',1:numel(h))
+c_eval('h(?).XMinorGrid = ''off'';',1:numel(h))
+%c_eval('xticklabels = h(?).XTickLabels;',1:numel(h))
 c_eval('h(?).XGrid = ''on'';',1:numel(h))
-c_eval('h(?).XTickLabelRotation = 45;',1:numel(h))
+c_eval('h(?).XTickLabelRotation = 0;',1:numel(h))
 
 hl = findobj(gcf,'type','line'); c_eval('hl(?).LineWidth = 1;',1:numel(hl))
 linkprop(h,{'XLim','YLim'})
-h(1).YLim = [-1.5 5.5];
+h(1).YLim = [-1.5 6.5];
 
 
