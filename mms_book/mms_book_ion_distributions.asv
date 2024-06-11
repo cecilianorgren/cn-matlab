@@ -19,9 +19,6 @@ c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1
 [enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new, ...
   Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist3);
 
-c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
-c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
-
 %%
 
 L = [0.9482,-0.255,-0.1893];
@@ -51,15 +48,6 @@ c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
 c_eval('mvaVi?_2 = gseVi?*lmn_vi''; mvaVi?.name = ''Vi LMN'';',ic)
-
-c_eval('tsLgse? = irf.ts_vec_xyz(iPDist?.time,repmat(L,iPDist?.length,1));',ic)
-c_eval('tsMgse? = irf.ts_vec_xyz(iPDist?.time,repmat(M,iPDist?.length,1));',ic)
-c_eval('tsNgse? = irf.ts_vec_xyz(iPDist?.time,repmat(N,iPDist?.length,1));',ic)
-
-c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt?,-1);',ic)
-c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt?,-1);',ic)
-c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt?,-1);',ic)
-
 
 
 %% One dist at the time
@@ -249,7 +237,7 @@ end
 %h = setup_subplots(2,2);
 dt_all = [-15  -10 0 10 15];
 dt_all = [-15:5:15];
-dt_all = [-3:1:3]-00;
+%dt_all = [-6:2:6]-20;
 
 [h1,h] = initialize_combined_plot('topbottom',2,3,numel(dt_all),0.2,'vertical');
 
@@ -261,8 +249,7 @@ irf_plot(hca,{mvaVi3})
 hca.YLabel.String = 'v_i (km/s)';
 hca.ColorOrder = mms_colors('xyz');
 irf_legend(hca,{'L','M','N'},[0.98 0.98]);
-irf_legend(hca,{sprintf('L=[%.2f,%.2f,%.2f]',L(1),L(2),L(3)),sprintf('M=[%.2f,%.2f,%.2f]',M(1),M(2),M(3)),sprintf('N=[%.2f,%.2f,%.2f]',N(1),N(2),N(3))}',[1.01 0.98]);
-hca.YLabel.Interpreter = 'tex';
+irf_legend(hca,{sprintf('L=[%.2f,]'),'M','N'},[1.01 0.98]);
 
 hca = h1(isub); isub = isub + 1;
 hca.ColorOrder = mms_colors('xyz');
@@ -272,7 +259,7 @@ h1(2).YLim = [-2000 2000];
 hca.YLabel.String = 'v_e (km/s)';
 hca.ColorOrder = mms_colors('xyz');
 irf_legend(hca,{'L','M','N'},[0.98 0.98]);
-hca.YLabel.Interpreter = 'tex';
+
 
 
 isub = 1;
@@ -297,7 +284,7 @@ c_eval('vExB = mvaVExB?.tlim(pdist.time([1 end]) + 0.5*0.15*[-1 1]);',ic)
 nSmooth = 1;
 hca = h(isub); isub = isub + 1;
 %vdf = pdist_nobg.reduce('2D',L_vi,M_vi);
-vdf = pdist_nobg.reduce('2D',L,M,'vint',[-inf 0]);
+vdf = pdist_nobg.reduce('2D',L,M);
 vdf.plot_plane(hca','smooth',nSmooth,'vectors',{dmpaB3.resample(pdist),'B'})
 axis(hca,'square')
 hca.XLabel.String = 'v_L (km/s)';
@@ -354,7 +341,7 @@ end
 if 1 % plot ExB
   %%
   hold(hca,'on')
-  hbulk = plot(hca,mean(vExB.x.data,1)*1e0,mean(vExB.y.data,1)*1e0,'ok','MarkerFaceColor','w','markersize',5);
+  hbulk = plot(hca,mean(vExB.y.data,1)*1e0,mean(vExB.x.data,1)*1e0,'ok','MarkerFaceColor','w','markersize',5);
   %plot(hca,mean(ve.y.data,1)*1e-3,mean(ve.z.data,1)*1e-3,'+k')
   %plot(hca,mean(ve.y.data,1)*1e-3,mean(ve.z.data,1)*1e-3,'ow')
   hold(hca,'off')    
