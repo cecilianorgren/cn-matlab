@@ -609,7 +609,7 @@ irf_zoom(h1,'y')
 colors = get(gca,'colororder');
 colors = [0.5 0.5 0.5; 0.7 0.7 0.7; 0.5 0.5 0.5];
 for it = 1:nt % mark locations of distributions
-  for ip = 2:numel(h1)
+  for ip = 1:numel(h1)
     c_eval('tcenter = ePDist?.tlim(times(it)+0.03*0.49*[-1 1]).time;',ic)
     time_int = tcenter+0.03*0.5*[-1 1];
     hmark = irf_pl_mark(h1(ip),time_int',colors(it,:),'facealpha',0.5);
@@ -1116,8 +1116,9 @@ c_eval('lmnB? = gseB?*Tgse''; plB{end+1} = lmnB?.x;',ic)
 irf_plot(hca,plB,'comp')
 hca.YLabel.String = 'B_{LMN} (nT)';  hca.YLabel.Interpreter = 'tex';
 set(hca,'ColorOrder',colors)
-%irf_legend(hca,{'L','M','N'},[0.98 0.98])
+irf_legend(hca,{'L','M','N'},[0.98 0.98])
 
+if 0
 hca = h1(isub); isub = isub + 1;
 set(hca,'ColorOrder',colors)
 plE = cell([]);
@@ -1129,7 +1130,23 @@ hold(hca,'on')
 hold(hca,'off')
 hca.YLabel.String = 'E_{LMN} (mV/m)';  hca.YLabel.Interpreter = 'tex';
 set(hca,'ColorOrder',colors)
-%irf_legend(hca,{'L','M','N'},[0.98 0.98])
+%irf_legend(hca,{'L','M','N'},[0.98 0.98])'
+end
+
+if 1
+hca = h1(isub); isub = isub + 1;
+set(hca,'ColorOrder',colors)
+plE = cell([]);
+c_eval('lmnE? = gseVe?*Tgse''; plE{end+1} = lmnE?.abs;',ic)
+irf_plot(hca,plE,'comp')
+set(hca,'ColorOrder',colors)
+hold(hca,'on')
+%irf_plot(hca,plE.resample(PDist,'mean'))
+hold(hca,'off')
+hca.YLabel.String = 'v_{e} (mV/m)';  hca.YLabel.Interpreter = 'tex';
+set(hca,'ColorOrder',colors)
+irf_legend(hca,{'L','M','N'},[0.98 0.98])'
+end
 
 irf_zoom(h1,'x',tint_plot)
 irf_zoom(h1,'y')
