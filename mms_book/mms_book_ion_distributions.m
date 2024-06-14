@@ -1,5 +1,5 @@
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
@@ -11,6 +11,7 @@ c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
+c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr?.data).^2;',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic);
 c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic);
 c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
@@ -22,6 +23,10 @@ c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1
 
 c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
 c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
+
+% counts = (P/Perr)^2
+% sum counts for all time steps,
+% remove every bin which has counts<1.5
 
 %%
 
@@ -66,6 +71,10 @@ c_eval('tsNgse? = irf.ts_vec_xyz(iPDist?.time,repmat(N,iPDist?.length,1));',ic)
 c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt?,-1);',ic)
 c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt?,-1);',ic)
 c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt?,-1);',ic)
+
+c_eval('tsLdsl? = tsLgse?;',ic)
+c_eval('tsMdsl? = tsMgse?;',ic)
+c_eval('tsNdsl? = tsNgse?;',ic)
 
 
 
@@ -255,8 +264,8 @@ end
 %% Several at the same time.
 %h = setup_subplots(2,2);
 dt_all = [-15  -10 0 10 15];
-dt_all = [-15:5:15]+20;
-dt_all = [-6:2:6]+25;
+dt_all = [-15:5:15]+0;
+%dt_all = [-6:2:6]+25;
 %dt_all = [-6:2:6]-00;
 
 [h1,h] = initialize_combined_plot('topbottom',2,3,numel(dt_all),0.2,'vertical');
@@ -288,12 +297,39 @@ nSmooth = 1;
 
 
 for dt = dt_all
-
+%%
+elim = [600 Inf];
   time = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
   time = time + dt;
-  pdist = iPDist3.tlim(time + 10*0.5*0.150*[-1 1]).elim([600 Inf]);
-  %pdist = iPDist3_nobg.tlim(time + 10*0.5*0.150*[-1 1]).elim([600 Inf]);
+  tint_dist = time + 1*0.5*0.150*[-1 1];
+  pdist = iPDist3.tlim(tint_dist).elim([600 Inf]);
+  %pdist = iPDist3_nobg.tlim(time + 2*0.5*0.150*[-1 1]).elim([200 Inf]);
 
+  
+  counts = iPDist3_counts.tlim(tint_dist);
+  counts.data(isnan(counts.data)) = 0;  
+  count_sum = sum(counts.data,1);
+
+  pdist_1crem = iPDist3.tlim(tint_dist);
+  pdist_1crem.data(:,count_sum<1.5) = 0;
+  pdist_1crem = pdist_1crem.elim(elim);
+  pdist = pdist_1crem;
+
+  pdist = iPDist3_nobg.tlim(tint_dist).elim(elim);
+  pdist = iPDist3.tlim(tint_dist).elim(elim);
+  if 0
+    %%
+    edges = -0.5:1:9;
+    centers = edges(2:end)-0.5*(edges(2)-edges(1));
+    N = histcounts(counts.data(:),edges);
+    Nsum = histcounts(count_sum(:),edges);
+    %pdist_1crem.data()
+    hca = subplot(1,1,1);
+    bar(centers,[N; Nsum]',2)
+    legend(hca,{'Not summed','Summed'})
+    hca.YScale = 'log';
+  end
+%%
   t_dist_center = pdist.time.start + (pdist.time.stop - pdist.time.start)/2;
   c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data; tsMdsl?.resample(t_dist_center).data; tsNdsl?.resample(t_dist_center).data];',ic)
   Ldsl = Tdsl(1,:);
