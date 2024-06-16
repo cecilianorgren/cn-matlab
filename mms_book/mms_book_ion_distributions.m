@@ -265,6 +265,8 @@ end
 %h = setup_subplots(2,2);
 dt_all = [-15  -10 0 10 15];
 dt_all = [-15:5:15]+0;
+dt_all = [-15:5:15]+0;
+dt_all = [-6:2:6]+0;
 %dt_all = [-6:2:6]+25;
 %dt_all = [-6:2:6]-00;
 
@@ -301,7 +303,7 @@ for dt = dt_all
 elim = [600 Inf];
   time = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
   time = time + dt;
-  tint_dist = time + 1*0.5*0.150*[-1 1];
+  tint_dist = time + 10*0.5*0.150*[-1 1];
   pdist = iPDist3.tlim(tint_dist).elim([600 Inf]);
   %pdist = iPDist3_nobg.tlim(time + 2*0.5*0.150*[-1 1]).elim([200 Inf]);
 
@@ -315,8 +317,8 @@ elim = [600 Inf];
   pdist_1crem = pdist_1crem.elim(elim);
   pdist = pdist_1crem;
 
-  pdist = iPDist3_nobg.tlim(tint_dist).elim(elim);
-  pdist = iPDist3.tlim(tint_dist).elim(elim);
+  %pdist = iPDist3_nobg.tlim(tint_dist).elim(elim);
+  %pdist = iPDist3.tlim(tint_dist).elim(elim);
   if 0
     %%
     edges = -0.5:1:9;
