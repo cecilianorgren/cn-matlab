@@ -350,7 +350,7 @@ for dt = dt_all%(1)
   c_eval('vExB = mvaVExB?.tlim(pdist.time([1 end]) + 0.5*0.15*[-1 1]);',ic)    
   
   nSmooth = 1;
-  if 1 % f(L,M)
+  if 0 % f(L,M)
     hca = h(isub); isub = isub + 1;
     vdf = pdist.reduce('2D',Ldsl,Mdsl,'vint',vint_N);
     vdf.depend{1} = vdf.depend{1} - vL_Xline;
@@ -391,7 +391,7 @@ for dt = dt_all%(1)
     hca.YLim = vlim*[-1 1];
   end
 
-  if 1 % f(L,N)
+  if 0 % f(L,N)
     hca = h(isub); isub = isub + 1;
     %vdf = pdist_nobg.reduce('2D',[L_vi],[N_vi]);
     vdf = pdist.reduce('2D',[Ldsl],[Ndsl],'vint',vint_M);
@@ -413,7 +413,7 @@ for dt = dt_all%(1)
     hca.YLim = vlim*[-1 1];
   end
   
-  if 1 % f(M,N)
+  if 0 % f(M,N)
     hca = h(isub); isub = isub + 1;
     %vdf = pdist_nobg.reduce('2D',[M_vi],[N_vi]);
     vdf = pdist.reduce('2D',[Mdsl],[Ndsl],'vint',vint_L);
@@ -438,7 +438,7 @@ for dt = dt_all%(1)
   iso_values = [6.5e-28];
   iso_values = 20e-28;
   vlim = 3000;
-  if 0 % isuorface
+  if 1 % isuorface
     hca = h(isub); isub = isub + 1;
     hca.ColorOrder = pic_colors('matlab');
     hs = pdist.plot_isosurface(hca,'val',iso_values,'smooth',nSmooth,'fill','rotate',lmn);
@@ -462,7 +462,7 @@ for dt = dt_all%(1)
     hca.ZLabel.String = 'v_N (km/s)';
     hca.Title = [];
   end
-  if 0 % isuorface
+  if 1 % isuorface
     hca = h(isub); isub = isub + 1;
     hca.ColorOrder = pic_colors('matlab');
     hs = pdist.plot_isosurface(hca,'val',iso_values,'smooth',nSmooth,'fill');
@@ -485,7 +485,7 @@ for dt = dt_all%(1)
     hca.ZLabel.String = 'v_N (km/s)';
     hca.Title = [];
   end
-  if 0 % isuorface
+  if 1 % isuorface
     hca = h(isub); isub = isub + 1;
     hca.ColorOrder = pic_colors('matlab');
     hs = pdist.plot_isosurface(hca,'val',iso_values,'smooth',nSmooth,'fill');
@@ -510,7 +510,8 @@ for dt = dt_all%(1)
   end
   
 
-  times_exact{1} = vdf.time;
+  %times_exact{1} = vdf.time;
+  times_exact{1} = pdist.time;
 
   c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]+0.2);',1,1:numel(h1))
   %cn.print(sprintf('torbert_fi_ref_dt_%g',dt))
