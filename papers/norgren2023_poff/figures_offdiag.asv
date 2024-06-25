@@ -804,10 +804,6 @@ ylim_gradnvex = [-1.5 3.99];
 ax2.YLim = ylim_gradnvex*vsc/130e3;
 ax2.YLim = [-29 39]*ylim_gradnvex(2)/39;
 
-
-hca = irf_panel('ne');
-hca.YLim = [0.021 0.069];
-
 hca = irf_panel('stress x comp');
 hca.YLim = [-4.49 2.99];
 
@@ -816,7 +812,7 @@ hca = irf_panel('gradients 1, smoothed 2');
 hca.YLim = [-5.99 3.99];
 
 hca = irf_panel('gradients 1, smoothed 2, mV/m');
-hca.YLim = [-3.99 6.99];
+hca.YLim = [-4.49 5.49];
 %% Figure 3. Pyz, 2D distribution and pressure and stress contributions, MN, X times, with locations shown
 ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
