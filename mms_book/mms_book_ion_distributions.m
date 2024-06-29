@@ -1,10 +1,10 @@
 mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 %mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
-db_info = datastore('mms_db');
+%db_info = datastore('mms_db');
 
 %% Torbert event 
-ic = 3;
+ic = 1;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
 c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
@@ -14,6 +14,8 @@ c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?
 c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr?.data).^2;',ic)
 c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic);
 c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic);
+c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic);
+c_eval('dbcsVe? = mms.get_data(''Ve_dbcs_fpi_brst_l2'',tint,?);',ic);
 c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
 c_eval('tic; dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint); toc',ic);
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
@@ -920,6 +922,8 @@ h1(2).Position = [0.1700    0.7672    0.3000    0.0848];
 %% One time but with more overview panels
 dt_all = [-30:2:30];
 
+%dt_all = 0;
+
 [h1,h] = initialize_combined_plot('leftright',3,2,2,0.4,'vertical');
 %[h1,h] = initialize_combined_plot('topbottom',2,3,numel(dt_all),0.2,'vertical');
 
@@ -939,16 +943,26 @@ hca = h1(isub); isub = isub + 1;
 hca.ColorOrder = mms_colors('xyz');
 irf_plot(hca,{mvaVExB3.resample(iPDist3)})
 irf_zoom(h1,'x',tint_zoom)
-h1(2).YLim = [-2000 2000];
+%h1(2).YLim = [-2000 2000];
 hca.YLabel.String = 'v_e (km/s)';
 hca.ColorOrder = mms_colors('xyz');
 irf_legend(hca,{'L','M','N'},[0.98 0.98]);
 hca.YLabel.Interpreter = 'tex';
 
 
+hca = h1(isub); isub = isub + 1;
+hca.ColorOrder = mms_colors('xyz');
+irf_plot(hca,{mvaE3.resample(iPDist3)})
+irf_zoom(h1,'x',tint_zoom)
+h1(2).YLim = [-2000 2000];
+hca.YLabel.String = 'v_e (km/s)';
+hca.ColorOrder = mms_colors('xyz');
+irf_legend(hca,{'L','M','N'},[0.98 0.98]);
+hca.YLabel.Interpreter = 'tex';
  
 for dt = dt_all%(1)
 %%
+  delete(findobj(gcf,'type','patch'))
   isub = 1;
   nSmooth = 1;
   elim = [600 Inf];
@@ -967,8 +981,18 @@ for dt = dt_all%(1)
   pdist_1crem = pdist_1crem.elim(elim);
   pdist = pdist_1crem;
 
+  t_dist_center = pdist.time.start + (pdist.time.stop - pdist.time.start)/2;
+  c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data; tsMdsl?.resample(t_dist_center).data; tsNdsl?.resample(t_dist_center).data];',ic)
+  Ldsl = Tdsl(1,:);
+  Mdsl = Tdsl(2,:);
+  Ndsl = Tdsl(3,:);
   
+  
+  c_eval('B = mvaB?.tlim(pdist.time([1 end]) + 0.5*0.15*[-1 1]);',ic)  
+  c_eval('E = mvaE?.tlim(pdist.time([1 end]) + 0.5*0.15*[-1 1]);',ic) 
+  c_eval('vExB = mvaVExB?.tlim(pdist.time([1 end]) + 0.5*0.15*[-1 1]);',ic)    
 
+  isub = 1;
   if 1 % f(L,M)
     hca = h(isub); isub = isub + 1;
     vdf = pdist.reduce('2D',Ldsl,Mdsl,'vint',[-inf inf]);
@@ -1007,7 +1031,7 @@ for dt = dt_all%(1)
     hca.XLim = vlim*[-1 1];
     hca.YLim = vlim*[-1 1];
   end
- 
+  isub = 2;
   if 1 % f(L,N)
     hca = h(isub); isub = isub + 1;
     %vdf = pdist_nobg.reduce('2D',[L_vi],[N_vi]);
@@ -1026,7 +1050,7 @@ for dt = dt_all%(1)
     hca.XLim = vlim*[-1 1];
     hca.YLim = vlim*[-1 1];
   end
-  
+  isub = 4;
   if 1 % f(M,N)
     hca = h(isub); isub = isub + 1;
     %vdf = pdist_nobg.reduce('2D',[M_vi],[N_vi]);
@@ -1054,6 +1078,8 @@ for dt = dt_all%(1)
   iso_values = [6.5e-28];
   iso_values = 7e-28;
   vlim = 2500;
+
+  isub = 3;
   if 1 % isuorface
     hca = h(isub); isub = isub + 1;
     hca.ColorOrder = pic_colors('matlab');
@@ -1079,5 +1105,10 @@ for dt = dt_all%(1)
   colormap(pic_colors('candy_gray'))
   c_eval('hmark(?) = irf_pl_mark(h1(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]+0.2);',1,1:numel(h1))
   drawnow
-  cn.print(sprintf('torbert_fi_ref_dt_%g',dt))
+  cn.print(sprintf('torbert_fi_ref_dt_%02.0f',dt-dt_all(1)))
 end
+
+
+
+
+
