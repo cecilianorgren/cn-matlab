@@ -1,7 +1,8 @@
 %% Specify time and spacecraft
 units = irf_units;
 irf.log('critical')
-ic = 1;
+ic_dist = 1;
+ic = 1:4;
 
 localuser = datastore('local','user');
 localuser = 'cecilia';
@@ -121,21 +122,21 @@ c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
 
 %return
 %% Distributions
-ic = 1;
+%ic = 1;
 % Distributions, FPI
-c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic_dist) % missing some ancillary data
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic_dist) % missing some ancillary data
 % Remove all one-count "noise"
-c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
-c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic_dist) % missing some ancillary data
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic_dist)
+c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic_dist)
 %c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
 
 %c_eval('iPDist?_nobg = iPDist?;',ic)
 %c_eval('iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 
-c_eval('iPitch? = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
-c_eval('iPitch?_nobg = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
+c_eval('iPitch? = iPDist1_nobg.pitchangles(dmpaB?,12);',ic_dist)
+c_eval('iPitch?_nobg = iPDist1_nobg.pitchangles(dmpaB?,12);',ic_dist)
 
 
 
@@ -341,7 +342,7 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %gseGradPine.data(abs(gseGradPine.data)>100) = NaN;
 %%
 
-c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,12);',ic)
+c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,12);',ic_dist)
 
 disp('Done loading data.')
 
@@ -349,7 +350,7 @@ disp('Done loading data.')
 if 0
   %%
 %c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
-ic = 1;
+ic = ic_dist;
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 elim = [200 40000];

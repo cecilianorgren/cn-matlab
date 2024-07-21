@@ -6,8 +6,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
@@ -332,11 +332,11 @@ ic = 3;
 
 tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
 
-npanels = 6;
+npanels = 7;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
-fontsize = 16;
+fontsize = 12;
 comps = 'xyz';
 ylim_stress = [-4 3];
 
@@ -355,6 +355,18 @@ if 1 % B LMN
   hca.YLabel.String = {'B (nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+end 
+if 1 % E LMN
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  fhigh = 10;
+  c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+  hca.YLabel.String = {'E (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
 end 
 if 1 % Tpar, Tperp
   hca = irf_panel('Tepar, Teperp');
@@ -489,7 +501,9 @@ c_eval('hl(?).LineWidth = 1;',1:numel(hl))
 c_eval('h(?).LineWidth = 1;',1:numel(h))
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
 h(end).XTickLabelRotation = 0;
-c_eval('h(?).YLim = ylim_stress;',4:6)
+c_eval('h(?).YLim = ylim_stress;',(4:6)+1)
+
+c_eval('hold(h(?),"on"); plot(h(?),h(?).XLim,[0 0],"color",[0.7 0.7 0.7],"linewidth",1); h(?).Children = circshift(h(?).Children,-1)',1:numel(h))
 
 %% Figure: Gradients
 ic = 3;

@@ -1,14 +1,16 @@
 %% Specify time and spacecraft
 units = irf_units;
 irf.log('critical')
-ic = 1;
+ic_dist = 1;
+ic = 1:4;
 
 localuser = datastore('local','user');
+localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
-db_info = datastore('mms_db');   
+db_info = datastore('mms_db'); 
 
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
 files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
@@ -22,6 +24,7 @@ fileId = '20170725220853';
 
 iFile = find(cellfun(@(s) contains(s,fileId),{files.name}));
 
+%%
 if 0
 tint_all = irf.tint('2017-07-09T17:30:00.00Z/2017-07-09T17:35:00.00Z');
 files = mms.db_list_files('mms1_fgm_brst_l2',tint_all);
@@ -53,7 +56,8 @@ ae = irf.ts_scalar(irf_time(omni_index_min(:,1),'epoch>EpochTT'),omni_index_min(
 al = irf.ts_scalar(irf_time(omni_index_min(:,1),'epoch>EpochTT'),omni_index_min(:,3)); al.name = 'AL';
 au = irf.ts_scalar(irf_time(omni_index_min(:,1),'epoch>EpochTT'),omni_index_min(:,4)); au.name = 'AU';
 end
-%% Magnetic field
+
+%% Fields
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',1:4);
@@ -61,6 +65,23 @@ c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',ti
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',1:4);
 c_eval('dslE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',1:4);
 c_eval('gsmE? = c_coord_trans(''GSE'',''GSM'',gseE?);',1:4)
+
+c_eval('dslE?fast = mms.db_get_ts(''mms?_edp_fast_ql_dce2d'',''mms?_edp_dce_xyz_dsl'',tint);');
+
+
+
+c_eval('dslE?_l2pre_dce_edp =                mms.db_get_ts(''mms?_edp_brst_l2pre_dce'',''mms?_edp_dce_dsl_brst_l2pre'',tint);');
+
+
+c_eval('dslE?_l2pre_dce2d_edp =                mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_dce_dsl_brst_l2pre'',tint);');
+c_eval('dslE?_l2pre_dce2d_adp =                mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_adp_brst_l2pre'',tint);');
+c_eval('dslE?_l2pre_dce2d_quality =            mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_quality_brst_l2pre'',tint);');
+c_eval('dslE?_l2pre_dce2d_phase =              mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_phase_brst_l2pre'',tint);');
+c_eval('dslE?_l2pre_dce2d_adc_offset =         mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_adc_offset_brst_l2pre'',tint);');
+c_eval('dslE?_l2pre_dce2d_edp_swwake_residue = mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_swwake_residue_brst_l2pre'',tint);');
+c_eval('dslE?_l2pre_dce2d_spin_residue =       mms.db_get_ts(''mms?_edp_brst_l2pre_dce2d'',''mms?_edp_spin_residue_brst_l2pre'',tint);');
+
+
 % Spacecraft potential
 c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 % Density
@@ -98,22 +119,24 @@ c_eval('Pi?par = facPi?.xx;',ic)
 
 % Spacecraft position
 c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
+
+%return
 %% Distributions
-ic = 1;
+%ic = 1;
 % Distributions, FPI
-c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic_dist) % missing some ancillary data
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic_dist) % missing some ancillary data
 % Remove all one-count "noise"
-c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
-c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
-c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic)
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic_dist) % missing some ancillary data
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic_dist)
+c_eval('iPDist?_onecount = iPDist?; iPDist?_onecount.data = (iPDist?_onecount.data./iPDistErr?.data).^2;',ic_dist)
 %c_eval('iPDist?.data(iPDist?.data < iPDistErr?.data*1.01) = 0;',ic)
 
 %c_eval('iPDist?_nobg = iPDist?;',ic)
 %c_eval('iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 
-c_eval('iPitch? = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
-c_eval('iPitch?_nobg = iPDist1_nobg.pitchangles(dmpaB?,12);',ic)
+c_eval('iPitch? = iPDist1_nobg.pitchangles(dmpaB?,12);',ic_dist)
+c_eval('iPitch?_nobg = iPDist1_nobg.pitchangles(dmpaB?,12);',ic_dist)
 
 
 
@@ -165,24 +188,28 @@ eis_pa1234.units = eis_pa3.units;
 eis_pa1234.species = eis_pa3.species;
 
 %% Derived quantities, par/perp, mag mom, beta, J, 
+% Angle between B and spacecraft spin plane, for EdotB
+c_eval('ang_tmp = acosd(dmpaB?.z.data./dmpaB?.abs.data); B?ang = irf.ts_scalar(dmpaB?.time,ang_tmp); B?ang.name = ''acosd(Bz/Babs)'';',ic)
+c_eval('ang_tmp = acosd(sqrt(dmpaB?.x.data.^2 + dmpaB?.y.data.^2)./dmpaB?.abs.data); B?ang2 = irf.ts_scalar(dmpaB?.time,ang_tmp); B?ang2.name = ''acosd(Bz/Babs)'';',ic)
+
 ic = 1:4;
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 % vExB
 %c_eval('gsmVExB? = cross(gsmE?.resample(gsmB?.time),gsmB?)/gsmB?.abs/gsmB?.abs*1e3; gsmVExB?.units = '''';',ic) % km/s
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
 % Magnetic field pressure
-c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
+c_eval('PB?  = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
 % Dynamic pressure
 c_eval('PDi? = ne?.resample(gsmVi?)*1e6*0.5*units.mp*gsmVi?.x.^2*1e6*1e9; PDi?.name = ''Dynamic pressure''; PDi?.units =''nPa'';',ic)
 % Plasma beta
 c_eval('betae? = (gsePe?.trace.resample(gsePi?))/3/PB?.resample(gsePi?);',ic)
 c_eval('betai? = (gsePi?.trace)/3/PB?.resample(gsePi?);',ic)
-c_eval('beta? = (gsePi?.trace+gsePe?.trace.resample(gsePi?))/3/PB?.resample(gsePi?); beta?.name = ''beta ie''; beta?.data(beta?.data<0) = NaN;',ic)
+c_eval('beta?  = (gsePi?.trace+gsePe?.trace.resample(gsePi?))/3/PB?.resample(gsePi?); beta?.name = ''beta ie''; beta?.data(beta?.data<0) = NaN;',ic)
 % Thermal speeds
-c_eval('vti?perp = units.s*(1-1/(Ti?perp*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3; ; vti?perp.units = ''km/s'';',ic)
-c_eval('vte?perp = units.s*(1-1/(Te?perp*units.e/(units.me*units.c^2)+1).^2).^0.5*1e-3; ; vte?perp.units = ''km/s'';',ic)
-c_eval('vti?par = units.s*(1-1/(Ti?par*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3; ; vti?par.units = ''km/s'';',ic)
-c_eval('vte?par = units.s*(1-1/(Te?par*units.e/(units.me*units.c^2)+1).^2).^0.5*1e-3; ; vte?par.units = ''km/s'';',ic)
+c_eval('vti?perp = units.s*(1-1/(Ti?perp*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3; vti?perp.units = ''km/s'';',ic)
+c_eval('vte?perp = units.s*(1-1/(Te?perp*units.e/(units.me*units.c^2)+1).^2).^0.5*1e-3; vte?perp.units = ''km/s'';',ic)
+c_eval('vti?par  = units.s*(1-1/(Ti?par*units.e/(units.mp*units.c^2)+1).^2).^0.5*1e-3;  vti?par.units  = ''km/s'';',ic)
+c_eval('vte?par  = units.s*(1-1/(Te?par*units.e/(units.me*units.c^2)+1).^2).^0.5*1e-3;  vte?par.units  = ''km/s'';',ic)
 % Magnetic moment based on thermal speeds
 c_eval('mag_mome? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mome?.units = ''nAm^2''; mag_mome?.name = ''magnetic moment'';',ic)
 c_eval('mag_momi? = 0.5*units.me*vti?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_momi?.units = ''nAm^2''; mag_momi?.name = ''magnetic moment'';',ic)
@@ -198,8 +225,14 @@ c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gse
 c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',ic);
 c_eval('gseJ? = (gseJe?+gseJi?);',ic);
 
+c_eval('JdotE? = gseJ?.*gseE?.resample(gseJ?);',ic);
+
+c_eval('EdotB? = gseE?.resample(gseB?).dot(gseB?); EdotB?.name = ''E dot B'';',ic);
+c_eval('EdotB?comps = gseE?.resample(gseB?).*gseB?; EdotB?comps.name = ''E.*B'';',ic);
+c_eval('EcrossB? = gseE?.resample(gseB?).cross(gseB?); EcrossB?.name = ''E cross B'';',ic);
+
+
 %% Things requiring 4 sc.
-c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4 )
 
 c_eval('gseVixB? = gseVi?.cross(gseB?.resample(gseVi?))*1e-3; gseVixB?.name = ''v_ixB'';',1:4)
 c_eval('gseVexB? = gseVe?.cross(gseB?.resample(gseVe?))*1e-3; gseVexB?.name = ''v_exB'';',ic)
@@ -223,6 +256,10 @@ c_eval('[gseJ?par,gseJ?perp] = irf_dec_parperp(gseB?,gseJ?); gseJ?par.name = ''J
 
 gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
 gseEav = (gseE1.resample(gseE2) + gseE2.resample(gseE2) + gseE3.resample(gseE2) + gseE4.resample(gseE2))/4; gseEav.name = 'E1234'; % gseE1 not there?
+
+
+[gseEpar,gseEperp] = irf_dec_parperp(gseBav,gseEav); gseEpar.name = 'E par'; gseEperp.name = 'E perp';
+
 [gseJcurlpar,gseJcurlperp] = irf_dec_parperp(gseBav,gseJcurl); gseJcurlpar.name = 'J curl par'; gseJcurlperp.name = 'J curl perp';
 
 
@@ -254,9 +291,35 @@ gseJxBne_mVm = (gseJxB)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.na
 gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
 %gseJxBne_mVm.data(abs(neav.data)<0.02,:) = NaN;
 
+c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJyBz? =    gseJ?.y*gseB?.z.resample(gseJ?); gseJyBz?.name = ''Jy*Bz''; gseJyBz?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJzBy? = -1*gseJ?.z*gseB?.y.resample(gseJ?); gseJzBy?.name = ''-Jz*By''; gseJzBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJzBx? =    gseJ?.z*gseB?.x.resample(gseJ?); gseJzBx?.name = ''Jz*Bx''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxBz? = -1*gseJ?.x*gseB?.z.resample(gseJ?); gseJxBz?.name = ''-Jx*Bz''; gseJxBz?.units = ''nA/m^2 nT'';',1:4)
+
 c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',ic)
 %gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
 
+
+% FPI
+c_eval('gseJxBy?ne_mVm = gseJxBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBy?ne_mVm.units = ''mV/m'';',ic)
+c_eval('gseJyBx?ne_mVm = gseJyBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBx?ne_mVm.units = ''mV/m'';',ic)
+c_eval('gseJyBz?ne_mVm = gseJyBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBz?ne_mVm.units = ''mV/m'';',ic)
+c_eval('gseJzBy?ne_mVm = gseJzBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBy?ne_mVm.units = ''mV/m'';',ic)
+c_eval('gseJzBx?ne_mVm = gseJzBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBx?ne_mVm.units = ''mV/m'';',ic)
+c_eval('gseJxBz?ne_mVm = gseJxBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBz?ne_mVm.units = ''mV/m'';',ic)
+
+% Curl
+gseJxBy_ne_mVm_curl =    gseJcurl.x*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJyBx_ne_mVm_curl = -1*gseJcurl.y*gseB.x*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJzBx_ne_mVm_curl =    gseJcurl.z*gseB.x*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJxBz_ne_mVm_curl = -1*gseJcurl.x*gseB.z*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJyBz_ne_mVm_curl =    gseJcurl.y*gseB.z*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJzBy_ne_mVm_curl = -1*gseJcurl.z*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+
+%%
 
 gseVexBav = (gseVexB1.resample(gseVexB2) + gseVexB2.resample(gseVexB2) + gseVexB3.resample(gseVexB2) + gseVexB4.resample(gseVexB2))/4; gseVexBav.name = 'gseVexB1234';
 
@@ -264,7 +327,7 @@ gseVeav = (gseVe1.resample(gseVe1) + gseVe2.resample(gseVe1) + gseVe3.resample(g
 gseVeperpav = (gseVe1perp.resample(gseVe1) + gseVe2perp.resample(gseVe1) + gseVe3perp.resample(gseVe1) + gseVe4perp.resample(gseVe1))/4; gseVeav.name = 'gseVeperpB1234';
 gseVeparav = (gseVe1par.resample(gseVe1par) + gseVe2par.resample(gseVe1) + gseVe3par.resample(gseVe1) + gseVe4par.resample(gseVe1))/4; gseVeav.name = 'gseVeB1234';
 
-  
+gseGradPe = divP(gseR1,gseR2,gseR3,gseR4,gsePe1,gsePe2,gsePe3,gsePe4); gseGradPe.units = 'nPa/km';  
 gseGradPi = divP(gseR1,gseR2,gseR3,gseR4,gsePi1,gsePi2,gsePi3,gsePi4); gseGradPi.units = 'nPa/km';
 gseGradTe = divP(gseR1,gseR2,gseR3,gseR4,gseTe1,gseTe2,gseTe3,gseTe4); gseGradTe.units = 'eV/km';
 gseGradTi = divP(gseR1,gseR2,gseR3,gseR4,gseTi1,gseTi2,gseTi3,gseTi4); gseGradTi.units = 'eV/km';
@@ -279,7 +342,7 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %gseGradPine.data(abs(gseGradPine.data)>100) = NaN;
 %%
 
-c_eval('iPitch? = iPDist1.pitchangles(dmpaB?,12);',ic)
+c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,12);',ic_dist)
 
 disp('Done loading data.')
 
@@ -287,7 +350,7 @@ disp('Done loading data.')
 if 0
   %%
 %c_eval('iPitch? = iPDist?.pitchangles(dmpaB?.resample(iPDist?),12);',ic)
-ic = 1;
+ic = ic_dist;
 disp('Preparing reduced distributions.')
 vint = [-Inf Inf];
 elim = [200 40000];
@@ -340,9 +403,10 @@ c_eval('if1Dz?_nobg = iPDist?_nobg.reduce(''1D'',[0 0 1],''vint'',vint);',ic)
 
 if 0
   %%
+tint_fered = irf.tint('2017-07-25T22:09:46.00Z/2017-07-25T22:09:56.00Z'); %20151112071854
 lowerelim = 100; % eV
-c_eval('vPara = dmpaB?.resample(ePDist?).norm;',ic)
-c_eval('ef1D?_par = ePDist?.elim([100 Inf]).tlim(tint_fered).reduce(''1D'',vPara,''vint'',vint,''scpot'',scPot?.resample(ePDist?));',ic)% reduced distribution along B
+c_eval('vPara = dmpaB?.resample(ePDist?).norm;',1)
+c_eval('ef1D?_par = ePDist?.elim([100 Inf]).tlim(tint_fered).reduce(''1D'',vPara,''vint'',vint,''scpot'',scPot?.resample(ePDist?));',1)% reduced distribution along B
 end
 disp('Done preparing reduced distributions.')
 
@@ -350,3 +414,39 @@ disp('Done preparing reduced distributions.')
 
 %c_eval('[fitdata?,ts?] = funFitVDF(if1Dx?,''nPop'',2,''plot'',0,''guessprevious'',0,''X0'',[0.5e6 0 100e3 0.5e6 0 100e3]);',ic)
 end
+
+%%
+c_eval('matB? = gseB?.abs.data;',ic)
+c_eval('matParTe? = facTe?.xx.resample(gseB?.time).data;',ic)
+c_eval('matParTi? = facTi?.xx.resample(gseB?.time).data;',ic)
+c_eval('matPerTe? = (facTe?.yy.resample(gseB?.time).data + facTe?.zz.resample(gseB?.time).data)/2;',ic)
+c_eval('matPerTi? = (facTi?.yy.resample(gseB?.time).data + facTi?.zz.resample(gseB?.time).data)/2;',ic)
+c_eval('matTe? = facTe?.trace.resample(gseB?.time).data/3;',ic)
+c_eval('matTi? = facTi?.trace.resample(gseB?.time).data/3;',ic)
+c_eval('matNe? = ne?.resample(gseB?.time).data;',ic)
+
+c_eval('vte?perp = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matTi?,''Vte''); vte?perp = irf.ts_scalar(gseB?.time,vte?perp)*1e-3; vte?.units = ''km/s'';',ic)
+c_eval('vte?par = irf_plasma_calc(matB?,matNe?,0,matParTe?,matTi?,''Vte''); vte?par = irf.ts_scalar(gseB?.time,vte?par)*1e-3; vte?.units = ''km/s'';',ic)
+c_eval('vte? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Vte''); vte? = irf.ts_scalar(gseB?.time,vte?)*1e-3; vte?.units = ''km/s'';',ic)
+c_eval('vtp? = irf_plasma_calc(matB?,matNe?,0,matTe?,matPerTi?,''Vtp''); vtp? = irf.ts_scalar(gseB?.time,vtp?)*1e-3; vtp?.units = ''km/s'';',ic)
+c_eval('vA? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Va''); vA? = irf.ts_scalar(gseB?.time,vA?)*1e-3; vA?.units = ''km/s'';',ic)
+
+% Frequencies
+c_eval('flh? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Flh''); flh? = irf.ts_scalar(gseB?.time,flh?);',ic)
+c_eval('fce? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Fce''); fce? = irf.ts_scalar(gseB?.time,fce?);',ic)
+c_eval('fcp? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Fcp''); fcp? = irf.ts_scalar(gseB?.time,fcp?);',ic)
+c_eval('fpe? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Fpe''); fpe? = irf.ts_scalar(gseB?.time,fpe?);',ic)
+c_eval('fpp? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Fpp''); fpp? = irf.ts_scalar(gseB?.time,fpp?);',ic)
+
+% Length scales
+c_eval('Lp? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Li''); Lp? = irf.ts_scalar(gseB?.time,Lp?)*1e-3; Lp?.units = ''km''; Lp?.name=''p inertial length'';',ic)
+c_eval('Le? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Le''); Le? = irf.ts_scalar(gseB?.time,Le?)*1e-3; Le?.units = ''km''; Le?.name=''e inertial length'';',ic)
+c_eval('Ld? = irf_plasma_calc(matB?,matNe?,0,matTe?,matTi?,''Ld''); Ld? = irf.ts_scalar(gseB?.time,Ld?)*1e-3; Ld?.units = ''km''; Ld?.name=''Debye length'';',ic)
+c_eval('re? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Roe''); re? = irf.ts_scalar(gseB?.time,re?)*1e-3; re?.units = ''km''; re?.name=''e gyroradius'';',ic)
+c_eval('rp? = irf_plasma_calc(matB?,matNe?,0,matPerTe?,matPerTi?,''Rop''); rp? = irf.ts_scalar(gseB?.time,rp?)*1e-3; rp?.units = ''km''; rp?.name=''p gyroradius'';',ic)
+
+%c_eval('beta? = (re?/Le?).^2;',ic)
+c_eval('PB? = gseB?.abs2/2/units.mu0*1e-9; PB?.name = ''Magnetic pressure''; PB?.units =''nPa'';',ic)
+
+% Magnetic moment
+c_eval('mag_mom? = 0.5*units.me*vte?perp.^2*10^6/(gseB?.abs*1e-9)*1e9;  mag_mom?.units = ''nAm^2''; mag_mom?.name = ''magnetic moment'';',ic)

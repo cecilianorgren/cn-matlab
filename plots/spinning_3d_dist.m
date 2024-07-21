@@ -123,8 +123,15 @@ if 1 % isuorface
   hca.Title = [];
 end
 
+%% Annotate
+% arrow for tip of arrow head/triangle
+xx = [500 500];
+yy = [1500 1000];
+zz = [1200 1200];
+[harr,xxx,yyy] = arrow([xx(1) yy(1) zz(1)],[xx(2) yy(2) zz(2)],'color','k');
+
 %% Make movie
-vidObj = VideoWriter([printpath ,'3D_turning_4d'],'MPEG-4');
+vidObj = VideoWriter([printpath ,'3D_turning_4h'],'MPEG-4');
 open(vidObj)
 
 
@@ -148,14 +155,21 @@ for ia = 1:nAngles
   camlight(gca,0,0)
 
   hca.Visible = 'off';
-  %hca.OuterPosition = [0.1 0.1 0.9 0.9];
-  hca.PositionConstraint = 'innerposition';
-  hca.PositionConstraint = 'outerposition';
+  %hca.OuterPosition = [0.1 0.1 0.8 0.8];
+  %hca.PositionConstraint = 'innerposition';
+  %hca.PositionConstraint = 'outerposition';
   %hca.Projection = "perspective";
-  hca.InnerPosition = [0.2170    0.1990    0.6975    0.7335] - [0.05 0.05 -0.05 0.05];
-  hca.InnerPosition = [0 0 1 1];
-  hca.InnerPosition = [0.1 0.1 0.8 0.8];
-
+  %hca.InnerPosition = [0.2170    0.1990    0.6975    0.7335] - [0.05 0.05 -0.05 0.05];
+  %hca.InnerPosition = [0 0 1 1];
+  %hca.InnerPosition = [0.1 0.1 0.8 0.8];
+  %hca.InnerPosition = [0.1 0.1 0.8 0.8];
+  
+  axis(hca,'square')
+  axis(hca,'equal')
+  camp = campos;
+  %norm(camp)
+  hca.CameraViewAngle = 12;
+  hca.CameraViewAngleMode = 'manual';
   pause(0.1)
 
   currFrame = getframe(gcf);
