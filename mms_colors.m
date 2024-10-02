@@ -36,6 +36,8 @@ elseif 0 % official MMS colors, bad contrast
         newColor = [0.8 0.4 0];
       case 'a' % absolute value
         newColor = [0.3 0.3 0.3]; 
+      case 'p' % absolute value
+        newColor = [0.6 0.5 0.0]; 
       otherwise 
         irf.log('warning',['Can''t recognize input ''' colorOption(ii) '''. Inserting a nice yellow instead.']);
         newColor = [0.8 0.6 0.0]; 
@@ -62,6 +64,11 @@ else % better colors
         newColor = [1 0.2 0];
       case 'a' % absolute value
         newColor = [0.3 0.3 0.3]; 
+      case 'p' % absolute value
+        newColor = [0.9 0.6 0.1]; 
+        newColor = [0.3010    0.7450    0.9330]; 
+        %newColor = [0.4940    0.1840    0.5560]; 
+         
       otherwise 
         irf.log('warning',['Can''t recognize input ''' colorOption(ii) '''. Inserting a nice yellow instead.']);
         newColor = [0.95 0.7 0.0]; 

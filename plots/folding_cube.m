@@ -298,7 +298,7 @@ linkprop(h,{'CLim'});
 %scrsize = get(0,'ScreenSize');
 %fig_position = scrsize;
 %fig_position(3) = fig_position(4)*0.7888;
-
+ic = 3;
 fig = figure('Position',[1     1   550   696]);
 
 if 0

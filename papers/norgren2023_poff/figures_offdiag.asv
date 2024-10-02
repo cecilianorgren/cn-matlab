@@ -8,8 +8,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 %mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
-%db_info = datastore('mms_db');
+mms.db_init('local_file_db','/Volumes/mms');
+db_info = datastore('mms_db');
 
 units = irf_units;
 
@@ -625,7 +625,7 @@ end
 if 1 % gradients, comparison
   
   hca = irf_panel('gradients 1, smoothed 2');
-  set(hca,'ColorOrder',mms_colors('xyzab'))
+  set(hca,'ColorOrder',mms_colors('xyzap'))
   c_eval('data1 = mvaGrad_Se?.tlim(tint).smooth(nsm)*1e3;',ic) % nPa -> pPa
   c_eval('data2 = mvaGrad_Pe?.tlim(tint).smooth(nsm)*1e3;',ic)
   c_eval('data3 = mvaGrad_NVve?.tlim(tint).smooth(nsm)*1e3;',ic)
@@ -633,15 +633,15 @@ if 1 % gradients, comparison
   c_eval('data5 = mvaVgradNVe?.tlim(tint).smooth(nsm)*1e3;',ic)
   irf_plot(hca,{data1,data2,data3,data4,data5},'comp');
   hca.YLabel.String = {'Gradients','(pPa/s)'};
-  set(hca,'ColorOrder',mms_colors('xyzab'))
+  set(hca,'ColorOrder',mms_colors('xyzap'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('xy'))
   irf_legend(hca,{'\partial_t{X_{xy}}','  \partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('z'))
   irf_legend(hca,{'m_e\partial_t(nu_xu_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
-  set(hca,'ColorOrder',mms_colors('ab'))
+  set(hca,'ColorOrder',mms_colors('ap'))
   irf_legend(hca,{'m_enu_x\partial_t{u_y}'},[0.98 0.35],'fontsize',fontsize_leg);
-  set(hca,'ColorOrder',mms_colors('b'))
+  set(hca,'ColorOrder',mms_colors('p'))
   irf_legend(hca,{'m_eu_y\partial_t(nu_x)'},[0.98 0.15],'fontsize',fontsize_leg);
   %irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},[0.98 0.1],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
@@ -650,7 +650,7 @@ if 1 % gradients, comparison
 end
 if 1 % gradients, comparison, mV/m  
   hca = irf_panel('gradients 1, smoothed 2, mV/m');
-  set(hca,'ColorOrder',mms_colors('xyzab'))
+  set(hca,'ColorOrder',mms_colors('xyzap'))
   c_eval('data1 =   mvaGrad_Se?*1e-9/(ne?*1e6*units.e*vsc);',ic)
   c_eval('data2 =   mvaGrad_Pe?*1e-9/(ne?*1e6*units.e*vsc);',ic)
   c_eval('data3 = mvaGrad_NVve?*1e-9/(ne?*1e6*units.e*vsc);',ic)
@@ -665,16 +665,16 @@ if 1 % gradients, comparison, mV/m
   
   irf_plot(hca,{-data1,-data2,-data3,-data4,-data5},'comp');
   hca.YLabel.String = {'Gradients','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('xyzab'))
+  set(hca,'ColorOrder',mms_colors('xyzap'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('xy'))
   irf_legend(hca,{'-\partial_x{X_{xy}}/ne','  -\partial_x{P_{xy}}/ne'},[0.02 0.15],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('z'))
   irf_legend(hca,{'-m_e\partial_x(nu_xu_y)/ne'},[0.98 0.98],'fontsize',fontsize_leg);  
-  set(hca,'ColorOrder',mms_colors('ab'))
+  set(hca,'ColorOrder',mms_colors('ap'))
   %irf_legend(hca,{'-m_env_x\partial_x{v_y}/ne','-m_ev_y\partial_x(nv_x)/ne'},leg_loc,'fontsize',fontsize_leg);
   irf_legend(hca,{'-m_enu_x\partial_x{u_y}/ne'},[0.98 0.75],'fontsize',fontsize_leg);
-  set(hca,'ColorOrder',mms_colors('b'))
+  set(hca,'ColorOrder',mms_colors('p'))
   irf_legend(hca,{'-m_eu_y\partial_x(nu_x)/ne'},[0.98 0.15],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
   set(hca,'ColorOrder',mms_colors('1111'))
@@ -831,6 +831,7 @@ hca.YLim = [-5.99 3.99];
 
 hca = irf_panel('gradients 1, smoothed 2, mV/m');
 hca.YLim = [-3.99 6.99];
+
 %% Figure 3. Pyz, 2D distribution and pressure and stress contributions, MN, X times, with locations shown
 ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
