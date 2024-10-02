@@ -635,14 +635,27 @@ if 1 % gradients, comparison
   hca.YLabel.String = {'Gradients','(pPa/s)'};
   set(hca,'ColorOrder',mms_colors('xyzap'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
-  set(hca,'ColorOrder',mms_colors('xy'))
-  irf_legend(hca,{'\partial_t{X_{xy}}','  \partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize_leg);
-  set(hca,'ColorOrder',mms_colors('z'))
-  irf_legend(hca,{'m_e\partial_t(nu_xu_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
-  set(hca,'ColorOrder',mms_colors('ap'))
-  irf_legend(hca,{'m_enu_x\partial_t{u_y}'},[0.98 0.35],'fontsize',fontsize_leg);
-  set(hca,'ColorOrder',mms_colors('p'))
-  irf_legend(hca,{'m_eu_y\partial_t(nu_x)'},[0.98 0.15],'fontsize',fontsize_leg);
+  
+  if 0
+    set(hca,'ColorOrder',mms_colors('xy'))
+    irf_legend(hca,{'\partial_t{X_{xy}}','  \partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize_leg);
+    set(hca,'ColorOrder',mms_colors('z'))
+    irf_legend(hca,{'m_e\partial_t(nu_xu_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
+    set(hca,'ColorOrder',mms_colors('ab'))
+    irf_legend(hca,{'m_enu_x\partial_t{u_y}'},[0.98 0.35],'fontsize',fontsize_leg);
+    set(hca,'ColorOrder',mms_colors('b'))
+    irf_legend(hca,{'m_eu_y\partial_t(nu_x)'},[0.98 0.15],'fontsize',fontsize_leg);
+  else
+    set(hca,'ColorOrder',mms_colors('xy'))
+    irf_legend(hca,{'\Delta X_{xy}/\Delta{t}','  \Delta{P_{xy}}/\Delta{t}'},[0.02 0.15],'fontsize',fontsize_leg);
+    set(hca,'ColorOrder',mms_colors('z'))
+    irf_legend(hca,{'m_e\Delta(nu_xu_y)/\Delta{t}'},[0.98 0.98],'fontsize',fontsize_leg);  
+    set(hca,'ColorOrder',mms_colors('ab'))
+    irf_legend(hca,{'m_enu_x\Delta{u_y}/\Delta{t}'},[0.98 0.35],'fontsize',fontsize_leg);
+    set(hca,'ColorOrder',mms_colors('b'))
+    irf_legend(hca,{'m_eu_y\Delta(nu_x)/\Delta{t}'},[0.98 0.15],'fontsize',fontsize_leg);
+  end
+
   %irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},[0.98 0.1],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
   %irf_legend(hca,{sprintf('N_{sm}=%g',nsm)},[1.01 0.99],'fontsize',fontsize_leg,'color','k');
@@ -680,8 +693,10 @@ if 1 % gradients, comparison, mV/m
   set(hca,'ColorOrder',mms_colors('1111'))
   %irf_legend(hca,{sprintf('N_{sm}=%g',nsm),sprintf('v=%g{km/s}',vsc*1e-3)}',[1.01 0.99],'fontsize',14,'color','k');
   
-  irf_legend(hca,{'\partial_x\rightarrow{v_x^{-1}}/\Delta_t'}',[0.05 0.99],'fontsize',14,'color','k');
-  irf_legend(hca,{sprintf('v_x=%g {km/s}',vsc*1e-3)}',[0.02 0.75],'fontsize',14,'color','k');
+  %irf_legend(hca,{'\partial_x\rightarrow{v_x^{-1}}\partial_t'}',[0.05 0.99],'fontsize',14,'color','k');
+  irf_legend(hca,{'\partial_x\rightarrow{v_{x,sc}^{-1}}/\Delta{t}'}',[0.05 0.99],'fontsize',14,'color','k');
+  irf_legend(hca,{sprintf('v_{x,sc}=%g {km/s}',vsc*1e-3)}',[0.02 0.75],'fontsize',14,'color','k');
+
 end
 if 0 % gradients, comparison    
   hca = irf_panel('gradients 1, smoothed after');
@@ -931,6 +946,8 @@ if 1 % S
   h1(2).YLim = h1(1).YLim;
 end
 
+ql = 35;
+q_lw = 1.5;
 dp_clim = 0.01999*[-1 1];
 ds_clim = 0.01999*[-1 1];
 contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.75);
@@ -986,7 +1003,30 @@ for itime = 1:times.length
     plot(hca,vlimit_x*[1 1],hca.YLim,'b--')    
     hold(hca,'off')
   end
-  if 1 % plot B direction
+  if 1 % plot B direction quiver
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B__.data,1);
+    B_std = std(B__.data,1);
+    b = B_/norm(B_);
+    B_std_inplane = std(B__.data(:,2:3),1);
+    B_inplane = sqrt(sum(B_(2:3).^2));
+    bpl = B_;
+
+    if B_inplane > 2*norm(B_std_inplane)
+      quiver(hca,-bpl(2)*ql,-bpl(3)*ql,bpl(2)*2*ql,bpl(3)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)
+      hold(hca,'off')
+      hca.XLim = xlim;
+      hca.YLim = ylim;
+      B_ = B_(1:2);    end
+    irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.98 0.98],'color','k','fontsize',fontsize_B_amp)
+  end
+  if 0 % plot B direction
     %%
     xlim = hca.XLim;
     ylim = hca.YLim;
@@ -1087,7 +1127,30 @@ for itime = 1:times.length
     hca.CLim = dp_clim;
     1;    
   end
-  if 1 % plot B direction
+  if 1 % plot B direction quiver
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B__.data,1);
+    B_std = std(B__.data,1);
+    b = B_/norm(B_);
+    B_std_inplane = std(B__.data(:,2:3),1);
+    B_inplane = sqrt(sum(B_(2:3).^2));
+    bpl = B_;
+
+    if B_inplane > 2*norm(B_std_inplane)
+      quiver(hca,-bpl(2)*ql,-bpl(3)*ql,bpl(2)*2*ql,bpl(3)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)
+      hold(hca,'off')
+      hca.XLim = xlim;
+      hca.YLim = ylim;
+      B_ = B_(1:2);    end
+   % irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.98 0.98],'color','k','fontsize',fontsize_B_amp)
+  end
+  if 0 % plot B direction
       %%
       xlim = hca.XLim;
       ylim = hca.YLim;
@@ -1200,7 +1263,30 @@ for itime = 1:times.length
     hca.CLim = dp_clim;
     1;    
   end
-  if 1 % plot B direction
+  if 1 % plot B direction quiver
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B__.data,1);
+    B_std = std(B__.data,1);
+    b = B_/norm(B_);
+    B_std_inplane = std(B__.data(:,2:3),1);
+    B_inplane = sqrt(sum(B_(2:3).^2));
+    bpl = B_;
+
+    if B_inplane > 2*norm(B_std_inplane)
+      quiver(hca,-bpl(2)*ql,-bpl(3)*ql,bpl(2)*2*ql,bpl(3)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)
+      hold(hca,'off')
+      hca.XLim = xlim;
+      hca.YLim = ylim;
+      B_ = B_(1:2);    end
+ %   irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.98 0.98],'color','k','fontsize',fontsize_B_amp)
+  end
+  if 0 % plot B direction
     %%
     xlim = hca.XLim;
     ylim = hca.YLim;
@@ -1478,6 +1564,9 @@ if 1
   ds_clim = 0.025*[-1 1];
 end
 
+
+ql = 30;
+q_lw = 1.5;
 dp_clim = 0.01999*[-1 1];
 ds_clim = 0.01999*[-1 1];
 contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.5);
@@ -1535,7 +1624,33 @@ for itime = 1:times.length
     plot(hca,vlimit_x*[1 1],hca.YLim,'b--')    
     hold(hca,'off')
   end
-  if 1 % plot B direction
+  if 1 % plot B direction quiver
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B__.data,1);
+    B_std = std(B__.data,1);
+    b = B_/norm(B_);
+    B_std_inplane = std(B__.data(:,1:2),1);
+    B_inplane = sqrt(sum(B_(1:2).^2));
+    bpl = B_;
+
+    if B_inplane > 2*norm(B_std_inplane)
+      quiver(hca,-bpl(1)*ql,-bpl(2)*ql,bpl(1)*2*ql,bpl(2)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)
+      %plot(hca,[-bpl(1)*ql bpl(1)*ql],[-bpl(2)*ql,bpl(2)*ql],'color',[1 0 0],'linewidth',q_lw)
+      hold(hca,'off')
+      hca.XLim = xlim;
+      hca.YLim = ylim;
+      B_ = B_(1:2);
+    end
+    irf_legend(hca,sprintf('B_{%s} = %.1f nT', comps,B_inplane),[0.98 0.98],'color','k','fontsize',fontsize_B_amp)
+  end
+  
+  if 0 % plot B direction
     %%
     xlim = hca.XLim;
     ylim = hca.YLim;
@@ -1637,7 +1752,31 @@ for itime = 1:times.length
     hca.CLim = dp_clim;
     1;    
   end
-  if 1 % plot B direction
+  if 1 % plot B direction quiver
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B__.data,1);
+    B_std = std(B__.data,1);
+    b = B_/norm(B_);
+    B_std_inplane = std(B__.data(:,1:2),1);
+    B_inplane = sqrt(sum(B_(1:2).^2));
+    bpl = B_;
+
+    if B_inplane > 2*norm(B_std_inplane)      
+      quiver(hca,-bpl(1)*ql,-bpl(2)*ql,bpl(1)*2*ql,bpl(2)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)
+      hold(hca,'off')
+      hca.XLim = xlim;
+      hca.YLim = ylim;
+      B_ = B_(1:2);
+    end
+  end
+  
+  if 0 % plot B direction
       %%
       xlim = hca.XLim;
       ylim = hca.YLim;
@@ -1746,7 +1885,31 @@ for itime = 1:times.length
     hca.CLim = dp_clim;
     1;    
   end
-  if 1 % plot B direction
+  if 1 % plot B direction quiver
+    %%
+    xlim = hca.XLim;
+    ylim = hca.YLim;
+    hold(hca,'on')
+    %dt_distx = 0.030;
+    %B_ = B.tlim(dist.time([1 end]) + 0.5*dt_dist*[-1 1]);
+    B__ = B.tlim(dist.time([1 end]) + 0.5*0.03*[-1 1]);
+    B_ = mean(B__.data,1);
+    B_std = std(B__.data,1);
+    b = B_/norm(B_);
+    B_std_inplane = std(B__.data(:,1:2),1);
+    B_inplane = sqrt(sum(B_(1:2).^2));
+    bpl = B_;
+
+    if B_inplane > 2*norm(B_std_inplane)
+      quiver(hca,-bpl(1)*ql,-bpl(2)*ql,bpl(1)*2*ql,bpl(2)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)      
+      hold(hca,'off')
+      hca.XLim = xlim;
+      hca.YLim = ylim;
+      B_ = B_(1:2);
+    end
+    %irf_legend(hca,sprintf('B = %.1f nT', B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
+  end
+  if 0 % plot B direction
     %%
     xlim = hca.XLim;
     ylim = hca.YLim;
@@ -1773,7 +1936,7 @@ for itime = 1:times.length
     end
 
     %irf_legend(hca,sprintf('B = %.1f nT', B_inplane),[0.02 0.98],'color','k','fontsize',fontsize_B_amp)
-    end
+  end
   if 1 % plot bulk speed
     %%
     hold(hca,'on')
