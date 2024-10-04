@@ -514,8 +514,8 @@ npanels = 6;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
-fontsize = 16;
-fontsize_leg = 13;
+fontsize = 14;
+fontsize_leg = 11;
 comps = 'xyz';
 
 isub = 0;
@@ -650,9 +650,9 @@ if 1 % gradients, comparison
     irf_legend(hca,{'\Delta X_{xy}/\Delta{t}','  \Delta{P_{xy}}/\Delta{t}'},[0.02 0.15],'fontsize',fontsize_leg);
     set(hca,'ColorOrder',mms_colors('z'))
     irf_legend(hca,{'m_e\Delta(nu_xu_y)/\Delta{t}'},[0.98 0.98],'fontsize',fontsize_leg);  
-    set(hca,'ColorOrder',mms_colors('ab'))
+    set(hca,'ColorOrder',mms_colors('ap'))
     irf_legend(hca,{'m_enu_x\Delta{u_y}/\Delta{t}'},[0.98 0.35],'fontsize',fontsize_leg);
-    set(hca,'ColorOrder',mms_colors('b'))
+    set(hca,'ColorOrder',mms_colors('p'))
     irf_legend(hca,{'m_eu_y\Delta(nu_x)/\Delta{t}'},[0.98 0.15],'fontsize',fontsize_leg);
   end
 

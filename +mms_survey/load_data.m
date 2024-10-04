@@ -14,9 +14,11 @@ tint = irf.tint('2015-10-16T10:34:14.00Z/2015-10-16T10:35:55.00Z'); %20151016103
 tint = irf.tint('2015-11-12T07:18:54.00Z/2015-11-12T07:19:45.00Z'); %20151112071854
 tint = irf.tint('2015-11-17T14:15:54.00Z/2015-11-17T14:18:14.00Z'); %20151117141554
 tint = irf.tint('2016-02-02T09:03:14.00Z/2016-02-02T09:04:14.00Z'); %20160101090314
+tint = irf.tint('2017-08-20T01:53:00.00Z/2017-08-20T01:57:00.00Z'); %20160101090314
 %% Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
-mms.db_init('local_file_db','/data/mms');
+%mms.db_init('local_file_db','/data/mms');
+mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');   
 
 
