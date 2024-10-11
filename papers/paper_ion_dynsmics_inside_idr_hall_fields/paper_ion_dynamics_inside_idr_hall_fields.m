@@ -5,7 +5,7 @@ mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
 % Torbert event 
-ic = 1;
+ic = 3;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
@@ -20,15 +20,20 @@ c_eval('dbcsVe? = mms.get_data(''Ve_dbcs_fpi_brst_l2'',tint,?);',ic);
 c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
 c_eval('dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
+c_eval('gseVixB? = cross(gseVi?*1e3,gseB?.resample(gseVi?.time)*1e-9)*1e3; gseVixB?.units = '''';',ic) % mV/m
 c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic); toc
+c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic); toc
 
 c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
 
+c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
 
 c_eval('[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new,Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist?);',ic)
 
 c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
 c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
+
+c_eval('B?inf = irf.ts_scalar(gseB?.time,sqrt(gseB?.abs2.data*1e-18 + 1e-9*gsePi?.resample(gseB?).trace.data/3*(2*units.mu0)))*1e9;',ic)
 
 % counts = (P/Perr)^2
 % sum counts for all time steps,
@@ -51,8 +56,8 @@ M_gse = [0 1 0];
 N_gse = [0 0 1];
 lmn_gse = [L_gse; M_gse; N_gse];
 
-L_gse = [1 0 0];
-M_gse = [0 1 -0.2];
+L_gse = [1 0 -.2]; L_gse = L_gse/norm(L_gse);
+M_gse = [0 1 -0.2]; M_gse = cross(L_gse,cross(M_gse,L));
 %N_gse = [0 0 1];
 N_gse = cross(L_gse,M_gse);
 lmn_gse = [L_gse; M_gse; N_gse];
@@ -63,6 +68,7 @@ M = lmn(2,:);
 N = lmn(3,:);
 
 
+c_eval('mvaVixB? = gseVixB?*lmn''; mvaVixB?.name = ''Vi x B LMN'';',ic)
 c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
@@ -88,15 +94,16 @@ c_eval('fi?_M = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).red
 c_eval('fi?_N = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).reduce(''1D'',N);',ic)
 
 %% Define times, etc... things that are common for the entire study
-tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z'); %20151112071854
+tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z');
 time_xline = irf_time('2017-07-11T22:34:03.00Z','utc>EpochTT');
 time_xline_ion = irf_time('2017-07-11T22:34:02.00Z','utc>EpochTT');
 v_xline = -170;
 time_vdf = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
+tint_figure_zoom = irf.tint('2017-07-11T22:33:30.00Z/2017-07-11T22:34:30.00Z');
 
 %% Figure: Overview
 
-h = irf_plot(7);
+h = irf_plot(5);
 
 fontsize = 12;
 
@@ -127,13 +134,13 @@ if 1 % Vi
   irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
 end
 
-if 1 % dEFlux ion
+if 0 % dEFlux ion
   hca = irf_panel('ion dEF omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,iPDist?.deflux.omni.specrec,''donotfitcolorbarlabel'');',ic)  
   hca.YScale = 'log'; 
 end
-if 1 % dEFlux ion
+if 0 % dEFlux ion
   hca = irf_panel('ion dEF omni movmean rem onecounts');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).deflux.omni.specrec,''donotfitcolorbarlabel'');',ic)  
@@ -154,12 +161,13 @@ if 1 % fi red L
     
   hca.NextPlot = "add";
   %c_eval('irf_plot(hca,mvaVi?.x,''k-'')',ic)
-  c_eval('irf_plot(hca,irf.ts_scalar(mvaVi?.time,repmat(v_xline,[mvaVi?.length,1])),''k-'')',ic)
+  %c_eval('irf_plot(hca,irf.ts_scalar(mvaVi?.time,repmat(v_xline,[mvaVi?.length,1])),''k-'')',ic)
   hca.NextPlot = "replace";
 
   hca.YLabel.String = {'v_{iL} (km/s)'};
 
-  irf_legend(hca,sprintf('N_{mean} = %g',nMovMean),[0.02,0.1],'fontsize',fontsize);
+  %irf_legend(hca,sprintf('N_{mean} = %g',nMovMean),[0.02,0.1],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('N_{mean} = %g',nMovMean),' one-counts removed'},[0.02,0.98],'fontsize',fontsize,'color','k');
 end
 if 1 % fi red M
   hca = irf_panel('fi M');
@@ -192,17 +200,30 @@ if 1 % fi red L
   hca.YLabel.String = {'v_{iN} (km/s)'};
 end
 
-irf_zoom(h,'x',tint_figure)
+%irf_zoom(h,'x',tint_figure)
+irf_zoom(h,'x',tint_figure_zoom)
+irf_zoom(h(1:2),'y')
 irf_pl_mark(h,time_xline,'black','linestyle',':')
-irf_pl_mark(h,time_xline_ion,'red','linestyle',':')
+%irf_pl_mark(h,time_xline_ion,'red','linestyle',':')
 %colormap(irf_colormap('thermal'))
-colormap(pic_colors('candy4'))
+colormap([pic_colors('candy_gray'); 1 1 1])
 irf_plot_axis_align
 h(end).XTickLabelRotation = 0;
 c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
-
+%hlinks1 = linkprop(h(3:4),{'CLim'});
+%hlinks2 = linkprop(h(5:7),{'CLim'});
+hlinks2 = linkprop(h(3:5),{'CLim'});
 h(1).Title.String = sprintf('N_{movmean} = %g',nMovMean);
+c_eval('h(?).FontSize = 14;',1:numel(h))
 
+if 0
+  %%
+  h(3).YLim = 1499*[-1 1];
+  h(4).YLim = 1499*[-1 1];
+  h(5).YLim = 1499*[-1 1];
+  h(5).CLim = [-3 -1];
+  colormap([0.9 0.9 0.9; pic_colors('candy4')])
+end
 
 %% Figure: Reduced distributions, 2D
 
@@ -269,19 +290,19 @@ units = irf_units;
 
 % Define magnetic field
 a = 1.5*1e3;
-b = 20*1e3;
+b = 120*1e3;
 xvec = a*linspace(-60,60,500);
-zvec = 1e3*linspace(-40,40,100);
+zvec = 1e3*linspace(-1000,1000,400);
 yvec = linspace(-0,0,1);
 
 [X,Y,Z] = ndgrid(xvec,yvec,zvec);
 
 % Integrate orbits
-B0 = 10e-9;
+B0 = 20e-9;
 E0 = 3e-3;
 m = units.mp;
 q = units.e;
-lz = 3*b;
+lz = .5*b;
 
 Bx = @(x,y,z) B0*2*z/b^2*0;
 Bx = @(x,y,z) B0*tanh(z/b);
@@ -289,7 +310,7 @@ By = @(x,y,z) B0*x*0;
 Bz = @(x,y,z) B0*2*x/a^2;
 Ex = @(x,y,z) E0*x*0;
 Ey = @(x,y,z) 1*(E0*x*0 + E0*z*0 + E0);
-Ez = @(x,y,z) 1*(1*E0*-20*(z/(2*lz)).*exp(-(z/(4*lz)).^2));
+Ez = @(x,y,z) 1*-40e-3*(z/(1*lz)).*exp(-(z/(2*lz)).^2);
 
 Ay = @(x,y,z) (x/a).^2 - (z/b).^2;
 Ay =  @(x,y,z) -b*B0*log(cosh(z/b)) + B0*(x/a).^2 + 0*y; %.*exp(-z.^2/b.^2)
@@ -311,13 +332,13 @@ options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,0.5*xvec([1 end])),...
                  'RelTol',1e-12,'AbsTol',1e-12);
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
-tstop = 7;
+tstop = 8;
 
 vz0 = E0/B0;
 x_init_all = [0 0 0 0 -500e3 700e3;...
               ];
 
-x_init_all = [0 0 -1500e3 0 10e3 290e3;...
+x_init_all = [0 0 -1000e3 0 -10e3 E0/B0;...
               ];
 
 
@@ -335,13 +356,40 @@ for ip = 1:size(x_init_all,1)
   p(ip).vz = x_sol(:,6);
 end
 
-h = setup_subplots(4,1);
+h = setup_subplots(4,3,'vertical');
 isub = 1;
+dotsize = 10;
+
+
 
 if 1 % Bx, Ez
   hca = h(isub); isub = isub + 1;
-  plot(hca,zvec*1e-3,Bx(0,0,zvec)*1e9,zvec*1e-3,Ez(0,0,zvec)*1e3,zvec*1e-3,Ey(0,0,zvec)*1e3,'linewidth',1)
+  plot(hca,zvec*1e-3,Bx(0,0,zvec)*1e9,zvec*1e-3,Ez(0,0,zvec)*1e3,zvec*1e-3,Ey(0,0,zvec)*1e3,'linewidth',1)  
   irf_legend(hca,{'B_L','E_N','E_M'},[0.02 0.98])
+  hca.XLabel.String = 'N (km)';
+end
+if 1 % potential from Ez
+  hca = h(isub); isub = isub + 1;
+  plot(hca,zvec*1e-3,-cumtrapz(zvec,Ez(0,0,zvec)*1e3)/1000,'linewidth',1)      
+  hca.YLabel.String = '\phi = -\int E_N dN (V)';
+  hca.XLabel.String = 'N (km)';
+end
+if 1 % Jy from Bx
+  hca = h(isub); isub = isub + 1;
+  dz = zvec(2)-zvec(1); % m
+  Jy = units.mu0^(-1)*gradient(Bx(0,0,zvec))/(dz); % Jy = dBx/dz
+  plot(hca,zvec*1e-3,Jy*1e9,'linewidth',1)      
+  hca.YLabel.String = 'J_M (nA/m^2)';
+  hca.XLabel.String = 'N (km)';
+end
+if 1 % vey from Jy from Bx
+  hca = h(isub); isub = isub + 1;
+  dz = zvec(2)-zvec(1);
+  Jy = units.mu0^(-1)*gradient(Bx(0,0,zvec))/(dz);
+  vey = -Jy/units.e/0.04e6; % J = nev
+  vey = vey*1e-6; % 10^3 km/s
+  plot(hca,zvec*1e-3,vey,'linewidth',1)      
+  hca.YLabel.String = 'v_{eM} = -J_y/ne (10^3 km/s)';
   hca.XLabel.String = 'N (km)';
 end
 if 0 % particle
@@ -356,50 +404,90 @@ if 0 % particle
 end
 if 1 % particle, vy
   hca = h(isub); isub = isub + 1;
-  hca.NextPlot = "add";
   for ip = 1:numel(p)
-    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,5,p(ip).vy*1e-3)
+    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,dotsize,p(ip).vy*1e-3)
   end
-  hca.NextPlot = "replaceall";
   hcb = colorbar(hca);
-  hcb.YLabel.String = 'v_y (km/s)';
-  colormap(hca,pic_colors('blue_red'))  
+  hcb.YLabel.String = 'v_M (km/s)';
+  colormap(hca,pic_colors('bluegrayred'))  
   hca.CLim = max(abs(hca.CLim))*[-1 1];
   hca.XLabel.String = 'M (km)';
   hca.YLabel.String = 'N (km)';
 end
 if 1 % particle, |vz|
   hca = h(isub); isub = isub + 1;
-  hca.NextPlot = "add";
   for ip = 1:numel(p)
-    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,5,abs(p(ip).vz)*1e-3)
+    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,dotsize,abs(p(ip).vz)*1e-3)
   end
-  hca.NextPlot = "replaceall";
   hcb = colorbar(hca);
-  hcb.YLabel.String = '|v_z| (km/s)';
+  hcb.YLabel.String = '|v_N| (km/s)';
   colormap(hca,pic_colors('candy_gray'))
   hca.XLabel.String = 'M (km)';
   hca.YLabel.String = 'N (km)';
 end
 if 1 % particle, sqrt(vy^2+vz^2)
   hca = h(isub); isub = isub + 1;
-  hca.NextPlot = "add";
   for ip = 1:numel(p)
-    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,5,sqrt(p(ip).vy.^2 + p(ip).vz.^2)*1e-3)    
+    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,dotsize,sqrt(p(ip).vy.^2 + p(ip).vz.^2)*1e-3)    
   end
-  hca.NextPlot = "replaceall";
   hcb = colorbar(hca);
-  hcb.YLabel.String = '(v_y^2+v_z^2)^{1/2} (km/s)';
+  hcb.YLabel.String = '(v_M^2+v_N^2)^{1/2} (km/s)';
   colormap(hca,pic_colors('candy_gray'))
   %hca.CLim = max(abs(hca.CLim))*[-1 1];
   hca.XLabel.String = 'M (km)';
   hca.YLabel.String = 'N (km)';
 end
+if 1 % particle, eV
+  hca = h(isub); isub = isub + 1;
+  for ip = 1:numel(p)
+    eV = units.mp*(p(ip).vy.^2 + p(ip).vz.^2)/2/units.eV;
+    scatter(hca,p(ip).y*1e-3,p(ip).z*1e-3,dotsize,eV)    
+  end
+  hcb = colorbar(hca);
+  hcb.YLabel.String = 'Energy (eV)';
+  colormap(hca,pic_colors('candy_gray'))
+  %hca.CLim = max(abs(hca.CLim))*[-1 1];
+  hca.XLabel.String = 'M (km)';
+  hca.YLabel.String = 'N (km)';
+end
+if 1 % particle, time, vm
+  hca = h(isub); isub = isub + 1;
+  for ip = 1:numel(p)    
+    plot(hca,p(ip).t,p(ip).vy*1e-3)    
+  end    
+  hca.YLabel.String = 'v_M (km/s)';
+  hca.XLabel.String = 'time (s)';
+end
+if 1 % particle, time, vn
+  hca = h(isub); isub = isub + 1;
+  for ip = 1:numel(p) 
+    plot(hca,p(ip).t,(p(ip).vz*1e-3))    
+  end    
+  hca.YLabel.String = 'v_N (km/s)';
+  hca.XLabel.String = 'time (s)';
+end
+if 1 % particle, time, vtot
+  hca = h(isub); isub = isub + 1;
+  for ip = 1:numel(p)    
+    plot(hca,p(ip).t,sqrt(p(ip).vy.^2+p(ip).vz.^2)*1e-3)    
+  end    
+  hca.YLabel.String = '(v_M^2+v_N^2)^{1/2} (km/s)';
+  hca.XLabel.String = 'time (s)';
+end
+if 1 % particle, time
+  hca = h(isub); isub = isub + 1;
+  for ip = 1:numel(p)
+    eV = units.mp*(p(ip).vy.^2 + p(ip).vz.^2)/2/units.eV;
+    plot(hca,p(ip).t,eV)    
+  end    
+  hca.YLabel.String = 'Energy (eV)';
+  hca.XLabel.String = 'time (s)';
+end
 
 c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
 c_eval('h(?).Box = ''on'';',1:numel(h))
 %c_eval('axis(h(?),''equal'');',2:4)
-hlinks = linkprop(h(2:4),{'XLim','YLim'});
+hlinks = linkprop(h(5:8),{'XLim','YLim'});
 
 %% Ion distributions, One dist at the time
 %h = setup_subplots(2,2);
@@ -595,6 +683,8 @@ dt_all = [-15 -10 0 10 15];
 dt_all = [-15:5:15]+0;
 dt_all = [-15:5:15]+-1.5;
 dt_all = [-6:2:6]+.5;
+dt_all = [-6:2:6]+.5;
+dt_all = [-6:3:6]+.5;
 %dt_all = [-6:2:6]+0;
 %dt_all = [-6:2:6]+25;
 %dt_all = [-6:2:6]-00;
@@ -631,7 +721,7 @@ isub = 1;
 
 
 elim = [0 Inf];
-pdist_all = iPDist1.movmean(nMovMean,'RemoveOneCounts',iPDist1_counts).elim(elim);
+c_eval('pdist_all = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim);',ic)
 time = time_vdf;
 
 
@@ -861,6 +951,7 @@ drawnow
 hb = findobj(gcf,'type','colorbar'); hb = hb(end:-1:1);
 %delete(hb(1:end-3))
 delete(hb)
+hcb = colorbar(h(numel(h)-2),'location','north');
 
 compact_panels(h(1:3:end),0,0)
 compact_panels(h(2:3:end),0,0)
@@ -1444,5 +1535,55 @@ end
 
 
 
+%% 3D isosurface, to illustrate 3D tilt
 
+
+
+elim = [2000 Inf];
+nMovMean = 7;
+c_eval('pdist_all = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts);',ic)
+pdist_all.data(:,1:20,:,:) = 0;
+%pdist_all = pdist_all.elim(elim);
+
+time = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
+dt = -3;
+time = time + dt;
+
+h = setup_subplots(1,1);
+isub = 1;
+
+pdist = pdist_all.tlim(time+0.5*0.15*[-1 1]);
+
+hca = h(isub); isub = isub + 1;
+hca.ColorOrder = pic_colors('matlab');
+nSmooth = 3;
+iso_values = 1*10.^[-27:-15];
+iso_values = [6.5e-28];
+%iso_values = [6.5e-27];
+hs = pdist.plot_isosurface(hca,'vals',iso_values,'smooth',nSmooth,'fill');
+%hs = pdist_nobg.plot_isosurface(hca,'smooth',nSmooth);
+%hs = pdist.plot_isosurface(hca,'smooth',nSmooth,'fill','rotate',lmn);
+c_eval('hs.Patch(?).FaceAlpha = 1;',1:numel(hs.Patch))
+axis(hca,'square')
+vlim = 2500;
+hca.XLim = vlim*[-1 1];
+hca.YLim = vlim*[-1 1];
+hca.ZLim = vlim*[-1 1];
+%camlight(gca,90,-45)
+%view(hca,[-1 -1 0.5])
+%view(hca,[1 0.2 0.2])
+view(hca,[0 1 0.2])
+camlight(gca,0,0)
+
+if 1 % Add max energy
+  %%
+  Emax = max(pdist_all.depend{1}(:));
+  %Emax = 32000;
+  vmax = sqrt(2*units.eV*Emax/units.mp)*1e-3;
+  
+  [X,Y,Z] = sphere(20);
+  hold(hca,'on')
+  hsurf = surf(hca,vmax*X,vmax*Y,vmax*Z,'facealpha',0.1,'facecolor',[0 0 0],'EdgeColor','none');
+  hold(hca,'off')
+end
 
