@@ -4,29 +4,35 @@
 mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
+units = irf_units;
 % Torbert event 
 ic = 3;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
-c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
 c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
 c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr?.data).^2;',ic)
-c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic);
+c_eval('gseVi? = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',1:4);
 c_eval('dbcsVi? = mms.get_data(''Vi_dbcs_fpi_brst_l2'',tint,?);',ic);
-c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',ic);
+c_eval('gseVe? = mms.get_data(''Ve_gse_fpi_brst_l2'',tint,?);',1:4);
 c_eval('dbcsVe? = mms.get_data(''Ve_dbcs_fpi_brst_l2'',tint,?);',ic);
-c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
-c_eval('dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
+c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('dslE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
 c_eval('gseVixB? = cross(gseVi?*1e3,gseB?.resample(gseVi?.time)*1e-9)*1e3; gseVixB?.units = '''';',ic) % mV/m
+c_eval('gseVexB? = cross(gseVe?*1e3,gseB?.resample(gseVe?.time)*1e-9)*1e3; gseVexB?.units = '''';',ic) % mV/m
+
+c_eval('gseVexB? = cross(gseVe?*1e3,gseB?.resample(gseVe?.time)*1e-9)*1e3; gseVexB?.units = '''';',ic) % mV/m
 c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic); toc
 c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic); toc
 
+c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
+
 c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
 
-c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',ic);
+c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',1:4);
 
 c_eval('[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new,Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist?);',ic)
 
@@ -34,6 +40,54 @@ c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',
 c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
 
 c_eval('B?inf = irf.ts_scalar(gseB?.time,sqrt(gseB?.abs2.data*1e-18 + 1e-9*gsePi?.resample(gseB?).trace.data/3*(2*units.mu0)))*1e9;',ic)
+%%
+c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
+c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
+
+c_eval('gseJe? = -units.e*ne?*gseVe?*1e3*1e6*1e9; gseJe?.units = ''nA/m^2''; gseJe?.coordinateSystem = ''GSE'';',1:4);
+c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units = ''nA/m^2''; gseJi?.coordinateSystem = ''GSE'';',1:4);
+c_eval('gseJ? = (gseJe?+gseJi?);',1:4);
+
+c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
+[Jcurl,divB,gseB,JxB,gseCurvB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
+
+gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
+gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
+gseJcurl.time = EpochTT(gseJcurl.time); gseJcurl.name = '4sc current density';
+
+gseBav = (gseB1.resample(gseB2) + gseB2.resample(gseB2) + gseB3.resample(gseB2) + gseB4.resample(gseB2))/4; gseBav.name = 'B1234'; 
+neav = (ne1.resample(ne1) + ne2.resample(ne1) + ne3.resample(ne1) + ne4.resample(ne1))/4; % gseE1 not there?
+gseJxB = gseJcurl.cross(gseBav.resample(gseJcurl)); gseJxB.name = 'JxB'; gseJxB.units = 'nAm^-2 nT';
+gseJxBne_mVm = (gseJxB*1e-18)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.name = 'JxB/ne';
+%gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
+
+
+c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJyBz? =    gseJ?.y*gseB?.z.resample(gseJ?); gseJyBz?.name = ''Jy*Bz''; gseJyBz?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJzBy? = -1*gseJ?.z*gseB?.y.resample(gseJ?); gseJzBy?.name = ''-Jz*By''; gseJzBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJzBx? =    gseJ?.z*gseB?.x.resample(gseJ?); gseJzBx?.name = ''Jz*Bx''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxBz? = -1*gseJ?.x*gseB?.z.resample(gseJ?); gseJxBz?.name = ''-Jx*Bz''; gseJxBz?.units = ''nA/m^2 nT'';',1:4)
+
+c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',1:4)
+
+% FPI
+c_eval('gseJxBy?ne_mVm = gseJxBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBy?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJyBx?ne_mVm = gseJyBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBx?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJyBz?ne_mVm = gseJyBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBz?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJzBy?ne_mVm = gseJzBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBy?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJzBx?ne_mVm = gseJzBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBx?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJxBz?ne_mVm = gseJxBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBz?ne_mVm.units = ''mV/m'';',1:4)
+
+% Curl
+gseJxBy_ne_mVm_curl =    gseJcurl.x*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJyBx_ne_mVm_curl = -1*gseJcurl.y*gseB.x*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJzBx_ne_mVm_curl =    gseJcurl.z*gseB.x*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJxBz_ne_mVm_curl = -1*gseJcurl.x*gseB.z*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJyBz_ne_mVm_curl =    gseJcurl.y*gseB.z*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+gseJzBy_ne_mVm_curl = -1*gseJcurl.z*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+
 
 % counts = (P/Perr)^2
 % sum counts for all time steps,
@@ -63,17 +117,48 @@ N_gse = cross(L_gse,M_gse);
 lmn_gse = [L_gse; M_gse; N_gse];
 
 lmn = lmn_gse;
+lmn = lmn_edr;
 L = lmn(1,:);
 M = lmn(2,:);
 N = lmn(3,:);
 
 
 c_eval('mvaVixB? = gseVixB?*lmn''; mvaVixB?.name = ''Vi x B LMN'';',ic)
+c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''Ve x B LMN'';',ic)
 c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
 c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';',ic)
+c_eval('mvaVe?perp = gseVe?perp*lmn''; mvaVe?perp.name = ''Ve perp LMN'';',ic)
+
+
+c_eval('mvaJ? = gseJ?*lmn'';',1:4)
+c_eval('mvaJxBne?_mVm = gseJxBne?_mVm*lmn'';',1:4)
+mvaJxBne_mVm = gseJxBne_mVm*lmn';
+
+c_eval('mvaJxB? = mvaJ?.cross(mvaB?.resample(mvaJ?)); mvaJxB?.name = ''JxB''; mvaJxB?.units = ''nA/m^2 nT'';',ic)
+c_eval('mvaJLBM? =    mvaJ?.x*mvaB?.y.resample(mvaJ?); mvaJLBM?.name = ''JL*BM''; mvaJLBM?.units = ''nA/m^2 nT'';',ic)
+c_eval('mvaJMBL? = -1*mvaJ?.y*mvaB?.x.resample(mvaJ?); mvaJMBL?.name = ''-JM*BL''; mvaJMBL?.units = ''nA/m^2 nT'';',ic)
+c_eval('mvaJMBN? =    mvaJ?.y*mvaB?.z.resample(mvaJ?); mvaJMBN?.name = ''JM*BN''; mvaJMBN?.units = ''nA/m^2 nT'';',ic)
+c_eval('mvaJNBM? = -1*mvaJ?.z*mvaB?.y.resample(mvaJ?); mvaJNBM?.name = ''-JN*BM''; mvaJNBM?.units = ''nA/m^2 nT'';',ic)
+c_eval('mvaJNBL? =    mvaJ?.z*mvaB?.x.resample(mvaJ?); mvaJNBL?.name = ''JN*BL''; mvaJNBL?.units = ''nA/m^2 nT'';',ic)
+c_eval('mvaJLBN? = -1*mvaJ?.x*mvaB?.z.resample(mvaJ?); mvaJLBN?.name = ''-JL*BN''; mvaJLBN?.units = ''nA/m^2 nT'';',ic)
+
+
+% FPI
+c_eval('mvaJLBM?ne_mVm = mvaJLBM?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJLBM?ne_mVm.units = ''mV/m'';',ic)
+c_eval('mvaJMBL?ne_mVm = mvaJMBL?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJMBL?ne_mVm.units = ''mV/m'';',ic)
+c_eval('mvaJMBN?ne_mVm = mvaJMBN?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJMBN?ne_mVm.units = ''mV/m'';',ic)
+c_eval('mvaJNBM?ne_mVm = mvaJNBM?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJNBM?ne_mVm.units = ''mV/m'';',ic)
+c_eval('mvaJNBL?ne_mVm = mvaJNBL?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJNBL?ne_mVm.units = ''mV/m'';',ic)
+c_eval('mvaJLBN?ne_mVm = mvaJLBN?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJLBN?ne_mVm.units = ''mV/m'';',ic)
+
+
+c_eval('mvaVeMBL? = -1*mvaVe?.y*1e3*mvaB?.x.resample(mvaVe?.time)*1e-9*1e3; mvaVeMBL?.name = ''-VeM x BL'';',ic) % mV/m
+c_eval('mvaVeLBM? = +1*mvaVe?.x*1e3*mvaB?.y.resample(mvaVe?.time)*1e-9*1e3; mvaVeLBM?.name = ''VeL x BM'';',ic) % mV/m
+
+c_eval('mvaEVexB? = mvaE?.resample(mvaVexB?) + mvaVexB?; mvaEVexB?.name = ''E + ve x B'';',ic) % mV/m
 
 c_eval('tsLgse? = irf.ts_vec_xyz(iPDist?.time,repmat(L,iPDist?.length,1));',ic)
 c_eval('tsMgse? = irf.ts_vec_xyz(iPDist?.time,repmat(M,iPDist?.length,1));',ic)
@@ -100,6 +185,8 @@ time_xline_ion = irf_time('2017-07-11T22:34:02.00Z','utc>EpochTT');
 v_xline = -170;
 time_vdf = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
 tint_figure_zoom = irf.tint('2017-07-11T22:33:30.00Z/2017-07-11T22:34:30.00Z');
+tint_figure_edr = irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:12.00Z');
+nMovMean = 5;
 
 %% Figure: Overview
 
@@ -224,6 +311,167 @@ if 0
   h(5).CLim = [-3 -1];
   colormap([0.9 0.9 0.9; pic_colors('candy4')])
 end
+
+%% Figure: Hall fields
+ic = 3;
+h = irf_plot(4);
+
+fontsize = 12;
+fhighE = 10;
+
+if 1 % B lmn
+  hca = irf_panel('B LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
+  hca.YLabel.String = {'B (nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end 
+if 1 % E lmn
+  hca = irf_panel('E LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhighE,[],5),mvaE?.y.filt(0,10,[],5),mvaE?.z.filt(0,10,[],5)},''comp'');',ic)
+  hca.YLabel.String = {'E (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic),sprintf('E < %g Hz',fhighE)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end 
+if 1 % Ve
+  hca = irf_panel('Ve LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint)*1e-3,mvaVe?.y.tlim(tint)*1e-3,mvaVe?.z.tlim(tint)*1e-3},''comp'');',ic)  
+  
+  hca.YLabel.String = {'v_e (10^3 km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+if 0 % Vi
+  hca = irf_panel('Vi LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVi?.x.tlim(tint),mvaVi?.y.tlim(tint),mvaVi?.z.tlim(tint)},''comp'');',ic)  
+  
+  hca.YLabel.String = {'v_i (km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
+end
+if 0 % JxB
+  hca = irf_panel('JxB LMN');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{gseJxB1.z,gseJxB2.z,gseJxB3.z,gseJxB4.z,gseJxB.z},'comp');
+  
+  hca.YLabel.String = {'JxB_N (km/s)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'1','2','3','4','curl'},[0.98,0.98],'fontsize',fontsize);
+end
+if 1 % JxB/ne mV/m
+  hca = irf_panel('E Hall LMN');
+  set(hca,'ColorOrder',mms_colors('1243b'))
+  c_eval('irf_plot(hca,{mvaE?.z.filt(0,fhighE,[],5),mvaJxBne?_mVm.z,mvaJLBM?ne_mVm,mvaJMBL?ne_mVm},''comp'');',ic)
+  
+  hca.YLabel.String = {'E_N (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1243b'))
+  irf_legend(hca,{,sprintf('E (< %g Hz)',fhighE),'JxB/ne','J_LB_M/ne','-J_MB_L/ne'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+if 0 % JxB/ne mV/m
+  hca = irf_panel('JxB/ne LMN');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{mvaJxBne1_mVm.z,mvaJxBne2_mVm.z,mvaJxBne3_mVm.z,mvaJxBne4_mVm.z,mvaJxBne_mVm.z},'comp');
+  
+  hca.YLabel.String = {'JxB_N/ne (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_legend(hca,{'1','2','3','4','curl'},[0.98,0.98],'fontsize',fontsize);
+end
+if 0 % E + vexB LMN
+  hca = irf_panel('E + VexB LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaEVexB?.x.tlim(tint),mvaEVexB?.y.tlim(tint),mvaEVexB?.z.tlim(tint)},''comp'');',ic)  
+  
+  hca.YLabel.String = {'E + v_e x B (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+if 0 % E + vexB N
+  hca = irf_panel('E + VexB N');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_patch(hca,{mvaEVexB?.z.tlim(tint),0});',ic)  
+  
+  hca.YLabel.String = {'E + v_e x B (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+if 0 % E + vexB
+  hca = irf_panel('ve and vExB LMN');
+  colors = [mms_colors('xyz'); (mms_colors('xyz')*1).^0.5];
+  set(hca,'ColorOrder',colors)
+  c_eval('irf_plot(hca,{mvaVe?perp.x.tlim(tint),mvaVe?perp.y.tlim(tint),mvaVe?perp.z.tlim(tint)},''comp'');',ic)  
+  hold(hca,'on')
+  set(hca,'ColorOrder',colors(4:6,:))
+  c_eval('htmp = irf_plot(hca,{mvaVExB?.x.resample(mvaVe?),mvaVExB?.y.resample(mvaVe?),mvaVExB?.z.resample(mvaVe?)},''comp'');',ic)  
+  c_eval('htmp.Children(?).LineStyle = ''--'';',1:3)  
+  hold(hca,'off')
+  
+  hca.YLabel.String = {'v_L (km/s)'};
+  set(hca,'ColorOrder',colors)
+  irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+if 0 % E + vexB L
+  hca = irf_panel('ve and vExB L');
+  colors = [mms_colors('123'); (mms_colors('xyz')*1).^0.5];
+  set(hca,'ColorOrder',colors)
+  c_eval('irf_plot(hca,{mvaVExB?.x.resample(mvaVe?),mvaVe?perp.x.tlim(tint),mvaVe?},''comp'');',ic)    
+  hca.YLabel.String = {'v_L (km/s)'};
+  set(hca,'ColorOrder',colors)
+  irf_legend(hca,{'v_{ExB}','v_{e\perp}','v_e'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+if 0 % E + vexB M
+  hca = irf_panel('ve and vExB M');
+  colors = [mms_colors('123'); (mms_colors('xyz')*1).^0.5];
+  set(hca,'ColorOrder',colors)
+  c_eval('irf_plot(hca,{mvaVExB?.y.resample(mvaVe?),mvaVe?perp.y.tlim(tint),mvaVe?.y.tlim(tint)},''comp'');',ic)    
+  hca.YLabel.String = {'v_M (km/s)'};
+  set(hca,'ColorOrder',colors)
+  irf_legend(hca,{'v_{ExB}','v_{e\perp}','v_e'},[0.98,0.98],'fontsize',fontsize);
+  irf_legend(hca,{sprintf('MMS %g',ic)},[0.08 0.98],'fontsize',fontsize,'color','k');
+end
+
+%irf_zoom(h,'x',tint_figure)
+irf_zoom(h,'x',tint_figure_edr)
+irf_zoom(h,'y')
+irf_pl_mark(h,time_xline,'black','linestyle',':')
+%irf_pl_mark(h,time_xline_ion,'red','linestyle',':')
+%colormap(irf_colormap('thermal'))
+colormap([pic_colors('candy_gray'); 1 1 1])
+irf_plot_axis_align
+h(end).XTickLabelRotation = 0;
+c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
+
+c_eval('h(?).FontSize = 16;',1:numel(h))
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
+nInd = 1;
+
+for ii = 1:numel(h)
+  irf_legend(h(ii),legends{nInd},[0.01 0.98],'color',[0 0 0])
+  nInd = nInd + 1;
+  h(ii).FontSize = 12;
+end
+
+if 0
+  %%
+  h(3).YLim = 1499*[-1 1];
+  h(4).YLim = 1499*[-1 1];
+  h(5).YLim = 1499*[-1 1];
+  h(5).CLim = [-3 -1];
+  colormap([0.9 0.9 0.9; pic_colors('candy4')])
+end
+
 
 %% Figure: Reduced distributions, 2D
 
@@ -488,6 +736,44 @@ c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
 c_eval('h(?).Box = ''on'';',1:numel(h))
 %c_eval('axis(h(?),''equal'');',2:4)
 hlinks = linkprop(h(5:8),{'XLim','YLim'});
+
+%% Single (or a few) 1D reduced ion population
+
+fontsize = 14;
+nMovMean = 7;
+elim = [500 Inf];
+c_eval('pdist_all = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim);',ic)
+
+time = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
+dt = 0;
+time = time + dt;
+pdist = pdist_all.tlim(time+0.5*0.15*[-1 1]);
+c_eval('pdist_with_noise = iPDist?.movmean(nMovMean).tlim(time+0.5*0.15*[-1 1]);',ic)
+
+vlim = [-1500 1500];
+
+h = setup_subplots(1,1);
+
+t_dist_center = pdist.time.start + (pdist.time.stop - pdist.time.start)/2;
+c_eval('Tdsl = [tsLdsl?.resample(t_dist_center).data; tsMdsl?.resample(t_dist_center).data; tsNdsl?.resample(t_dist_center).data];',ic)
+Ldsl = Tdsl(1,:);
+Mdsl = Tdsl(2,:);
+Ndsl = Tdsl(3,:);
+
+hca = h(1);
+
+vdf = pdist.reduce('1D',Mdsl);
+vdf_with_noise = pdist_with_noise.reduce('1D',Mdsl);
+plot(hca,vdf.depend{1},vdf.data,vdf_with_noise.depend{1},vdf_with_noise.data)
+hca.XLim = vlim;
+hca.XLabel.String = 'v_M (km/s)';
+hca.YLabel.String = 'f_i (s/m^4)';
+hl = findobj(gcf,'type','line');
+hl.LineWidth = 2;
+hca.XGrid = 'on';
+hca.YGrid = 'on';
+t1t2 = pdist.time + 0.5*nMovMean*0.150*[-1 1];
+irf_legend(hca,sprintf('%s-%s',t1t2(1).utc('HH:MM:SS.mmm'),t1t2(2).utc('HH:MM:SS.mmm')),[0.02,0.98],'fontsize',fontsize,'color','k');
 
 %% Ion distributions, One dist at the time
 %h = setup_subplots(2,2);
@@ -936,7 +1222,8 @@ end
 c_eval('h(?).FontSize = 8;',1:numel(h))
 
 
-colormap(pic_colors('candy_gray'))
+%colormap(pic_colors('candy_gray'))
+colormap(pic_colors('thermal'))
 
 hlinks_LM = linkprop(h(1:numel(dt_all):end),{'CLim'});
 hlinks_LN = linkprop(h(2:numel(dt_all):end),{'CLim'});
