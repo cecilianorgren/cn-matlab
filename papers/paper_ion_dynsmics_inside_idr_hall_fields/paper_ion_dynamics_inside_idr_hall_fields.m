@@ -117,7 +117,7 @@ N_gse = cross(L_gse,M_gse);
 lmn_gse = [L_gse; M_gse; N_gse];
 
 lmn = lmn_gse;
-lmn = lmn_edr;
+%lmn = lmn_edr;
 L = lmn(1,:);
 M = lmn(2,:);
 N = lmn(3,:);
@@ -971,13 +971,22 @@ dt_all = [-15:5:15]+-1.5;
 dt_all = [-6:2:6]+.5;
 dt_all = [-6:2:6]+.5;
 dt_all = [-6:3:6]+.5;
+
+dt_all = [-6:3:6]+.5;
+dt_all = [-30 -3 1 5 15]-.5;
 %dt_all = [-6:2:6]+0;
 %dt_all = [-6:2:6]+25;
 %dt_all = [-6:2:6]-00;
+times_utc = ['2017-07-11T22:33:50.582Z';...
+             '2017-07-11T22:34:00.582Z';...
+             '2017-07-11T22:34:03.000Z';...
+             '2017-07-11T22:34:07.940Z';...
+             %'2017-07-11T22:34:20.940Z';...
+             '2017-07-11T22:34:15.940Z'];
 
 [h1,h] = initialize_combined_plot('topbottom',2,3,numel(dt_all),0.2,'vertical');
 
-vL_Xline = -170;
+vL_Xline = 0*-170;
 
 isub = 1;
 tint_zoom = irf.tint('2017-07-11T22:33:24.00Z/2017-07-11T22:34:40.00Z'); %20151112071854
@@ -1017,10 +1026,11 @@ vint_M = [-Inf Inf];
 vint_N = [-Inf Inf];
 elim = [200 Inf];
 
-for dt = dt_all%(1)
-
-  time = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
-  time = time + dt;
+% time = irf_time('2017-07-11T22:34:02.000Z','utc>EpochTT');
+% time = time + dt;
+times = EpochTT(times_utc);
+for it = 1:times.length%(1)
+  time = times(it)  ;
   
   pdist = pdist_all.tlim(time+0.5*0.15*[-1 1]);
   tint_dist = pdist.time + 0.5*0.150*nMovMean*[-1 1];
@@ -1269,6 +1279,8 @@ c_eval('h1(?).XLabel = [];',1:(numel(h1)-1))
 
 h1(1).Position = [0.1700    0.8530    0.3000    0.0848];
 h1(2).Position = [0.1700    0.7672    0.3000    0.0848];
+
+%hca.CLim = [-10 -7];
 
 %% Several at the same time. forces on VDF
 %h = setup_subplots(2,2);
