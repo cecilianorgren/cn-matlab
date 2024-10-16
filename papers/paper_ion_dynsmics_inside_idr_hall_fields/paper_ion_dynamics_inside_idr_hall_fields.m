@@ -538,7 +538,7 @@ units = irf_units;
 
 % Define magnetic field
 a = 1.5*1e3;
-b = 120*1e3;
+b = 150*1e3;
 xvec = a*linspace(-60,60,500);
 zvec = 1e3*linspace(-1000,1000,400);
 yvec = linspace(-0,0,1);
@@ -558,7 +558,7 @@ By = @(x,y,z) B0*x*0;
 Bz = @(x,y,z) B0*2*x/a^2;
 Ex = @(x,y,z) E0*x*0;
 Ey = @(x,y,z) 1*(E0*x*0 + E0*z*0 + E0);
-Ez = @(x,y,z) 1*-40e-3*(z/(1*lz)).*exp(-(z/(2*lz)).^2);
+Ez = @(x,y,z) 1*-70e-3*(z/(2*lz)).*exp(-(z/(2*lz)).^2);
 
 Ay = @(x,y,z) (x/a).^2 - (z/b).^2;
 Ay =  @(x,y,z) -b*B0*log(cosh(z/b)) + B0*(x/a).^2 + 0*y; %.*exp(-z.^2/b.^2)
@@ -586,7 +586,7 @@ vz0 = E0/B0;
 x_init_all = [0 0 0 0 -500e3 700e3;...
               ];
 
-x_init_all = [0 0 -1000e3 0 -10e3 E0/B0;...
+x_init_all = [0 0 -1000e3 0 10e3 E0/B0;...
               ];
 
 
@@ -604,7 +604,7 @@ for ip = 1:size(x_init_all,1)
   p(ip).vz = x_sol(:,6);
 end
 
-h = setup_subplots(4,3,'vertical');
+h = setup_subplots(4,4,'vertical');
 isub = 1;
 dotsize = 10;
 
@@ -618,7 +618,11 @@ if 1 % Bx, Ez
 end
 if 1 % potential from Ez
   hca = h(isub); isub = isub + 1;
-  plot(hca,zvec*1e-3,-cumtrapz(zvec,Ez(0,0,zvec)*1e3)/1000,'linewidth',1)      
+  plot(hca,zvec*1e-3,-cumtrapz(zvec,Ez(0,0,zvec)*1e3)/1000,'linewidth',1)     
+  hold(hca,'on')
+  plot(hca,zvec*1e-3,zvec*0 - 5000,'linewidth',1)
+  hold(hca,'off')
+
   hca.YLabel.String = '\phi = -\int E_N dN (V)';
   hca.XLabel.String = 'N (km)';
 end
@@ -637,6 +641,9 @@ if 1 % vey from Jy from Bx
   vey = -Jy/units.e/0.04e6; % J = nev
   vey = vey*1e-6; % 10^3 km/s
   plot(hca,zvec*1e-3,vey,'linewidth',1)      
+  hold(hca,'on')
+  plot(hca,zvec*1e-3,zvec*0 - 18,'linewidth',1)
+  hold(hca,'off')
   hca.YLabel.String = 'v_{eM} = -J_y/ne (10^3 km/s)';
   hca.XLabel.String = 'N (km)';
 end
@@ -730,6 +737,21 @@ if 1 % particle, time
   end    
   hca.YLabel.String = 'Energy (eV)';
   hca.XLabel.String = 'time (s)';
+end
+if 1 % particle, color, phase space
+  hca = h(isub); isub = isub + 1;
+  for ip = 1:numel(p)    
+    scatter(hca,p(ip).vy*1e-3,p(ip).vz*1e-3,dotsize,p(ip).z*1e-3)
+  end    
+  axis(hca,'equal')
+  axis(hca,'square')
+  hca.YLabel.String = 'v_M';
+  hca.XLabel.String = 'v_N';
+  hca.XLim = 1500*[-1 1];
+  hca.YLim = 1500*[-1 1];
+  hcb = colorbar(hca);
+  colormap(hca,pic_colors('blue_red'))
+  hca.CLim = 2*b*1e-3*[-1 1];
 end
 
 c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
