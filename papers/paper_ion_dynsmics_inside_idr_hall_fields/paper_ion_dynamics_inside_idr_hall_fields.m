@@ -33,14 +33,16 @@ c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
 c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
 
 c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',1:4);
+c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',1:4);
 
-c_eval('[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new,Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist?);',ic)
+%c_eval('[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new,Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist?);',ic)
 
 c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
 c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
 
 c_eval('B?inf = irf.ts_scalar(gseB?.time,sqrt(gseB?.abs2.data*1e-18 + 1e-9*gsePi?.resample(gseB?).trace.data/3*(2*units.mu0)))*1e9;',ic)
-%%
+
+
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 c_eval('[gseVe?par,gseVe?perp] = irf_dec_parperp(gseB?,gseVe?); gseVe?par.name = ''Ve par''; gseVe?perp.name = ''Ve perp'';',ic)
 
@@ -117,7 +119,7 @@ N_gse = cross(L_gse,M_gse);
 lmn_gse = [L_gse; M_gse; N_gse];
 
 lmn = lmn_gse;
-%lmn = lmn_edr;
+lmn = lmn_edr;
 L = lmn(1,:);
 M = lmn(2,:);
 N = lmn(3,:);
