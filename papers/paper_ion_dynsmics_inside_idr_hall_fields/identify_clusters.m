@@ -4,7 +4,8 @@ nMovMean = 7;
 elim = [3000 Inf];
 pdist = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts).elim(elim).tlim(time_xline + 0.15*0.5*[-1 1]);
 ipdist = iPDist3.movmean(nMovMean).tlim(time_xline + 0.15*0.5*[-1 1]);
-epdist = ePDist3.movmean(nMovMean).tlim(time_xline + 0.03*0.5*[-1 1]);
+%epdist = ePDist3.movmean(nMovMean).tlim(time_xline + 0.03*0.5*[-1 1]);
+
 %%
 N = 100000;
 MP = pdist.elim([50 Inf]).macroparticles('ntot',N,'skipzero',1);
@@ -15,7 +16,8 @@ nGroups = 4;  % number of classes
 [idx, c, sumd, d] = kmeans(V, nGroups);
 %s = silhouette(V, idx, 'sqeuclid');
 
-
+%%
+idx = clusterR;
 fieldnames = fields(MP);
 for iGroup = 1:nGroups
   idx_tmp = find(idx==iGroup); 
@@ -68,7 +70,7 @@ end
 % Optimal_K = eva.OptimalK;
 
 %% 
-h = setup_subplots(4,4);
+h = setup_subplots(2,2);
 isub = 1;
 
 hca = h(isub); isub = isub + 1;
@@ -77,7 +79,7 @@ hca.XLabel.String = 'v_x (km/s)';
 hca.YLabel.String = 'v_y (km/s)';
 hca.ZLabel.String = 'v_z (km/s)';
 cmap = colormap;
-icolors = round(interp1(1:size(cmap,1),1:size(cmap,1),linspace(1,size(cmap,1),4)));
+icolors = round(interp1(1:size(cmap,1),1:size(cmap,1),linspace(1,size(cmap,1),nGroups)));
 group_colors = cmap(icolors,:);
 
 
@@ -118,7 +120,7 @@ if 1 % f(y,z)
   hold(hca,'off')
 end
 
-
+%%
 dv = 100; % cm/s
 nscaling = 1/(0.01^5);
 for iGroup = 1:nGroups

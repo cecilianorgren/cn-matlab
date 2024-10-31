@@ -25,7 +25,33 @@ scatter(X(:,1),X(:,2),10,'.') % Scatter plot with points of size 10
 hold on
 gmPDF = @(x,y) arrayfun(@(x0,y0) pdf(gm,[x0 y0]),x,y);
 fcontour(gmPDF,[-8 6])
+%% 2D
+mu1 = [1 2];          % Mean of the 1st component
+sigma1 = [2 0; 0 .5]; % Covariance of the 1st component
+mu2 = [-3 -5];        % Mean of the 2nd component
+sigma2 = [1 0; 0 1];  % Covariance of the 2nd component
 
+rng('default') % For reproducibility
+r1 = mvnrnd(mu1,sigma1,1000);
+r2 = mvnrnd(mu2,sigma2,1000);
+X = [r1; r2];
+
+xvec = linspace(min(R(:,1)),max(R(:,1)),101);
+yvec = linspace(min(R(:,2)),max(R(:,2)),102);
+[Xv,Yv] = meshgrid(xvec,yvec);
+
+gm = fitgmdist(X,2);
+
+XXv = [Xv(:) Yv(:)];
+mu = squeeze(gm.mu(1,:));
+Sigma = squeeze(gm.Sigma(:,:,1));
+p = mvnpdf(XXv, mu, Sigma);
+p = reshape(p,numel(xvec),numel(yvec));
+
+scatter(X(:,1),X(:,2),10,'.') % Scatter plot with points of size 10
+hold on
+gmPDF = @(x,y) arrayfun(@(x0,y0) pdf(gm,[x0 y0]),x,y);
+fcontour(gmPDF,[-8 6])
 %% 3D
 mu1 = [1 2 0];          % Mean of the 1st component
 sigma1 = [2 0 0; 0 .5 00; 0 0 0.5]; % Covariance of the 1st component
@@ -41,14 +67,26 @@ r1 = mvnrnd(mu1,sigma1,1000);
 r2 = mvnrnd(mu2,sigma2,1000);
 r3 = mvnrnd(mu3,sigma3,1000);
 R = [r1; r2; r3];
+%%
+%R = V;
 
 xvec = linspace(min(R(:,1)),max(R(:,1)),101);
 yvec = linspace(min(R(:,2)),max(R(:,2)),102);
 zvec = linspace(min(R(:,3)),max(R(:,3)),103);
 [X,Y,Z] = ndgrid(xvec,yvec,zvec);
 
-nComp = 3;
+nComp = 4;
 
+
+initial_guess = [0 -1000 -1000;...
+                 0 -1000 +1000;...
+                 0 +1000 -1000;...
+                 0 +1000 +1000];
+S.mu = initial_guess;
+S.sigma = [500 500 500]';
+S = [];
+               
+%gm = fitgmdist(R,nComp,'Start',S);
 gm = fitgmdist(R,nComp);
 XYZ = [X(:) Y(:) Z(:)];
 %mu = gm.mu;

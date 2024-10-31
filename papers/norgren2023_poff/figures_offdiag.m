@@ -490,6 +490,15 @@ c_eval('hm(?) = irf_pl_mark(h(?),time_reversal);',1:numel(h))
 c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h))
 c_eval('hm(?).LineStyle = ''--'';',1:numel(h))
 
+irf_legend(h(1),{'Tailward'},[0.22 1.03],'color','k','fontsize',15,'horizontalalignment','right')
+irf_legend(h(1),{'Earthward'},[0.62 1.03],'color','k','fontsize',15,'horizontalalignment','left')
+irf_legend(h(1),{'X line'},[0.42 1.03],'color','k','fontsize',15,'horizontalalignment','center')
+
+%irf_legend(h1(2),{'Tailward'},[0.15 1.02],'color','k','fontsize',15)
+%irf_legend(h1(2),{'Earthward'},[0.95 1.02],'color','k','fontsize',15)
+%irf_legend(h1(2),{'X line'},[0.56 1.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+
 %irf_zoom(h(1:iisub),'x',fastTint)
 irf_zoom(h,'x',tint_edr)
 %irf_zoom(h,'x',tint)
@@ -504,6 +513,24 @@ h(end).XTickLabelRotation = 0;
 c_eval('h(?).YLim = ylim_stress;',(4:6)+1)
 
 c_eval('hold(h(?),"on"); plot(h(?),h(?).XLim,[0 0],"color",[0.7 0.7 0.7],"linewidth",1); h(?).Children = circshift(h(?).Children,-1)',1:numel(h))
+
+%% Figure 1, part two, X line topografy
+a = 100;
+b = a/5;
+xvec = a*linspace(-2,2,100);
+yvec = b*linspace(-2,2,100);
+[X,Y] = ndgrid(xvec,yvec);
+
+fA = @(x,y) (x/a).^2 - (y/b).^2;
+
+A = fA(X,Y);
+
+hca = subplot(1,1,1);
+
+contour(hca,X,Y,A,'k')
+%hca.XLabel.String = 'x (km)';
+%hca.YLabel.String = 'y (km)';
+
 
 %% Figure: Gradients
 ic = 3;
@@ -659,7 +686,7 @@ if 1 % gradients, comparison
   %irf_legend(hca,{'m_env_x\partial_t{v_y}','m_ev_y\partial_t(nv_x)'},[0.98 0.1],'fontsize',fontsize_leg);
   %irf_legend(hca,{sprintf('N_{smooth} = %g',nsm)},[0.5 0.99],'fontsize',fontsize,'color','k');
   %irf_legend(hca,{sprintf('N_{sm}=%g',nsm)},[1.01 0.99],'fontsize',fontsize_leg,'color','k');
-  irf_legend(h(1),{sprintf('Gradients: N_{sm}=%g',nsm)},[0.1 1.1],'fontsize',fontsize_leg,'color','k');
+  %irf_legend(h(1),{sprintf('Gradients: N_{sm}=%g',nsm)},[0.1 1.1],'fontsize',fontsize_leg,'color','k');
 end
 if 1 % gradients, comparison, mV/m  
   hca = irf_panel('gradients 1, smoothed 2, mV/m');
@@ -834,6 +861,11 @@ ax2.YLim = ylim_gradnvex*vsc/130e3;
 ax2.YLim = [-29 39]*ylim_gradnvex(2)/39;
 
 
+irf_legend(h(1),{'Tailward'},[0.22 1.03],'color','k','fontsize',15,'horizontalalignment','right')
+irf_legend(h(1),{'Earthward'},[0.62 1.03],'color','k','fontsize',15,'horizontalalignment','left')
+irf_legend(h(1),{'X line'},[0.42 1.03],'color','k','fontsize',15,'horizontalalignment','center')
+
+
 hca = irf_panel('ne');
 hca.YLim = [0.021 0.069];
 
@@ -851,6 +883,7 @@ hca.YLim = [-3.99 6.99];
 ic = 3;
 %t1 =  irf_time('2017-07-11T22:34:01.30Z','utc>EpochTT');
 %t2 =  irf_time('2017-07-11T22:34:03.30Z','utc>EpochTT');
+time_reversal = irf_time('2017-07-11T22:34:02.641773681Z','utc>EpochTT');
 times = irf_time(['2017-07-11T22:34:01.30Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0;
 times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.03;
 times = irf_time(['2017-07-11T22:34:01.00Z';'2017-07-11T22:34:03.30Z'],'utc>EpochTT')+0.4;
@@ -946,6 +979,31 @@ if 1 % S
   h1(2).YLim = h1(1).YLim;
 end
 
+c_eval('hm(?) = irf_pl_mark(h1(?),time_reversal);',1:numel(h1))
+c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h1))
+c_eval('hm(?).LineStyle = ''--'';',1:numel(h1))
+c_eval('hm(?).LineWidth = 1;',1:numel(h1))
+
+irf_legend(h1(1),{'Tailward'},[0.1 1.02],'color','k','fontsize',15)
+irf_legend(h1(1),{'Earthward'},[0.95 1.02],'color','k','fontsize',15)
+irf_legend(h1(1),{'X line'},[0.56 1.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+irf_legend(h1(2),{'Tailward'},[0.15 1.02],'color','k','fontsize',15)
+irf_legend(h1(2),{'Earthward'},[0.95 1.02],'color','k','fontsize',15)
+irf_legend(h1(2),{'X line'},[0.56 1.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+irf_legend(h1(1),{'I'},[0.43 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'II'},[0.495 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'III'},[0.56 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'IV'},[0.62 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'V'},[0.69 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+irf_legend(h1(2),{'I'},[0.43 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'II'},[0.495 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'III'},[0.56 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'IV'},[0.62 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'V'},[0.69 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+
 ql = 35;
 q_lw = 1.5;
 dp_clim = 0.01999*[-1 1];
@@ -954,6 +1012,7 @@ contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.75);
 
 times_exact = {};
 isub = 1;
+leg_time = {'I','II','III','IV','V'};
 % f
 for itime = 1:times.length
   %hca = h2(isub); isub = isub + 1;
@@ -991,6 +1050,8 @@ for itime = 1:times.length
   colormap(hca,pic_colors('candy4'))   
   hca.XLabel.String = sprintf('v_%s (10^3 km/s)',comps(1));
   hca.YLabel.String = sprintf('v_%s (10^3 km/s)',comps(2));
+  
+  hca.Title.String = leg_time{itime};
 
   if 0 % plot E+vxB=0
     %%
@@ -1334,7 +1395,7 @@ for ip = 1:2
     hmark.FaceAlpha = 0.5;
   end
 end
-
+%
 
 hlinks_all = linkprop(h2,{'XLim','YLim'});
 hlinks_f = linkprop(h2(1:nt),{'CLim'});
@@ -1371,8 +1432,8 @@ hb(ih).Position(4) = hb(ih).Position(4)*0.9;
 hb(5).Position(2) = h2(5).Position(2);
 hb(5).Position(4) = h2(5).Position(4);
 
-h1(1).Position(2) = 0.78;
-h1(2).Position(2) = 0.78;
+h1(1).Position(2) = 0.79;
+h1(2).Position(2) = 0.79;
 %ihsub = [2 3 5 6];
 ihsub = [2:nt nt+2:(2*nt) 2*nt+2:(3*nt)];
 c_eval('h2(?).YLabel.String = [];',ihsub)
@@ -1564,6 +1625,30 @@ if 1
   ds_clim = 0.025*[-1 1];
 end
 
+c_eval('hm(?) = irf_pl_mark(h1(?),time_reversal);',1:numel(h1))
+c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h1))
+c_eval('hm(?).LineStyle = ''--'';',1:numel(h1))
+c_eval('hm(?).LineWidth = 1;',1:numel(h1))
+
+irf_legend(h1(1),{'Tailward'},[0.1 1.02],'color','k','fontsize',15)
+irf_legend(h1(1),{'Earthward'},[0.95 1.02],'color','k','fontsize',15)
+irf_legend(h1(1),{'X line'},[0.56 1.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+irf_legend(h1(2),{'Tailward'},[0.15 1.02],'color','k','fontsize',15)
+irf_legend(h1(2),{'Earthward'},[0.95 1.02],'color','k','fontsize',15)
+irf_legend(h1(2),{'X line'},[0.56 1.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+irf_legend(h1(1),{'I'},[0.43 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'II'},[0.495 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'III'},[0.56 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'IV'},[0.62 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(1),{'V'},[0.69 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+irf_legend(h1(2),{'I'},[0.43 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'II'},[0.495 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'III'},[0.56 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'IV'},[0.62 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+irf_legend(h1(2),{'V'},[0.69 0.02],'color','k','fontsize',15,'horizontalalignment','center')
 
 ql = 30;
 q_lw = 1.5;
@@ -1613,6 +1698,9 @@ for itime = 1:times.length
   hca.XLabel.String = sprintf('v_%s (10^3 km/s)',comps(1));
   hca.YLabel.String = sprintf('v_%s (10^3 km/s)',comps(2));
 
+  
+  hca.Title.String = leg_time{itime};
+  
   if 0 % plot E+vxB=0
     %%
     hold(hca,'on')
@@ -1995,8 +2083,8 @@ hb(ih).Position(4) = hb(ih).Position(4)*0.9;
 hb(5).Position(2) = h2(5).Position(2);
 hb(5).Position(4) = h2(5).Position(4);
 
-h1(1).Position(2) = 0.78;
-h1(2).Position(2) = 0.78;
+h1(1).Position(2) = 0.79;
+h1(2).Position(2) = 0.79;
 %ihsub = [2 3 5 6];
 ihsub = [2:nt nt+2:(2*nt) 2*nt+2:(3*nt)];
 c_eval('h2(?).YLabel.String = [];',ihsub)

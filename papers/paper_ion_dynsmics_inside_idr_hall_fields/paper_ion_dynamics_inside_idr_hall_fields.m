@@ -7,7 +7,7 @@ mms.db_init('local_file_db','/Volumes/mms');
 units = irf_units;
 % Torbert event 
 ic = 3;
-tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z');
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
