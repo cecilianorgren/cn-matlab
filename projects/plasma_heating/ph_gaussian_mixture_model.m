@@ -89,8 +89,8 @@ S = [];
 %gm = fitgmdist(R,nComp,'Start',S);
 gm = fitgmdist(R,nComp);
 XYZ = [X(:) Y(:) Z(:)];
-%mu = gm.mu;
-%Sigma = gm.Sigma;
+mu = gm.mu;
+Sigma = gm.Sigma;
 %p = mvnpdf(XYZ, mu(1,:), Sigma(:,:,1)); p = reshape(p,size(X));
 
 gmPDF = @(x,y,z) arrayfun(@(x0,y0,z0) pdf(gm,[x0 y0 z0]),x,y,z);

@@ -1,6 +1,6 @@
 %%
 time_xline = irf_time('2017-07-11T22:34:03.00Z','utc>EpochTT') +- 0;
-nMovMean = 7;
+nMovMean = 20;
 elim = [3000 Inf];
 pdist = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts).elim(elim).tlim(time_xline + 0.15*0.5*[-1 1]);
 ipdist = iPDist3.movmean(nMovMean).tlim(time_xline + 0.15*0.5*[-1 1]);
@@ -12,52 +12,79 @@ MP = pdist.elim([50 Inf]).macroparticles('ntot',N,'skipzero',1);
 V = [MP.vx, MP.vy, MP.vz];
 
 %
+initial_guess = [0 -1000 -1000;...
+                 0 -1000 +1000;...
+                 0 +1000 -1000;...
+                 0 +1000 +1000];
+
 nGroups = 4;  % number of classes
-[idx, c, sumd, d] = kmeans(V, nGroups);
-%s = silhouette(V, idx, 'sqeuclid');
+[idx, c, sumd, d] = kmeans(V, nGroups,'Start',initial_guess);
+s = silhouette(V, idx, 'sqeuclid');
 
-%%
-idx = clusterR;
-fieldnames = fields(MP);
-for iGroup = 1:nGroups
-  idx_tmp = find(idx==iGroup); 
-  for iField = 1:numel(fieldnames)
-    var = MP.(fieldnames{iField});
-    MPtmp.(fieldnames{iField}) = var(idx_tmp);
-  end
+
+MP_grouped = macroparticle_moments(MP,idx);
+pdist_group = partial_pdist(pdist,MP,idx);
+
+gm_out = gaussian_mixture_model([MP.vx, MP.vy, MP.vz],4);
+
+pdist_group_gmm = partial_pdist(pdist,MP,gm_out.idx);
+if 0
+  %%
+  evaluation = evalclusters(V,"kmeans","silhouette","KList",1:8)
+end
+
+%% Calculate moments and split macroparticle structure into one for each group
+%idx = clusterR;
+if 1
+  MP_grouped = macroparticle_moments(MP,idx);
+else
+  fieldnames = fields(MP);
+  for iGroup = 1:nGroups
+    idx_tmp = find(idx==iGroup); 
+    for iField = 1:numel(fieldnames)
+      var = MP.(fieldnames{iField});
+      MPtmp.(fieldnames{iField}) = var(idx_tmp);
+    end
+    
+    % Calculate speed and density
+    n = sum(MPtmp.dn);
+    jx = sum(MPtmp.vx.*MPtmp.dn);
+    jy = sum(MPtmp.vy.*MPtmp.dn);
+    jz = sum(MPtmp.vz.*MPtmp.dn);
+    vx = jx/n;
+    vy = jy/n;
+    vz = jz/n;
+    MPtmp.sum_n = n*1e-6;
+    MPtmp.sum_jx = jx;
+    MPtmp.sum_jy = jy;
+    MPtmp.sum_jz = jz;
+    MPtmp.sum_vx = vx;
+    MPtmp.sum_vy = vy;
+    MPtmp.sum_vz = vz;
   
-  % Calculate speed and density
-  n = sum(MPtmp.dn);
-  jx = sum(MPtmp.vx.*MPtmp.dn);
-  jy = sum(MPtmp.vy.*MPtmp.dn);
-  jz = sum(MPtmp.vz.*MPtmp.dn);
-  vx = jx/n;
-  vy = jy/n;
-  vz = jz/n;
-  MPtmp.sum_n = n*1e-6;
-  MPtmp.sum_jx = jx;
-  MPtmp.sum_jy = jy;
-  MPtmp.sum_jz = jz;
-  MPtmp.sum_vx = vx;
-  MPtmp.sum_vy = vy;
-  MPtmp.sum_vz = vz;
-
-  MP_grouped{iGroup} = MPtmp;
+    MP_grouped{iGroup} = MPtmp;
+  end
 end
 
 %% Make nGroups pdists based on the dominant class for each bin.
-Dep1_edges = [pdist.ancillary.energy-pdist.ancillary.delta_energy_minus pdist.ancillary.energy(end)+pdist.ancillary.delta_energy_minus(end)];
-Dep2_edges = 0.5:1:32.5;
-Dep3_edges = 0.5:1:16.5;
-for iGroup = 1:nGroups
-  [average_groupid,~,mid,~] = histcn([MP.iDep1, MP.iDep2, MP.iDep3], Dep1_edges, Dep2_edges, Dep3_edges, 'AccumData', idx, 'Fun', @mean);
-  average_groupid = round(average_groupid); 
-  pdist_tmp = pdist;
-  id_exclude = find(average_groupid ~= iGroup);
-  %[i1,i2,i3] = ind2sub([32 32 16],id_exclude);
-  pdist_tmp.data(1,id_exclude) = 0;
-  
-  pdist_group{iGroup} = pdist_tmp;
+
+if 1
+  pdist_group = partial_pdist(pdist,MP,idx);
+else
+  %Dep1_edges = [pdist.ancillary.energy-pdist.ancillary.delta_energy_minus pdist.ancillary.energy(end)+pdist.ancillary.delta_energy_minus(end)];
+  Dep1_edges = 0.5:1:(size(pdist.depend{1},2)+0.5);
+  Dep2_edges = 0.5:1:32.5;
+  Dep3_edges = 0.5:1:16.5;
+  for iGroup = 1:nGroups
+    [average_groupid,~,mid,~] = histcn([MP.iDep1, MP.iDep2, MP.iDep3], Dep1_edges, Dep2_edges, Dep3_edges, 'AccumData', idx, 'Fun', @mean);
+    average_groupid = round(average_groupid); 
+    pdist_tmp = pdist;
+    id_exclude = find(average_groupid ~= iGroup);
+    %[i1,i2,i3] = ind2sub([32 32 16],id_exclude);
+    pdist_tmp.data(1,id_exclude) = 0;
+    
+    pdist_group{iGroup} = pdist_tmp;
+  end
 end
 
 
@@ -69,21 +96,30 @@ end
 % eva = evalclusters(V,'kmeans','CalinskiHarabasz','KList',1:6);
 % Optimal_K = eva.OptimalK;
 
-%% 
-h = setup_subplots(2,2);
+%% Plot
+delete(h)
+h = setup_subplots(2,1,'vertical');
 isub = 1;
 
+colormap(pic_colors('matlab'))
+
 hca = h(isub); isub = isub + 1;
-hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 15, idx);
+hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 30, idx,'filled');
 hca.XLabel.String = 'v_x (km/s)';
 hca.YLabel.String = 'v_y (km/s)';
 hca.ZLabel.String = 'v_z (km/s)';
+hs.MarkerFaceAlpha = 0.1;
+hs.MarkerEdgeAlpha = 0.1;
+
 cmap = colormap;
 icolors = round(interp1(1:size(cmap,1),1:size(cmap,1),linspace(1,size(cmap,1),nGroups)));
 group_colors = cmap(icolors,:);
 
+view(hca,[0 0 1])
 
-if 1 % f(x,y)
+%isub = isub + 1;
+
+if 0 % f(x,y)
   hca = h(isub); isub = isub + 1;
   vdf = pdist.reduce('2D',[1 0 0],[0 1 0]);
   vdf.plot_plane(hca);
@@ -95,7 +131,7 @@ if 1 % f(x,y)
   end
   hold(hca,'off')
 end
-if 1 % f(x,z)
+if 0 % f(x,z)
   hca = h(isub); isub = isub + 1;
   vdf = pdist.reduce('2D',[1 0 0],[0 0 1]);
   vdf.plot_plane(hca);
@@ -107,7 +143,7 @@ if 1 % f(x,z)
   end
   hold(hca,'off')
 end
-if 1 % f(y,z)
+if 0 % f(y,z)
   hca = h(isub); isub = isub + 1;
   vdf = pdist.reduce('2D',[0 1 0],[0 0 1]);
   vdf.plot_plane(hca);
@@ -116,6 +152,41 @@ if 1 % f(y,z)
   hold(hca,'on')
   for iGroup = 1:nGroups
     plot(hca,MP_grouped{iGroup}.sum_vy,MP_grouped{iGroup}.sum_vz,'markeredgecolor','k','markerfacecolor',group_colors(iGroup,:),'Marker','s','linewidth',0.5);
+  end
+  hold(hca,'off')
+end
+
+if 1 % f(x,y), contour plots of all groups together
+  hca = h(isub); isub = isub + 1;
+  holdon = 0;
+  for iGroup = 1:numel(pdist_group)
+    %set(hca,'colororder',group_colors(iGroup,:))
+    if not(holdon); hold(hca,'on'); holdon = 1; end   
+    pd = pdist_group{iGroup};
+    vdf = pd.reduce('2D',[1 0 0],[0 1 0]);
+    data = squeeze(vdf.data);
+    %data(isnan(data)) = 0;
+    nSmooth = 0;
+    data = smooth2(data,nSmooth,nSmooth);
+    %vdf.data(vdf.data==0) = NaN;
+    %vdf.data(vdf.data) = NaN;
+    data = log10(data);
+
+
+    [hh_,hh] = contour(vdf.depend{1},vdf.depend{1},data',1,'color',group_colors(iGroup,:),'linewidth',4);
+    %[hh_,hh] = contour(vdf.depend{1},vdf.depend{1},data',3,'k');
+    %hh.FaceColor = 'none';
+    %hh.Color = group_colors(iGroup,:);
+    hh.FaceAlpha = 0.2;
+    %hh.EdgeColor = group_colors(iGroup,:);
+    pause(1)
+  end
+  hold(hca,'off');
+  hca.XLabel.String = 'v_x (km/s)';
+  hca.YLabel.String = 'v_y (km/s)';
+  hold(hca,'on')
+  for iGroup = 1:nGroups
+    plot(hca,MP_grouped{iGroup}.sum_vx,MP_grouped{iGroup}.sum_vy,'markeredgecolor','k','markerfacecolor',group_colors(iGroup,:),'Marker','s','linewidth',0.5);
   end
   hold(hca,'off')
 end
