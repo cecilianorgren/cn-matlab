@@ -16,7 +16,7 @@ zvec = linspace(min(R(:,3)),max(R(:,3)),103);
 %S = [];
                
 %gm = fitgmdist(R,nComp,'Start',S);
-gm = fitgmdist(R,nComp);
+gm = fitgmdist(R,nComp,varargin{:});
 XYZ = [X(:) Y(:) Z(:)];
 mu = gm.mu;
 Sigma = gm.Sigma;

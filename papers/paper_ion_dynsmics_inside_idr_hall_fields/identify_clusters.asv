@@ -327,7 +327,7 @@ c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
 %% Run through times, do gaussian mixture model and kmeans, and compare
 
 
-for dt = -10:2:10  
+for dt = 0%-10:2:10  
   time = time_xline + dt;
   nMovMean = 7;
   pdist = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts).tlim(time + 0.15*0.5*[-1 1]).elim([300 Inf]);
@@ -364,13 +364,13 @@ for dt = -10:2:10
 
   %% Plot results
   
-  nRows = 3;
+  nRows = 2;
   nCols = 2;  
-  [h1,h] = initialize_combined_plot('topbottom',1,nRows,nCols,0.2,'horizontal');
+  [h1,h] = initialize_combined_plot('topbottom',1,nRows,nCols,0.2,'hori');
   h1.Position(2) = h1.Position(2)-0.05;
   h1.Position(4) = h1.Position(4)*2;
   fig = gcf;
-  fig.Position = [1598         181         751         1078];
+  fig.Position = [1598         281         851         878];
   
   hca = h1(1);
   colors = mms_colors('xyza');
@@ -388,23 +388,8 @@ for dt = -10:2:10
   
   colormap(pic_colors('matlab'))
   linewidth_contour = 2;
-  vlim = 2500;
   
   isub = 1;
-  if 1 % Scatter plot of gmm 
-    hca = h(isub); isub = isub + 1;
-    hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 30, gm_out.idx,'filled');
-    hca.XLabel.String = 'v_x (km/s)';
-    hca.YLabel.String = 'v_y (km/s)';
-    hca.ZLabel.String = 'v_z (km/s)';
-    hs.MarkerFaceAlpha = 0.1;
-    hs.MarkerEdgeAlpha = 0.1;
-    
-    cmap = colormap;
-    icolors = round(interp1(1:size(cmap,1),1:size(cmap,1),linspace(1,size(cmap,1),nGroups)));
-    group_colors = cmap(icolors,:);
-    hca.Title.String = 'Gaussian mixture model';
-  end
   if 1 % Scatter plot of kmeans 
     hca = h(isub); isub = isub + 1;
     hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 30, idx,'filled');
@@ -417,9 +402,54 @@ for dt = -10:2:10
     cmap = colormap;
     icolors = round(interp1(1:size(cmap,1),1:size(cmap,1),linspace(1,size(cmap,1),nGroups)));
     group_colors = cmap(icolors,:);
-    hca.Title.String = 'k-means';
+  end
+  if 1 % Scatter plot of gmm 
+    hca = h(isub); isub = isub + 1;
+    hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 30, gm_out.idx,'filled');
+    hca.XLabel.String = 'v_x (km/s)';
+    hca.YLabel.String = 'v_y (km/s)';
+    hca.ZLabel.String = 'v_z (km/s)';
+    hs.MarkerFaceAlpha = 0.1;
+    hs.MarkerEdgeAlpha = 0.1;
+    
+    cmap = colormap;
+    icolors = round(interp1(1:size(cmap,1),1:size(cmap,1),linspace(1,size(cmap,1),nGroups)));
+    group_colors = cmap(icolors,:);
   end
 
+  if 1 % f(x,y), contour plots of all groups together, kmeans
+    hca = h(isub); isub = isub + 1;
+    holdon = 0;
+    for iGroup = 1:numel(pdist_group_km)
+      %set(hca,'colororder',group_colors(iGroup,:))
+      if not(holdon); hold(hca,'on'); holdon = 1; end   
+      pd = pdist_group_km{iGroup};
+      vdf = pd.reduce('2D',[1 0 0],[0 1 0]);
+      data = squeeze(vdf.data);
+      %data(isnan(data)) = 0;
+      nSmooth = 0;
+      data = smooth2(data,nSmooth,nSmooth);
+      %vdf.data(vdf.data==0) = NaN;
+      %vdf.data(vdf.data) = NaN;
+      data = log10(data);
+  
+  
+      [hh_,hh] = contour(hca,vdf.depend{1},vdf.depend{1},data',1,'color',group_colors(iGroup,:),'linewidth',linewidth_contour);
+      %[hh_,hh] = contour(vdf.depend{1},vdf.depend{1},data',3,'k');
+      %hh.FaceColor = 'none';
+      %hh.Color = group_colors(iGroup,:);
+      hh.FaceAlpha = 0.2;
+      %hh.EdgeColor = group_colors(iGroup,:);
+    end
+    hold(hca,'off');
+    hca.XLabel.String = 'v_x (km/s)';
+    hca.YLabel.String = 'v_y (km/s)';
+    hold(hca,'on')    
+    for iGroup = []%1:nGroups
+      plot(hca,MP_grouped_km{iGroup}.sum_vx,MP_grouped_km{iGroup}.sum_vy,'markeredgecolor','k','markerfacecolor',group_colors(iGroup,:),'Marker','s','linewidth',0.5);
+    end
+    hold(hca,'off')
+  end
   if 1 % f(x,y), contour plots of all groups together, gmm
     hca = h(isub); isub = isub + 1;
     holdon = 0;
@@ -454,77 +484,12 @@ for dt = -10:2:10
     end
     hold(hca,'off')
   end
-  if 1 % f(x,y), contour plots of all groups together, kmeans
-    hca = h(isub); isub = isub + 1;
-    holdon = 0;
-    for iGroup = 1:numel(pdist_group_km)
-      %set(hca,'colororder',group_colors(iGroup,:))
-      if not(holdon); hold(hca,'on'); holdon = 1; end   
-      pd = pdist_group_km{iGroup};
-      vdf = pd.reduce('2D',[1 0 0],[0 1 0]);
-      data = squeeze(vdf.data);
-      %data(isnan(data)) = 0;
-      nSmooth = 0;
-      data = smooth2(data,nSmooth,nSmooth);
-      %vdf.data(vdf.data==0) = NaN;
-      %vdf.data(vdf.data) = NaN;
-      data = log10(data);
-  
-  
-      [hh_,hh] = contour(hca,vdf.depend{1},vdf.depend{1},data',1,'color',group_colors(iGroup,:),'linewidth',linewidth_contour);
-      %[hh_,hh] = contour(vdf.depend{1},vdf.depend{1},data',3,'k');
-      %hh.FaceColor = 'none';
-      %hh.Color = group_colors(iGroup,:);
-      hh.FaceAlpha = 0.2;
-      %hh.EdgeColor = group_colors(iGroup,:);
-    end
-    hold(hca,'off');
-    hca.XLabel.String = 'v_x (km/s)';
-    hca.YLabel.String = 'v_y (km/s)';
-    hold(hca,'on')    
-    for iGroup = 1:nGroups
-      plot(hca,MP_grouped_km{iGroup}.sum_vx,MP_grouped_km{iGroup}.sum_vy,'markeredgecolor','k','markerfacecolor',group_colors(iGroup,:),'Marker','s','linewidth',0.5);
-    end
-    hold(hca,'off')
-  end
 
-  if 1 % f(x,y), contour plots of all groups together, gmm
-    hca = h(isub); isub = isub + 1;
-    holdon = 0;
-    for iGroup = 1:numel(pdist_group_gmm)
-      %set(hca,'colororder',group_colors(iGroup,:))
-      if not(holdon); hold(hca,'on'); holdon = 1; end   
-      F = gm_out.F{iGroup};
-      X = gm_out.X(:,:,1);
-      Y = gm_out.Y(:,:,1);
-      Fxy = sum(F,3);
-      contour(hca,X,Y,Fxy,'color',group_colors(iGroup,:))
-    end
-    hold(hca,'off');
-    hca.XLabel.String = 'v_x (km/s)';
-    hca.YLabel.String = 'v_y (km/s)';
-    hold(hca,'on')
-    for iGroup = 1:nGroups
-      plot(hca,MP_grouped_gmm{iGroup}.sum_vx,MP_grouped_gmm{iGroup}.sum_vy,'markeredgecolor','k','markerfacecolor',group_colors(iGroup,:),'Marker','s','linewidth',0.5);
-    end
-    hold(hca,'off')
-  end
-  
-  
-  
-  compact_panels(h,0.05)
-  c_eval('h(?).XLim = vlim*[-1 1]; h(?).YLim = vlim*[-1 1];',1:numel(h))
   c_eval('h(?).Box = ''on'';',1:numel(h))
-  c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))  
-  c_eval('h(?).XTick = h(?).YTick;',1:numel(h))
-  c_eval('axis(h(?),''square'');',1:numel(h))
-
-  hca = h(isub); isub = isub + 1;
-  delete(hca)
-
+  c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
   %% Print results
   tint_print = pdist.time.utc('MMHHSS_mmm');
-  cn.print(sprintf('gmm_kmeans_%s',tint_print))
+  %cn.print(sprintf('gmm_kmeans_%s',tint_print))
 
 
 

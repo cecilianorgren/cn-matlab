@@ -176,9 +176,10 @@ c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt?,-1);',ic)
 
 %% Reduce distributions
 nMovMean = 5;
-c_eval('fi?_L = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).reduce(''1D'',L);',ic)
-c_eval('fi?_M = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).reduce(''1D'',M);',ic)
-c_eval('fi?_N = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).reduce(''1D'',N);',ic)
+elim = [200 Inf];
+c_eval('fi?_L = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',L);',ic)
+c_eval('fi?_M = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',M);',ic)
+c_eval('fi?_N = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',N);',ic)
 
 %% Define times, etc... things that are common for the entire study
 tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z');
@@ -192,7 +193,7 @@ nMovMean = 5;
 
 %% Figure: Overview
 
-h = irf_plot(5);
+h = irf_plot(6);
 
 fontsize = 12;
 
@@ -204,7 +205,7 @@ if 1 % B gse
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98 0.98],'fontsize',fontsize);
 end 
-if 0 % Ve
+if 1 % Ve
   hca = irf_panel('Ve LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint),mvaVe?.y.tlim(tint),mvaVe?.z.tlim(tint)},''comp'');',ic)  
@@ -289,9 +290,10 @@ if 1 % fi red L
   hca.YLabel.String = {'v_{iN} (km/s)'};
 end
 
+
 %irf_zoom(h,'x',tint_figure)
 irf_zoom(h,'x',tint_figure_zoom)
-irf_zoom(h(1:2),'y')
+irf_zoom(h(1:3),'y')
 irf_pl_mark(h,time_xline,'black','linestyle',':')
 %irf_pl_mark(h,time_xline_ion,'red','linestyle',':')
 %colormap(irf_colormap('thermal'))
@@ -301,7 +303,7 @@ h(end).XTickLabelRotation = 0;
 c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
 %hlinks1 = linkprop(h(3:4),{'CLim'});
 %hlinks2 = linkprop(h(5:7),{'CLim'});
-hlinks2 = linkprop(h(3:5),{'CLim'});
+hlinks2 = linkprop(h(4:6),{'CLim'});
 h(1).Title.String = sprintf('N_{movmean} = %g',nMovMean);
 c_eval('h(?).FontSize = 14;',1:numel(h))
 
@@ -998,6 +1000,7 @@ dt_all = [-6:3:6]+.5;
 
 dt_all = [-6:3:6]+.5;
 dt_all = [-30 -3 1 5 15]-.5;
+dt_all = [-30 -3 1 5 15]-.5;
 %dt_all = [-6:2:6]+0;
 %dt_all = [-6:2:6]+25;
 %dt_all = [-6:2:6]-00;
@@ -1010,7 +1013,7 @@ times_utc = ['2017-07-11T22:33:50.582Z';...
 
 [h1,h] = initialize_combined_plot('topbottom',2,3,numel(dt_all),0.2,'vertical');
 
-vL_Xline = 0*-170;
+vL_Xline = 1*-170;
 
 isub = 1;
 tint_zoom = irf.tint('2017-07-11T22:33:24.00Z/2017-07-11T22:34:40.00Z'); %20151112071854
@@ -1094,7 +1097,7 @@ for it = 1:times.length%(1)
     axis(hca,'square')
     hca.XLabel.String = 'v_L (km/s)';
     hca.XLabel.String = 'v_L-v_{L}^{Xline} (km/s)';
-    hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
+    %hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
     hca.YLabel.String = 'v_M (km/s)';
     if 1 % plot B direction
       xlim = hca.XLim;
@@ -1136,7 +1139,7 @@ for it = 1:times.length%(1)
     axis(hca,'square')
     hca.XLabel.String = 'v_L (km/s)';
     hca.XLabel.String = 'v_L-v_{L}^{Xline} (km/s)';
-    hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
+    %hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
     hca.YLabel.String = 'v_N (km/s)';
     if 1 % plot ExB
       hold(hca,'on')
