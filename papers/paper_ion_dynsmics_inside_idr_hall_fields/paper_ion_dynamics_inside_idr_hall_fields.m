@@ -1,7 +1,7 @@
 % Load data
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
 units = irf_units;
@@ -25,8 +25,8 @@ c_eval('gseVixB? = cross(gseVi?*1e3,gseB?.resample(gseVi?.time)*1e-9)*1e3; gseVi
 c_eval('gseVexB? = cross(gseVe?*1e3,gseB?.resample(gseVe?.time)*1e-9)*1e3; gseVexB?.units = '''';',ic) % mV/m
 
 c_eval('gseVexB? = cross(gseVe?*1e3,gseB?.resample(gseVe?.time)*1e-9)*1e3; gseVexB?.units = '''';',ic) % mV/m
-c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic); toc
-c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic); toc
+c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic);
+c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic);
 
 c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4)
 
