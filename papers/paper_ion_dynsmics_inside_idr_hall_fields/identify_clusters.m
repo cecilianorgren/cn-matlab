@@ -327,7 +327,7 @@ c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
 %% Run through times, do gaussian mixture model and kmeans, and compare
 
 
-for dt = -10:2:10  
+for dt = 7
   time = time_xline + dt;
   nMovMean = 7;
   pdist = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts).tlim(time + 0.15*0.5*[-1 1]).elim([300 Inf]);
@@ -345,18 +345,25 @@ for dt = -10:2:10
   % kmeans  
   nGroups = 4;  % number of classes
   [idx, c, sumd, d] = kmeans(V, nGroups,'Start',initial_guess);
-  s = silhouette(V, idx, 'sqeuclid');
+  %s = silhouette(V, idx, 'sqeuclid');
   
   
   MP_grouped_km = macroparticle_moments(MP,idx);
   pdist_group_km = partial_pdist(pdist,MP,idx);
   
 
-  S.Mu = initial_guess;
-  S.Sigma = [500 500 500]'; % this is not right format
+  % Gaussian mixture model
+  clear S
+  S.mu = initial_guess;    
+  % S.Sigma = 500*ones(3,3,nGroups);
+  S.Sigma = 500*ones(1,3,nGroups); % with input: 'CovType','diagonal'
   S.ComponentProportion = [1 1 1 1];
   
-  gm_out = gaussian_mixture_model([MP.vx, MP.vy, MP.vz],4);
+  %gm_out = gaussian_mixture_model([MP.vx, MP.vy, MP.vz],4,'Start',S);
+  gm_out = gaussian_mixture_model([MP.vx, MP.vy, MP.vz],4,'Start',S,'CovType','diagonal');
+  
+    
+  %gm_out = gaussian_mixture_model([MP.vx, MP.vy, MP.vz],4);
   
   MP_grouped_gmm = macroparticle_moments(MP,gm_out.idx);
   pdist_group_gmm = partial_pdist(pdist,MP,gm_out.idx);
@@ -370,7 +377,7 @@ for dt = -10:2:10
   h1.Position(2) = h1.Position(2)-0.05;
   h1.Position(4) = h1.Position(4)*2;
   fig = gcf;
-  fig.Position = [1598         181         751         1078];
+  fig.Position = [98         181         751         1078];
   
   hca = h1(1);
   colors = mms_colors('xyza');
@@ -391,9 +398,10 @@ for dt = -10:2:10
   vlim = 2500;
   
   isub = 1;
+  step = 100; % plot only every xth macroparticles, for speed
   if 1 % Scatter plot of gmm 
     hca = h(isub); isub = isub + 1;
-    hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 30, gm_out.idx,'filled');
+    hs = scatter3(hca, V(1:step:end,1), V(1:step:end,2), V(1:step:end,3), 30, gm_out.idx(1:step:end),'filled');
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = 'v_y (km/s)';
     hca.ZLabel.String = 'v_z (km/s)';
@@ -407,7 +415,7 @@ for dt = -10:2:10
   end
   if 1 % Scatter plot of kmeans 
     hca = h(isub); isub = isub + 1;
-    hs = scatter3(hca, V(:,1), V(:,2), V(:,3), 30, idx,'filled');
+    hs = scatter3(hca, V(1:step:end,1), V(1:step:end,2), V(1:step:end,3), 30, idx(1:step:end),'filled');
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = 'v_y (km/s)';
     hca.ZLabel.String = 'v_z (km/s)';
@@ -441,7 +449,7 @@ for dt = -10:2:10
       %[hh_,hh] = contour(vdf.depend{1},vdf.depend{1},data',3,'k');
       %hh.FaceColor = 'none';
       %hh.Color = group_colors(iGroup,:);
-      hh.FaceAlpha = 0.2;
+      %hh.FaceAlpha = 0.2;
       %hh.EdgeColor = group_colors(iGroup,:);
 
     end
@@ -475,7 +483,7 @@ for dt = -10:2:10
       %[hh_,hh] = contour(vdf.depend{1},vdf.depend{1},data',3,'k');
       %hh.FaceColor = 'none';
       %hh.Color = group_colors(iGroup,:);
-      hh.FaceAlpha = 0.2;
+      %hh.FaceAlpha = 0.2;
       %hh.EdgeColor = group_colors(iGroup,:);
     end
     hold(hca,'off');

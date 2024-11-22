@@ -1,0 +1,25 @@
+function varargout = maximum_pressure_direction_xy(tsP)
+
+
+nT = tsP.length;
+R_all = zeros(nt,3,3);
+P_rot_all = zeros(nt,3,3);
+
+for it = 1:nT  
+  P = squeeze(pressure);
+ 
+  % Rotate tensor, to find the most unequal component
+  % Angle 
+  theta = 0.5*atan((2*P(1,2))./(P(2,2)-P(1,1)));
+
+  R = [cos(theta) -sin(theta) 0; sin(theta) cos(theta) 0; 0 0 1];
+  P2 = R*(P*transpose(R));
+
+  if P2(1,1) > P2(2,2)
+    theta = -theta;
+    R = [cos(theta) -sin(theta) 0; sin(theta) cos(theta) 0; 0 0 1];
+    P2 = R*(P*transpose(R));
+  end
+  R_all(it,:,:) = R;
+  P_rot_all(it,:,:) = P2;
+end
