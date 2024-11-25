@@ -64,6 +64,7 @@ nGroups = 4;  % number of classes/groups for kmeans and gmm
 
 % Prepare the distribution
 c_eval('pdist_all = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim);',ic)
+doPrint = 0;
 
 for dt = -5
   time = time_xline + dt;  

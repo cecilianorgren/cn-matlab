@@ -1,5 +1,6 @@
+doPrint = 1;
 
-for dt = -30:30  
+for dt = -50:-41 
 time = time_xline + dt;
 nMovMean = 7;
 vel = mean(gseVi3.tlim(time + nMovMean*0.15*0.5*[-1 1]).data,1);
@@ -172,7 +173,9 @@ compact_panels(h,0.04)
 
 
 tint_print = pdist.time.utc('MMHHSS_mmm');
-cn.print(sprintf('rotating_fvxvy_by_pressure_%s',tint_print))
+if doPrint
+  cn.print(sprintf('rotating_fvxvy_by_pressure_%s',tint_print))
+end
 
 end
 
