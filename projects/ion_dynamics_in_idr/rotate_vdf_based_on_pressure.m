@@ -34,7 +34,7 @@ pdist_rot2 = pdist.shift(vel, 10, R2, 'mms');
 varargout{1} = T2;
 varargout{2} = pdist_rot2;
 
-doPlot = 1;
+doPlot = 0;
 if doPlot
   nRows = 3;
   nCols = 2;

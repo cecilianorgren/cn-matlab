@@ -1,6 +1,7 @@
+doPrint = 1;
 
-
-time = time_xline + 6;
+for dt = -50:-41 
+time = time_xline + dt;
 nMovMean = 7;
 vel = mean(gseVi3.tlim(time + nMovMean*0.15*0.5*[-1 1]).data,1);
 pressure = gsePi3.tlim(time + 0.15*0.5*[-1 1]);
@@ -8,7 +9,7 @@ pdist = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts).tlim(time + 0
 
 T = squeeze(pressure.data);
 
-% Rotate tensor twice, to find the most unequal component
+% Rotate tensor, to find the most unequal component
 theta1 = 0.5*atan((2*T(2,3))./(T(3,3)-T(2,2)));
 theta2 = 0.5*atan((2*T(1,2))./(T(2,2)-T(1,1)));
 %theta2 = 0.5*atan((2*T(2,1))./(T(1,1)-T(2,2)));
@@ -21,7 +22,11 @@ T1 = R1*(T*transpose(R1));
 R2 = [cos(theta2) -sin(theta2) 0; sin(theta2) cos(theta2) 0; 0 0 1];
 T2 = R2*(T*transpose(R2));
 
-
+if T2(1,1) > T2(2,2)
+  theta2 = -theta2;
+  R2 = [cos(theta2) -sin(theta2) 0; sin(theta2) cos(theta2) 0; 0 0 1];
+  T2 = R2*(T*transpose(R2));
+end
 
 pdist_rot1 = pdist.shift(squeeze(vel), 10, eye(3), 'mms');
 pdist_rot2 = pdist.shift(squeeze(vel), 10, R2, 'mms');
@@ -70,6 +75,8 @@ if 1 % Original distribution
   axis(hca,'square')
   hca.XLim = vlim;
   hca.YLim = vlim;
+  hca.XLabel.String = 'v_x (km/s)';
+  hca.YLabel.String = 'v_y (km/s)';
   Tstr = {sprintf('%6.3f, %6.3f, %6.3f',T(1,1),T(1,2),T(1,3));...
           sprintf('%6.3f, %6.3f, %6.3f',T(2,1),T(2,2),T(2,3));...
           sprintf('%6.3f, %6.3f, %6.3f',T(3,1),T(3,2),T(3,3))};
@@ -96,6 +103,8 @@ if 1 % Original distribution, shifted to bulk speed frame
   axis(hca,'square')
   hca.XLim = vlim;
   hca.YLim = vlim;
+  hca.XLabel.String = 'v_x (km/s)';
+  hca.YLabel.String = 'v_y (km/s)';
   Tstr = {sprintf('%6.3f, %6.3f, %6.3f',T(1,1),T(1,2),T(1,3));...
           sprintf('%6.3f, %6.3f, %6.3f',T(2,1),T(2,2),T(2,3));...
           sprintf('%6.3f, %6.3f, %6.3f',T(3,1),T(3,2),T(3,3))};
@@ -122,6 +131,8 @@ if 1 % Rotated distribution
   axis(hca,'square')
   hca.XLim = vlim;
   hca.YLim = vlim;
+  hca.XLabel.String = 'v_x (km/s)';
+  hca.YLabel.String = 'v_y (km/s)';
   Tstr = {sprintf('%6.3f, %6.3f, %6.3f',T2(1,1),T2(1,2),T2(1,3));...
           sprintf('%6.3f, %6.3f, %6.3f',T2(2,1),T2(2,2),T2(2,3));...
           sprintf('%6.3f, %6.3f, %6.3f',T2(3,1),T2(3,2),T2(3,3))};
@@ -162,7 +173,73 @@ compact_panels(h,0.04)
 
 
 tint_print = pdist.time.utc('MMHHSS_mmm');
+if doPrint
+  cn.print(sprintf('rotating_fvxvy_by_pressure_%s',tint_print))
+end
 
-cn.print(sprintf('%'))
+end
 
+
+%% Plot rotation and pressure components
+
+% Finds the direction of maximum pressure, minimizes the off-diagonal
+% components, and returns the rotated pressure matrix. This is used to
+% rotate the distributions to better help dientify the various populations
+% present.
+c_eval('[tsP?,tsR?,tsR1?,tsR2?,tsR3?] = maximum_pressure_direction_xy(gsePi?);',ic)
+
+ic = 3;
+h = irf_plot(6);
+
+if 1
+  hca = irf_panel('B');
+  hca.ColorOrder = mms_colors('xyz');
+  c_eval('irf_plot(hca,{gseB?.x,gseB?.y,gseB?.z},''comp'');',ic)
+  hca.YLabel.String = 'B (nT)';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'x','y','z'},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('P diag');
+  hca.ColorOrder = mms_colors('xyz');
+  c_eval('irf_plot(hca,{gsePi?.xx,gsePi?.yy,gsePi?.zz},''comp'');',ic)
+  hca.YLabel.String = 'P_{ii} (nPa)';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'xx','yy','zz'},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('P off-diag');
+  hca.ColorOrder = mms_colors('xyz');
+  c_eval('irf_plot(hca,{gsePi?.xy,gsePi?.xz,gsePi?.yz},''comp'');',ic)
+  hca.YLabel.String = 'P_{ij} (nPa)';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'xy','xz','yz'},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('P diag rot');
+  hca.ColorOrder = mms_colors('xyz');
+  c_eval('irf_plot(hca,{tsP?.xx,tsP?.yy,tsP?.zz},''comp'');',ic)
+  hca.YLabel.String = 'P_{ii}^{rot} (nPa)';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'xx','yy','zz'},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('P off-diag rot');
+  hca.ColorOrder = mms_colors('xyz');
+  c_eval('irf_plot(hca,{tsP?.xy,tsP?.xz,tsP?.yz},''comp'');',ic)
+  hca.YLabel.String = 'P_{ij}^{rot} (nPa)';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'xy','xz','yz'},[0.98 0.98])
+end
+if 1
+  hca = irf_panel('Pyy/Pxx comparison');
+  hca.ColorOrder = mms_colors('xyz');
+  c_eval('irf_plot(hca,{gsePi?.yy/gsePi?.xx,tsP?.yy/tsP?.xx},''comp'');',ic)
+  hca.YLabel.String = 'P_{yy}/P_{xx}';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'original','rotated'},[0.98 0.98])
+end
+
+
+irf_zoom(h,)
 

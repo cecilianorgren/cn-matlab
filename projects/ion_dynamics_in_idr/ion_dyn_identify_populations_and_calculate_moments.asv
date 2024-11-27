@@ -534,7 +534,7 @@ c_eval('hl(?).LineWidth = 1.0;',1:numel(hl))
 hmark = irf_pl_mark(h,time_xline,'black','linestyle','-');
   
 %%
-for it = 1:nT
+for it = 49:nT
   pause(0.1)
 
   hp = findobj(gcf,'type','patch'); delete(hp);
@@ -546,7 +546,7 @@ print_str = sprintf('ion_dyn_gmm_%s',time_str);
 
 
 if exist('hmark','var'); delete(hmark); end
-c_eval('hmark(?) = irf_pl_mark(h(?),time + nMovMean*0.150*0.5*[-1 1],''k'');',1:numel(h))
+c_eval('hmark(?) = irf_pl_mark(h(?),time + nMovMean*0.150*0.5*[-1 1],''k'');',1:numel(h1))
 
 
 group_colors = mms_colors('1234');
@@ -672,6 +672,8 @@ for iGroup = 1:nGroups
     plot(hca,vy_tmp,vz_tmp,'markeredgecolor','k','markerfacecolor',group_colors(iGroup,:),'Marker','s','linewidth',0.5);    
     hold(hca,'off')
   end
+
+
 end
 
 if 1 % 1D reduced distributions, observed and gmm, x
@@ -695,10 +697,7 @@ if 1 % 1D reduced distributions, observed and gmm, x
   hca.YLabel.String = 'f^{obs} (s/m^3)';   
   hca.ColorOrder = group_colors;
   hold(hca,'on')
-  hl = plot(hca,vvec,sum(vdf_model,1)./max(sum(vdf_model,1))*max(vdf_obs.data),'color',[0.6 0.6 0.6],'LineStyle',':');
-  hl = plot(hca,vvec,vdf_model./max(sum(vdf_model,1))*max(vdf_obs.data));
-  %hl = hl(end:-1:1);
-  c_eval('hl(?).Color = group_colors(?,:);',1:nGroups)
+  plot(hca,vvec,vdf_model./max(vdf_model(:))*max(vdf_obs.data))    
   hold(hca,'off')
   hca.XLabel.String = 'v_L (km/s)';
 end
@@ -724,10 +723,7 @@ if 1 % 1D reduced distributions, observed and gmm, y
   hca.YLabel.String = 'f^{obs} (s/m^3)';      
   hca.ColorOrder = group_colors; 
   hold(hca,'on')
-  hl = plot(hca,vvec,sum(vdf_model,1)./max(sum(vdf_model,1))*max(vdf_obs.data),'color',[0.6 0.6 0.6],'LineStyle',':');
-  hl = plot(hca,vvec,vdf_model./max(sum(vdf_model,1))*max(vdf_obs.data));
-  %hl = hl(end:-1:1);
-  c_eval('hl(?).Color = group_colors(?,:);',1:nGroups)  
+  plot(hca,vvec,vdf_model./max(vdf_model(:))*max(vdf_obs.data),'color',group_colors)    
   hold(hca,'off')
   hca.XLabel.String = 'v_M (km/s)';
 end
@@ -752,10 +748,7 @@ if 1 % 1D reduced distributions, observed and gmm, z
   hca.YLabel.String = 'f^{obs} (s/m^3)';   
   hca.ColorOrder = group_colors;
   hold(hca,'on')
-  hl = plot(hca,vvec,sum(vdf_model,1)./max(sum(vdf_model,1))*max(vdf_obs.data),'color',[0.6 0.6 0.6],'LineStyle',':');
-  hl = plot(hca,vvec,vdf_model./max(sum(vdf_model,1))*max(vdf_obs.data));
-  %hl = hl(end:-1:1);
-  c_eval('hl(?).Color = group_colors(?,:);',1:nGroups)   
+  plot(hca,vvec,vdf_model./max(vdf_model(:))*max(vdf_obs.data))    
   hold(hca,'off')
   hca.XLabel.String = 'v_N (km/s)';
 end

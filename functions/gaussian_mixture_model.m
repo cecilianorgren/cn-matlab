@@ -40,6 +40,9 @@ if nargout == 1
   out.Z = Z;
   out.gmPDF = gmPDF;
   out.F = F;
+  out.vx = xvec;
+  out.vy = yvec;
+  out.vz = zvec;
   varargout{1} = out;
 else
   varargout{1} = clusterR;

@@ -124,6 +124,10 @@ else
     end
   end
 end
+
+if ~exist(directory,'dir')
+  eval(['mkdir ', directory])
+end
 % Add filename to directory path
 %path_and_file= [directory,filename,'.',frmt(1:3)];
 path_and_file= [directory,filename,'.',fileending];
