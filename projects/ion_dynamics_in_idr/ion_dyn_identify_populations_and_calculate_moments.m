@@ -64,10 +64,10 @@ c_eval('mvaPi? = gsePi?''; mvaPi?.name = ''Pi LMN'';',ic) % check rotation
 %% Run through distributions
 time_xline = irf_time('2017-07-11T22:34:03.00Z','utc>EpochTT');
 
-nMovMean = 5; % Number of distributions for the moving average
+nMovMean = 7; % Number of distributions for the moving average
 elim = [200 Inf]; % Energy limit
 N_MP = 100000; % Number of macroparticles
-nGroups = 4;  % number of classes/groups for kmeans and gmm
+nGroups = 6;  % number of classes/groups for kmeans and gmm
 
 
 % Decide how many output times
@@ -131,22 +131,172 @@ for it = 1:nT
   initial_guess = [0 -1000 -1000;...
                    0 -1000 +1000;...
                    0 +1000 -1000;...
-                   0 +1000 +1000];
+                   0 +1000 +1000;...
+                   0  0000  0000;...
+                   0  0000  0000];
+  initial_guess = initial_guess(1:nGroups,:);
+  
   % kmeans  
   [idx, c, sumd, d] = kmeans(V, nGroups,'Start',initial_guess);
   %s = silhouette(V, idx, 'sqeuclid');
   
-  % One can also refit the separated kmeans clusters to 'recapture' the
-  % tails of them (since the cuts between kmeans clusters are very sharp).
-  
-  
   MP_grouped_km = macroparticle_moments(MP,idx);
   pdist_group_km = partial_pdist(pdist,MP,idx);
   
+  % The cuts between kmeans clusters are very (unphyscially) sharp.
+  % Refit the separated kmeans clusters to 'recapture' their tails or
+  % generally improve the identification. Each kmeans cluster are fitted to
+  % a single normal distribution.
+  %%
+  if 0
+  for iGroup = 1:nGroups
+    S.mu = [MP_grouped_km{iGroup}.sum_vx, MP_grouped_km{iGroup}.sum_vy, MP_grouped_km{iGroup}.sum_vz];
+    S.Sigma = [200 10 10; 10 200 10; 10 10 200]; % these numbers are a bit arbitrary
+    S.ComponentProportion = 1;      
+        
+    Vtmp = V(idx==iGroup,:);
+    gm_out_kmeans{iGroup} = gaussian_mixture_model(Vtmp,1,'Start',S);    
+    
+    
+    if 0 % plot results   
+      %%
+      % Setup grid
+      vmax = 2400;
+      nv = 80;
+      vvec = linspace(-vmax,vmax,nv);      
+      dv = (vvec(2)-vvec(1))*1e3;
+      [X,Y,Z] = ndgrid(vvec,vvec,vvec);
+      XYZ = [X(:) Y(:) Z(:)];
+      
+      % Extract parameters
+      mu = gm_out_kmeans{iGroup}.gm.mu;
+      Sigma = gm_out_kmeans{iGroup}.gm.Sigma;
+      Ftmp = gm_out_kmeans{iGroup}.gm.ComponentProportion*mvnpdf(XYZ, mu, Sigma); 
+      F = reshape(Ftmp,size(X));
+      vdf_model_x = squeeze(sum(sum(F,3),2)); % 1e-2*1e-2*dv*dv*squeeze(sum(sum(F,3),2));
+      vdf_model_y = squeeze(sum(sum(F,3),1)); % 1e-2*1e-2*dv*dv*squeeze(sum(sum(F,3),1));
+      vdf_model_z = squeeze(sum(sum(F,1),2)); % 1e-2*1e-2*dv*dv*squeeze(sum(sum(F,1),2));
+    
+      histvec = -vmax:100:vmax;
+      h = setup_subplots(3,1); % nDim x 1
+      isub = 1;
+      
+      hca = h(isub); isub = isub + 1;
+      histogram(hca,Vtmp(:,1),histvec)
+      hold(hca,'on')
+      yyaxis(hca,'right')
+      plot(hca,vvec,vdf_model_x,'k')
+      hold(hca,'off')
+      hca.XLabel.String = 'v_L (km/s)';
+      
+      
+      hca = h(isub); isub = isub + 1;
+      histogram(hca,Vtmp(:,2),histvec)
+      hold(hca,'on')
+      yyaxis(hca,'right')
+      plot(hca,vvec,vdf_model_y,'k')
+      hold(hca,'off')
+      hca.XLabel.String = 'v_M (km/s)';
+      
+      
+      hca = h(isub); isub = isub + 1;
+      histogram(hca,Vtmp(:,3),histvec)
+      hold(hca,'on')
+      yyaxis(hca,'right')
+      plot(hca,vvec,vdf_model_z,'k')
+      hold(hca,'off')
+      hca.XLabel.String = 'v_N (km/s)';
+      
+    end
+        
+  end
+  end
+  if 0 % plot results comparing the four clusters
+     %%
+      % Setup grid
+      vmax = 2400;
+      nv = 100;
+      vvec = linspace(-vmax,vmax,nv);      
+      dv = (vvec(2)-vvec(1))*1e3;
+      [X,Y,Z] = ndgrid(vvec,vvec,vvec);
+      XYZ = [X(:) Y(:) Z(:)];
+      
+      % Extract parameters
+      mu = gm_out_kmeans{iGroup}.gm.mu;
+      Sigma = gm_out_kmeans{iGroup}.gm.Sigma;
+      Ftmp = gm_out_kmeans{iGroup}.gm.ComponentProportion*mvnpdf(XYZ, mu, Sigma); 
+      F = reshape(Ftmp,size(X));
+      vdf_model_x = squeeze(sum(sum(F,3),2)); % 1e-2*1e-2*dv*dv*squeeze(sum(sum(F,3),2));
+      vdf_model_y = squeeze(sum(sum(F,3),1)); % 1e-2*1e-2*dv*dv*squeeze(sum(sum(F,3),1));
+      vdf_model_z = squeeze(sum(sum(F,1),2)); % 1e-2*1e-2*dv*dv*squeeze(sum(sum(F,1),2));
+    
+      histvec = -vmax:50:vmax;
+      % Bin particles
+      [count, edges, mid, loc] = histcn([V idx],histvec,histvec,histvec,0.5:1:4.5);
+      
+      h = setup_subplots(3,1); % nDim x 1
+      isub = 1;
+      
+      if 1 % vL
+        hca = h(isub); isub = isub + 1;            
+        count_v = squeeze(sum(sum(count(:,:,:,:),3),2));
+        plot(hca,mid{1},sum(count_v,2),'k');
+        hold(hca,'on')
+        plot(hca,mid{1},count_v);
+        %for iGroup = 1:4
+          %hbar = bar(hca,mid{1},count_vx(:,iGroup),1,'facealpha',0.5);
+        %end
+        hold(hca,'off')      
+        hca.XLabel.String = 'v_L (km/s)';
+      end
+      if 1 % VM
+        hca = h(isub); isub = isub + 1;            
+        count_v = squeeze(sum(sum(count(:,:,:,:),3),1));
+        plot(hca,mid{1},sum(count_v,2),'k');
+        hold(hca,'on')
+        plot(hca,mid{1},count_v);
+        %for iGroup = 1:4
+          %hbar = bar(hca,mid{1},count_vx(:,iGroup),1,'facealpha',0.5);
+        %end
+        hold(hca,'off')      
+        hca.XLabel.String = 'v_M (km/s)';
+      end
+      if 1 % VN
+        hca = h(isub); isub = isub + 1;            
+        count_v = squeeze(sum(sum(count(:,:,:,:),2),1));
+        plot(hca,mid{1},sum(count_v,2),'k');
+        hold(hca,'on')
+        plot(hca,mid{1},count_v);
+        %for iGroup = 1:4
+          %hbar = bar(hca,mid{1},count_vx(:,iGroup),1,'facealpha',0.5);
+        %end
+        hold(hca,'off')      
+        hca.XLabel.String = 'v_N (km/s)';
+      end
+      %%
+      hca = h(isub); isub = isub + 1;
+      histogram(hca,Vtmp(:,2),histvec)
+      hold(hca,'on')
+      yyaxis(hca,'right')
+      plot(hca,vvec,vdf_model_y,'k')
+      hold(hca,'off')
+      hca.XLabel.String = 'v_M (km/s)';
+      
+      
+      hca = h(isub); isub = isub + 1;
+      histogram(hca,Vtmp(:,3),histvec)
+      hold(hca,'on')
+      yyaxis(hca,'right')
+      plot(hca,vvec,vdf_model_z,'k')
+      hold(hca,'off')
+      hca.XLabel.String = 'v_N (km/s)';
+  
+  end
+  %%
   % Gaussian mixture model
   % Use results from kmeans to give initial guess of gmm
   
-  initial_guess_method = 'kmeans';
+  initial_guess_method = 'guess1';
   switch initial_guess_method
     case 'kmeans'
       for iGroup = 1:nGroups
@@ -157,14 +307,17 @@ for it = 1:nT
     case 'guess1'  
       S.mu = initial_guess; % same as for kmeans         
       S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-      S.ComponentProportion = [1 1 1 1];
+      S.ComponentProportion = repmat(1,[1,nGroups]);
     case 'guess2' % a bit colder distributions 
       S.mu = [0 -1000 -1000;...
               0 -1000 +1000;...
               0 +100 -1000;...
-              0 +100 +1000];
+              0 +100 +1000;...
+              0 0 0;...
+              0 0 0];
+      S.mu = S.mu(1:nGroups,:);
       S.Sigma = repmat([100 10 10; 10 100 10; 10 10 100],[1 1 nGroups]);  
-      S.ComponentProportion = [1 1 1 1];
+      S.ComponentProportion = repmat(1,[1,nGroups]);
   end
   
   
