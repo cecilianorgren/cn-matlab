@@ -15,7 +15,7 @@ z = pic.zi;
 A0 = pic.twpelim(twpe).A;
 [X0,Z0] = ndgrid(pic.xi,pic.zi);
 
-ns = 1;
+ns = 10;
 fEx = griddedInterpolant(X,Z,smooth2(pic.Ex,ns));
 fEy = griddedInterpolant(X,Z,smooth2(pic.Ey,ns));
 fEz = griddedInterpolant(X,Z,smooth2(pic.Ez,ns));
@@ -28,15 +28,22 @@ fvz = griddedInterpolant(X,Z,pic.viz);
 
 
 
-x0 = [97.0];
+x0 = [100.6];
 y0 = 0;
-z0 = [3];
+z0 = [-4];
 
 ip = 1;
 
 vx0 = fvx(x0',z0');
 vy0 = fvy(x0',z0');
 vz0 = fvx(x0',z0');
+
+
+Babs = sqrt(fBx(x0',z0').^2 + fBy(x0',z0').^2 + fBz(x0',z0').^2);
+vx0 = (fEy(x0',z0')*fBx(x0',z0')-fEx(x0',z0')*fBy(x0',z0'))/Babs;
+vy0 = (fEz(x0',z0')*fBx(x0',z0')-fEx(x0',z0')*fBz(x0',z0'))/Babs;
+vz0 = (fEx(x0',z0')*fBy(x0',z0')-fEy(x0',z0')*fBx(x0',z0'))/Babs;
+
 %vx0 = 0;
 %vx0 = .0;
 %vz0 = -0.2;
@@ -244,11 +251,15 @@ if 0 % L-forces vs time
 end
 if 1 % Cumalative L-forces vs time
   hca = h(isub); isub = isub + 1;
-  plot(hca,p.t,cumsum(p.Ex), p.t,cumsum(-p.vz.*p.By), p.t, cumsum(p.vy.*p.Bz),'linewidth',1)
-  legend(hca,{'E_x','-v_zB_y','v_yB_z'},'Box','off')  
+  plot(hca,p.t,cumtrapz(p.t,p.Ex), p.t,cumtrapz(p.t,-p.vz.*p.By), p.t, cumtrapz(p.t,p.vy.*p.Bz),'linewidth',1)
+  hold(hca,'on')
+  plot(hca,p.t,p.vx,'linewidth',1,'color',[0 0 0])
+  hold(hca,'off')
+  %plot(hca,p.t,cumsum(p.Ex), p.t,cumsum(-p.vz.*p.By), p.t, cumsum(p.vy.*p.Bz),'linewidth',1)
+  legend(hca,{'E_x','-v_zB_y','v_yB_z','v_x'},'Box','off')  
   hca.XGrid = 'on';
   hca.YGrid = 'on';
-  hca.YLabel.String = 'cumulative F_x';
+  hca.YLabel.String = 'v_x = (1/m)\int F_x dt';
   hca.XLabel.String = '(t-t_{start})\omega_{ci}';
 end
 if 0 % position vs time

@@ -7,6 +7,9 @@ if days
   [~,computername]=system('hostname');
   if strfind(computername,'ift0227887')
     directory = ['/Users/cno062/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+    
+    directory_root = '/Users/cno062/Dropbox-IRFU/Cecilia Norgren/Days/';
+    directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
   elseif 'CeciliasMacBook'
     directory_root = '/Users/cecilia/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];

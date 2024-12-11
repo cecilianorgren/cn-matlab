@@ -116,6 +116,7 @@ else
     [~,computername]=system('hostname');
     if strfind(computername,'ift0227887')
       directory = ['/Users/cno062/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+      directory = printpath;
     elseif strfind(computername,'CeciliasMacBook')
       directory = printpath;
     else
