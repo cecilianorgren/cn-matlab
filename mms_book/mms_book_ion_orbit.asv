@@ -15,7 +15,7 @@ z = pic.zi;
 A0 = pic.twpelim(twpe).A;
 [X0,Z0] = ndgrid(pic.xi,pic.zi);
 
-ns = 1;
+ns = 01;
 fEx = griddedInterpolant(X,Z,smooth2(pic.Ex,ns));
 fEy = griddedInterpolant(X,Z,smooth2(pic.Ey,ns));
 fEz = griddedInterpolant(X,Z,smooth2(pic.Ez,ns));
@@ -28,9 +28,9 @@ fvz = griddedInterpolant(X,Z,pic.viz);
 
 
 
-x0 = [97.0];
+x0 = [97.4];
 y0 = 0;
-z0 = [3];
+z0 = [-3];
 
 ip = 1;
 
