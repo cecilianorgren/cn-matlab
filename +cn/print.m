@@ -116,17 +116,25 @@ else
     [~,computername]=system('hostname');
     if strfind(computername,'ift0227887')
       directory = ['/Users/cno062/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+    elseif strfind(computername,'CeciliasMacBook')
+      directory = printpath;
     else
-      directory = ['/Users/Cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+      directory = ['/Users/cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
     end 
+    directory = strrep(directory,'\','');
     if ~exist(directory,'dir')
-      eval(['mkdir ', directory])
+      %eval(['mkdir ', directory])
+      mkdir(directory)
     end
   end
 end
 
+% The print functions can't seem to handle backslashes used to represent a
+% space in the folder path or file name, so just replace
+directory = strrep(directory,'\','');
 if ~exist(directory,'dir')
-  eval(['mkdir ', directory])
+  %eval(['mkdir ', directory])
+  mkdir(directory)
 end
 % Add filename to directory path
 %path_and_file= [directory,filename,'.',frmt(1:3)];
