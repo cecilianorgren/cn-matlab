@@ -2,6 +2,7 @@
 %% Load data
 ic = [3];
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
+% tint = irf.tint('2017-07-11T22:34:02.00Z/2017-07-11T22:34:03.00Z');
 
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
