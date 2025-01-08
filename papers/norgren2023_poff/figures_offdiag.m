@@ -8,8 +8,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
 units = irf_units;
@@ -249,6 +249,8 @@ c_eval('mvaNVgradVe?_smooth = units.me*ne?*1e6*gseVe?.x*1e3*irf.ts_scalar(mvaVe?
 
 c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',1:4)
 
+time_reversal = irf_time('2017-07-11T22:34:02.641773681Z','utc>EpochTT');
+
 %% Spacecraft constellation
 tt = irf_time('2017-07-11T22:33:58.000000000Z','utc>EpochTT');
 R0 = (mvaR1 + mvaR2.resample(mvaR1) + mvaR3.resample(mvaR1) + mvaR4.resample(mvaR1))/4;
@@ -422,7 +424,7 @@ if 1 % Se-off LMN
   c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint).smooth(nsm)*1e3,mvaSe?.xz.tlim(tint).smooth(nsm)*1e3,mvaSe?.yz.tlim(tint).smooth(nsm)*1e3},''comp'');',ic)  
   set(hca,'ColorOrder',mms_colors('xyza'))
   %c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint).smooth(nsm)*1e3},''comp'');',ic)  
-  hca.YLabel.String = {'X_e (pPa)'};
+  hca.YLabel.String = {'S_e (pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
   %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
@@ -538,7 +540,7 @@ ic = 3;
 
 tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
 
-npanels = 6;
+npanels = 8;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -582,6 +584,35 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.15],'fontsize',fontsize_leg);
 end
+if 1 % E M
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E M');
+  set(hca,'ColorOrder',mms_colors('yza'))  
+  fhigh = 10;
+  %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+  c_eval('irf_patch(hca,{mvaE?.resample(mvaVe?).tlim(tint_edr).y,0});',ic)
+  hold(hca,'on')
+  c_eval('irf_plot(hca,{mvaE?.y.filt(0,fhigh,[],3),mvaVexB?.y},''comp'');',ic) 
+  hold(hca,'off')
+  hca.YLabel.String = {'E_y','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('yza'))
+  %irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+end
+if 1 % E LMN
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  fhigh = 10;
+  c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic) 
+  hca.YLabel.String = {'E','(mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+end
+
 if 1 % Se, Pe, nvv, xy
   hca = irf_panel('stress x comp');
   set(hca,'ColorOrder',mms_colors('xyza'))
@@ -590,7 +621,7 @@ if 1 % Se, Pe, nvv, xy
   c_eval('irf_plot(hca,{mvaSe?.xy.tlim(tint)*1e3},''comp'');',ic)  
   hca.YLabel.String = {'Stress','(pPa)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'X_{xy}','P_{xy}','m_enu_xu_y'},[0.98 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'S_{xy}','P_{xy}','m_enu_xu_y'},[0.98 0.15],'fontsize',fontsize_leg);
   %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
 end
 if 0 % NVVe-off LMN
@@ -666,7 +697,7 @@ if 1 % gradients, comparison
   
   if 0
     set(hca,'ColorOrder',mms_colors('xy'))
-    irf_legend(hca,{'\partial_t{X_{xy}}','  \partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize_leg);
+    irf_legend(hca,{'\partial_t{S_{xy}}','  \partial_t{P_{xy}}'},[0.02 0.15],'fontsize',fontsize_leg);
     set(hca,'ColorOrder',mms_colors('z'))
     irf_legend(hca,{'m_e\partial_t(nu_xu_y)'},[0.98 0.98],'fontsize',fontsize_leg);  
     set(hca,'ColorOrder',mms_colors('ab'))
@@ -675,7 +706,7 @@ if 1 % gradients, comparison
     irf_legend(hca,{'m_eu_y\partial_t(nu_x)'},[0.98 0.15],'fontsize',fontsize_leg);
   else
     set(hca,'ColorOrder',mms_colors('xy'))
-    irf_legend(hca,{'\Delta X_{xy}/\Delta{t}','  \Delta{P_{xy}}/\Delta{t}'},[0.02 0.15],'fontsize',fontsize_leg);
+    irf_legend(hca,{'\Delta S_{xy}/\Delta{t}','  \Delta{P_{xy}}/\Delta{t}'},[0.02 0.15],'fontsize',fontsize_leg);
     set(hca,'ColorOrder',mms_colors('z'))
     irf_legend(hca,{'m_e\Delta(nu_xu_y)/\Delta{t}'},[0.98 0.98],'fontsize',fontsize_leg);  
     set(hca,'ColorOrder',mms_colors('ap'))
@@ -709,7 +740,7 @@ if 1 % gradients, comparison, mV/m
   set(hca,'ColorOrder',mms_colors('xyzap'))
   %irf_legend(hca,{'\partial_x{S_{xy}}','\partial_x{P_{xy}}','\partial_x(nv_x*v_y)','n*vx*\partial_x{v_y}','v_y\partial(nv_x)'},leg_loc,'fontsize',fontsize);
   set(hca,'ColorOrder',mms_colors('xy'))
-  irf_legend(hca,{'-\partial_x{X_{xy}}/ne','  -\partial_x{P_{xy}}/ne'},[0.02 0.15],'fontsize',fontsize_leg);
+  irf_legend(hca,{'-\partial_x{S_{xy}}/ne','  -\partial_x{P_{xy}}/ne'},[0.02 0.15],'fontsize',fontsize_leg);
   set(hca,'ColorOrder',mms_colors('z'))
   irf_legend(hca,{'-m_e\partial_x(nu_xu_y)/ne'},[0.98 0.98],'fontsize',fontsize_leg);  
   set(hca,'ColorOrder',mms_colors('ap'))
@@ -899,13 +930,14 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
 %times = times + 0.25;
 times = times + 0.30*1;
 %times = times + 0.06;
-dt_dist = 4*0.061; % for two distributions
+dt_dist = 4*0.061; % N*for two distributions
+dt_dist = 2*0.031; % for two (one does not work with ts*Rot' due to datasize of 1-time array)
 
 fontsize_B_amp = 13;
 markersize = 5;
 
+vint = [-10000 10000];
 vint = [-Inf Inf];
-%vint = [-20000 20000];
 vg = -100000:2000:100000;
 elim = [100 Inf];
 %h = setup_subplots(2,times.length,'vertical'); 
@@ -962,7 +994,7 @@ if 1 % S
   %irf_plot(hca,mvaPe.xy*1e3,'color','k','linewidth',1)
   hp = irf_patch(hca,{mvaSe.(comps_ts)*1e3,0},'color','k','linewidth',1);
   %irf_plot(hca,{mvaPe1.xy*1e3,mvaB1.abs},'comp')
-  hca.YLabel.String = ['X',sprintf('_{e%s} (pPa)',comps)];
+  hca.YLabel.String = ['S',sprintf('_{e%s} (pPa)',comps)];
   %hca.YLabel.String = 'S_{eLM} (pPa)';
   hca.YLabel.Interpreter = 'tex';
   irf_zoom(hca,'x',irf.tint('2017-07-11T22:33:58.30Z/2017-07-11T22:34:05.99Z'))
@@ -1185,7 +1217,7 @@ for itime = 1:times.length
     ha_.CData = newdata;
     %hc_.Colorbar.YLabel.String = {sprintf('m_ef_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)dv_%sdv_%s',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2),comps(1),comps(2)),'(1/m^3)'};
     %hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (10^{%.0f} pPa)',comps(1),comps(2),log10(data_scale_num))};
-    hc_.Colorbar.YLabel.String = {['dX',sprintf('_{e%s%s}(v_%s,v_%s)',comps(1),comps(2),comps(1),comps(2))],'(pPa)'};
+    hc_.Colorbar.YLabel.String = {['dS',sprintf('_{e%s%s}(v_%s,v_%s)',comps(1),comps(2),comps(1),comps(2))],'(pPa)'};
     hca.CLim = dp_clim;
     1;    
   end
@@ -1486,7 +1518,7 @@ if 1 % make TSeries of integrated dP, dS
   hold(h1(isub),'off')
   
   h1(2).YLabel.String = sprintf('P_{e%s} (pPa)',comps);
-  h1(1).YLabel.String = ['X',sprintf('_{e%s} (pPa)',comps)];
+  h1(1).YLabel.String = ['S',sprintf('_{e%s} (pPa)',comps)];
   h1(1).YLabel.Interpreter = 'tex';
   h1(2).YLabel.Interpreter = 'tex';
 end
@@ -1537,7 +1569,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
 %times = times + 0.25;
 times = times + 0.30*1;
 %times = times + 0.06;
-dt_dist = 4*0.061; % for two distributions
+dt_dist = 2*0.061; % 0.061 is for two distributions
 
 fontsize_B_amp = 13;
 markersize = 5;
@@ -1602,7 +1634,7 @@ if 1
   hp = irf_patch(hca,{mvaSe.(comps_ts)*1e3,0},'color','k','linewidth',1);
   %irf_plot(hca,{mvaPe1.xy*1e3,mvaB1.abs},'comp')
   %hca.YLabel.String = sprintf('S_{e%s} (pPa)',comps);
-  hca.YLabel.String = ['X',sprintf('_{e%s} (pPa)',comps)];  
+  hca.YLabel.String = ['S',sprintf('_{e%s} (pPa)',comps)];  
   %hca.YLabel.String = 'S_{eLM} (pPa)';
   hca.YLabel.Interpreter = 'tex';
   %hca.YLabel.String = [sprintf('\\mathcal{X}_{e%s} (pPa)',comps)]; 
@@ -1659,6 +1691,7 @@ contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.5);
 %contour_levels = 10.^([-14 -13 -12 -11 -10 -9]+0.75);
 
 
+leg_time = {'I','II','III','IV','V'};
 times_exact = {};
 isub = 1;
 for itime = 1:times.length
@@ -2135,7 +2168,7 @@ if 1 % make TSeries of integrated dP, dS
   hold(h1(isub),'off')
   
   h1(2).YLabel.String = sprintf('P_{e%s} (pPa)',comps);
-  h1(1).YLabel.String = ['X',sprintf('_{e%s} (pPa)',comps)];
+  h1(1).YLabel.String = ['S',sprintf('_{e%s} (pPa)',comps)];
   h1(1).YLabel.Interpreter = 'tex';
   h1(2).YLabel.Interpreter = 'tex';
 end
@@ -2185,7 +2218,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
 %times = times + 0.25;
 times = times + 0.30*1;
 %times = times + 0.06;
-dt_dist = 4*0.061; % for two distributions
+dt_dist = 2*0.061; % 0.061 for two distributions
 
 fontsize_B_amp = 13;
 

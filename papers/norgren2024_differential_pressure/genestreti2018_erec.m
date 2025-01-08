@@ -7,16 +7,18 @@ db_info = datastore('mms_db');
 ic = 1:4;
 
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
-c_eval('gseE?fast = mms.get_data(''E_gse_edp_fast_l2'',tint,?)',ic);
+c_eval('gseE?fast = mms.get_data(''E_gse_edp_fast_l2'',tint,?)ö',ic);
 
 %%
+angle = 1;
 ic = 1:4;
-id_lmn = 8; % from Genestreti 2018
+id_lmn = 14; % from Genestreti 2018
 switch id_lmn
   case 1 % GSW
     L = [0.99986, -0.0521, 0.0052];
     M = [0.0523, 0.9980, 0.0362];
     N = [-0.0019,-0.9361,0.9993];  
+    angle = 21;
   case 8 % MVA-Ve
     L = [0.9482,-0.2551,-0.1893];
     M = [0.1749,0.9168,-0.3591];
@@ -29,6 +31,7 @@ switch id_lmn
     L = [0.9482,-0.2551,-0.1893];
     M = [0.1818,0.9245,-0.3350];
     N = [0.2604,0.2832,0.9230];  
+    angle = 1;
 end
 lmn = [L;M;N];
 
@@ -43,11 +46,15 @@ c_eval("mvaE?fast = gseE?fast.tlim(tint_e_rec)*lmn';",ic)
 %meanEfast = mean(Efast.data);
 %stdEfast = std(Efast.data);
 
+%c_eval('mvaE?_M_nonstar = irf.ts_scalar(mvaE?.time, (mvaE?.y.data - cosd(angle)*mvaE?.y.data)/sind(angle));',ic)
+%c_eval('mvaE?fast_M_nonstar = irf.ts_scalar(mvaE?fast.time, (mvaE?fast.y.data - cosd(angle)*mvaE?fast.y.data)/sind(angle));',ic)
+
+
 %disp(sprintf('BRST: E = [%7.4f,%7.4f,%7.4f] +- [%7.4f,%7.4f,%7.4f], FAST: E = [%7.4f,%7.4f,%7.4f] +- [%7.4f,%7.4f,%7.4f]',meanEbrst(:),stdEbrst(:),meanEfast(:),stdEfast(:)))
 disp(sprintf('id_LMN = %g',id_lmn))
 c_eval("disp(sprintf('MMS ?: BRST: EM = %7.4f +- %7.4f, FAST: EM = %7.4f +- %7.4f',mean(mvaE?.data(:,2)),std(mvaE?.data(:,2)),mean(mvaE?fast.data(:,2)),std(mvaE?fast.data(:,2))))",ic)
 
-%
+%%
 hca = subplot(1,1,1);
 set(hca,'ColorOrder',mms_colors('1234'))
 plot(hca,mvaE1fast.data(:,3),mvaE1fast.data(:,2),'kx',...

@@ -7,9 +7,10 @@ db_info = datastore('mms_db');
 ic = 1:4;
 
 c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
-c_eval('gseE?fast = mms.get_data(''E_gse_edp_fast_l2'',tint,?)',ic);
+c_eval('gseE?fast = mms.get_data(''E_gse_edp_fast_l2'',tint,?)ö',ic);
 
 %%
+angle = 0;
 ic = 1:4;
 id_lmn = 8; % from Genestreti 2018
 switch id_lmn
@@ -26,9 +27,10 @@ switch id_lmn
     M = [];
     N = [];  
   case 14 % #14 from Genestreti 2018, and the one used by Torbert
-    L = [0.9482,-0.255,-0.1893];
+    L = [0.9482,-0.2551,-0.1893];
     M = [0.1818,0.9245,-0.3350];
     N = [0.2604,0.2832,0.9230];  
+    angle = 1;
 end
 lmn = [L;M;N];
 
@@ -43,11 +45,15 @@ c_eval("mvaE?fast = gseE?fast.tlim(tint_e_rec)*lmn';",ic)
 %meanEfast = mean(Efast.data);
 %stdEfast = std(Efast.data);
 
+
+c_eval('mvaE?M_nonstar = irf.ts_scalar(mvaE?.time,mvaE?.z.data*angle + mvaE.y.data);',ic)
+
+
 %disp(sprintf('BRST: E = [%7.4f,%7.4f,%7.4f] +- [%7.4f,%7.4f,%7.4f], FAST: E = [%7.4f,%7.4f,%7.4f] +- [%7.4f,%7.4f,%7.4f]',meanEbrst(:),stdEbrst(:),meanEfast(:),stdEfast(:)))
 disp(sprintf('id_LMN = %g',id_lmn))
 c_eval("disp(sprintf('MMS ?: BRST: EM = %7.4f +- %7.4f, FAST: EM = %7.4f +- %7.4f',mean(mvaE?.data(:,2)),std(mvaE?.data(:,2)),mean(mvaE?fast.data(:,2)),std(mvaE?fast.data(:,2))))",ic)
 
-%%
+%
 hca = subplot(1,1,1);
 set(hca,'ColorOrder',mms_colors('1234'))
 plot(hca,mvaE1fast.data(:,3),mvaE1fast.data(:,2),'kx',...
@@ -55,5 +61,5 @@ plot(hca,mvaE1fast.data(:,3),mvaE1fast.data(:,2),'kx',...
          mvaE3fast.data(:,3),mvaE3fast.data(:,2),'gx',...
          mvaE4fast.data(:,3),mvaE4fast.data(:,2),'bx')
 hca.XLim = [-20 35];
-hca.YLim = [-4 7];
+hca.YLim = [-4 8];
 
