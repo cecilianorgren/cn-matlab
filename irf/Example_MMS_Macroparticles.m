@@ -1,0 +1,65 @@
+mms.db_init('local_file_db','/Volumes/mms');
+
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); 
+
+ic = 3;
+ePDist = mms.get_data('PDe_fpi_brst_l2',tint,ic);
+ne = mms.get_data('Ne_fpi_brst_l2',tint,ic);
+
+iPDist = mms.get_data('PDi_fpi_brst_l2',tint,ic);
+iPDistErr = mms.get_data('PDERRi_fpi_brst_l2',tint,ic);
+iPDist_counts = iPDist; iPDist_counts.data = (iPDist_counts.data./iPDistErr.data).^2;
+
+c_eval('scPot = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+
+%%
+nMP = 1e5;
+
+it = 2000;
+pdist = ePDist(it);
+
+mp = pdist.macroparticles('ntot',nMP,'scpot',scPot(it));
+
+VX = mp.vx;
+VY = mp.vy;
+VZ = mp.vz;
+
+L = [0 1 0];
+M = [0 0 1];
+N = [1 0 0];
+R = [L; M ; N];
+
+VX2 = [VX VY VZ]*L';
+VY2 = [VX VY VZ]*M';
+VZ2 = [VX VY VZ]*N';
+
+VXYZ = [VX VY VZ]*R';
+VABS = sqrt(VX.^2 + VY.^2 + VZ.^2);
+
+
+disp(sprintf('ne = %g, sum(dn) = %g',ne(it).data,sum(mp.dn)))
+
+%% Figure, scatter
+
+step = 1;
+
+hca = subplot(2,2,1);
+scatter3(hca,VX(1:step:end),VY(1:step:end),VZ(1:step:end),5,mp.iDep1(1:step:end)) % energy index (Dep1)
+hca.XLim = prctile(VABS(:),90)*[-1 1];
+hca.YLim = prctile(VABS(:),90)*[-1 1];
+hca.ZLim = prctile(VABS(:),90)*[-1 1];
+
+hca = subplot(2,2,2);
+scatter3(hca,VX(1:step:end),VY(1:step:end),VZ(1:step:end),5,mp.iDep2(1:step:end)) % azimuthal angle index (Dep2)
+hca.XLim = prctile(VABS(:),90)*[-1 1];
+hca.YLim = prctile(VABS(:),90)*[-1 1];
+hca.ZLim = prctile(VABS(:),90)*[-1 1];
+
+hca = subplot(2,2,3);
+scatter3(hca,VX(1:step:end),VY(1:step:end),VZ(1:step:end),5,mp.iDep3(1:step:end)) % polar angle index (Dep3)
+hca.XLim = prctile(VABS(:),90)*[-1 1];
+hca.YLim = prctile(VABS(:),90)*[-1 1];
+hca.ZLim = prctile(VABS(:),90)*[-1 1];
+
+hca = subplot(2,2,4);
+hist(hca,mp.dn,100)
