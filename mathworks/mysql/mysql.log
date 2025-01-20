@@ -1,0 +1,34 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018) (preloaded format=mex 2018.4.30)  6 SEP 2018 12:57
+entering extended mode
+ restricted \write18 enabled.
+ %&-line parsing enabled.
+**mysql.cpp
+(./mysql.cpp
+This is MeX  Version 1.05  18 XII 1993  (B. Jackowski & M. Ry\'cko)
+! You can't use `macro parameter character #' in vertical mode.
+l.1 #
+     include <stdlib.h>
+? 
+! You can't use `macro parameter character #' in horizontal mode.
+l.2 #
+     include <stdio.h>
+? 
+! You can't use `macro parameter character #' in horizontal mode.
+l.3 #
+     include <string.h>
+? 
+! Interruption.
+<to be read again> 
+                   i
+l.3 #i
+      nclude <string.h>
+? 
+! You can't use `macro parameter character #' in horizontal mode.
+l.4 #
+     include <ctype.h>  //  for toupper() macro in streq()
+? 
+! You can't use `macro parameter character #' in vertical mode.
+l.6 #
+     ifdef WIN32
+? exir\
+No pages of output.
