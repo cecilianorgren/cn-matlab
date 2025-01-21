@@ -8,8 +8,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
 units = irf_units;
@@ -23,7 +23,7 @@ c_eval('tic; gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2
 %c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
 
 % Electric field
-disp('Loading electric field...')
+disp('Loading electric field...') 
 c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
 c_eval('tic; dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint); toc',ic);
 c_eval('tic; E?par=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_par_epar_brst_l2'',tint); toc',ic);
@@ -117,7 +117,7 @@ c_eval('Dng? = sqrt(8*(facPepp?.xy.data.^2+facPepp?.xz.data.^2+facPepp?.yz.data.
 c_eval('Dng? = irf.ts_scalar(ne?.time,Dng?);',ic);
 
 % Compute agyrotropy Aphi from facPeqq
-c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? = agyro?.abs',ic);
+c_eval('agyro? = 2*(facPeqq?.yy-facPeqq?.zz)/(facPeqq?.yy+facPeqq?.zz); agyro? = agyro?.abs;',ic);
 
 % Compute temperature ratio An
 c_eval('Temprat? = facPepp?.xx/(facPepp?.yy);',ic);
@@ -240,8 +240,8 @@ c_eval('mvaGrad_NVve? = irf.ts_scalar(mvaNVVe?.time,gradient(mvaNVVe?.xy.data,tt
 c_eval('mvaNVgradVe? = units.me*ne?*1e6*gseVe?.x*1e3*irf.ts_scalar(mvaVe?.time,gradient(mvaVe?.y.data*1e3,tt))*1e9; mvaNVgradVe?.name = ''n*vx*grad(vy,x)'';',ic)
 c_eval('mvaVgradNVe? = units.me*gseVe?.y*1e3*irf.ts_scalar(mvaVe?.time,gradient(ne?.data*1e6.*mvaVe?.x.data*1e3,tt))*1e9; mvaVgradNVe?.name = ''vy*grad(n*vx)'';',ic)
 c_eval('mvaGradNVe? = irf.ts_scalar(mvaVe?.time,gradient(ne?.data*1e6.*mvaVe?.x.data*1e3,tt)); mvaGradNVe?.name = ''grad_x(n*vx)'';',ic)
-
-np_smooth = 30;
+%%
+np_smooth = 2;
 c_eval('mvaGrad_Se?_smooth = irf.ts_scalar(mvaSe?.time,gradient(mvaSe?.smooth(np_smooth).xy.data)); mvaGrad_Se?.name = ''grad(n*vx*vy + Pxy)'';',ic)
 c_eval('mvaGrad_NVve?_smooth = irf.ts_scalar(mvaNVVe?.time,gradient(mvaNVVe?.smooth(np_smooth).xy.data)); mvaGrad_NVve?.name = ''grad(n*vx*vy)'';',ic)
 c_eval('mvaNVgradVe?_smooth = units.me*ne?*1e6*gseVe?.x*1e3*irf.ts_scalar(mvaVe?.time,gradient(mvaVe?.smooth(np_smooth).y.data*1e3))*1e9; mvaNVgradVe?.name = ''n*vx*grad(vy,x)'';',ic)
@@ -251,6 +251,7 @@ c_eval('mvaR? = gseR?*lmn''; mvaR?.name = ''R LMN'';',1:4)
 
 time_reversal = irf_time('2017-07-11T22:34:02.641773681Z','utc>EpochTT');
 
+disp('Done.')
 %% Spacecraft constellation
 tt = irf_time('2017-07-11T22:33:58.000000000Z','utc>EpochTT');
 R0 = (mvaR1 + mvaR2.resample(mvaR1) + mvaR3.resample(mvaR1) + mvaR4.resample(mvaR1))/4;
@@ -359,7 +360,7 @@ if 1 % B LMN
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
 end 
-if 1 % E LMN
+if 0 % E LMN
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E LMN');
@@ -369,6 +370,21 @@ if 1 % E LMN
   hca.YLabel.String = {'E (mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+end 
+if 1 % E LMN incl Ey*10
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E LMN');
+  colors_tmp = mms_colors('xyza');
+  colors_tmp = [colors_tmp(1,:); colors_tmp(2,:); colors_tmp(2,:).^2; colors_tmp(3,:)];
+  set(hca,'ColorOrder',colors_tmp)  
+  fhigh = 10;
+  c_eval('hh = irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3)*10,mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+  hca.YLabel.String = {'E (mV/m)'};
+  set(hca,'ColorOrder',colors_tmp)
+  irf_legend(hca,{'E_x','E_y','10E_y','E_z'},leg_loc,'fontsize',fontsize);
+
   irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
 end 
 if 1 % Tpar, Tperp
@@ -540,7 +556,7 @@ ic = 3;
 
 tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
 
-npanels = 8;
+npanels = 7;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -584,23 +600,8 @@ if 1 % Ve
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{comps(1),comps(2),comps(3)},[0.98 0.15],'fontsize',fontsize_leg);
 end
-if 1 % E M
-  isub = isub + 1;
-  zoomy = [zoomy isub];
-  hca = irf_panel('E M');
-  set(hca,'ColorOrder',mms_colors('yza'))  
-  fhigh = 10;
-  %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
-  c_eval('irf_patch(hca,{mvaE?.resample(mvaVe?).tlim(tint_edr).y,0});',ic)
-  hold(hca,'on')
-  c_eval('irf_plot(hca,{mvaE?.y.filt(0,fhigh,[],3),mvaVexB?.y},''comp'');',ic) 
-  hold(hca,'off')
-  hca.YLabel.String = {'E_y','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('yza'))
-  %irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
-  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
-end
-if 1 % E LMN
+
+if 0 % E LMN
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E LMN');
@@ -827,6 +828,66 @@ if 0 % gradx(n*Ve), less data
   %irf_legend(hca,{sprintf('smoothed, %g',nsm2),sprintf('smoothed, %g',nsm)},leg_loc,'fontsize',fontsize);
   irf_legend(hca,{sprintf('N_{sm}=%g',nsm),sprintf('v=%g{km/s}',vsc*1e-3)}',[1.01 0.99],'fontsize',14,'color','k');
 end
+
+if 0 % E M, ohms law
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E M');
+
+
+  c_eval('data2 =  mvaGrad_Pe?*1e-9/(ne?*1e6*units.e*vsc)*1e3;',ic)
+  c_eval('data4 =  mvaNVgradVe?*1e-9/(ne?*1e6*units.e*vsc)*1e3;',ic)
+
+  set(hca,'ColorOrder',mms_colors('1234'))  
+  fhigh = 10;
+  if 1
+    c_eval('irf_plot(hca,{mvaE?.y.resample(mvaVe?)+1*mvaVexB?.y,-1*data2.smooth(30),-1*data4.smooth(30)},''comp'');',ic) 
+  elseif 1
+    c_eval('irf_plot(hca,{mvaE?.y.resample(mvaVe?),-1*mvaVexB?.y},''comp'');',ic) 
+  else
+    %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+    c_eval('hp = irf_patch(hca,{mvaE?.resample(mvaVe?).tlim(tint_edr).y,0});',ic)
+    hold(hca,'on')
+    %c_eval('irf_plot(hca,{mvaE?.y.filt(0,fhigh,[],3),-1*mvaVexB?.y},''comp'');',ic) 
+    c_eval('irf_plot(hca,{mvaE?.y.resample(mvaVe?),1*mvaVexB?.y},''comp'');',ic) 
+  end
+  hold(hca,'off')
+  hca.YLabel.String = {'E_y','(mV/m)'};
+  hca.YLabel.Interpreter = 'tex';
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'E_y+u_exB','-\partial_xP_{exy}','-m_enu_x\partial_xu_y'},leg_loc,'fontsize',fontsize_leg);
+  %irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+end
+if 1 % E M, vexB_M
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E M');
+
+
+  c_eval('data2 =  mvaGrad_Pe?*1e-9/(ne?*1e6*units.e*vsc)*1e3;',ic)
+  c_eval('data4 =  mvaNVgradVe?*1e-9/(ne?*1e6*units.e*vsc)*1e3;',ic)
+
+  set(hca,'ColorOrder',mms_colors('1234'))  
+  fhigh = 10;
+  if 1
+    c_eval('irf_plot(hca,{mvaE?.y.resample(mvaVe?),mvaE?.y.resample(mvaVe?)+1*mvaVexB?.y},''comp'');',ic) 
+  elseif 1
+    c_eval('irf_plot(hca,{mvaE?.y.resample(mvaVe?),-1*mvaVexB?.y},''comp'');',ic) 
+  else
+    %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+    c_eval('hp = irf_patch(hca,{mvaE?.resample(mvaVe?).tlim(tint_edr).y,0});',ic)
+    hold(hca,'on')
+    %c_eval('irf_plot(hca,{mvaE?.y.filt(0,fhigh,[],3),-1*mvaVexB?.y},''comp'');',ic) 
+    c_eval('irf_plot(hca,{mvaE?.y.resample(mvaVe?),1*mvaVexB?.y},''comp'');',ic) 
+  end
+  hold(hca,'off')
+  hca.YLabel.String = {'E_y','(mV/m)'};
+  hca.YLabel.Interpreter = 'tex';
+  set(hca,'ColorOrder',mms_colors('1234'))
+  irf_legend(hca,{'E_y','(E_y + u_exB)_y'},[0.98 0.1],'fontsize',fontsize_leg);
+  %irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+end
+
 if 1 % n*Ve, grad_x(nVe) with two yaxes
   set(gcf,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
   
