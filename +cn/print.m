@@ -104,8 +104,10 @@ elseif printInPlotTime
   [~,computername]=system('hostname');
   if strfind(computername,'ift0227887')
     directory = ['/Users/cno062/Research/Events/',timeutc(1:10),extrapath];
+  elseif strfind(computername,'Cecilias-Mac-mini.local')
+    directory = ["/Users/cecilianorgren/ IRFU Dropbox/Cecilia Norgren/Research/Events/",timeutc(1:10),extrapath];    
   else
-    directory = ['/Users/Cecilia/Research/Events/',timeutc(1:10),extrapath];
+    directory = ['/Users/Cecilia/Research/Events/',timeutc(1:10),extrapath];    
   end  
   
   if ~exist(directory,'dir')
@@ -119,8 +121,8 @@ else
       directory = printpath;
     elseif strfind(computername,'CeciliasMacBook')
       directory = printpath;
-    else
-      directory = ['/Users/cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+    else strfind(computername,'Cecilias-Mac-mini')
+      directory = printpath;
     end 
     directory = strrep(directory,'\','');
     if ~exist(directory,'dir')
