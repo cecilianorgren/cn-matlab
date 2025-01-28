@@ -14,6 +14,10 @@ if days
     directory_root = '/Users/cecilia/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
     %directory = ['/Users/cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];
+  elseif strfind(computername,'Cecilias-MacBook')
+    directory_root = '/Users/cecilia/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
+    directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
+    %directory = ['/Users/cecilia/Research/Days/',datestr(now,'yyyy-mm-dd'),extrapath];  
   elseif strfind(computername,'Cecilias-Mac-mini')
     directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
