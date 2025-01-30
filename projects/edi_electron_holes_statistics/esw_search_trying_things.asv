@@ -1,0 +1,102 @@
+%% Convolutions: 2 square functions
+
+x = -10:.1:10;
+
+y1 = heaviside(x-(-3)).*(1-heaviside(x-(1)));
+y2 = heaviside(x-(-1)).*(1-heaviside(x-(3)));
+
+
+z=conv(y1,y2);
+hca = subplot(2,1,1);
+plot(hca,1:numel(x),y1,1:numel(x),y2);
+hca = subplot(2,1,2);
+plot(hca,1:numel(z),z);
+
+
+%% Convolutions: Gaussian and square function
+
+x = -10:.1:10;
+
+y1 = exp(-x.^2);
+y2 = heaviside(x-(-1)).*heaviside(x-(1));
+y2 = heaviside(x-(-1)).*(1-heaviside(x-(1)));
+
+
+z=conv(y1,y2);
+hca = subplot(2,1,1);
+plot(hca,x,y1,x,y2);
+hca = subplot(2,1,2);
+plot(hca,z);
+
+%% Convolutions: 2 gaussian and gaussian
+
+x = -10:.1:10;
+
+y1 = exp(-(x+3).^2) + exp(-(x-3).^2);
+y2 = exp(-x.^2);
+
+
+z = conv(y1,y2);
+
+hca = subplot(2,1,1);
+plot(hca,x,y1,x,y2);
+hca = subplot(2,1,2);
+plot(hca,z);
+
+%% Convolutions: Parallel electric field and dipolar function (deriv. of gaussian)
+tint = irf.tint('2017-07-06T13:54:32.103127685Z/2017-07-06T13:54:32.315286621Z');
+tint = tint + [0.08 -0.08];
+
+tsEpar = gseE1par.tlim(tint);
+
+y1 = tsEpar.data;
+f_esw = @(t,tp2p) t.*exp(-(t./tp2p).^2);
+
+t1 = tsEpar.time-tsEpar.time.start;
+dt = t1(2)-t1(1);
+i1 = 1:numel(t1);
+
+tp2p = dt*8; % sampling steps
+t2 = -3*tp2p:dt:3*tp2p;
+i2 = 1:numel(t2);
+
+
+y2 = f_esw(t2,tp2p);
+
+
+z = conv(y1,y2);
+
+nRows = 3;
+nCols = 1;
+ip = 0;
+for iRow = 1:nRows
+  for iCol = 1:nCols
+    ip = ip + 1;
+    h(iRow,iCol) = subplot(nRows,nCols,ip);
+  end
+end
+isub = 1;
+
+
+for iref = 0:numel(z)-1
+  %iref = 100;
+  
+  isub = 1;
+
+  hca = h(isub); isub = isub + 1;
+  plot(hca,i2,y2); % ESW shape function
+  
+  hca = h(isub); isub = isub + 1;
+  plotyy(hca,i2+iref,y2,i1+(numel(i2)-1),y1); % data and ESW shape function
+  
+  hca = h(isub); isub = isub + 1;
+  plot(hca,1:numel(z),z,iref,z(iref+1),'*');
+  
+  
+  hlinks = linkprop(h(2:3),{'XLim'});
+  h(2).XLim = [0 numel(z)+2*numel(y2)];
+  
+
+
+  pause(0.01)
+end

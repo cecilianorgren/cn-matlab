@@ -1,7 +1,8 @@
 %% Load data
 ic = 1:4;
 tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
 c_eval('gseB?  = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
@@ -10,6 +11,7 @@ c_eval('gseE?  = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_
 c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
 c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',ic)
+
 
 
 %% Cross-correlate EDI and EDP
@@ -33,3 +35,11 @@ maxLagE = 10;
 c_eval('[tsCE?!,tsLE?!] = edi_eh_running_average_correlation(gseE?par,gseE!par,T,dt,maxLagE);',ic,ic)
 
 irf_plot({A1_000,A1_180,B1,B1_int,tsC1_000,tsC1_180})
+
+
+%% Automatically identify ESWs
+
+
+
+
+

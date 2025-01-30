@@ -21,6 +21,9 @@ if days
   elseif strfind(computername,'Cecilias-Mac-mini')
     directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
+  elseif strfind(computername,'Mac')
+    directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
+    directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
   end 
   if ~exist(directory,'dir')
     %eval(['mkdir ', directory])
