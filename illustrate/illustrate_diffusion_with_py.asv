@@ -26,7 +26,7 @@ q = -units.e;
 B0 = 10e-9; % T
 E0 = 3e-3; % V/m
 lz = 30e3; % m
-Ay = @(x,y,z,t) (B0*lz)*log(cosh((z/lz))) - 1*E0*t;
+Ay = @(x,y,z,t) -(B0*lz)*log(cosh((z/lz))) - 1*E0*t;
 Bx = @(x,y,z) B0*tanh(z/lz);
 By = @(x,y,z) x*0;
 Bz = @(x,y,z) 0*x/a^2;
@@ -34,12 +34,15 @@ Ex = @(x,y,z) x*0;
 Ey = @(x,y,z) x*0 + z*0 + E0; % V/m
 Ez = @(x,y,z) x*0;
 Ez = @(x,y,z) 10*E0*-1*(z/1/lz).*exp(-(z/(lz)).^2);
+Phi = @(x,y,z) -y.*Ey(x,y,z);
+H = @(x,y,z,vx,vy,vz) (1/2/m)*(vx).^2 + (1/2/m)*(vy).^2 + (1/2/m)*(vz).^2 + 1*units.e*Phi(x,y,z);
+H = @(x,y,z,vx,vy,vz) (m/2)*(vx).^2 + (m/2)*(vy).^2 + (m/2)*(vz).^2 - 1*units.e*Phi(x,y,z);
 
 
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
                  'AbsTol',1e-6);
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,2,[-400*1e3 400*1e4]),...
-                 'AbsTol',1e-12);
+                 'AbsTol',1e-22,'RelTol',1e-22);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
@@ -82,7 +85,9 @@ for ip = 1:size(x_init_all,1)
   p(ip).py = units.me*p(ip).vy - units.e*Ay(p(ip).x,p(ip).y,p(ip).z,p(ip).t);
   p(ip).py_mvy = units.me*p(ip).vy;
   p(ip).py_qAy = - units.e*Ay(p(ip).x,p(ip).y,p(ip).z,p(ip).t);
-
+  p(ip).H = H(p(ip).x,p(ip).y,p(ip).z,p(ip).vx,p(ip).vy,p(ip).vz);
+  p(ip).Phi = Phi(p(ip).x,p(ip).y,p(ip).z);
+  p(ip).U = (m/2)*(p(ip).vx).^2 + (m/2)*(p(ip).vy).^2 + (m/2)*(p(ip).vz).^2;
 end
 nP = numel(p);
 
@@ -97,7 +102,7 @@ linewidth = 1.5;
 
 if 1 % Figure
   %%
-  nRows = 5;
+  nRows = 7;
   nCols = 1;
   h = setup_subplots(nRows,nCols);
   isub = 1;
@@ -230,6 +235,28 @@ if 1 % Figure
     hold(hca,'off')
     hca.XLabel.String = 't (s)';
     hca.YLabel.String = '-eA_y (...)';
+  end
+  if 1 % H
+    hca = h(isub); isub = isub + 1;
+    
+    for ip = iPs                
+      plot(hca,p(ip).t,p(ip).H,p(ip).t,p(ip).U,p(ip).t,-p(ip).Phi*units.e)
+      if ip == 1, hold(hca,'on'); end
+    end
+    hold(hca,'off')
+    hca.XLabel.String = 't (s)';
+    hca.YLabel.String = 'H (...)';
+  end
+  if 1 % H(y)
+    hca = h(isub); isub = isub + 1;
+    
+    for ip = iPs                
+      plot(hca,p(ip).y*1e-3,p(ip).H,p(ip).y*1e-3,p(ip).U,p(ip).y*1e-3,-p(ip).Phi*units.e)
+      if ip == 1, hold(hca,'on'); end
+    end
+    hold(hca,'off')
+    hca.XLabel.String = 'y (km)';
+    hca.YLabel.String = 'H (...)';
   end
   if 0 % energy
     hca = h(isub); isub = isub + 1;

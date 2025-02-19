@@ -8,8 +8,8 @@ tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
 units = irf_units;
@@ -1719,7 +1719,7 @@ if 1
   ds_clim = 0.025*[-1 1];
 end
 
-c_eval('hm(?) = irf_pl_mark(h1(?),time_reversal);',1:numel(h1))
+%c_eval('hm(?) = irf_pl_mark(h1(?),time_reversal);',1:numel(h1))
 c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h1))
 c_eval('hm(?).LineStyle = ''--'';',1:numel(h1))
 c_eval('hm(?).LineWidth = 1;',1:numel(h1))
@@ -5233,3 +5233,126 @@ for comp = ["xx","yy","zz","xy","xz","yz"]
   hca.YLabel.String = comp;
   irf_legend(hca,{'P','S'}',[1.02,0.95])
 end
+
+%% Figure for IRFU seminar
+%% Figure: Overview 1
+ic = 3;
+
+tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
+
+npanels = 4;
+h = irf_plot(npanels);
+iisub = 0;
+cmap = colormap(pic_colors('candy4'));
+fontsize = 20;
+comps = 'xyz';
+ylim_stress = [-4 3];
+
+isub = 0;
+zoomy = [];
+leg_loc = [0.98 0.1];
+%leg_loc = [1.02 0.9];
+nsm = 1;
+
+if 1 % B LMN
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('B LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
+  hca.YLabel.String = {'B (nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+end 
+if 0 % E LMN
+  isub = isub + 1;
+  zoomy = [zoomy isub];
+  hca = irf_panel('E LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  fhigh = 10;
+  c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+  hca.YLabel.String = {'E (mV/m)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
+  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+end 
+if 1 % Tpar, Tperp
+  hca = irf_panel('Tepar, Teperp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{Te?par,Te?perp},''comp'');',ic)  
+  hca.YLabel.String = {'T_e (eV)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'T_{e,||}','T_{e,\perp}'},[0.98 0.15],'fontsize',fontsize);
+end
+if 1 % Ve
+  hca = irf_panel('Ve LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint)*1e-3,mvaVe?.y.tlim(tint)*1e-3,mvaVe?.z.tlim(tint)*1e-3},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('1'))
+  %c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+  c_eval('irf_plot(hca,{-1*vte?.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+  
+  hca.YLabel.String = {'u_e (10^3 km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{['u_' comps(1)],['u_' comps(2)],['u_' comps(3)],'-v_{te}'},[0.98,0.3],'fontsize',fontsize);
+end
+if 1 % Pe-off LMN
+  hca = irf_panel('Pe off LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaPe?.xy.tlim(tint).smooth(nsm)*1e3,mvaPe?.xz.tlim(tint).smooth(nsm)*1e3,mvaPe?.yz.tlim(tint).smooth(nsm)*1e3},''comp'');',ic)  
+  hca.YLabel.String = {'P_e (pPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{comps(1:2),comps([1 3]),comps([2 3])},leg_loc,'fontsize',fontsize);
+  %irf_legend(hca,{'LM','LN','MN'}',[1.02 0.9],'fontsize',fontsize);
+end
+
+legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
+nInd = 1;
+for ii = 1:npanels
+  irf_legend(h(ii),legends{nInd},[0.01 0.98],'color',[0 0 0],'fontsize',fontsize)
+  nInd = nInd + 1;
+  h(ii).FontSize = fontsize;
+end
+
+time_reversal = irf_time('2017-07-11T22:34:02.641773681Z','utc>EpochTT');
+clear hm
+c_eval('hm(?) = irf_pl_mark(h(?),time_reversal);',1:numel(h))
+c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h))
+c_eval('hm(?).LineStyle = ''--'';',1:numel(h))
+
+irf_legend(h(1),{'Tailward'},[0.22 1.03],'color','k','fontsize',20,'horizontalalignment','right')
+irf_legend(h(1),{'Earthward'},[0.62 1.03],'color','k','fontsize',20,'horizontalalignment','left')
+irf_legend(h(1),{'X line'},[0.42 1.03],'color','k','fontsize',20,'horizontalalignment','center')
+
+%irf_legend(h1(2),{'Tailward'},[0.15 1.02],'color','k','fontsize',15)
+%irf_legend(h1(2),{'Earthward'},[0.95 1.02],'color','k','fontsize',15)
+%irf_legend(h1(2),{'X line'},[0.56 1.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+
+%irf_zoom(h(1:iisub),'x',fastTint)
+irf_zoom(h,'x',tint_edr)
+%irf_zoom(h,'x',tint)
+irf_zoom(h,'y')
+irf_plot_axis_align
+%h(1).Title.String = irf_ssub('MMS ?',ic);
+hl = findobj(gcf,'type','line');
+c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
+h(end).XTickLabelRotation = 0;
+%c_eval('h(?).YLim = ylim_stress;',(4:6)+1)
+
+c_eval('hold(h(?),"on"); plot(h(?),h(?).XLim,[0 0],"color",[0.7 0.7 0.7],"linewidth",1); h(?).Children = circshift(h(?).Children,-1)',1:numel(h))
+
+ c_eval('hmark(?) = irf_pl_mark(h(!),[times_exact{?}(1).epochUnix times_exact{?}(end).epochUnix] + 0.5*0.03*[-1 1],[0.5 0.5 0.5]); hmark(?).FaceAlpha = 0.5;',1:times.length,1:4)
+
+
+  
+%irf_legend(h(1),{'I'},[0.43 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+%irf_legend(h(1),{'II'},[0.495 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+%irf_legend(h(1),{'III'},[0.56 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+%irf_legend(h(1),{'IV'},[0.62 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+%irf_legend(h(1),{'V'},[0.69 0.02],'color','k','fontsize',15,'horizontalalignment','center')
+
+
+c_eval('h(?).FontSize = 24;',1:numel(h))
