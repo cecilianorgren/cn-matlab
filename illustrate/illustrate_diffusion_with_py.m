@@ -35,8 +35,8 @@ Ey = @(x,y,z) x*0 + z*0 + E0; % V/m
 Ez = @(x,y,z) x*0;
 Ez = @(x,y,z) 10*E0*-1*(z/1/lz).*exp(-(z/(lz)).^2)*0; % finite Ez makes H change with time, and thus with y (since the electron moves along y)
 Phi = @(x,y,z) -y.*Ey(x,y,z) - z.*Ez(x,y,z);
-H = @(x,y,z,vx,vy,vz) (1/2/m)*(vx).^2 + (1/2/m)*(vy).^2 + (1/2/m)*(vz).^2 + 1*units.e*Phi(x,y,z);
-H = @(x,y,z,vx,vy,vz) (m/2)*(vx).^2 + (m/2)*(vy).^2 + (m/2)*(vz).^2 - 1*units.e*Phi(x,y,z);
+H_p = @(x,y,z,px,py,pz,t) 0*(1/2/m)*(px).^2 + (1/2/m)*(px-q*Ay(x,y,z,t)).^2 + 0*(1/2/m)*(pz).^2 + 1*q*Phi(x,y,z);
+H_v = @(x,y,z,vx,vy,vz) (m/2)*(vx).^2 + (m/2)*(vy).^2 + (m/2)*(vz).^2 + 1*q*Phi(x,y,z);
 
 
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
@@ -82,10 +82,13 @@ for ip = 1:size(x_init_all,1)
   ylim(2) = max([ylim(2); p(ip).y]);
   zlim(1) = min([zlim(1); p(ip).z]);
   zlim(2) = max([zlim(2); p(ip).z]);
+  p(ip).px = units.me*p(ip).vx;
   p(ip).py = units.me*p(ip).vy - units.e*Ay(p(ip).x,p(ip).y,p(ip).z,p(ip).t);
+  p(ip).pz = units.me*p(ip).vz;
   p(ip).py_mvy = units.me*p(ip).vy;
   p(ip).py_qAy = - units.e*Ay(p(ip).x,p(ip).y,p(ip).z,p(ip).t);
-  p(ip).H = H(p(ip).x-p(ip).x(1),p(ip).y-p(ip).y(1),p(ip).z-p(ip).z(1),p(ip).vx,p(ip).vy,p(ip).vz);
+  p(ip).H_v = H_v(p(ip).x,p(ip).y,p(ip).z,p(ip).vx,p(ip).vy,p(ip).vz);
+  p(ip).H_p = H_p(p(ip).x,p(ip).y,p(ip).z,p(ip).px,p(ip).py,p(ip).pz,p(ip).t);
   p(ip).Phi = Phi(p(ip).x,p(ip).y,p(ip).z);
   p(ip).Phi = Phi(p(ip).x-p(ip).x(1),p(ip).y-p(ip).y(1),p(ip).z-p(ip).z(1));
   p(ip).U = (m/2)*(p(ip).vx).^2 + (m/2)*(p(ip).vy).^2 + (m/2)*(p(ip).vz).^2;
@@ -103,7 +106,7 @@ linewidth = 1.5;
 
 if 1 % Figure
   %%
-  nRows = 7;
+  nRows = 8;
   nCols = 1;
   h = setup_subplots(nRows,nCols);
   isub = 1;
@@ -241,7 +244,7 @@ if 1 % Figure
     hca = h(isub); isub = isub + 1;
     
     for ip = iPs                
-      plot(hca,p(ip).t,p(ip).H,p(ip).t,p(ip).U,p(ip).t,-p(ip).Phi*units.e)
+      plot(hca,p(ip).t,p(ip).H_v,p(ip).t,p(ip).U,p(ip).t,-p(ip).Phi*units.e)
       if ip == 1, hold(hca,'on'); end
     end
     hold(hca,'off')
@@ -252,7 +255,18 @@ if 1 % Figure
     hca = h(isub); isub = isub + 1;
     
     for ip = iPs                
-      plot(hca,p(ip).y*1e-3,p(ip).H,p(ip).y*1e-3,p(ip).U,p(ip).y*1e-3,-p(ip).Phi*units.e)
+      plot(hca,p(ip).y*1e-3,p(ip).H_v,p(ip).y*1e-3,p(ip).U,p(ip).y*1e-3,-p(ip).Phi*units.e)
+      if ip == 1, hold(hca,'on'); end
+    end
+    hold(hca,'off')
+    hca.XLabel.String = 'y (km)';
+    hca.YLabel.String = 'H (...)';
+  end
+  if 1 % H_v, H_p vs t
+    hca = h(isub); isub = isub + 1;
+    
+    for ip = iPs                
+      plotyy(hca,p(ip).t,p(ip).H_v,p(ip).t,p(ip).H_p)
       if ip == 1, hold(hca,'on'); end
     end
     hold(hca,'off')

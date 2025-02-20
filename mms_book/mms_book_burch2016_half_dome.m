@@ -7,9 +7,9 @@ localuser = 'cno062';
 %localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
-%mms.db_init('local_file_db',['/Volumes/mms']);
+mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
 %
 tint_all = irf.tint('2015-10-16T13:00:24.00Z/2015-10-16T13:09:30.00Z');
@@ -57,6 +57,8 @@ c_eval('defatt.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tin
 c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt,-1);',ic)
 c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt,-1);',ic)
 c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt,-1);',ic)
+
+% Make reduced distributions
 
 %% Plot distributions
 ic = 2;
