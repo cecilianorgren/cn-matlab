@@ -946,7 +946,7 @@ for ipart = 1:numel(x0)
 end
 toc
 
-%% Plot results
+% Plot results
 ipart = 1;
 p_e = pall_e(ipart);
 p_i = pall_i(ipart);
@@ -958,7 +958,7 @@ quiv_scal = 6;
 
 fontsize = 16;
 
-h = setup_subplots(3,1);
+h = setup_subplots(4,2);
 isub = 1;
 tlim = [0 55];
 
@@ -1003,7 +1003,7 @@ if 0 % 2D trajectory
   hca.XLim = [60 140];
   colormap(hca,pic_colors('blue_red'))
 end
-if 0 % 2D trajectory, with time-colored plots
+if 1 % 2D trajectory, with time-colored plots
   hca = h(isub); isub = isub + 1;
 
   Ay = pic.A;
@@ -1040,7 +1040,7 @@ if 0 % 2D trajectory, with time-colored plots
   %view(hca,[0 1 0]);
   hca.XLim = [60 140];
 end
-if 0 % 2D trajectory, with time-colored plots of vx
+if 1 % 2D trajectory, with time-colored plots of vx
   hca = h(isub); isub = isub + 1;
 
   Ay = pic.A;
@@ -1079,7 +1079,7 @@ if 0 % 2D trajectory, with time-colored plots of vx
   hca.XLim = [60 140];
 end
 
-if 0 % 3D trajectory
+if 1 % 3D trajectory
   hca = h(isub); isub = isub + 1;
 
   Ay = pic.A;
@@ -1106,7 +1106,7 @@ if 0 % 3D trajectory
   hca.ZLabel.String = 'z/d_i';
   %view(hca,[0 1 0]);
 end
-if 0 % t(x)
+if 1 % t(x)
   hca = h(isub); isub = isub + 1;
 
  
@@ -1122,7 +1122,7 @@ if 0 % t(x)
   hca.YLim = tlim;
   irf_legend(hca,{'Normal Hall fields','No Hall fields'}',[0.02 0.02],'fontsize',fontsize)
 end
-if 0 % t(vx)
+if 1 % t(vx)
   hca = h(isub); isub = isub + 1;
 
  
@@ -1163,7 +1163,7 @@ if 1 % Fx(t)
   Ex1 = p_i.Ex(itpi);
   vzBy1 = -p_i.vz(itpi).*p_i.By(itpi);
   vyBz1 = p_i.vy(itpi).*p_i.Bz(itpi);
-  Ex2 = p_e.Ex(itpe);
+  Ex2 = p_i.Ex(itpe);
   vzBy2 = -p_e.vz(itpe).*p_e.By(itpe);
   vyBz2 = p_e.vy(itpe).*p_e.Bz(itpe);
   colors = hca.ColorOrder;
@@ -1187,32 +1187,25 @@ if 1 % W(t)
   
   itpi = intersect(find(p_i.t>tlim(1)),find(p_i.t<tlim(2)));
   itpe = intersect(find(p_e.t>tlim(1)),find(p_e.t<tlim(2)));  
-  Ex1 = p_i.Ex(itpi); x1 = p_i.x(itpi); 
-  Ey1 = p_i.Ey(itpi); y1 = p_i.y(itpi);
-  Ez1 = p_i.Ez(itpi); z1 = p_i.z(itpi);
-  Ex2 = p_e.Ex(itpe); x2 = p_e.x(itpe);
-  Ey2 = p_e.Ey(itpe); y2 = p_e.y(itpe);
-  Ez2 = p_e.Ez(itpe); z2 = p_e.z(itpe);
-  Wx1 = cumtrapz(x1,Ex1);
-  Wy1 = cumtrapz(y1,Ey1);
-  Wz1 = cumtrapz(z1,Ez1);
-  Wx2 = cumtrapz(x2,Ex2);
-  Wy2 = cumtrapz(y2,Ey2);
-  Wz2 = cumtrapz(z2,Ez2);
-
+  Ex1 = p_i.Ex(itpi);
+  Ey1 = p_i.Ey(itpi);
+  Ez1 = p_i.Ez(itpi);
+  Ex2 = p_i.Ex(itpe);
+  Ey2 = p_i.Ex(itpe);
+  Ez2 = p_i.Ex(itpe);
   colors = hca.ColorOrder;
   hca.ColorOrder = colors;
-  plot(hca,p_i.t(itpi),Wx1, p_i.t(itpi),Wy1, p_i.t(itpi),Wz1, 'linewidth',2)  
+  plot(hca,p_i.t(itpi),Ex1, p_i.t(itpi),vzBy1, p_i.t(itpi),vyBz1, 'linewidth',2)  
   hold(hca,'on')
   hca.ColorOrder = colors;
-  plot(hca,p_e.t(itpe),Wx2, p_e.t(itpe),Wy2, p_e.t(itpe),Wz2, 'linewidth',2,'linestyle','--')  
+  plot(hca,p_e.t(itpe),Ex2, p_e.t(itpe),vzBy2, p_e.t(itpe),vyBz2, 'linewidth',2,'linestyle','--')  
   hold(hca,'off')
   hca.Box = 'on';
   hca.XLabel.String = 't\omega_{ci}';
   hca.YLabel.String = 'x/d_i';
   %view(hca,[0 1 0]);
   hca.XLim = tlim;
-  irf_legend(hca,{'W_x','W_y','W_z'},[0.02 0.98],'fontsize',16)
+  irf_legend(hca,{'E_x','-v_yB_x','v_xB_y'},[0.02 0.98],'fontsize',16)
 end
 
 h(1).Title.String = sprintf('x_0 = %g, z_0 = %g',x0,z0);
