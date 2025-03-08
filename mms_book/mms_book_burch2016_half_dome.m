@@ -1,4 +1,4 @@
-%% Load data
+ %% Load data
 % units = irf_units;
 irf.log('critical')
 ic = 2:3:4;
