@@ -1,0 +1,28 @@
+function varargout = maximum_shear_direction(P)
+
+T = P.data;
+
+% Rotate tensor, to find the most unequal component
+theta1 = 0.5*atan((2*T(:,2,3))./(T(:,3,3)-T(:,2,2)));
+theta2 = 0.5*atan((2*T(:,1,2))./(T(:,2,2)-T(:,1,1)));
+%theta2 = 0.5*atan((2*T(2,1))./(T(1,1)-T(2,2)));
+
+% Initialize arrays
+R2 = zeros(P.length,3,3);
+T2 = zeros(P.length,3,3);
+
+R2(:,1,:) = [cos(theta2) -sin(theta2) theta2*0];
+R2(:,2,:) = [sin(theta2) cos(theta2) theta2*0];
+R2(:,3,:) = repmat([0 0 1],P.length,1);
+
+T2(:,1,:) = R2(:,1,:)*(T(:,:,1).*R2(:,1) + T(:,:,2).*R2(:,2) + T(:,:,3).*R2(:,3));
+
+
+T2 = R2*(T*transpose(R2));
+T2 = 
+
+if T2(1,1) > T2(2,2)
+  theta2 = -theta2;
+  R2 = [cos(theta2) -sin(theta2) 0; sin(theta2) cos(theta2) 0; 0 0 1];
+  T2 = R2*(T*transpose(R2));
+end

@@ -181,6 +181,15 @@ c_eval('fi?_L = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).eli
 c_eval('fi?_M = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',M);',ic)
 c_eval('fi?_N = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',N);',ic)
 
+
+%% Reduce distribution in direction of maximum pressure
+Trot = maximum_shear_direction(gsePi3);
+e1 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,1,:)));
+e2 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,2,:)));
+e3 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,3,:)));
+
+c_eval('fi?_e1 = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',e1);',ic)
+
 %% Define times, etc... things that are common for the entire study
 tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z');
 time_xline = irf_time('2017-07-11T22:34:03.00Z','utc>EpochTT');
@@ -193,7 +202,7 @@ nMovMean = 5;
 
 %% Figure: Overview
 
-h = irf_plot(6);
+h = irf_plot(7);
 
 fontsize = 12;
 
@@ -278,6 +287,21 @@ if 1 % fi red L
   hca = irf_panel('fi N');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,fi?_N.specrec,''donotfitcolorbarlabel'');',ic)  
+  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
+  
+  
+  hca.NextPlot = "add";
+  %c_eval('irf_plot(hca,mvaVi?.z,''k-'')',ic)
+  hca.NextPlot = "replace";
+
+  hca.YLabel.String = {'v_{iN} (km/s)'};
+end
+if 1 % fi red e1
+  hca = irf_panel('fi e1');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_spectrogram(hca,fi?_e1.specrec,''donotfitcolorbarlabel'');',ic)  
   
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
