@@ -7,17 +7,17 @@ fileName = 'illustration_magnetic_reconnection';
 a = 5;
 b = 1;
 x = a*linspace(-10,10,200);
-y = b*linspace(-10,10,100);
-z = linspace(-10,10,5);
-[X,Y] = meshgrid(x,y);
-dx = x(2) - x(1);
-dy = y(2) - y(1);
-%dz = z(2) - z(1);
-x_xline = x;
-y_xline = x*b/a;
+z = b*linspace(-10,10,100);
 
-Ay = @(x,y) (x/a).^2 - (y/b).^2;
-AY0 = Ay(X,Y);
+[X,Z] = meshgrid(x,z);
+dx = x(2) - x(1);
+dz = z(2) - z(1);
+
+x_xline = x;
+z_xline = x*b/a;
+
+Ay = @(x,z) (x/a).^2 - (z/b).^2;
+AY0 = Ay(X,Z);
 
 %[FX,FY] = gradient(AY,dx,dy);
 %Bx = -FX;
@@ -28,7 +28,9 @@ colors = pic_colors('matlab');
 colors = [colors; colors(end:-1:1,:)];
 
 hca = subplot(1,1,1);
-t = 0:30;
+hca.Position(4) = hca.Position(3)*(b/a);
+
+t = 0:60;
 Astep = 20;
 dA = Astep/numel(t);
 AYlev0 = -100:Astep:(100 + Astep);
@@ -51,18 +53,19 @@ end
 % Advance and collect frames
 for it = 1:numel(t)
   % Draw separatrix
-  plot(hca,x_xline,y_xline,'linewidth',1,'linestyle','--','color',color_separatrix)
+  plot(hca,x_xline,z_xline,'linewidth',4,'linestyle','--','color',color_separatrix)
+  %axis(hca,'equal')
   hold(hca,'on')
-  plot(hca,x_xline,-y_xline,'linewidth',1,'linestyle','--','color',color_separatrix)
+  plot(hca,x_xline,-z_xline,'linewidth',4,'linestyle','--','color',color_separatrix)
 
   % Draw field lines
   AY = AY0 - dA*t(it);
-  S = contourcs(x,y,AY,AYlev0);
+  S = contourcs(x,z,AY,AYlev0);
   for is = 1:numel(S)
-    sx = interp1(1:numel(S(is).X),S(is).X,1:0.5:numel(S(is).X));
-    sy = interp1(1:numel(S(is).Y),S(is).Y,1:0.5:numel(S(is).Y));%S(is).Y;
-    plot(hca,sx(sy>=0),sy(sy>=0),'color',linecolor_top,'linewidth',2)
-    plot(hca,sx(sy<=0),sy(sy<=0),'color',linecolor_bot,'linewidth',2)
+    sx = interp1(1:numel(S(is).X),S(is).X,1:0.1:numel(S(is).X));
+    sy = interp1(1:numel(S(is).Y),S(is).Y,1:0.1:numel(S(is).Y));%S(is).Y;
+    plot(hca,sx(sy>=0),sy(sy>=0),'color',linecolor_top,'linewidth',8)
+    plot(hca,sx(sy<=0),sy(sy<=0),'color',linecolor_bot,'linewidth',8)
    
 
 %     if not(holdon)
