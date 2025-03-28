@@ -1,4 +1,26 @@
 % illustration_diffusion_orbit
+%% Gyromotion, fake
+
+vy = @(z) 0.5*sin(z);
+Ay = @(z) -0.5*sin(z);
+
+z = linspace(-pi/2,pi/2,100);
+
+h = setup_subplots(1,1);
+isub = 1;
+
+hca = h(isub); isub = isub + 1;
+plot(hca,z,vy(z),z,Ay(z),z,vy(z)+Ay(z))
+hca.Box = 'on';
+%hca.Visible = 'off';
+hca.XLim = z([1 end]);
+
+irf_legend(hca,{'m_iv_y','eA_y','p_y'}',[0.02 0.7],'fontsize',20)
+
+hl = findobj(gcf,'type','line');
+c_eval('hl(?).LineWidth = 2;',1:numel(hl))
+c_eval('h(?).FontSize = 20;',1:numel(h))
+
 
 %% xz
 % Define magnetic field
@@ -33,7 +55,7 @@ Bz = @(x,y,z) 0*x/a^2;
 Ex = @(x,y,z) x*0;
 Ey = @(x,y,z) x*0 + z*0 + E0; % V/m
 Ez = @(x,y,z) x*0;
-Ez = @(x,y,z) 10*E0*-1*(z/1/lz).*exp(-(z/(lz)).^2)*0; % finite Ez makes H change with time, and thus with y (since the electron moves along y)
+Ez = @(x,y,z) 10*E0*-1*(z/1/lz).*exp(-(z/(lz)).^2)*1; % finite Ez makes H change with time, and thus with y (since the electron moves along y)
 Phi = @(x,y,z) -y.*Ey(x,y,z) - z.*Ez(x,y,z);
 H_p = @(x,y,z,px,py,pz,t) 0*(1/2/m)*(px).^2 + (1/2/m)*(px-q*Ay(x,y,z,t)).^2 + 0*(1/2/m)*(pz).^2 + 1*q*Phi(x,y,z);
 H_v = @(x,y,z,vx,vy,vz) (m/2)*(vx).^2 + (m/2)*(vy).^2 + (m/2)*(vz).^2 + 1*q*Phi(x,y,z);
@@ -106,7 +128,7 @@ linewidth = 1.5;
 
 if 1 % Figure
   %%
-  nRows = 8;
+  nRows = 5;
   nCols = 1;
   h = setup_subplots(nRows,nCols);
   isub = 1;
@@ -240,7 +262,7 @@ if 1 % Figure
     hca.XLabel.String = 't (s)';
     hca.YLabel.String = '-eA_y (...)';
   end
-  if 1 % H
+  if 0 % H
     hca = h(isub); isub = isub + 1;
     
     for ip = iPs                
@@ -251,7 +273,7 @@ if 1 % Figure
     hca.XLabel.String = 't (s)';
     hca.YLabel.String = 'H (...)';
   end
-  if 1 % H(y)
+  if 0 % H(y)
     hca = h(isub); isub = isub + 1;
     
     for ip = iPs                
@@ -262,7 +284,7 @@ if 1 % Figure
     hca.XLabel.String = 'y (km)';
     hca.YLabel.String = 'H (...)';
   end
-  if 1 % H_v, H_p vs t
+  if 0 % H_v, H_p vs t
     hca = h(isub); isub = isub + 1;
     
     for ip = iPs                
