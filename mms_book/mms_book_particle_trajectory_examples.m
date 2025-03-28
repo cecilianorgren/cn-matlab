@@ -1,3 +1,42 @@
+%% Integrate trajectories for constant EB from simulation using gridden interpolant
+
+% Integrate trajectories
+vy = pictmp.viy;
+vx = pictmp.vix;
+vz = pictmp.viz;
+F_vx = griddedInterpolant(X,Z,vx);
+F_vy = griddedInterpolant(X,Z,vy);
+F_vz = griddedInterpolant(X,Z,vz);
+
+
+x0 = [20 21 22 23 24];
+z0 = [3 3 3 3 3];
+
+ip = 1;
+
+v0 = [0 0.00 -0.05];
+vx0 = F_vx(x0',z0');
+vy0 = F_vy(x0',z0');
+vz0 = F_vx(x0',z0');
+
+tstart = 0;
+tstop = 150;
+m = 100;
+q = 1;
+%clear particles
+for ipart = 4:numel(x0)
+  r0 = [x0(ipart) 0 z0(ipart)];
+  v0 = [vx0(ipart) vy0(ipart) vz0(ipart)];
+  out = pic(it).integrate_trajectory_constant_EB(r0,v0,tstart,tstop,m,q);
+  particles(ipart) = out;
+end
+%plot3(gca,out.x,out.y,out.z)
+%%
+
+
+%%
+
+
 % See integrate_trajectories
 no02m = PIC('/Volumes/DataRaid/cno062/no_hot_bg_n02_m100/data_h5/fields.h5');
 %trp =

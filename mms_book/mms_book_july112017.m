@@ -145,7 +145,7 @@ tint_edr = irf.tint('2017-07-11T22:34:00.000Z/2017-07-11T22:34:06.000Z'); %20151
 tint_overview = irf.tint('2017-07-11T22:33:29.700Z/2017-07-11T22:34:20.000Z'); %20151112071854
 tint_overview = tint_edr + 30*[-1 1]; %20151112071854
 tint_dist = irf.tint('2017-07-11T22:34:02.367Z/2017-07-11T22:34:02.397Z');
-h = irf_plot(5);
+h = irf_plot(4);
 
 fontsize = 14;
 fontsize_leg = 14;
@@ -164,7 +164,7 @@ if 1 % vi
 end
 h_del = irf_panel('delete');
 
-if 1 % ve
+if 0 % B
   hca = irf_panel('B');
   hca.LineStyleOrder = {'-','-','-','-','--'};
   hca.ColorOrder = mms_colors('xyz');
@@ -282,17 +282,18 @@ irf_zoom(h,'y')
 c_eval('h(?).XTickLabelRotation = 0;',1:numel(h))
 c_eval('h(?).LineWidth = 1.0;',1:numel(h))
 delete(h_del)
-c_eval('h(?).Position(2) = h(?).Position(2)+0.12;',3:numel(h))
+%c_eval('h(?).Position(2) = h(?).Position(2)+0.12;',3:numel(h))
+c_eval('h(?).Position(2) = h(?).Position(2)+0.15;',3:numel(h))
 [hline1,hline2] = irf_plot_zoomin_lines_between_panels(h(1),h(3));
 h(1).XLabel = [];
 
 irf_pl_mark(h(1),tint_edr(1),'k')
 irf_pl_mark(h(1),tint_edr(2),'k')
 
-irf_pl_mark(h(3:5),tint_dist','k')
+irf_pl_mark(h(3:end),tint_dist','k')
 
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',[1 3:numel(h)])
-irf_plot_axis_align(h([1 3:5]))
+irf_plot_axis_align(h([1 3:end]))
 
 %% Overview plot, induction + rotation of ve
 

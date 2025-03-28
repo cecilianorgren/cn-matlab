@@ -1,7 +1,7 @@
 %% Load data
 ic = [3];
-tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z'); %20151112071854
-% tint = irf.tint('2017-07-11T22:34:02.00Z/2017-07-11T22:34:03.00Z');
+
+tint = irf.tint('2015-10-16T13:06:30.00Z/2015-10-16T13:07:30.00Z');
 
 % Load datastore
 %mms.db_init('local_file_db','/Volumes/Nexus/data');
@@ -15,17 +15,17 @@ units = irf_units;
 
 % Magnetic field
 disp('Loading magnetic field...')
-c_eval('tic; dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint); toc;',ic);
-c_eval('tic; gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint); toc;',ic);
-c_eval('tic; gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint); toc;',ic);
+c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
+c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+c_eval('gsmB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gsm_brst_l2'',tint);',ic);
 
 %c_eval('gseB?scm = mms.get_data(''B_gse_scm_brst_l2'',tint,?);',ic)
 
 % Electric field
 disp('Loading electric field...') 
-c_eval('tic; gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint); toc',ic);
-c_eval('tic; dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint); toc',ic);
-c_eval('tic; E?par=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_par_epar_brst_l2'',tint); toc',ic);
+c_eval('gseE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l2'',tint);',ic);
+c_eval('dslE?=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
+c_eval('E?par=mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_par_epar_brst_l2'',tint);',ic);
 %c_eval('tic; dslE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_dsl_brst_l2'',tint); toc',ic);
 %c_eval('tic; gseE?hmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_gse_brst_l2'',tint); toc',ic);
 %c_eval('tic; E?parhmfe=mms.db_get_ts(''mms?_edp_brst_l2_hmfe'',''mms?_edp_hmfe_par_epar_brst_l2'',tint); toc',ic);
@@ -36,17 +36,17 @@ c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1:4);
 
 % Spacecraft potential
 disp('Loading spacecraft potential...')
-c_eval('tic; scPot?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint); toc;',ic);
-c_eval('tic; dcv?=mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l2'',tint); toc;',ic);
+c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+c_eval('dcv? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_dcv_brst_l2'',tint);',ic);
 
 % Particle moments
 % Skymap distributions
-if 0
+if 1
   %%
   ic_ = ic;
   %ic = 3;
 disp('Loading skymaps...')
-c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+c_eval('tic; ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?); toc;',ic)
 %c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
 %c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
 %c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
@@ -164,11 +164,17 @@ if 0 % Gradient from 4 sc
   %c_eval('gseVgradNVe? = gseVe?.y*irf.ts_scalar(gseVe?.time,gradient(ne?.data.*gseVe?.x.data,gseSe?.time-gseSe?.time(1))); gseVgradNVe?.name = ''n*vy*grad(n*vx)'';',ic)
 end
 
-% Rotate things into new coordinate system 
-L = [0.9482,-0.255,-0.1893];
-M = [0.1818,0.9245,-0.3350];
-N = [0.2604,0.2832,0.9230];
+%% Rotate things into new coordinate system 
+L = -[0.3665,-0.1201,-0.9226];
+M = -[0.5694,-0.7553,-0.3245];
+N = -[0.7358,0.6443,-0.2084];
 lmn = [L;M;N];
+
+
+%LMN = [0.3665,-0.1201,-0.9226; 0.5694,-0.7553,-0.3245; 0.7358,0.6443,-0.2084]';
+%L = LMN(1,:);
+%M = LMN(2,:);
+%N = LMN(3,:);
 
 c_eval('tsLgse? = irf.ts_vec_xyz(ePDist?.time,repmat(L,ePDist?.length,1));',ic)
 c_eval('tsMgse? = irf.ts_vec_xyz(ePDist?.time,repmat(M,ePDist?.length,1));',ic)
@@ -254,13 +260,25 @@ c_eval('mvaNVgradVe? = units.me*ne?*1e6*gseVe?.x*1e3*irf.ts_scalar(mvaVe?.time,g
 c_eval('mvaVgradNVe? = units.me*gseVe?.y*1e3*irf.ts_scalar(mvaVe?.time,gradient(ne?.data*1e6.*mvaVe?.x.data*1e3,tt))*1e9; mvaVgradNVe?.name = ''vy*grad(n*vx)'';',ic)
 c_eval('mvaGradNVe? = irf.ts_scalar(mvaVe?.time,gradient(ne?.data*1e6.*mvaVe?.x.data*1e3,tt)); mvaGradNVe?.name = ''grad_x(n*vx)'';',ic)
 
+%% Reduce distributions
+ic_dist = 3;
+ic = ic_dist;
+disp('Preparing reduced distributions.')
+vint = [-Inf Inf];
+elim = [30 40000];
+vg = -10000:200:10000;
+
+
+c_eval('ef1Dx? = ePDist?.elim(elim).reduce(''1D'',L,''vint'',vint,''vg'',vg);',ic)
+c_eval('ef1Dy? = ePDist?.elim(elim).reduce(''1D'',M,''vint'',vint,''vg'',vg);',ic)
+c_eval('ef1Dz? = ePDist?.elim(elim).reduce(''1D'',N,''vint'',vint,''vg'',vg);',ic)
 
 %% Figure: Overview 1
 ic = 3;
 
 tint_edr = irf.tint('2017-07-11T22:33:58.00Z/2017-07-11T22:34:09.00Z'); %20151112071854
 
-npanels = 4;
+npanels = 8;
 h = irf_plot(npanels);
 iisub = 0;
 cmap = colormap(pic_colors('candy4'));
@@ -282,35 +300,92 @@ if 1 % B LMN
   c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
   hca.YLabel.String = {'B (nT)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'x','y','z'}',[1.02,0.98],'fontsize',fontsize);
+  irf_legend(hca,{'L','M','N'}',[1.02,0.98],'fontsize',fontsize);
 end 
-if 0 % E LMN
+if 1 % E LMN
   isub = isub + 1;
   zoomy = [zoomy isub];
   hca = irf_panel('E LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))  
   fhigh = 10;
-  c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+  %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhigh,[],3),mvaE?.y.filt(0,fhigh,[],3),mvaE?.z.filt(0,fhigh,[],3)},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaE?.x,mvaE?.y,mvaE?.z},''comp'');',ic)
   hca.YLabel.String = {'E (mV/m)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{comps(1),comps(2),comps(3)},leg_loc,'fontsize',fontsize);
-  irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
+  irf_legend(hca,{comps(1),comps(2),comps(3)}',[1.02,0.98],'fontsize',fontsize);
+  %irf_legend(hca,{sprintf('f<%g Hz',fhigh)},[0.98 0.98],'fontsize',fontsize,'color',[0 0 0]);
 end 
 
+if 1 % Vi
+  hca = irf_panel('Vi LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaVi?.x.tlim(tint),mvaVi?.y.tlim(tint),mvaVi?.z.tlim(tint)},''comp'');',ic)  
+  set(hca,'ColorOrder',mms_colors('1'))
+  %c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+  %c_eval('irf_plot(hca,{-1*vte?.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+  
+  hca.YLabel.String = {'u_i (km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{['u_' comps(1)],['u_' comps(2)],['u_' comps(3)]}',[1.02,0.98],'fontsize',fontsize);
+end
 if 1 % Ve
   hca = irf_panel('Ve LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint)*1e-3,mvaVe?.y.tlim(tint)*1e-3,mvaVe?.z.tlim(tint)*1e-3},''comp'');',ic)  
+  c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint),mvaVe?.y.tlim(tint),mvaVe?.z.tlim(tint)},''comp'');',ic)  
   set(hca,'ColorOrder',mms_colors('1'))
   %c_eval('irf_plot(hca,{mvaVe?.x.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
-  c_eval('irf_plot(hca,{-1*vte?.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
+  %c_eval('irf_plot(hca,{-1*vte?.tlim(tint).smooth(30)*1e-3},''comp'',''--'');',ic)  
   
-  hca.YLabel.String = {'u_e (10^3 km/s)'};
+  hca.YLabel.String = {'u_e (km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{['u_' comps(1)],['u_' comps(2)],['u_' comps(3)],'-v_{te}'}',[1.02,0.98],'fontsize',fontsize);
+  irf_legend(hca,{['u_' comps(1)],['u_' comps(2)],['u_' comps(3)]}',[1.02,0.98],'fontsize',fontsize);
+end
+if 1 % e DEF omni
+  isub = isub + 1;
+  hca = irf_panel('i DEF omni');  
+  c_eval('[hout,hcb] = irf_spectrogram(hca,ePDist?.omni.deflux.specrec,''log'');',ic)  
+  set(hca,'yscale','log');
+  %set(hca,'ytick',[1e1 1e2 1e3 1e4]);  
+  colormap(hca,cmap) 
+  if 0 % E_ExB
+    hold(hca,'on')
+    c_eval('vexb = gseVExB?_srvy.abs.resample(iPDist?_fast);',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    hexb_p = irf_plot(hca,Eexb,'color',0.2*[1 1 1],'linestyle','-');
+    hexb_o = irf_plot(hca,Eexb*16,'color',0.5*[1 1 1],'linestyle','-');
+    hold(hca,'off')
+    %irf_legend([hexb_p,hexb_o],{'m_pv_{ExB}^2/2','m_Ov_{ExB}^2/2'}',[0.98 0.98])
+  end
+  if 0 % vi_par
+    hold(hca,'on')
+    c_eval('vexb = gseVi?_fast_par.abs;',ic)
+    Eexb = vexb.^2*1e6*units.mp/2/units.eV;
+    irf_plot(hca,Eexb,'b')
+    hold(hca,'off')
+  end
+  hca.YLabel.String = {'E_e','(eV)'};   
+  hca.YLabel.Interpreter = 'tex';
+end
+if 1 % e psd x,y,z, 3 panels
+  for comp = ['x','y','z']
+    isub = isub + 1;
+    hca = irf_panel(['f1D ' comp]);
+    c_eval(sprintf('f1D = ef1D%s?;',comp),ic)
+    irf_spectrogram(hca,f1D.specrec('velocity_1D'));  
+    hca.YLim = f1D.depend{1}(1,[1 end]);  
+    if 0 % % Vi, VExB
+      hold(hca,'on')    
+      c_eval('hl = irf_plot(hca,{gseVi?.(comp),gseVExB?.(comp).resample(gseVi?)},''comp'');',ic)      
+      hold(hca,'off')
+      irf_legend(hl,{'v_i','v_{ExB}'},[0.02 0.12])
+      hl = findobj(hca,'type','line');
+    end
+    hca.YLabel.String = {sprintf('v_{e%s}',comp),'(km/s)'}; 
+    hca.YLabel.Interpreter = 'tex';
+  end
 end
 
-if 1 % beta
+if 0 % beta
   hca = irf_panel('beta');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{betae?, betai?, beta?},''comp'');',ic)  
@@ -320,7 +395,7 @@ if 1 % beta
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'\beta_e','\beta_e','\beta'}',[1.02,0.98],'fontsize',fontsize);
 end
-if 1 % lengths
+if 0 % lengths
   hca = irf_panel('length scales');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{di?, de?, di?*sqrt(betai?.resample(di?)), rce?},''comp'');',ic)  
@@ -342,3 +417,4 @@ end
 
 irf_zoom(h,'x',gseB3.time)
 irf_zoom(h,'y')
+irf_plot_axis_align

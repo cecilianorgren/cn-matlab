@@ -1,7 +1,7 @@
 % Load data
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
 units = irf_units;
@@ -132,6 +132,7 @@ c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
 c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';',ic)
+c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
 c_eval('mvaVe?perp = gseVe?perp*lmn''; mvaVe?perp.name = ''Ve perp LMN'';',ic)
 
 
@@ -181,6 +182,18 @@ c_eval('fi?_L = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).eli
 c_eval('fi?_M = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',M);',ic)
 c_eval('fi?_N = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',N);',ic)
 
+
+%% Reduce distribution in direction of maximum pressure
+Trot = maximum_shear_direction(mvaPi3);
+e1 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,1,:)));
+e2 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,2,:)));
+e3 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,3,:)));
+
+c_eval('fi?_e1 = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',e1);',ic)
+
+
+%pdist_rot2 = pdist.shift(squeeze(vel), 10, R2, 'mms');
+
 %% Define times, etc... things that are common for the entire study
 tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z');
 time_xline = irf_time('2017-07-11T22:34:03.00Z','utc>EpochTT');
@@ -193,7 +206,7 @@ nMovMean = 5;
 
 %% Figure: Overview
 
-h = irf_plot(6);
+h = irf_plot(9);
 
 fontsize = 12;
 
@@ -223,6 +236,24 @@ if 1 % Vi
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
 end
+if 1 % Pi
+  hca = irf_panel('Pi LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaPi?.xx.tlim(tint),mvaPi?.yy.tlim(tint),mvaPi?.zz.tlim(tint)},''comp'');',ic)  
+  
+  hca.YLabel.String = {'P_i (nPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
+end
+if 1 % Pi
+  hca = irf_panel('Pi off LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{mvaPi?.xy.tlim(tint),mvaPi?.xz.tlim(tint),mvaPi?.yz.tlim(tint)},''comp'');',ic)  
+  
+  hca.YLabel.String = {'P_i (nPa)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'LM','LN','MN'},[0.98,0.98],'fontsize',fontsize);
+end
 
 if 0 % dEFlux ion
   hca = irf_panel('ion dEF omni');
@@ -238,7 +269,7 @@ if 0 % dEFlux ion
   irf_legend(hca,{sprintf('N_{mean} = %g',nMovMean),' one-counts removed'},[0.02,0.1],'fontsize',fontsize,'color','k');
 end
 
-if 1 % fi red L
+if 0 % fi red L
   hca = irf_panel('fi L');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('specrec = fi?_L.specrec;',ic)
@@ -259,7 +290,7 @@ if 1 % fi red L
   %irf_legend(hca,sprintf('N_{mean} = %g',nMovMean),[0.02,0.1],'fontsize',fontsize);
   irf_legend(hca,{sprintf('N_{mean} = %g',nMovMean),' one-counts removed'},[0.02,0.98],'fontsize',fontsize,'color','k');
 end
-if 1 % fi red M
+if 0 % fi red M
   hca = irf_panel('fi M');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,fi?_M.specrec,''donotfitcolorbarlabel'');',ic)  
@@ -274,7 +305,7 @@ if 1 % fi red M
   
   hca.YLabel.String = {'v_{iM} (km/s)'};
 end
-if 1 % fi red L
+if 0 % fi red L
   hca = irf_panel('fi N');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,fi?_N.specrec,''donotfitcolorbarlabel'');',ic)  
@@ -288,6 +319,30 @@ if 1 % fi red L
   hca.NextPlot = "replace";
 
   hca.YLabel.String = {'v_{iN} (km/s)'};
+end
+if 1 % max shear direction
+  hca = irf_panel('fi e1');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_spectrogram(hca,fi?_e1.specrec,''donotfitcolorbarlabel'');',ic)  
+  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
+  
+  
+  hca.NextPlot = "add";
+  %c_eval('irf_plot(hca,mvaVi?.z,''k-'')',ic)
+  hca.NextPlot = "replace";
+
+  hca.YLabel.String = {'v_{iN} (km/s)'};
+end
+if 1 % e1
+  hca = irf_panel('Vi e1');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{e1.x,e1.y,e1.z},''comp'');',ic)  
+  
+  hca.YLabel.String = {'e_1 (km/s)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
 end
 
 
@@ -303,7 +358,7 @@ h(end).XTickLabelRotation = 0;
 c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
 %hlinks1 = linkprop(h(3:4),{'CLim'});
 %hlinks2 = linkprop(h(5:7),{'CLim'});
-hlinks2 = linkprop(h(4:6),{'CLim'});
+%hlinks2 = linkprop(h(4:6),{'CLim'});
 h(1).Title.String = sprintf('N_{movmean} = %g',nMovMean);
 c_eval('h(?).FontSize = 14;',1:numel(h))
 
@@ -1045,6 +1100,7 @@ isub = 1;
 elim = [0 Inf];
 c_eval('pdist_all = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim);',ic)
 time = time_vdf;
+
 
 
 vint_L = [-Inf -170];
