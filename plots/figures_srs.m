@@ -354,3 +354,16 @@ end
 if doGif
   imwrite(all_im,map,[printpath fileName,'.gif'],'DelayTime',0,'LoopCount',inf)
 end
+
+%%
+N = 200;
+[X,Y,Z] = sphere(N);
+
+hca = subplot(1,1,1);
+colors = pic_colors('matlab');
+surf(hca,X,Y,Z)
+shading(hca,'flat')
+colormap(colors(6,:))
+camlight
+axis(hca,'equal')
+hca.Visible = 'off';  
