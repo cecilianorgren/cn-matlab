@@ -32,7 +32,7 @@ Ay = pic.A;
 Ay_xline = Avals(1);
 Ay_presheet = 10;
 
-for iA = 10
+for iA = 0
 %iA = -1;
 Amin = Ay_xline + 0.5*(iA-1);
 Amax = Ay_xline + 0.5*iA;
