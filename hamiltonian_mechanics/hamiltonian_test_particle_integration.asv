@@ -535,7 +535,7 @@ zvec = b*linspace(-4,4,100);
 %AY0 = Ay(X,Y,Z);
 
 
-B0 = 14.46e-9;
+B0 = 10e-9;
 E0 = 1e-3;
 % Integrate orbits
 m = units.mp;
@@ -641,7 +641,6 @@ if 1 % Figure 1
   plot(hca,p(ip).x*1e-3,p(ip).z*1e-3)
   hca.XLabel.String = 'x (km)';
   hca.YLabel.String = 'z (km)';
-  axis(hca,'equal')
 
   hca = h(isub); isub = isub + 1;
   plot(hca,p(ip).t,p(ip).x*1e-3 ,p(ip).t,p(ip).z*1e-3)
@@ -665,10 +664,9 @@ if 1 % Figure 1
   hca = h(isub); isub = isub + 1;
   vabs = sqrt(p(ip).vx.^2 + p(ip).vz.^2);
   angle = acosd(p(ip).vx./vabs);
-  angle2 = atand(p(ip).vx./p(ip).vz);
-  plot(hca,p(ip).t,angle2)
+  plot(hca,p(ip).t,angle)
   hca.XLabel.String = 't (s)';
-  hca.YLabel.String = 'atan(v_x/v_z)';
+  hca.YLabel.String = 'acosd(v_x/v)';
 
   hca = h(isub); isub = isub + 1;
   mv22 = m*(p(ip).vx.^2 + p(ip).vz.^2)/2;  
@@ -684,12 +682,10 @@ if 1 % Figure 1
 
   hca = h(isub); isub = isub + 1;
   mv22 = m*(p(ip).vx.^2 + p(ip).vz.^2)/2;  
-  vabs = sqrt(p(ip).vx.^2 + p(ip).vz.^2);
-  angle2 = atand(p(ip).vx./p(ip).vz);
-  
-  plot(hca,mv22/units.eV,angle2)
-  hca.XLabel.String = 'U (eV)';
-  hca.YLabel.String = 'angle';
+  E-Ez(0,0,zvec)./By(0,0,zvec)*1e-3
+  plot(hca,p(ip).t,mv22/units.eV)
+  hca.XLabel.String = 't (s)';
+  hca.YLabel.String = 'mv^2/2 (eV)';
 
 
   if 0 % px vx aX
