@@ -13,7 +13,7 @@ zvec = b*linspace(-4,4,100);
 
 
 B0 = 10e-9;
-E0 = 3e-3;
+E0 = 20e-3;
 % Integrate orbits
 m = units.me;
 q = -units.e;
@@ -535,8 +535,8 @@ zvec = b*linspace(-4,4,100);
 %AY0 = Ay(X,Y,Z);
 
 
-B0 = 14.46e-9;
-E0 = 1e-3;
+B0 = 10e-9;
+E0 = 11e-3;
 % Integrate orbits
 m = units.mp;
 q = units.e;
@@ -558,7 +558,7 @@ options = odeset('AbsTol',1e-12);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
-tstop = 40;
+tstop = 20;
 % Good for y, but do not cross at the same z.
 
 
@@ -641,7 +641,7 @@ if 1 % Figure 1
   plot(hca,p(ip).x*1e-3,p(ip).z*1e-3)
   hca.XLabel.String = 'x (km)';
   hca.YLabel.String = 'z (km)';
-  axis(hca,'equal')
+  %axis(hca,'equal')
 
   hca = h(isub); isub = isub + 1;
   plot(hca,p(ip).t,p(ip).x*1e-3 ,p(ip).t,p(ip).z*1e-3)

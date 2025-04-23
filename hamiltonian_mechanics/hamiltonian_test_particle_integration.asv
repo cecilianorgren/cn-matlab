@@ -13,7 +13,7 @@ zvec = b*linspace(-4,4,100);
 
 
 B0 = 10e-9;
-E0 = 3e-3;
+E0 = 20e-3;
 % Integrate orbits
 m = units.me;
 q = -units.e;
@@ -536,7 +536,7 @@ zvec = b*linspace(-4,4,100);
 
 
 B0 = 10e-9;
-E0 = 1e-3;
+E0 = 11e-3;
 % Integrate orbits
 m = units.mp;
 q = units.e;
@@ -558,7 +558,7 @@ options = odeset('AbsTol',1e-12);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
-tstop = 40;
+tstop = 20;
 % Good for y, but do not cross at the same z.
 
 
@@ -641,6 +641,7 @@ if 1 % Figure 1
   plot(hca,p(ip).x*1e-3,p(ip).z*1e-3)
   hca.XLabel.String = 'x (km)';
   hca.YLabel.String = 'z (km)';
+  %axis(hca,'equal')
 
   hca = h(isub); isub = isub + 1;
   plot(hca,p(ip).t,p(ip).x*1e-3 ,p(ip).t,p(ip).z*1e-3)
@@ -664,9 +665,10 @@ if 1 % Figure 1
   hca = h(isub); isub = isub + 1;
   vabs = sqrt(p(ip).vx.^2 + p(ip).vz.^2);
   angle = acosd(p(ip).vx./vabs);
-  plot(hca,p(ip).t,angle)
+  angle2 = atand(p(ip).vx./p(ip).vz);
+  plot(hca,p(ip).t,angle2)
   hca.XLabel.String = 't (s)';
-  hca.YLabel.String = 'acosd(v_x/v)';
+  hca.YLabel.String = 'atan(v_x/v_z)';
 
   hca = h(isub); isub = isub + 1;
   mv22 = m*(p(ip).vx.^2 + p(ip).vz.^2)/2;  
@@ -682,10 +684,12 @@ if 1 % Figure 1
 
   hca = h(isub); isub = isub + 1;
   mv22 = m*(p(ip).vx.^2 + p(ip).vz.^2)/2;  
-  E-Ez(0,0,zvec)./By(0,0,zvec)*1e-3
-  plot(hca,p(ip).t,mv22/units.eV)
-  hca.XLabel.String = 't (s)';
-  hca.YLabel.String = 'mv^2/2 (eV)';
+  vabs = sqrt(p(ip).vx.^2 + p(ip).vz.^2);
+  angle2 = atand(p(ip).vx./p(ip).vz);
+  
+  plot(hca,mv22/units.eV,angle2)
+  hca.XLabel.String = 'U (eV)';
+  hca.YLabel.String = 'angle';
 
 
   if 0 % px vx aX

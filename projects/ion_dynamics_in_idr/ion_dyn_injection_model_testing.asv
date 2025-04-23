@@ -161,52 +161,13 @@ no02m.twpelim(23000).plot_map({'Ez','By','abs(Ez./By)','abs(vz(3)./vx(3))'}','cl
 %% On observed data, data can be loaded with paper_ion_dynamics_inside_idr_hall_fields.m
 time_xline_ion = irf_time('2017-07-11T22:34:02.00Z','utc>EpochTT');
 tref = time_xline_ion +- 10;
-intEz = irf_integrate(mvaE3.z,tref);
-intJxBz = irf_integrate(mvaJxBne3_mVm.z,tref);
-intBy = irf_integrate(mvaB3.y,tref);
+intEz = irf_integrate(gseE3.z,tref);
+intBy = irf_integrate(gseB3.y,tref);
 
 
-h = irf_plot(8);
-
-hca = irf_panel('Vi');
-irf_plot(hca,mvaVi3);
-hca.YLabel.String = 'v_i (km/s)';
+h = irf_plot(6);
 
 hca = irf_panel('B');
-irf_plot(hca,mvaB3);
-hca.YLabel.String = 'B (nT)';
-
-hca = irf_panel('E');
-irf_plot(hca,mvaE3.resample(mvaVi3));
-hca.YLabel.String = 'E (mV/m)';
-
-hca = irf_panel('JxB/ne');
-irf_plot(hca,mvaJxBne3_mVm.resample(mvaVi3));
-hca.YLabel.String = 'JxB/ne (mV/m)';
-
-hca = irf_panel('int By');
-irf_plot(hca,intBy);
-hca.YLabel.String = '\int By dt (nTs)';
-hca.YLabel.Interpreter = 'tex';
-
-hca = irf_panel('int Ez');
-irf_plot(hca,intEz);
-hca.YLabel.String = '\int Ez dt (s mV/m)';
-hca.YLabel.Interpreter = 'tex';
-
-hca = irf_panel('int JxB/ne');
-irf_plot(hca,intEz);
-hca.YLabel.String = '\int JxB/ne dt (s mV/m)';
-hca.YLabel.Interpreter = 'tex';
-
-
-hca = irf_panel('int Ez / int By');
-toplot = 1e-3*(intEz*1e-3)/(intBy*1e-9);
-irf_plot(hca,toplot);
-hca.YLabel.String = '\int Ez dt/\int By dt (km/s)';
-hca.YLabel.Interpreter = 'tex';
-hca.YLim = prctile(toplot.data,[3 97]);
-
 
 
 
