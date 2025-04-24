@@ -811,6 +811,7 @@ VZ(VZ == 0) = NaN;
 VXVZ(VXVZ == 0) = NaN;
 
 x_label = 'U (eV)';
+y_label = '\phi/A_x (km/s)'; % 'E_0/B_0 (km/s)'
 
 if 1
   %v_ = linspace(0,2000,250); % km/s
@@ -818,37 +819,39 @@ if 1
   UU = sqrt(2*UU/m_)*1e-3*units.eV;
   %VV*units.eV;
   %v = sqrt(2*U/m);
-  x_label = '|v| (km/s)';
+  x_label = 'v (km/s)';
 end
 fontsize = 16;
 
-nRows = 3; nCols = 2;
+nRows = 1; nCols = 4;
 h = setup_subplots(nRows,nCols,'horizontal');
 
 isub = 1;
 
+if 0 % U_x
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, (UX/units.eV))
 shading(hca,'flat')
 hca.XLabel.String = x_label;
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'U_x';
-
+end
+if 0 % Uz
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, (UZ/units.eV))
 shading(hca,'flat')
 hca.XLabel.String = x_label;
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'U_z';
-
+end
 
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, VX*1e-3)
 shading(hca,'flat')
 hca.XLabel.String = x_label;
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'v_x (km/s)';
 
@@ -856,7 +859,7 @@ hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, VZ*1e-3)
 shading(hca,'flat')
 hca.XLabel.String = x_label;
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'v_z (km/s)';
 
@@ -864,7 +867,7 @@ hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, abs(VXVZ))
 shading(hca,'flat')
 hca.XLabel.String = x_label;
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = '|v_x/v_z|';
 hca.CLim = [0 prctile(hca.Children.CData(:),99)];
@@ -873,12 +876,14 @@ hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, atand(VXVZ))
 shading(hca,'flat')
 hca.XLabel.String = x_label;
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
-hcb.YLabel.String = 'tan^{-1}(v_x/v_z)';
+hcb.YLabel.String = '\theta = tan^{-1}(v_x/v_z)';
 %hca.CLim = [0 prctile(hca.Children.CData(:),99)];
 
-colormap(pic_colors('candy4'))
+%colormap(pic_colors('candy4'))
+colormap(irf_colormap('waterfall'))
+compact_panels(0.01,0.01)
 c_eval('h(?).Color = [0.9 0.9 0.9];',1:numel(h))
 c_eval('h(?).Box = ''on''; h(?).Layer = ''top'';',1:numel(h))
 c_eval('h(?).FontSize = 16;',1:numel(h))
@@ -888,8 +893,10 @@ c_eval('h(?).FontSize = 16;',1:numel(h))
 
 
 hb = findobj(gcf,'type','colorbar');
-c_eval('h(?).Position(3) = h(?).Position(3)*0.9;',1:numel(hb))
-c_eval('hb(?).Position(1) = hb(?).Position(1)-0.01;',1:numel(hb))
+%c_eval('h(?).Position(3) = h(?).Position(3)*1.1;',1:numel(hb))
+c_eval('h(?).Position(2) = 0.15;',1:numel(hb))
+%c_eval('hb(?).Position(1) = hb(?).Position(1)-0.0;',1:numel(hb))
+c_eval('hb(?).Location = ''south''; hb(?).Position(3) = hb(?).Position(3)/2; hb(?).Position(1) = hb(?).Position(1) + hb(?).Position(3);',1:numel(hb))
 
 delete(h(isub:end))
 h(isub:end) = [];
