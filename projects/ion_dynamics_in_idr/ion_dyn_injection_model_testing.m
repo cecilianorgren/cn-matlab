@@ -160,54 +160,99 @@ no02m.twpelim(23000).plot_map({'Ez','By','abs(Ez./By)','abs(vz(3)./vx(3))'}','cl
 
 %% On observed data, data can be loaded with paper_ion_dynamics_inside_idr_hall_fields.m
 time_xline_ion = irf_time('2017-07-11T22:34:02.00Z','utc>EpochTT');
-tref = time_xline_ion +- 10;
+tref = time_xline_ion +- 140;
 intEz = irf_integrate(mvaE3.z,tref);
 intJxBz = irf_integrate(mvaJxBne3_mVm.z,tref);
 intBy = irf_integrate(mvaB3.y,tref);
+aa = ne3.data*1e6;
+bb = mvaE3.z.resample(ne3).data*1e-3;
+
+cc = mvaJLBM3.data*1e-18;
+dd = mvaJ3.y.data*1e-9;
+
+Bx_Hall_data = -1e9*(units.e*aa.*bb - cc)./dd;
+Bx_Hall_data(abs(Bx_Hall_data) > prctile(abs(Bx_Hall_data),90)) = NaN;
+Bx_Hall = irf.ts_vec_xyz(mvaJLBM3.time, [Bx_Hall_data 0*Bx_Hall_data 0*Bx_Hall_data]);
+Bx_Hall = Bx_Hall.x;
+
+ee = sqrt(mvaB3.x.resample(Bx_Hall).data.^2 + Bx_Hall.data.^2);
+Bxy = irf.ts_scalar(Bx_Hall.time, ee);
+
+intBxy = irf_integrate(Bxy,tref);
+%%
 
 
-h = irf_plot(8);
+h = irf_plot(7);
 
 hca = irf_panel('Vi');
 irf_plot(hca,mvaVi3);
+hca.ColorOrder = mms_colors('xyz');
 hca.YLabel.String = 'v_i (km/s)';
 
 hca = irf_panel('B');
 irf_plot(hca,mvaB3);
+hca.ColorOrder = mms_colors('xyz');
 hca.YLabel.String = 'B (nT)';
+
+hca = irf_panel('Bx Hall');
+hca.ColorOrder = mms_colors('1234');
+irf_plot(hca,{Bx_Hall.x.filt(0,5,[],5),mvaB3.x},'comp');
+hca.YLabel.String = 'B_x (nT)';
+hca.YLabel.Interpreter = 'tex';
+hca.ColorOrder = mms_colors('1234');
+irf_legend(hca,{'B_x^{Hall}','B_x'},[0.02 0.98])
 
 hca = irf_panel('E');
 irf_plot(hca,mvaE3.resample(mvaVi3));
+hca.ColorOrder = mms_colors('xyz');
 hca.YLabel.String = 'E (mV/m)';
 
 hca = irf_panel('JxB/ne');
 irf_plot(hca,mvaJxBne3_mVm.resample(mvaVi3));
+hca.ColorOrder = mms_colors('xyz');
 hca.YLabel.String = 'JxB/ne (mV/m)';
 
-hca = irf_panel('int By');
-irf_plot(hca,intBy);
-hca.YLabel.String = '\int By dt (nTs)';
+hca = irf_panel('int By, Ez, JxB/ne');
+hca.ColorOrder = mms_colors('1234');
+irf_plot(hca,{intEz, intJxBz, intBy, intBxy},'comp');
+hca.YLabel.String = '\int X dt (nTs, s mV/m)';
 hca.YLabel.Interpreter = 'tex';
+hca.ColorOrder = mms_colors('1234');
+irf_legend(hca,{'\int Ez dt', '\int JxB/ne dt', '\int By dt', '\int Bxy dt'},[0.02 0.98])
 
-hca = irf_panel('int Ez');
-irf_plot(hca,intEz);
-hca.YLabel.String = '\int Ez dt (s mV/m)';
-hca.YLabel.Interpreter = 'tex';
-
-hca = irf_panel('int JxB/ne');
-irf_plot(hca,intEz);
-hca.YLabel.String = '\int JxB/ne dt (s mV/m)';
-hca.YLabel.Interpreter = 'tex';
+if 0
+  hca = irf_panel('int By');
+  irf_plot(hca,intBy);
+  hca.YLabel.String = '\int By dt (nTs)';
+  hca.YLabel.Interpreter = 'tex';
+  
+  hca = irf_panel('int Ez');
+  irf_plot(hca,intEz);
+  hca.YLabel.String = '\int Ez dt (s mV/m)';
+  hca.YLabel.Interpreter = 'tex';
+  
+  hca = irf_panel('int JxB/ne');
+  irf_plot(hca,intJxBz);
+  hca.YLabel.String = '\int JxB/ne dt (s mV/m)';
+  hca.YLabel.Interpreter = 'tex';
+end
 
 
 hca = irf_panel('int Ez / int By');
-toplot = 1e-3*(intEz*1e-3)/(intBy*1e-9);
-irf_plot(hca,toplot);
+hca.ColorOrder = mms_colors('1234');
+toplot1 = 1e-3*(intEz*1e-3)/(intBy*1e-9);
+toplot2 = 1e-3*(intJxBz*1e-3)/(intBy*1e-9);
+toplot3 = 1e-3*(intEz*1e-3)/(intBxy*1e-9);
+irf_plot(hca,{toplot1, toplot2, toplot3},'comp');
 hca.YLabel.String = '\int Ez dt/\int By dt (km/s)';
+hca.ColorOrder = mms_colors('1234');
+irf_legend(hca,{'\int Ez dt/\int By dt', '\int JxB/ne dt/\int By dt','\int Ez dt/\int Bxy dt'},[0.02 0.98])
 hca.YLabel.Interpreter = 'tex';
-hca.YLim = prctile(toplot.data,[3 97]);
+hca.YLim = prctile([toplot1.data; toplot2.data; toplot3.data],[3 97]);
 
 
 
+hl = findobj(h,'type','line');
+c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
 
-
+irf_zoom(h,'x',tint)

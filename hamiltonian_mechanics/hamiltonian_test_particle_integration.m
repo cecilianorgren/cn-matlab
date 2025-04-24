@@ -772,6 +772,8 @@ vz = (2*Uz/m)^0.5;
 
 vxvz = vx/vz;
 
+v = sqrt(2*U/m);
+
 f_phi = matlabFunction(phi);
 f_Ax = matlabFunction(Ax);
 f_U = matlabFunction(U);
@@ -780,13 +782,15 @@ f_Uz = matlabFunction(Uz);
 f_vx = matlabFunction(vx);
 f_vz = matlabFunction(vz);
 f_vxvz = matlabFunction(vxvz);
+f_v = matlabFunction(v);
 
 
 
 units = irf_units;
 m_ = units.mp;
 q_ = units.e;
-U_ = linspace(0,2000,250)*units.eV; % eV -> J
+U_ = linspace(0,7000,1050)*units.eV; % eV -> J
+U_ = logspace(-1,4,1050)*units.eV; % eV -> J
 eb_ =  linspace(0e3,1000e3,249); % E0 = Ez = 10 mV/m, B0 = By = 10 nT -> E0/B0 = 1000 km/s
 %eb_ =  logspace(5,8,19);
 
@@ -806,7 +810,16 @@ UZ(UZ < 0) = NaN;
 VZ(VZ == 0) = NaN;
 VXVZ(VXVZ == 0) = NaN;
 
+x_label = 'U (eV)';
 
+if 1
+  %v_ = linspace(0,2000,250); % km/s
+  %[VV,EB] = ndgrid(v_,eb_);
+  UU = sqrt(2*UU/m_)*1e-3*units.eV;
+  %VV*units.eV;
+  %v = sqrt(2*U/m);
+  x_label = '|v| (km/s)';
+end
 fontsize = 16;
 
 nRows = 3; nCols = 2;
@@ -817,7 +830,7 @@ isub = 1;
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, (UX/units.eV))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
+hca.XLabel.String = x_label;
 hca.YLabel.String = 'E_0/B_0 (km/s)';
 hcb = colorbar(hca);
 hcb.YLabel.String = 'U_x';
@@ -825,7 +838,7 @@ hcb.YLabel.String = 'U_x';
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, (UZ/units.eV))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
+hca.XLabel.String = x_label;
 hca.YLabel.String = 'E_0/B_0 (km/s)';
 hcb = colorbar(hca);
 hcb.YLabel.String = 'U_z';
@@ -834,7 +847,7 @@ hcb.YLabel.String = 'U_z';
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, VX*1e-3)
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
+hca.XLabel.String = x_label;
 hca.YLabel.String = 'E_0/B_0 (km/s)';
 hcb = colorbar(hca);
 hcb.YLabel.String = 'v_x (km/s)';
@@ -842,7 +855,7 @@ hcb.YLabel.String = 'v_x (km/s)';
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, VZ*1e-3)
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
+hca.XLabel.String = x_label;
 hca.YLabel.String = 'E_0/B_0 (km/s)';
 hcb = colorbar(hca);
 hcb.YLabel.String = 'v_z (km/s)';
@@ -850,7 +863,7 @@ hcb.YLabel.String = 'v_z (km/s)';
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, abs(VXVZ))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
+hca.XLabel.String = x_label;
 hca.YLabel.String = 'E_0/B_0 (km/s)';
 hcb = colorbar(hca);
 hcb.YLabel.String = '|v_x/v_z|';
@@ -859,7 +872,7 @@ hca.CLim = [0 prctile(hca.Children.CData(:),99)];
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, atand(VXVZ))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
+hca.XLabel.String = x_label;
 hca.YLabel.String = 'E_0/B_0 (km/s)';
 hcb = colorbar(hca);
 hcb.YLabel.String = 'tan^{-1}(v_x/v_z)';
