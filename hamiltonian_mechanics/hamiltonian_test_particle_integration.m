@@ -791,7 +791,7 @@ m_ = units.mp;
 q_ = units.e;
 U_ = linspace(0,7000,1050)*units.eV; % eV -> J
 U_ = logspace(-1,4,1050)*units.eV; % eV -> J
-eb_ =  linspace(0e3,1000e3,249); % E0 = Ez = 10 mV/m, B0 = By = 10 nT -> E0/B0 = 1000 km/s
+eb_ =  linspace(0e3,1200e3,249); % E0 = Ez = 10 mV/m, B0 = By = 10 nT -> E0/B0 = 1000 km/s
 %eb_ =  logspace(5,8,19);
 
 [UU,EB] = ndgrid(U_,eb_);
