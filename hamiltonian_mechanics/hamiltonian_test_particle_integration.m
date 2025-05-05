@@ -13,7 +13,7 @@ zvec = b*linspace(-4,4,100);
 
 
 B0 = 10e-9;
-E0 = 3e-3;
+E0 = 20e-3;
 % Integrate orbits
 m = units.me;
 q = -units.e;
@@ -536,7 +536,7 @@ zvec = b*linspace(-4,4,100);
 
 
 B0 = 10e-9;
-E0 = 1e-3;
+E0 = 11e-3;
 % Integrate orbits
 m = units.mp;
 q = units.e;
@@ -558,7 +558,7 @@ options = odeset('AbsTol',1e-12);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
-tstop = 40;
+tstop = 20;
 % Good for y, but do not cross at the same z.
 
 
@@ -613,11 +613,13 @@ if 1 % Figure 1
   hca.XLabel.String = 'z (km)';
   irf_legend(hca,{'B_y','E_z'},[0.02 0.98], 'fontsize',fontsize)
 
-  hca = h(isub); isub = isub + 1;
-  plot(hca, zvec*1e-3, -Ez(0,0,zvec)./By(0,0,zvec)*1e-3)
-  hca.XLabel.String = 'z (km)';
-  hca.XLabel.String = 'v (km/z)';
-  irf_legend(hca,{'-E_z/B_y'},[0.02 0.98], 'fontsize',fontsize)
+  if 0
+    hca = h(isub); isub = isub + 1;
+    plot(hca, zvec*1e-3, -Ez(0,0,zvec)./By(0,0,zvec)*1e-3)
+    hca.XLabel.String = 'z (km)';
+    hca.XLabel.String = 'v (km/z)';
+    irf_legend(hca,{'-E_z/B_y'},[0.02 0.98], 'fontsize',fontsize)
+  end
 
   hca = h(isub); isub = isub + 1;
   plot(hca,zvec*1e-3,Ax(0,0,zvec,0))
@@ -639,6 +641,7 @@ if 1 % Figure 1
   plot(hca,p(ip).x*1e-3,p(ip).z*1e-3)
   hca.XLabel.String = 'x (km)';
   hca.YLabel.String = 'z (km)';
+  %axis(hca,'equal')
 
   hca = h(isub); isub = isub + 1;
   plot(hca,p(ip).t,p(ip).x*1e-3 ,p(ip).t,p(ip).z*1e-3)
@@ -662,9 +665,16 @@ if 1 % Figure 1
   hca = h(isub); isub = isub + 1;
   vabs = sqrt(p(ip).vx.^2 + p(ip).vz.^2);
   angle = acosd(p(ip).vx./vabs);
-  plot(hca,p(ip).t,angle)
+  angle2 = atand(p(ip).vx./p(ip).vz);
+  plot(hca,p(ip).t,angle2)
   hca.XLabel.String = 't (s)';
-  hca.YLabel.String = 'acosd(v_x/v)';
+  hca.YLabel.String = 'atan(v_x/v_z)';
+
+  hca = h(isub); isub = isub + 1;
+  mv22 = m*(p(ip).vx.^2 + p(ip).vz.^2)/2;  
+  plot(hca,p(ip).t,mv22/units.eV)
+  hca.XLabel.String = 't (s)';
+  hca.YLabel.String = 'mv^2/2 (eV)';
 
   %hca = h(isub); isub = isub + 1;
   %plot(hca,p(ip).y,p(ip).z)
@@ -673,10 +683,22 @@ if 1 % Figure 1
   %plot(hca,p(ip).t,p(ip).y)
 
   hca = h(isub); isub = isub + 1;
+  mv22 = m*(p(ip).vx.^2 + p(ip).vz.^2)/2;  
+  vabs = sqrt(p(ip).vx.^2 + p(ip).vz.^2);
+  angle2 = atand(p(ip).vx./p(ip).vz);
+  
+  plot(hca,mv22/units.eV,angle2)
+  hca.XLabel.String = 'U (eV)';
+  hca.YLabel.String = 'angle';
+
+
+  if 0 % px vx aX
+  hca = h(isub); isub = isub + 1;
   plot(hca,p(ip).t,p(ip).vx*1e-3, p(ip).t,p(ip).Ax*q/m*1e-3, p(ip).t,p(ip).px/m*1e-3)
   hca.XLabel.String = 't (s)';
   hca.YLabel.String = 'v_x (km/s)';
   irf_legend(hca,{'v_x','(q/m)A_x','p_x/m'},[0.02 0.1], 'fontsize',fontsize)
+  end
 
   if 0
   hca = h(isub); isub = isub + 1;
@@ -750,6 +772,8 @@ vz = (2*Uz/m)^0.5;
 
 vxvz = vx/vz;
 
+v = sqrt(2*U/m);
+
 f_phi = matlabFunction(phi);
 f_Ax = matlabFunction(Ax);
 f_U = matlabFunction(U);
@@ -758,14 +782,16 @@ f_Uz = matlabFunction(Uz);
 f_vx = matlabFunction(vx);
 f_vz = matlabFunction(vz);
 f_vxvz = matlabFunction(vxvz);
+f_v = matlabFunction(v);
 
 
 
 units = irf_units;
 m_ = units.mp;
 q_ = units.e;
-U_ = linspace(0,2000,250)*units.eV; % eV -> J
-eb_ =  linspace(0e3,1000e3,249); % E0 = Ez = 10 mV/m, B0 = By = 10 nT -> E0/B0 = 1000 km/s
+U_ = linspace(0,7000,1050)*units.eV; % eV -> J
+U_ = logspace(-1,4,1050)*units.eV; % eV -> J
+eb_ =  linspace(0e3,1200e3,249); % E0 = Ez = 10 mV/m, B0 = By = 10 nT -> E0/B0 = 1000 km/s
 %eb_ =  logspace(5,8,19);
 
 [UU,EB] = ndgrid(U_,eb_);
@@ -784,57 +810,80 @@ UZ(UZ < 0) = NaN;
 VZ(VZ == 0) = NaN;
 VXVZ(VXVZ == 0) = NaN;
 
+x_label = 'U (eV)';
+y_label = '\phi/A_x (km/s)'; % 'E_0/B_0 (km/s)'
 
+if 1
+  %v_ = linspace(0,2000,250); % km/s
+  %[VV,EB] = ndgrid(v_,eb_);
+  UU = sqrt(2*UU/m_)*1e-3*units.eV;
+  %VV*units.eV;
+  %v = sqrt(2*U/m);
+  x_label = 'v (km/s)';
+end
 fontsize = 16;
 
-nRows = 2; nCols = 3;
-h = setup_subplots(nRows,nCols,'vertical');
+nRows = 1; nCols = 4;
+h = setup_subplots(nRows,nCols,'horizontal');
 
 isub = 1;
 
+if 0 % U_x
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, (UX/units.eV))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'U_x';
-
+end
+if 0 % Uz
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, (UZ/units.eV))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'U_z';
-
+end
 
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, VX*1e-3)
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'v_x (km/s)';
 
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, VZ*1e-3)
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = 'v_z (km/s)';
 
 hca = h(isub); isub = isub + 1;
 pcolor(hca, UU/units.eV, EB*1e-3, abs(VXVZ))
 shading(hca,'flat')
-hca.XLabel.String = 'U (eV)';
-hca.YLabel.String = 'E_0/B_0 (km/s)';
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
 hcb = colorbar(hca);
 hcb.YLabel.String = '|v_x/v_z|';
 hca.CLim = [0 prctile(hca.Children.CData(:),99)];
 
-colormap(pic_colors('candy4'))
+hca = h(isub); isub = isub + 1;
+pcolor(hca, UU/units.eV, EB*1e-3, atand(VXVZ))
+shading(hca,'flat')
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
+hcb = colorbar(hca);
+hcb.YLabel.String = '\theta = tan^{-1}(v_x/v_z)';
+%hca.CLim = [0 prctile(hca.Children.CData(:),99)];
+
+%colormap(pic_colors('candy4'))
+colormap(irf_colormap('waterfall'))
+compact_panels(0.01,0.01)
 c_eval('h(?).Color = [0.9 0.9 0.9];',1:numel(h))
 c_eval('h(?).Box = ''on''; h(?).Layer = ''top'';',1:numel(h))
 c_eval('h(?).FontSize = 16;',1:numel(h))
@@ -844,8 +893,10 @@ c_eval('h(?).FontSize = 16;',1:numel(h))
 
 
 hb = findobj(gcf,'type','colorbar');
-c_eval('h(?).Position(3) = h(?).Position(3)*0.9;',1:numel(hb))
-c_eval('hb(?).Position(1) = hb(?).Position(1)-0.01;',1:numel(hb))
+%c_eval('h(?).Position(3) = h(?).Position(3)*1.1;',1:numel(hb))
+c_eval('h(?).Position(2) = 0.15;',1:numel(hb))
+%c_eval('hb(?).Position(1) = hb(?).Position(1)-0.0;',1:numel(hb))
+c_eval('hb(?).Location = ''south''; hb(?).Position(3) = hb(?).Position(3)/2; hb(?).Position(1) = hb(?).Position(1) + hb(?).Position(3);',1:numel(hb))
 
 delete(h(isub:end))
 h(isub:end) = [];

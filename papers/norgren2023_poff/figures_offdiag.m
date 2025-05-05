@@ -992,7 +992,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
 times = times + 0.30*1;
 %times = times + 0.06;
 dt_dist = 4*0.061; % N*for two distributions
-dt_dist = 2*0.031; % for two (one does not work with ts*Rot' due to datasize of 1-time array)
+dt_dist = 2*0.06 1; % for two (one does not work with ts*Rot' due to datasize of 1-time array)
 
 fontsize_B_amp = 13;
 markersize = 5;
@@ -1630,7 +1630,7 @@ times = EpochTT(['2017-07-11T22:34:01.300000000Z';
 %times = times + 0.25;
 times = times + 0.30*1;
 %times = times + 0.06;
-dt_dist = 2*0.061; % 0.061 is for two distributions
+dt_dist = 2*0.031; % 0.061 is for two distributions
 
 fontsize_B_amp = 13;
 markersize = 5;
@@ -1719,7 +1719,7 @@ if 1
   ds_clim = 0.025*[-1 1];
 end
 
-%c_eval('hm(?) = irf_pl_mark(h1(?),time_reversal);',1:numel(h1))
+c_eval('hm(?) = irf_pl_mark(h1(?),time_reversal);',1:numel(h1))
 c_eval('hm(?).Color = [0.3 0.3 0.3];',1:numel(h1))
 c_eval('hm(?).LineStyle = ''--'';',1:numel(h1))
 c_eval('hm(?).LineWidth = 1;',1:numel(h1))
@@ -2063,7 +2063,7 @@ for itime = 1:times.length
     ha_.CData = newdata;
     %hc_.Colorbar.YLabel.String = {sprintf('m_ef_e(v_%s,v_%s)(v_%s-v_%s)(v_%s-v_%s)dv_%sdv_%s',comps(1),comps(2),comps(1),comps(1),comps(2),comps(2),comps(1),comps(2)),'(1/m^3)'};
     %hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (10^{%.0f} pPa)',comps(1),comps(2),log10(data_scale_num))};
-    hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s} (pPa)',comps(1),comps(2))};
+    hc_.Colorbar.YLabel.String = {sprintf('dP_{e%s%s}(v_x,v_y)',comps(1),comps(2)),' (pPa)'};
     
     hca.CLim = dp_clim;
     1;    
@@ -2083,7 +2083,7 @@ for itime = 1:times.length
     B_inplane = sqrt(sum(B_(1:2).^2));
     bpl = B_;
 
-    if B_inplane > 2*norm(B_std_inplane)
+    if B_inplane > 3*norm(B_std_inplane)
       quiver(hca,-bpl(1)*ql,-bpl(2)*ql,bpl(1)*2*ql,bpl(2)*2*ql,0,'color',[0 0 0],'linewidth',q_lw)      
       hold(hca,'off')
       hca.XLim = xlim;

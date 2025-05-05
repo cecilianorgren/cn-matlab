@@ -76,3 +76,17 @@ H_v = K_v + V;
 % Equations of motions
 
 %vx_ = gradient(H_p,px)
+
+%%
+syms Ax phi b z E0 B0 U Ux Uz q m vx vz EB
+
+phi = U/q;
+Ax = phi/(EB);
+vx = -(q/m)*Ax;
+Ux = m*vx^2/2;
+Uz = U-Ux;
+vz = sqrt(2*Uz/m);
+
+%%
+no02m = PIC('/Users/cno062/Data/PIC/no_hot_bg_n02_m100/data_h5/fields.h5');
+
