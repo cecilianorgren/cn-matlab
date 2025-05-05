@@ -37,20 +37,35 @@ h = findobj(gcf,'type','axes'); h = h(end:-1:1);
 c_eval('h(?).FontSize = 17;',1:numel(h))
 
 %% Do everything manually
+fontsize = 16;
 
-twpe = 1000;
+twpe = 19000;
 pic = no02m.twpelim(twpe).xlim([92 93]).zlim([0 5]);
 
+%pic = no02m.twpelim(twpe).xlim([90 91]).zlim([0 5]);
+
 iSpecies = 3;
+
+ntot = mean(pic.ni,1);
+n = mean(pic.n(iSpecies),1);
+nfrac = n./ntot;
+
 vx = mean(pic.vx(iSpecies),1);
 vz = mean(pic.vz(iSpecies),1);
 v = sqrt(vx.^2 + vz.^2);
+
+vx = vx - vx(iz_ref);
+vz = vz - vz(iz_ref);
+v = sqrt(vx.^2 + vz.^2);
+
 
 Ez = mean(pic.Ez,1);
 By = mean(pic.By,1);
 z = pic.zi;
 dz = z(2) - z(1);
-zref = 1;
+
+zref = 5;
+
 iz_ref = pic.ind_from_lim(z,zref);
 
 intEz = cumtrapz(z,Ez); intEz = intEz - intEz(iz_ref);
@@ -66,38 +81,43 @@ phiAx(abs(phiAx)<0.5) = NaN;
 mod_vx = -(1./phiAx).*v.^2/2;
 mod_vz = -v.*(1-(1./phiAx).^2.*v.^2/4).^0.5;
 
-nRows = 6;
+nRows = 7;
 nCols = 1;
 h = setup_subplots(nRows,nCols,'vertical');
 isub = 1;
 
 hca = h(isub); isub = isub + 1;
+plot(hca,z,ntot,z,n)
+irf_legend(hca,{'n_{i}','n_i (top)'},[0.98 0.98],'fontsize',fontsize)
+
+hca = h(isub); isub = isub + 1;
 plot(hca,z,Ez,z,By)
-irf_legend(hca,{'E_z','B_y'},[0.98 0.98])
+irf_legend(hca,{'E_z','B_y'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,phi,z,Ax)
-irf_legend(hca,{'\phi','A_x'},[0.98 0.98])
+irf_legend(hca,{'\phi','A_x'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,phiAx)
-irf_legend(hca,{'\phi/A_x'},[0.98 0.98])
+irf_legend(hca,{'\phi/A_x'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,phi,z,v.^2/2,z,phi+v.^2/2)
-irf_legend(hca,{'\phi','v^2/2','\phi+v^2/2'},[0.98 0.98])
+irf_legend(hca,{'\phi','v^2/2','\phi+v^2/2'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,vx,z,mod_vx)
-irf_legend(hca,{'v_x','mod v_x'},[0.98 0.98])
+irf_legend(hca,{'v_x','mod v_x'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,vz,z,mod_vz)
-irf_legend(hca,{'v_z','mod v_z'},[0.98 0.98])
+irf_legend(hca,{'v_z','mod v_z'},[0.98 0.98],'fontsize',fontsize)
 
 for ip = 1:numel(h)
   h(ip).XGrid = 'on';
   h(ip).YGrid = 'on';
+  h(ip).FontSize = fontsize;
 end
 
 %%

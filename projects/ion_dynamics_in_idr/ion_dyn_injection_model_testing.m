@@ -40,11 +40,11 @@ c_eval('h(?).FontSize = 17;',1:numel(h))
 fontsize = 16;
 
 twpe = 19000;
-pic = no02m.twpelim(twpe).xlim([92 93]).zlim([0 5]);
-
-%pic = no02m.twpelim(twpe).xlim([90 91]).zlim([0 5]);
-
+xlim = [92 93];
+zref = 2.9;
 iSpecies = 3;
+
+pic = no02m.twpelim(twpe).xlim(xlim).zlim([0 5]);
 
 ntot = mean(pic.ni,1);
 n = mean(pic.n(iSpecies),1);
@@ -54,12 +54,16 @@ vx = mean(pic.vx(iSpecies),1);
 vz = mean(pic.vz(iSpecies),1);
 v = sqrt(vx.^2 + vz.^2);
 
+vx = vx - vx(iz_ref);
+vz = vz - vz(iz_ref);
+v = sqrt(vx.^2 + vz.^2);
+
+
 Ez = mean(pic.Ez,1);
 By = mean(pic.By,1);
 z = pic.zi;
 dz = z(2) - z(1);
 
-zref = 1;
 
 iz_ref = pic.ind_from_lim(z,zref);
 
@@ -71,7 +75,7 @@ Ax = -intBy;
 
 phiAx = phi./Ax; 
 phiAx(abs(phiAx)>5) = NaN;
-phiAx(abs(phiAx)<0.5) = NaN;
+phiAx(abs(phiAx)<0.3) = NaN;
 
 mod_vx = -(1./phiAx).*v.^2/2;
 mod_vz = -v.*(1-(1./phiAx).^2.*v.^2/4).^0.5;
