@@ -41,57 +41,141 @@ fontsize = 16;
 
 twpe = 19000;
 xlim = [92 93];
-zref = 2.9;
-iSpecies = 3;
+xlim = 98+0.25*[-1 1]-7;
 
-pic = no02m.twpelim(twpe).xlim(xlim).zlim([0 5]);
+iSpecies = 3;
+zlim = [2 5];
+zref = 5.0;
+
+if 0
+iSpecies = 5;
+zlim = [-5 -1];
+zref = -4.5;
+end
+
+lim_nfrac = 0.5;
+
+
+pic = no02m.twpelim(twpe).xlim(xlim).zlim(zlim);
+pic_map = no02m.twpelim(twpe).xlim(xlim+[-20 20]).zlim(zlim+[-2 2]);
+
+z = pic.zi;
+dz = z(2) - z(1);
+iz_ref = pic.ind_from_lim(z,zref);
 
 ntot = mean(pic.ni,1);
 n = mean(pic.n(iSpecies),1);
 nfrac = n./ntot;
+% Find limit where there is a mixture of densities
+if zref > 0
+  iz_nlim = find(nfrac<lim_nfrac,1,'last');
+  if isempty(iz_nlim), iz_nlim = 1; end
+  bad_n_region = [zlim(1) z(iz_nlim) z(iz_nlim) zlim(1)];
+elseif zref < 0
+  iz_nlim = find(nfrac<lim_nfrac,1,'first');
+  if isempty(iz_nlim), iz_nlim = 1; end
+  bad_n_region = [zlim(2) z(iz_nlim) z(iz_nlim) zlim(2)];
+end
+%if numel(bad_n_region) < 4, bad_n_region = [NaN NaN NaN NaN]; end
 
 vx = mean(pic.vx(iSpecies),1);
+vy = mean(pic.vy(iSpecies),1);
 vz = mean(pic.vz(iSpecies),1);
-v = sqrt(vx.^2 + vz.^2);
+%v = sqrt(vx.^2 + vz.^2);
 
 vx = vx - vx(iz_ref);
 vz = vz - vz(iz_ref);
 v = sqrt(vx.^2 + vz.^2);
+vxyz = sqrt(vx.^2 + vy.^2 + vz.^2);
 
 
+Epar = mean(pic.Epar,1);
+Eperpx = mean(pic.Eperpx,1);
+Eperpz = mean(pic.Eperpz,1);
+Ex = mean(pic.Ex,1);
 Ez = mean(pic.Ez,1);
 By = mean(pic.By,1);
-z = pic.zi;
-dz = z(2) - z(1);
 
+Ez_map = pic_map.Ez;
 
-iz_ref = pic.ind_from_lim(z,zref);
+if 1
+intEz = cumtrapz(z,Ez); %intEz = intEz - intEz(iz_ref);
+intBy = cumtrapz(z,By); %intBy = intBy - intBy(iz_ref);
 
+phi = -intEz; phi = phi - phi(iz_ref);
+Ax = intBy;  Ax = Ax - Ax(iz_ref);
+else
 intEz = cumtrapz(z,Ez); intEz = intEz - intEz(iz_ref);
 intBy = cumtrapz(z,By); intBy = intBy - intBy(iz_ref);
 
-phi = -intEz;
-Ax = -intBy;
+phi = -intEz; 
+Ax = intBy;  
 
+end
 phiAx = phi./Ax; 
 phiAx(abs(phiAx)>5) = NaN;
 phiAx(abs(phiAx)<0.3) = NaN;
 
+mod_vx_from_px = -Ax;
 mod_vx = -(1./phiAx).*v.^2/2;
+mod_vz_from_phi = sign(phi).*sqrt(2*abs(phi)); % not correct according to model, but testing out
 mod_vz = -v.*(1-(1./phiAx).^2.*v.^2/4).^0.5;
 
-nRows = 7;
-nCols = 1;
-h = setup_subplots(nRows,nCols,'vertical');
+nRows = 8;
+nCols = 2;
+h = setup_subplots(nRows,nCols,'horizontal');
 isub = 1;
 
 hca = h(isub); isub = isub + 1;
-plot(hca,z,ntot,z,n)
-irf_legend(hca,{'n_{i}','n_i (top)'},[0.98 0.98],'fontsize',fontsize)
+pic_map.plot_map(hca,{'Ez'},'A',1,'sep','cmap',pic_colors('blue_red'))
+hmap = findobj(hca.Children,'Type','Image');
+hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
+hold(hca,'on')
+plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
+hold(hca,'off')
+hca.XGrid = "on"; hca.YGrid = "on";
 
 hca = h(isub); isub = isub + 1;
-plot(hca,z,Ez,z,By)
-irf_legend(hca,{'E_z','B_y'},[0.98 0.98],'fontsize',fontsize)
+pic_map.plot_map(hca,{['vx(' num2str(iSpecies) ')']},'A',1,'sep','cmap',pic_colors('blue_red'))
+hmap = findobj(hca.Children,'Type','Image');
+hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
+hold(hca,'on')
+plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
+hold(hca,'off')
+hca.XGrid = "on"; hca.YGrid = "on";
+
+hca = h(isub); isub = isub + 1;
+pic_map.plot_map(hca,{['vz(' num2str(iSpecies) ')']},'A',1,'sep','cmap',pic_colors('blue_red'))
+hmap = findobj(hca.Children,'Type','Image');
+hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
+hold(hca,'on')
+plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
+hold(hca,'off')
+hca.XGrid = "on"; hca.YGrid = "on";
+
+hca = h(isub); isub = isub + 1;
+pic_map.plot_map(hca,{['atand(vx(' num2str(iSpecies) ')./vz(' num2str(iSpecies) '))']},'A',1,'sep','cmap',pic_colors('blue_red'))
+hmap = findobj(hca.Children,'Type','Image');
+hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
+hca.CLim = [0 90];
+hold(hca,'on')
+plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
+hold(hca,'off')
+hca.XGrid = "on"; hca.YGrid = "on";
+
+isub_lim = isub;
+
+hca = h(isub); isub = isub + 1;
+plot(hca,z,ntot,z,n)
+irf_legend(hca,{'n_{i,tot}','n_i'},[0.98 0.98],'fontsize',fontsize)
+
+hca = h(isub); isub = isub + 1;
+plot(hca,z,Ez,z,By,z,Ex)
+irf_legend(hca,{'E_z','B_y','E_x'},[0.98 0.98],'fontsize',fontsize)
+
+hca = h(isub); isub = isub + 1;
+plot(hca,z,Eperpz,z,Eperpx,z,Epar)
+irf_legend(hca,{'E_{\perp,z}','E_{\perp,x}','E_{||}'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,phi,z,Ax)
@@ -102,22 +186,66 @@ plot(hca,z,phiAx)
 irf_legend(hca,{'\phi/A_x'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
-plot(hca,z,phi,z,v.^2/2,z,phi+v.^2/2)
-irf_legend(hca,{'\phi','v^2/2','\phi+v^2/2'},[0.98 0.98],'fontsize',fontsize)
+plot(hca,z,phi,z,v.^2/2,z,phi+v.^2/2,z,vxyz.^2/2)
+irf_legend(hca,{'\phi','v^2/2','\phi+v^2/2','v_{xyz}^2'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
-plot(hca,z,vx,z,mod_vx)
-irf_legend(hca,{'v_x','mod v_x'},[0.98 0.98],'fontsize',fontsize)
+plot(hca,z,vx,z,mod_vx,z,mod_vx_from_px)
+irf_legend(hca,{'v_x','mod v_x','v_x=-A_x'},[0.98 0.98],'fontsize',fontsize)
 
 hca = h(isub); isub = isub + 1;
-plot(hca,z,vz,z,mod_vz)
-irf_legend(hca,{'v_z','mod v_z'},[0.98 0.98],'fontsize',fontsize)
+plot(hca,z,vz,z,mod_vz,z,mod_vz_from_phi)
+irf_legend(hca,{'v_z','mod v_z','sign(\phi)(2|\phi|)^{1/2}'},[0.98 0.98],'fontsize',fontsize)
 
-for ip = 1:numel(h)
+hca = h(isub); isub = isub + 1;
+plot(hca,z,vx,z,vz,z,-v,z,vy)
+irf_legend(hca,{'v_x','v_z','-v','v_y'},[0.98 0.98],'fontsize',fontsize)
+
+hca = h(isub); isub = isub + 1;
+plot(hca,z,mod_vx,z,mod_vz)
+irf_legend(hca,{'mod v_x',' mod v_z'},[0.98 0.98],'fontsize',fontsize)
+
+hca = h(isub); isub = isub + 1;
+%plot(hca,z,mod_vx,z,mod_vz,z,mod_vz./v)
+%irf_legend(hca,{'mod v_x',' mod v_z',' mod v_z/v'},[0.98 0.98],'fontsize',fontsize)
+plot(hca,z,mod_vx,z,mod_vz)
+irf_legend(hca,{'mod v_x',' mod v_z'},[0.98 0.98],'fontsize',fontsize)
+
+if 1
+hca = h(isub); isub = isub + 1;
+plot(hca,z,atand(vx./vz),z,atand(mod_vx./mod_vz))
+irf_legend(hca,{'tan^{-1}v_x/v_z','mod tan^{-1} v_x/v_z'},[0.98 0.98],'fontsize',fontsize)
+end
+
+
+linkprop(h(1:(isub_lim-1)),{"XLim","YLim"})
+compact_panels(h(isub_lim:end),0.01)
+drawnow
+
+for ip = isub_lim:numel(h)
+  h(ip).XLim = zlim;
   h(ip).XGrid = 'on';
   h(ip).YGrid = 'on';
   h(ip).FontSize = fontsize;
+  h(ip).LineWidth = 1.5;
+  % Plot reference z
+  hold(h(ip),'on')
+  plot(h(ip),zref*[1 1],h(ip).YLim,'color',[0.0 0.0 0.0],'LineStyle','--')
+  hold(h(ip),'off')
+  % Plot reference where n/ntot>xxx
+  hold(h(ip),'on')
+  %plot(h(ip),z(iz_nlim)*[1 1],h(ip).YLim,'color',[0.5 0.5 0.5],'LineStyle','--')  
+  patch(h(ip),bad_n_region,h(ip).YLim([1 1 2 2]),'k','FaceAlpha',0.1,'EdgeColor','none') 
+  hold(h(ip),'off')
 end
+text(h(1),zref,h(1).YLim(1),sprintf('z_{ref} = %3.1f ',zref),'VerticalAlignment','bottom','HorizontalAlignment','right','FontSize',fontsize)
+text(h(1),z(iz_nlim),h(1).YLim(2),sprintf('n/n_{tot} = %g ',lim_nfrac),'VerticalAlignment','top','HorizontalAlignment','right','FontSize',fontsize)
+
+
+h(end).XLabel.String = 'z (d_i)';
+h(1).Title.String = sprintf('twpe = %g, x/d_i = [%5.1f, %5.1f]',twpe,xlim(1), xlim(2));
+hl = findobj(h,'type','line');
+c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
 
 %%
 twpe = 19000;
