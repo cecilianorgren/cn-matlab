@@ -194,7 +194,7 @@ elim = [100 Inf];
 c_eval('fi?_L_100_mm2 = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',L);',ic)
 
 
-elim = [100 Inf];
+elim = [100 Inf];open 
 c_eval('fi?_L_100_only = iPDist?.elim(elim).reduce(''1D'',L);',ic)
 
 elim = [200 Inf];

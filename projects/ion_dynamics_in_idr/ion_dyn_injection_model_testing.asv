@@ -39,9 +39,9 @@ c_eval('h(?).FontSize = 17;',1:numel(h))
 %% Do everything manually
 fontsize = 16;
 
-twpe = 19000;
+twpe = 20000;
 xlim = [92 93];
-xlim = 98+0.25*[-1 1]-7;
+xlim = [97 98]-9;
 
 iSpecies = 3;
 zlim = [2 5];
@@ -121,49 +121,19 @@ mod_vx = -(1./phiAx).*v.^2/2;
 mod_vz_from_phi = sign(phi).*sqrt(2*abs(phi)); % not correct according to model, but testing out
 mod_vz = -v.*(1-(1./phiAx).^2.*v.^2/4).^0.5;
 
-nRows = 8;
-nCols = 2;
-h = setup_subplots(nRows,nCols,'horizontal');
+nRows = 12;
+nCols = 1;
+h = setup_subplots(nRows,nCols,'vertical');
 isub = 1;
 
 hca = h(isub); isub = isub + 1;
 pic_map.plot_map(hca,{'Ez'},'A',1,'sep','cmap',pic_colors('blue_red'))
-hmap = findobj(hca.Children,'Type','Image');
-hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
+hmap = findobj(h(1).Children,'Type','Image');
+hca.CLim = prctile(abs(hmap.CData(:)),95)*[];
 hold(hca,'on')
 plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
 hold(hca,'off')
 hca.XGrid = "on"; hca.YGrid = "on";
-
-hca = h(isub); isub = isub + 1;
-pic_map.plot_map(hca,{['vx(' num2str(iSpecies) ')']},'A',1,'sep','cmap',pic_colors('blue_red'))
-hmap = findobj(hca.Children,'Type','Image');
-hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
-hold(hca,'on')
-plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
-hold(hca,'off')
-hca.XGrid = "on"; hca.YGrid = "on";
-
-hca = h(isub); isub = isub + 1;
-pic_map.plot_map(hca,{['vz(' num2str(iSpecies) ')']},'A',1,'sep','cmap',pic_colors('blue_red'))
-hmap = findobj(hca.Children,'Type','Image');
-hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
-hold(hca,'on')
-plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
-hold(hca,'off')
-hca.XGrid = "on"; hca.YGrid = "on";
-
-hca = h(isub); isub = isub + 1;
-pic_map.plot_map(hca,{['atand(vx(' num2str(iSpecies) ')./vz(' num2str(iSpecies) '))']},'A',1,'sep','cmap',pic_colors('blue_red'))
-hmap = findobj(hca.Children,'Type','Image');
-hca.CLim = prctile(abs(hmap.CData(:)),99)*[-1 1];
-hca.CLim = [0 90];
-hold(hca,'on')
-plot(hca,xlim(1)*[1 1],hca.YLim,'k',xlim(2)*[1 1],hca.YLim,'k')
-hold(hca,'off')
-hca.XGrid = "on"; hca.YGrid = "on";
-
-isub_lim = isub;
 
 hca = h(isub); isub = isub + 1;
 plot(hca,z,ntot,z,n)
@@ -211,18 +181,16 @@ hca = h(isub); isub = isub + 1;
 plot(hca,z,mod_vx,z,mod_vz)
 irf_legend(hca,{'mod v_x',' mod v_z'},[0.98 0.98],'fontsize',fontsize)
 
-if 1
+if 0
 hca = h(isub); isub = isub + 1;
 plot(hca,z,atand(vx./vz),z,atand(mod_vx./mod_vz))
 irf_legend(hca,{'tan^{-1}v_x/v_z','mod tan^{-1} v_x/v_z'},[0.98 0.98],'fontsize',fontsize)
 end
 
-
-linkprop(h(1:(isub_lim-1)),{"XLim","YLim"})
-compact_panels(h(isub_lim:end),0.01)
+compact_panels(h,0.01)
 drawnow
 
-for ip = isub_lim:numel(h)
+for ip = 2:numel(h)
   h(ip).XLim = zlim;
   h(ip).XGrid = 'on';
   h(ip).YGrid = 'on';
@@ -550,10 +518,3 @@ hl = findobj(h,'type','line');
 c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
 
 irf_zoom(h,'x',tint)
-
-
-%% Integrate particles
-
-
-%% Observations
-
