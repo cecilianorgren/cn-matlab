@@ -256,3 +256,5 @@ hl = findobj(h,'type','line');
 c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
 
 irf_zoom(h,'x',tint)
+
+%% Integrate particles
