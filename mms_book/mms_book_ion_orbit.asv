@@ -35,9 +35,9 @@ fvz = griddedInterpolant(X,Z,pic.viz);
 %%
 
 
-x0 = [98.0];
+x0 = [103.0];
 y0 = 0;
-z0 = [-3];
+z0 = [-4];
 
 ip = 1;
 
@@ -59,7 +59,7 @@ vz0 = (fEx(x0',z0')*fBy(x0',z0')-fEy(x0',z0')*fBx(x0',z0'))/Babs;
 
 fprintf('[%7.4f, %7.4f, %7.4f]\n',vx0,vy0,vz0)
 tstart = 0;
-tstop = 20;
+tstop = 30;
 mi = 1;
 qe = 1;
 
