@@ -19,6 +19,8 @@ A0 = pic.A;
 AX = pic.Ax;
 [X0,Z0] = ndgrid(pic.xi,pic.zi);
 
+
+
 ns = 10;
 fPhi = griddedInterpolant(X,Z,smooth2(phi,ns));
 fAx = griddedInterpolant(X,Z,smooth2(AX,ns));
@@ -35,7 +37,7 @@ fvz = griddedInterpolant(X,Z,pic.viz);
 %%
 
 
-x0 = [98.0];
+x0 = [99.0];
 y0 = 0;
 z0 = [-3];
 
@@ -106,8 +108,10 @@ p = pall_e(ipart);
 Alevs = min(A0(:)):1:max(A0(:));
 quiv_step = 100;
 quiv_scal = 6;
+vlim = 2;
+fontsize = 16;
 
-h = setup_subplots(6,2);
+h = setup_subplots(3,2);
 isub = 1;
 
 if 0 % Ez 
@@ -166,7 +170,7 @@ if 1 % Ex, with quivers
   hca.XLabel.String = 'x/d_i';
   hca.YLabel.String = 'z/d_i';
 
-  irf_legend(hca,sprintf('N_{smooth} = %g', ns*2+1),[0.98 1.04],'k')
+  irf_legend(hca,sprintf('N_{smooth} = %g', ns*2+1),[0.98 1.06],'k')
 end
 
 if 1 % By
@@ -212,7 +216,7 @@ if 1 % By
   hca.XLabel.String = 'x/d_i';
   hca.YLabel.String = 'z/d_i';
 
-  irf_legend(hca,sprintf('N_{smooth} = %g', ns*2+1),[0.98 1.04],'k')
+  irf_legend(hca,sprintf('N_{smooth} = %g', ns*2+1),[0.98 1.06],'k')
 end
 if 0 % 3D trajectory
   hca = h(isub); isub = isub + 1;
@@ -253,14 +257,17 @@ if 0 % 3D trajectory
   hca.ZLabel.String = 'z/d_i';
   view(hca,[0 0 1]);
 end
-if 0 % L-forces vs time
+if 1 % L-forces vs time
   hca = h(isub); isub = isub + 1;
   plot(hca,p.t,p.Ex, p.t,-p.vz.*p.By, p.t, p.vy.*p.Bz,'linewidth',1)
-  legend(hca,{'E_x','-v_zB_y','v_yB_z'},'Box','off')  
+  %legend(hca,{'E_x','-v_zB_y','v_yB_z'},'Box','off')  
   hca.XGrid = 'on';
   hca.YGrid = 'on';
+  hca.YLabel.String = 'F_x';
+  hca.XLabel.String = 't\omega_{ci}';
+  irf_legend(hca,{'E_x','-v_zB_y','v_yB_z'},[0.02 0.15],'fontsize',fontsize)
 end
-if 1 % Cumalative L-forces vs time
+if 0 % Cumalative L-forces vs time
   hca = h(isub); isub = isub + 1;
   plot(hca,p.t,cumtrapz(p.t,p.Ex), p.t,cumtrapz(p.t,-p.vz.*p.By), p.t, cumtrapz(p.t,p.vy.*p.Bz),'linewidth',1)
   hold(hca,'on')
@@ -275,16 +282,19 @@ if 1 % Cumalative L-forces vs time
 end
 if 1 % Cumalative L-forces vs x
   hca = h(isub); isub = isub + 1;
-  plot(hca,p.x,cumtrapz(p.t,p.Ex), p.x,cumtrapz(p.t,-p.vz.*p.By), p.x, cumtrapz(p.t,p.vy.*p.Bz),'linewidth',1)
+  plot(hca,p.x,cumtrapz(p.t,p.Ex), ...
+    p.x,cumtrapz(p.t,-p.vz.*p.By), ...
+    p.x, cumtrapz(p.t,p.vy.*p.Bz),'linewidth',1)
   hold(hca,'on')
-  plot(hca,p.x,p.vx,'linewidth',1,'color',[0 0 0])
+  %plot(hca,p.x,p.vx,'linewidth',1,'color',[0 0 0])
   hold(hca,'off')
   %plot(hca,p.t,cumsum(p.Ex), p.t,cumsum(-p.vz.*p.By), p.t, cumsum(p.vy.*p.Bz),'linewidth',1)
-  legend(hca,{'E_x','-v_zB_y','v_yB_z','v_x'},'Box','off')  
+  %legend(hca,{'E_x','-v_zB_y','v_yB_z','v_x'},'Box','off','Location','best')  
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.YLabel.String = 'v_x = (1/m)\int F_x dt';
   hca.XLabel.String = 'x (d_i)';
+  irf_legend(hca,{'E_x','-v_zB_y','v_yB_z'},[0.98 0.15],'fontsize',fontsize)
 end
 if 0 % Cumalative L-forces vs x, one more integration to get x
   hca = h(isub); isub = isub + 1;
@@ -307,23 +317,29 @@ if 0 % Cumalative L-forces vs x, one more integration to get x
 end
 if 1 % vx, vz
   hca = h(isub); isub = isub + 1;
-  plot(hca,p.vx,p.vz,p.vx(1),p.vz(1),'go','linewidth',1)
+  plot(hca,p.vx,p.vz,p.vx(1),p.vz(1),'go','linewidth',2)
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.XLabel.String = 'v_x';
   hca.YLabel.String = 'v_z';
   axis(hca,'equal')
+  hca.XLim = vlim*[-1 1];
+  hca.YLim = vlim*[-1 1];
+  hca.XTick = hca.YTick;
 end
-if 1 % vx, vy
+if 0 % vx, vy
   hca = h(isub); isub = isub + 1;
-  plot(hca,p.vx,p.vy,p.vx(1),p.vy(1),'go','linewidth',1)
+  plot(hca,p.vx,p.vy,p.vx(1),p.vy(1),'go','linewidth',2)
   hca.XGrid = 'on';
   hca.YGrid = 'on';
   hca.XLabel.String = 'v_x';
   hca.YLabel.String = 'v_y';
   axis(hca,'equal')
+  hca.XLim = vlim*[-1 1];
+  hca.YLim = vlim*[-1 1];
+  hca.XTick = hca.YTick;
 end
-if 1 % Ax, vx
+if 0 % Ax, vx
   hca = h(isub); isub = isub + 1;
   plot(hca,p.t,p.vx,p.t,p.Ax,p.t,p.vx+p.Ax,'linewidth',1)
   hca.XGrid = 'on';
@@ -348,7 +364,7 @@ if 0 % position vs time
   hca.XGrid = 'on';
   hca.YGrid = 'on';
 end
-if 1 % injection model, v^2
+if 0 % injection model, v^2
   hca = h(isub); isub = isub + 1;
   v2 = sqrt(p.vx.^2 + p.vy.^2 + p.vz.^2);
   plot(hca,p.t,v2,'linewidth',1)
@@ -359,7 +375,7 @@ if 1 % injection model, v^2
   hca.YGrid = 'on';
 end
 
-if 1 % injection model, phi, Ax
+if 0 % injection model, phi, Ax
   hca = h(isub); isub = isub + 1;
   v2 = sqrt(p.vx.^2 + 0*p.vy.^2 + p.vz.^2);
   plot(hca,p.t,p.Ax, p.t,p.Phi, p.t,-v2/2,'linewidth',1)
@@ -367,7 +383,7 @@ if 1 % injection model, phi, Ax
   hca.XGrid = 'on';
   hca.YGrid = 'on';
 end
-if 1 % injection model, Phi/Ax
+if 0 % injection model, Phi/Ax
   hca = h(isub); isub = isub + 1;
   toplot = p.Phi./p.Ax;
   toplot(abs(toplot)>prctile(abs(toplot),96)) = NaN;
@@ -377,7 +393,7 @@ if 1 % injection model, Phi/Ax
   hca.XGrid = 'on';
   hca.YGrid = 'on';
 end
-if 1 % injection model
+if 0 % injection model
   hca = h(isub); isub = isub + 1;
   v2 = sqrt(p.vx.^2 + p.vy.^2 + p.vz.^2);
   toplot = -(p.Ax./p.Phi).*v2/2;
@@ -408,8 +424,10 @@ end
 
 
 colormap(pic_colors('blue_red'))
-c_eval('h(?).FontSize = 14;',1:numel(h))
-
+c_eval('h(?).FontSize = 16;',1:numel(h))
+c_eval('h(?).LineWidth = 1;',1:numel(h))
+hl = findobj(gcf,'type','line'); hl = hl(end:-1:1); 
+c_eval('hl(?).LineWidth = 2;',1:numel(hl))
 
 
 
