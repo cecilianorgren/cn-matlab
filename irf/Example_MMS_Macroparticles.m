@@ -21,7 +21,7 @@ nMP = 1e5;
 
 % Pick your distribution(s), PDist.macroparticles returns an 1 x nt struct array
 it = 1200; % it = 1200:1201;
-pdist = ePDist(it);
+pdist = ePDist3(it);
 
 % Generate macroparticles
 % It might be necessary to remove the lowest energy levels due to
@@ -31,6 +31,17 @@ pdist = pdist.elim(elim);
 mp = pdist.macroparticles('ntot',nMP,'scpot',scPot(it));
 % mp.DepX shows which FPI bin they were generated from.
 
+ipdist = iPDist3(it);
+
+% Generate macroparticles
+% It might be necessary to remove the lowest energy levels due to
+% instrumental contamination
+elim = [100 Inf];
+ipdist = ipdist.elim(elim);
+mpi = ipdist.macroparticles('ntot',nMP,'scpot',scPot(it));
+% mp.DepX shows which FPI bin they were generated from.
+
+%%
 % Compare sum of partial densities with FPI density
 disp(sprintf('ne_fpi = %g, sum(dn_mp) = %g',ne(it).data,sum(mp.dn)))
 
