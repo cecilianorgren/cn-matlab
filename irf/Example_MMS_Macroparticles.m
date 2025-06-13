@@ -145,3 +145,22 @@ hca.YLim = 0.99*vmax*1e-3*[-1 1];
 % hca = subplot(nRows,nCols,isub); isub = isub + 1;
 % hca = subplot(nRows,nCols,isub); isub = isub + 1;
 
+
+%% Calculate densities from macroparticles
+
+iMP = iPDist3.macroparticles('nbin',1,'scpot',scPot3);
+%eMP = ePDist3.macroparticles('nbin',1,'scpot',scPot3);
+
+n_iMP = arrayfun(@(x) sum(x.dv.*x.df)*1e-6,iMP)'; 
+%n_eMP = arrayfun(@(x) sum(x.dv.*x.df)*1e-6,eMP)';
+
+tsNi = irf.ts_scalar(iPDist3.time, n_iMP);
+%tsNe = irf.ts_scalar(ePDist3.time, n_eMP);
+
+
+iMoms_ = mms.psd_moments(iPDist3.elim([100 Inf]),scPot3.resample(iPDist3));
+%eMoms = mms.psd_moments(ePDist3,scPot3.resample(iPDist3));
+tsNi_moms = iMoms.n_psd;
+tsNi_moms_ = iMoms_.n_psd;
+
+irf_plot({ni3,ne3,tsNi,tsNi_moms,tsNi_moms_})

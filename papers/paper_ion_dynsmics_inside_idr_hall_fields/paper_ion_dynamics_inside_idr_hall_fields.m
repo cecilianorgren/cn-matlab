@@ -36,6 +36,9 @@ c_eval('facTi? = mms.rotate_tensor(gseTi?,''fac'',gseB?);',ic)
 c_eval('ne? = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',1:4);
 c_eval('ni? = mms.get_data(''Ni_fpi_brst_l2'',tint,?);',1:4);
 
+c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+
+
 %c_eval('[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new,Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist?);',ic)
 
 c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)

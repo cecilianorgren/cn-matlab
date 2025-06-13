@@ -544,7 +544,7 @@ q = units.e;
 Bx = @(x,y,z) 0;
 By = @(x,y,z) -B0*(z/b).*exp(-z.^2/b.^2);
 Bz = @(x,y,z) z*0;
-Ex = @(x,y,z) z*0 - E0*0.02;
+Ex = @(x,y,z) z*0 - E0*0.03;
 Ey = @(x,y,z) z*0+0*E0*0.05;
 Ez = @(x,y,z) -E0*(z/b).*exp(-z.^2/b.^2);
 Ax = @(x,y,z,t) B0*(b/2).*exp(-z.^2/b.^2);
@@ -555,7 +555,7 @@ options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,3,[0 Inf]),...
                  'AbsTol',1e-6);
 options = odeset('Events', @(t_,xyz_) eom_box_edge(t_,xyz_,3,[-50*1e3 1500*1e3]),...
-                 'AbsTol',whos1e-12);
+                 'AbsTol',1e-12);
 %options = odeset('AbsTol',1e-12);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
