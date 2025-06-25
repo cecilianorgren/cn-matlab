@@ -124,13 +124,32 @@ dt = t1(2)-t1(1);
 i1 = 1:numel(t1);
 
 tp2p = dt*3; % sampling steps
-t2 = -3*tp2p:dt:3*tp2p;
+t2 = (-3*tp2p:dt:3*tp2p)';
 i2 = 1:numel(t2);
 
-y2 = f_esw(t1-tcenter,tp2p);
+y2 = f_esw(t2,tp2p);
+
+nfitfun = numel(y2);
 
 
 z = xcorr(y1,y2);
+irem = [1:nfitfun-1 numel(c)-(nfitfun-1)+1:numel(c)];
+z(irem) = [];
+%%
+
+[z_peaks,inds] = findpeaks(z,'MinPeakWidth',2);
+
+
+
+
+c(irem) = [];
+lags(irem) = [];
+imax = lags(c==max(c));
+
+
+
+tpeaks = inds - (numel(i2)+1)/2;
+tsTesw = irf.ts_scalar(t1(tpeaks),ones(numel(tpeaks,1)));
 
 
 i1 = 1:numel(y1);
@@ -206,3 +225,92 @@ for iref = 0:numel(z)-1
 
   pause(0.01)
 end
+
+%%
+
+
+
+x = 0:1000;
+x1 = -10:10;
+y1 = x1.*exp(-((x1)/5).^2);
+x2 = -20:20;
+y2 = (x2-4).*exp(-((x2-4)/5).^2);
+
+i1 = 1:numel(x1);
+i2 = 1:numel(x2);
+
+[c,lags] = xcorr(y2,y1);
+imax = lags(c==max(c));
+
+%plot(x1+numel(x1)+1-imax,y1,x2,y2,lags,c12)
+plot(i2,y2,i1+imax,y1,imax+(numel(i1)+1)/2,0,'sk')
+
+%%
+x = 0:1000;
+x1 = -10:10;
+y1 = x1.*exp(-((x1)/5).^2);
+x2 = -20:20;
+y2 = (x2-4).*exp(-((x2-4)/5).^2);
+
+nfitfun = numel(x1);
+
+i1 = 1:numel(x1);
+i2 = 1:numel(x2);
+
+[c,lags] = xcorr(y2,y1);
+irem = [1:nfitfun-1 numel(c)-(nfitfun-1)+1:numel(c)];
+c(irem) = [];
+lags(irem) = [];
+imax = lags(c==max(c));
+
+%plot(x1+numel(x1)+1-imax,y1,x2,y2,lags,c12)
+plot(i2,y2,i1+imax,y1,imax,0,'o')
+
+
+
+
+
+%%
+tsEpar = gseE1par.tlim(tint);
+
+y1 = tsEpar.data;
+f_esw = @(t,tp2p) t.*exp(-(t./tp2p).^2);
+
+
+dt = tsEpar.time(2) - tsEpar.time(1);
+t_min_esw = 0.001;
+i_min_esw = t_min_esw/dt;
+
+intE = irf_integrate(tsEpar);
+intEfilt =  intE.filt(5,0,[],5);
+negintEfilt = -1*intEfilt;
+%[peaks,inds] = findpeaks(negintEfilt.data,'MaxPeakWidth',0.5*i_min_esw);
+[peaks,inds] = findpeaks(negintEfilt.data,'MinPeakWidth',0.5*i_min_esw);
+
+
+tsESW = irf.ts_scalar(tsEpar.time(inds),peaks);
+
+h = irf_plot(4);
+hca = irf_panel('Epar');
+irf_plot(hca,{tsEpar})
+
+hca = irf_panel('int Epar');
+
+irf_plot(hca,{intE})
+
+hca = irf_panel('int Epar filt');
+irf_plot(hca,{intEfilt})
+%hold(hca,'on')
+%irf_plot(hca,{tsESW},'*')
+%hold(hca,'off')
+
+hca = irf_panel('neg int Epar filt');
+irf_plot(hca,{negintEfilt})
+hold(hca,'on')
+irf_plot(hca,{tsESW},'*')
+hold(hca,'off')
+
+
+
+
+
