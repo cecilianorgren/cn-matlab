@@ -5,7 +5,7 @@ T = P.data;
 % Rotate tensor, to find the most unequal component
 theta1 = 0.5*atan((2*T(:,2,3))./(T(:,3,3)-T(:,2,2)));
 theta2 = 0.5*atan((2*T(:,1,2))./(T(:,2,2)-T(:,1,1)));
-%theta2 = 0.5*atan((2*T(2,1))./(T(1,1)-T(2,2)));
+%theta2 = 0.5*atan((2*T(:,2,1))./(T(:,1,1)-T(:,2,2)));
 
 % Initialize arrays
 R2 = zeros(P.length,3,3);
@@ -33,5 +33,10 @@ for it = 1:P.length
 end
 
 
-
-varargout{1} = T2;
+switch nargout
+  case 1
+    varargout{1} = T2;
+  case 2
+    varargout{1} = T2;
+    varargout{2} = R2;
+end

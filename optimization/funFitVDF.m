@@ -154,9 +154,6 @@ while have_options
     case 'iterplot'
       l = 2;
       iterPlot = args{2};
-    case 'weight'
-      l = 2;
-      weight = args{2};
     case 'maxfunevals'
       l = 2;
       maxFunEvals = args{2};

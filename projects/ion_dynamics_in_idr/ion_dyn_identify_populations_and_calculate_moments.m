@@ -2,9 +2,9 @@
 % event.
 
 %% Load data
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 %mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
 units = irf_units;

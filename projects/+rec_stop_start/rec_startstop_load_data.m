@@ -8,8 +8,9 @@ localuser = datastore('local','user');
 localuser = 'cecilia';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
+mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db'); 
 
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
@@ -35,6 +36,8 @@ end
 tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
 
 %tint = irf.tint('2017-07-09T17:30:00.00Z/2017-07-09T17:35:00.00Z');
+
+tint = irf.tint('2017-07-25T22:07:00.00Z/2017-07-25T22:11:30.00Z');
 
 
 % Event path
@@ -343,6 +346,7 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %%
 
 c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,12);',ic_dist)
+c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,12);',ic_dist)
 
 disp('Done loading data.')
 

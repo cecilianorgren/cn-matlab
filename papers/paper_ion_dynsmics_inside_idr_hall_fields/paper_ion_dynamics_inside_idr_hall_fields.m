@@ -216,10 +216,14 @@ c_eval('fi?_N = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).eli
 
 
 %% Reduce distribution in direction of maximum pressure
-Trot = maximum_shear_direction(mvaPi3);
+[Prot,Trot] = maximum_shear_direction(mvaPi3);
 e1 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,1,:)));
 e2 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,2,:)));
 e3 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,3,:)));
+
+
+tsTrot = irf.ts_vec_xyz(gsePi3.time,[gsePi3.data(:,1,1), gsePi3.data(:,2,2), gsePi3.data(:,3,3)*0]);
+e1 = tsTrot.norm;
 
 c_eval('fi?_e1 = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim).reduce(''1D'',e1);',ic)
 
@@ -239,7 +243,7 @@ nMovMean = 5;
 
 %% Figure: Overview
 
-h = irf_plot(9);
+h = irf_plot(10);
 
 fontsize = 12;
 
@@ -302,7 +306,7 @@ if 0 % dEFlux ion
   irf_legend(hca,{sprintf('N_{mean} = %g',nMovMean),' one-counts removed'},[0.02,0.1],'fontsize',fontsize,'color','k');
 end
 
-if 0 % fi red L
+if 1 % fi red L
   hca = irf_panel('fi L');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('specrec = fi?_L.specrec;',ic)
@@ -323,7 +327,7 @@ if 0 % fi red L
   %irf_legend(hca,sprintf('N_{mean} = %g',nMovMean),[0.02,0.1],'fontsize',fontsize);
   irf_legend(hca,{sprintf('N_{mean} = %g',nMovMean),' one-counts removed'},[0.02,0.98],'fontsize',fontsize,'color','k');
 end
-if 0 % fi red M
+if 1 % fi red M
   hca = irf_panel('fi M');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,fi?_M.specrec,''donotfitcolorbarlabel'');',ic)  
@@ -338,7 +342,7 @@ if 0 % fi red M
   
   hca.YLabel.String = {'v_{iM} (km/s)'};
 end
-if 0 % fi red L
+if 1 % fi red L
   hca = irf_panel('fi N');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_spectrogram(hca,fi?_N.specrec,''donotfitcolorbarlabel'');',ic)  
@@ -356,7 +360,7 @@ end
 if 1 % max shear direction
   hca = irf_panel('fi e1');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_spectrogram(hca,fi?_e1.specrec,''donotfitcolorbarlabel'');',ic)  
+  c_eval('irf_spectrogram(hca,fi?_e1.specrec,''donotfitcolorbarlabel'',''lin'');',ic)  
   
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
@@ -366,19 +370,19 @@ if 1 % max shear direction
   %c_eval('irf_plot(hca,mvaVi?.z,''k-'')',ic)
   hca.NextPlot = "replace";
 
-  hca.YLabel.String = {'v_{iN} (km/s)'};
+  hca.YLabel.String = {'v_{i,Pmax} (km/s)'};
 end
 if 1 % e1
   hca = irf_panel('Vi e1');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_plot(hca,{e1.x,e1.y,e1.z},''comp'');',ic)  
+  c_eval('irf_plot(hca,{e1.norm.x,e1.norm.y,e1.norm.z},''comp'');',ic)  
   
   hca.YLabel.String = {'e_1 (km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
 end
 
-
+irf_plot_axis_align
 %irf_zoom(h,'x',tint_figure)
 irf_zoom(h,'x',tint_figure_zoom)
 irf_zoom(h(1:3),'y')
