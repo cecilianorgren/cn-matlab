@@ -266,9 +266,11 @@ ratio_away(ind_left) = sum_left./sum_all_left;
 ratio_away(ind_right) = sum_right./sum_all_right;
 end
 
-if 0
 fi3_L_neg = fi3_L.data(:,1:47);
 fi3_L_pos = fi3_L.data(:,48:end);
+
+fi3_L_neg = fi3_L_pos_neg.data(:,1);
+fi3_L_pos
 
 
 sum_all = sum(fi3_L.data,2);
@@ -282,23 +284,9 @@ tsFpos = irf.ts_scalar(fi3_L.time,ratio_pos);
 tsFaway = tsFneg.tlim(tint_left).combine(tsFpos.tlim(tint_right)); tsFaway.name = 'Away';
 tsFtowa = tsFpos.tlim(tint_left).combine(tsFneg.tlim(tint_right)); tsFtowa.name = 'Towards';
 
-%pos = fi3_L_pos_neg.tlim(tint_left).data(:,1)./
+pos = fi3_L_pos_neg.tlim(tint_left).data(:,1)./
 
 tsFLratio = irf.ts_scalar(fi3_L.time,f_L_ratio);
-end
-
-
-sum_neg = fi3_L_pos_neg.data(:,1);
-sum_pos = fi3_L_pos_neg.data(:,2);
-sum_all = sum_neg + sum_pos;
-ratio_neg = sum_neg./sum_all;
-ratio_pos = sum_pos./sum_all;
-tsFneg = irf.ts_scalar(fi3_L.time,ratio_neg);
-tsFpos = irf.ts_scalar(fi3_L.time,ratio_pos);
-
-tsFaway = tsFneg.tlim(tint_left).combine(tsFpos.tlim(tint_right)); tsFaway.name = 'Away';
-tsFtowa = tsFpos.tlim(tint_left).combine(tsFneg.tlim(tint_right)); tsFtowa.name = 'Towards';
-
 
 %% Figure: Overview
 
