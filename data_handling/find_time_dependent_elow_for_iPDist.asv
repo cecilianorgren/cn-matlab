@@ -1,0 +1,56 @@
+%% 
+
+%% Plot omni distributions of DEFlux, DPflux, counts
+
+%h = setup_subplots(3,1);
+
+omni_psd = iPDist3.omni;
+omni_deflux = iPDist3.deflux.omni;
+omni_counts = iPDist3_counts.omni;
+omni_counts_movmean = omni_counts; omni_counts_movmean.data = movmean(omni_counts_movmean.data,10,1);
+
+%irf_plot({omni_psd.specrec,omni_deflux.specrec,omni_counts.specrec})
+
+%BW = edge(omni_counts_movmean.data);
+%diff1 = diff(omni_counts_movmean.data,1,2);
+%diff2 = diff(omni_counts_movmean.data,2,2);
+%%
+log_nan = isnan( omni_counts_movmean.data);
+idx_nan = zeros(omni_counts_movmean.length,1);
+elow_t = zeros(omni_counts_movmean.length,1);
+for it = 1:omni_counts_movmean.length
+  idx_nan(it) = find(log_nan(it,:),1,'last');
+  elow_t(it) = omni_counts_movmean.depend{1}(it,idx_nan(it));
+end
+tsElow = irf.ts_scalar(omni_counts_movmean.time,)
+%%
+%last_idx_nan = find(idx_nan);
+
+h = irf_plot(4);
+
+if 1
+  hca = irf_panel('omni psd');
+  irf_spectrogram(hca,omni_psd.specrec,'log','donotfitcolorbarlabel')
+  hca.YScale = 'log';
+end
+if 1
+  hca = irf_panel('omni deflux');
+  irf_spectrogram(hca,omni_deflux.specrec,'log','donotfitcolorbarlabel')
+  hca.YScale = 'log';
+end
+if 1
+  hca = irf_panel('omni counts');
+  irf_spectrogram(hca,omni_counts.specrec,'log','donotfitcolorbarlabel')
+  hca.YScale = 'log';
+  hca.CLim(1) = 0;
+end
+
+if 1
+  hca = irf_panel('omni counts movmean 5');
+  irf_spectrogram(hca,omni_counts_movmean.specrec,'log','donotfitcolorbarlabel')
+  hca.YScale = 'log';
+  hca.CLim(1) = 0;
+  hold(hca,'on')
+
+  hold(hca,'off')
+end
