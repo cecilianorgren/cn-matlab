@@ -13,7 +13,8 @@ nMovMean = 5;
 omni_counts_movmean = omni_counts; 
 omni_counts_movmean.data = movmean(omni_counts_movmean.data,nMovMean,1);
 
-omni_counts2.data(omni_counts2.data==0) = NaN;
+%omni_counts2.data(omni_counts2.data==0) = NaN;
+omni_counts2.data(isnan(omni_counts2.data)) = 0;
 omni_counts2_movmean = omni_counts2; 
 omni_counts2_movmean.data = movmean(omni_counts2_movmean.data,nMovMean,1);
 
@@ -60,7 +61,7 @@ end
 
 
 %last_idx_nan = find(idx_nan);
-
+%%
 fontsize = 12;
 h = irf_plot(4);
 
