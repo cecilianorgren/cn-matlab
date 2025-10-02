@@ -20,7 +20,7 @@ cost_function = @(X) costfunction(X,t,E_obs,f_esw);
 A0 = -max(E_obs)/2*0.5*T;
 X0 = [A0*2/T^2 0.25*T t0 0]; % phi0, tp2p, t0, offset
 X0 = [A0 0.25*T t0 0]; % phi0, tp2p, t0, offset
-X0(1)
+X0(1);
 %X0 = [0 0 t0]; % phi0, tp2p, t0
 [X,FVAL,EXITFLAG,OUTPUT] = fminsearch(cost_function,X0);  
 
@@ -31,6 +31,7 @@ tsESW = irf.ts_scalar(E.time,1e3*f_esw(t,X(1),X(2),X(3),X(4)));
 
 varargout{1} = X;
 varargout{2} = tsESW;
+varargout{3} = EXITFLAG;
 
 
 function out = costfunction(X,t,E_obs,f_esw)

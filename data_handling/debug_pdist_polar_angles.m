@@ -130,3 +130,50 @@ scatter(VX(:),VY(:),'.')
 
 
 
+
+
+
+%% Current method, (v,az)
+units = irf_units;
+nMC = 10;
+
+daz = 11.25;
+az = daz/2:daz:360;
+naz = numel(az);
+az_edges = 0:daz:360;
+
+E_edges = logspace(1,4,5);
+v_edges = sqrt(2*units.eV*E_edges/units.mp);
+dv = diff(v_edges);
+nv = numel(v_edges) - 1;
+
+
+V =  zeros(nv,naz,nMC);
+AZ = zeros(nv,naz,nMC);
+
+for iaz = 1:naz
+  az1 = az_edges(iaz);
+  az2 = az_edges(iaz+1);
+  for iv = 1:nv
+    %v1 = v_edges(iv);
+    %v2 = v_edges(iv+1);  
+    %dv = v1-v2;
+    ex = 1;
+    v1 = v_edges(iv).^ex;
+    v2 = v_edges(iv+1).^ex;
+    dv = v2-v1;
+    V(iv,iaz,:) = v1 + dv*rand(1,nMC);
+    AZ(iv,iaz,:) = az1 + daz*rand(1,nMC);
+  end
+end
+
+V = V.^(1/ex);
+
+VX = V.*cosd(AZ);
+VY = V.*sind(AZ);
+
+
+scatter(VX(:),VY(:),'.')
+
+
+
