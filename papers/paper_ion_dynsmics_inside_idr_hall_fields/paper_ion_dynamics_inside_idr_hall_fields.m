@@ -1,8 +1,8 @@
 % Load data
-mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
 units = irf_units;
@@ -291,8 +291,11 @@ tint_figure_edr = irf.tint('2017-07-11T22:33:55.00Z/2017-07-11T22:34:12.00Z');
 tint_figure_zoom_inner_idr = irf.tint('2017-07-11T22:33:50.00Z/2017-07-11T22:34:20.00Z');
 nMovMean = 5;
 
+%% Calculate new shifted PDist (to be able to make proper pitchangles and azimuthala angles in NL plane)
+aa = pdist_cleaned(1).shift([-170 0 0],200,[1 0 0; 0 1 0; 0 0 1],ic);
+
 %% Calculate moments based on pdist with removed one counts. Then get eigenvectors from that and reduce in that direction.
-nMovMean = 15;
+nMovMean = 7;
 c_eval('pdist_cleaned = iPDist?.movmean(nMovMean,''removeonecounts'',iPDist?_counts).tlim(tint);',ic)
 c_eval('pdist_movmean = iPDist?.movmean(nMovMean).tlim(tint);',ic)
 c_eval('pdist_diff = pdist_cleaned; pdist_diff.data = pdist_movmean.data - pdist_cleaned.data;',ic)
@@ -300,13 +303,27 @@ pmoms_c = mms.psd_moments(pdist_cleaned,scPot3,'energyrange',[300 Inf]);
 pmoms_m = mms.psd_moments(pdist_movmean,scPot3,'energyrange',[300 Inf]);
 pmoms_d = mms.psd_moments(pdist_diff,scPot3,'energyrange',[300 Inf]);
 
-tsPmoms_dsl = pmoms.P_psd;
+tsPmoms_dsl = pmoms_c.P_psd;
 tsPmoms_gse = mms_dsl2gse(tsPmoms_dsl,defatt3,1);
 
-mvaPi3_moms = lmn*tsPmoms_gse*lmn'';
-mvaPi3_moms = lmn*tsPmoms_dsl*lmn'';
+mvaPi3_moms = lmn*tsPmoms_gse*lmn';
+mvaPi3_moms = lmn*tsPmoms_dsl*lmn';
 
 mvaPi3_moms.data = (mvaPi3_moms.data + permute(mvaPi3_moms.data,[1 3 2]))/2;
+
+%% Calculate pitchangle of ions with respect to current sheet normal
+lmn1 = lmn_vi;
+lmn2 = lmn_gse;
+lmn3 = lmn_edr;
+
+iPitch3_c_1 = pdist_cleaned.pitchangles(irf.ts_vec_xyz(pdist_cleaned.time,repmat(lmn1(3,:),pdist_cleaned.length,1)),16);
+iPitch3_c_2 = pdist_cleaned.pitchangles(irf.ts_vec_xyz(pdist_cleaned.time,repmat(lmn2(3,:),pdist_cleaned.length,1)),16);
+iPitch3_c_3 = pdist_cleaned.pitchangles(irf.ts_vec_xyz(pdist_cleaned.time,repmat(lmn3(3,:),pdist_cleaned.length,1)),16);
+
+pdist_cleaned_shifted = pdist_cleaned.shift([-170 0 0],200,[1 0 0; 0 1 0; 0 0 1],ic);
+iPitch3_c_1_s = pdist_cleaned_shifted.pitchangles(irf.ts_vec_xyz(pdist_cleaned.time,repmat(lmn1(3,:),pdist_cleaned.length,1)),16);
+iPitch3_c_2_s = pdist_cleaned_shifted.pitchangles(irf.ts_vec_xyz(pdist_cleaned.time,repmat(lmn2(3,:),pdist_cleaned.length,1)),16);
+iPitch3_c_3_s = pdist_cleaned_shifted.pitchangles(irf.ts_vec_xyz(pdist_cleaned.time,repmat(lmn3(3,:),pdist_cleaned.length,1)),16);
 
 %% Calculate % of ions moving towards or away from the X line
 tint_left = [fi3_L_elow.time(1) time_xline_ion];
@@ -365,10 +382,10 @@ tsFtowa = tsFpos.tlim(tint_left).combine(tsFneg.tlim(tint_right)); tsFtowa.name 
 
 %% Calculate eigenvalues and vector for P
 PP = gsePi3;
-PP = mvaPi3;
 %PP = mvaPi3_moms;
-PP = pmoms_c.P_psd;
-PP = mvaP_c;
+%PP = pmoms_c.P_psd;
+%PP = mvaP_c;
+PP = mvaPi3;
 
 nt = PP.length;
 all_eig_vals = zeros(nt,3);
@@ -377,6 +394,7 @@ all_eig_vec2 = zeros(nt,3);
 all_eig_vec3 = zeros(nt,3);
 nMovMean = 1;
 data_P = movmean(PP.data,nMovMean,1);
+data_P = PP.data;
 for it = 1:nt
   [V,D] = eig(squeeze(data_P(it,:,:)));
   all_eig_vals(it,:) = diag(D);
@@ -411,6 +429,9 @@ tsP_eig2d_vec1 = irf.ts_vec_xy(PP.time,all_eig2d_vec1); tsP_eig2d_vec1.name = 'V
 tsP_eig2d_vec2 = irf.ts_vec_xy(PP.time,all_eig2d_vec2); tsP_eig2d_vec2.name = 'V_2';
 
 
+
+[tsEig_val_3d, tsEig_v1_3d, tsEig_v2_3d, tsEig_v3_3d] = mvaPi3.eig([1 2 3]);
+[tsEig_val_2d, tsEig_v1_2d, tsEig_v2_2d] = mvaPi3.eig([1 2]);
 
 %% Figure: Overview
 
@@ -1101,7 +1122,7 @@ times_utc = [...%'2017-07-11T22:33:25.000Z';...
              '2017-07-11T22:34:15.940Z'];
 
 
-nMovMean = 7;
+nMovMean = 10;
 
 if 1 % Calculate eigenvectors
   %%
@@ -1114,23 +1135,25 @@ if 1 % Calculate eigenvectors
   c_eval('pdist_diff = pdist_cleaned; pdist_diff.data = pdist_original.data - pdist_cleaned.data;',ic)
   pdist_diff.data(pdist_diff.data<0) = 0;
   
-  pmoms_c = mms.psd_moments(pdist_cleaned,scPot3,'energyrange',[300 Inf]);
-  pmoms_o = mms.psd_moments(pdist_original,scPot3,'energyrange',[300 Inf]);
-  pmoms_d = mms.psd_moments(pdist_diff,scPot3,'energyrange',[300 Inf]);
+  pmoms_c = mms.psd_moments(pdist_cleaned,scPot3,'energyrange',[1500 Inf]);
+  pmoms_o = mms.psd_moments(pdist_original,scPot3,'energyrange',[1500 Inf]);
+  pmoms_d = mms.psd_moments(pdist_diff,scPot3,'energyrange',[1500 Inf]);
   %
-  mvaP_c = lmn*pmoms_c.P_psd*lmn'';
-  mvaP_o = lmn*pmoms_o.P_psd*lmn'';
-  mvaP_d = lmn*pmoms_d.P_psd*lmn'';
+  mvaP_c = lmn*pmoms_c.P_psd*lmn';
+  mvaP_o = lmn*pmoms_o.P_psd*lmn';
+  mvaP_d = lmn*pmoms_d.P_psd*lmn';
   
   
   [tsEig_val_c, tsEig_v1_c, tsEig_v2_c] = mvaP_c.eig([1 2]);
   [tsEig_val_o, tsEig_v1_o, tsEig_v2_o] = mvaP_o.eig([1 2]);
   [tsEig_val_d, tsEig_v1_d, tsEig_v2_d] = mvaP_d.eig([1 2]);
+  %tsEig_v1_c = tsEig_v1_c;
+
 end
 
 nRows = 4;
 nCols = size(times_utc,1);
-[h1,h] = initialize_combined_plot('topbottom',1,nRows,nCols,0.2,'vertical');
+[h1,h] = initialize_combined_plot('topbottom',2,nRows,nCols,0.3,'vertical');
 
 vL_Xline = 0*-170;
 
@@ -1155,6 +1178,18 @@ h1(2).YLim = [-2000 2000];
 hca.YLabel.String = 'v_e (km/s)';
 hca.ColorOrder = mms_colors('xyz');
 irf_legend(hca,{'L','M','N'},[0.98 0.98]);
+hca.YLabel.Interpreter = 'tex';
+end
+
+if 1 % tsEig_v1_c
+hca = h1(isub); isub = isub + 1;
+hca.ColorOrder = mms_colors('xyz');
+irf_plot(hca,{tsEig_v1_c.tlim(tint)})
+
+%h1(2).YLim = [-2000 2000];
+hca.YLabel.String = 'v_1 ';
+hca.ColorOrder = mms_colors('xyz');
+irf_legend(hca,{'L','M'},[0.98 0.98]);
 hca.YLabel.Interpreter = 'tex';
 end
 
@@ -1195,7 +1230,12 @@ for it = 1:times.length%(1)
   pdist = pdist.elim([elow Inf]);
   %pdist.data(:,:,:,1) = 0;
   %pdist.data(:,:,:,end) = 0;
-  
+
+  % Calculate eigenvectors and values
+  pmoms_tmp = mms.psd_moments(pdist,scPot3);
+  mvaP = irf.ts_tensor_xyz(pmoms_tmp.P_psd.time,lmn*squeeze(pmoms_tmp.P_psd.data)*lmn');
+  [tsEig_val_2d_tmp, tsEig_v1_2d_tmp, tsEig_v2_2d_tmp] = mvaP.eig([1 2]);
+
   c_eval('hmark = irf_pl_mark(h1,tint_dist,[0.5 0.5 0.5]);',1:numel(h1))
 
   if 0
@@ -1272,7 +1312,23 @@ for it = 1:times.length%(1)
       quiver(-scaxis(1)*scaxis_scale,-scaxis(2)*scaxis_scale,2*scaxis(1)*scaxis_scale,2*scaxis(2)*scaxis_scale,0,'k','linewidth',1)
       hold(hca,'off') 
     end
-    if 0
+    if 1 % eigenvectors, based on actual pdist chosen in the loop
+      hold(hca,'on')     
+
+      %EV1 = tsP_eig2d_vec1.resample(pdist.time).data;
+      %EV2 = tsP_eig2d_vec2.resample(pdist.time).data;
+      EV1 = tsEig_v1_2d_tmp.data;
+      EV2 = tsEig_v2_2d_tmp.data;
+      
+      quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,+2*EV1(1)*scaxis_scale,+2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',1.5)
+      quiver(hca,+EV1(1)*scaxis_scale,+EV1(2)*scaxis_scale,-2*EV1(1)*scaxis_scale,-2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',1.5)
+
+      quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,+2*EV2(1)*scaxis_scale,+2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',1.5)
+      quiver(hca,+EV2(1)*scaxis_scale,+EV2(2)*scaxis_scale,-2*EV2(1)*scaxis_scale,-2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',1.5)
+      hold(hca,'off') 
+      irf_legend(hca,sprintf('l_1/l_2=%.2f',tsEig_val_2d_tmp.data(1,1)./tsEig_val_2d_tmp.data(1,2)),[0.98 0.98],'fontsize',10,'color','k')
+    end
+    if 0 % eigenvectors, calculated as a timeseries before .... they are the same now
       hold(hca,'on')     
 
       %EV1 = tsP_eig2d_vec1.resample(pdist.time).data;
@@ -1280,8 +1336,11 @@ for it = 1:times.length%(1)
       EV1 = tsEig_v1_c.resample(pdist.time).data;
       EV2 = tsEig_v2_c.resample(pdist.time).data;
       
-      quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',1)
-      quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',1)
+      quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,+2*EV1(1)*scaxis_scale,+2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+      quiver(hca,+EV1(1)*scaxis_scale,+EV1(2)*scaxis_scale,-2*EV1(1)*scaxis_scale,-2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+
+      quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,+2*EV2(1)*scaxis_scale,+2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+      quiver(hca,+EV2(1)*scaxis_scale,+EV2(2)*scaxis_scale,-2*EV2(1)*scaxis_scale,-2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
       hold(hca,'off') 
     end
 
@@ -1493,7 +1552,8 @@ end
 
 %colormap(pic_colors('candy_gray'))
 %colormap(pic_colors('thermal'))
-colormap(pic_colors('candy6'))
+%colormap(pic_colors('candy6'))
+colormap(pic_colors('candy4'))
 
 hlinks_LM = linkprop(h(1:nRows:end),{'CLim'});
 hlinks_LN = linkprop(h(2:nRows:end),{'CLim'});

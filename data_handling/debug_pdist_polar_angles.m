@@ -27,10 +27,10 @@ modelPDist = mms.make_model_dist(PDist,Bxyz,SCpot,ne,Ve,T);
 %Ndsl = Tdsl(3,:);
 
 
-Mdsl = [0 1 0]
+Mdsl = [0 1 0];
 Ndsl = [0 0 1];
 
-Mdsl = [0 0 1]
+Mdsl = [0 0 1];
 Ndsl = [0 1 0];
 
 
@@ -42,7 +42,7 @@ hca = subplot(1,1,1);
 vdf.plot_plane(hca)
 irf_legend(hca,sprintf('sum(f*dv*dv) = %g cc',n),[0.02 0.02])
 axis equal
-colormap(pic_colors('candy6'))
+colormap(pic_colors('candy4'))
 
 %% Current method
 nMC = 10;
