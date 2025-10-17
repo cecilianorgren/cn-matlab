@@ -258,6 +258,37 @@ c_eval('fi?_e1 = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).el
 
 %pdist_rot2 = pdist.shift(squeeze(vel), 10, R2, 'mms');
 
+%% Reduce distribution in direction of maximum eigenvalue
+nMovMean = 7;
+elim = [500 Inf];
+c_eval('PD_cleaned = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts).elim(elim);',ic)
+c_eval('PD = iPDist?.movmean(2).elim(elim);',ic)
+pmoms_c = mms.psd_moments(PD_cleaned,scPot3,'energyrange',elim);
+
+tsPmoms_dsl = pmoms_c.P_psd;
+%tsPmoms_gse = mms_dsl2gse(tsPmoms_dsl,defatt3,1);
+%mvaPi3_moms = lmn*tsPmoms_gse*lmn';
+mvaPi3_c = lmn*tsPmoms_dsl*lmn';
+
+[tsEig_val_c, tsEig_v1_c, tsEig_v2_c] = mvaPi3_c.eig([1 2]);
+
+v1_rot = tsEig_v1_c.data;
+v1_rot(v1_rot(:,2)<0,:) = -v1_rot(v1_rot(:,2)<0,:);
+
+tsEig_v1_c_3D = irf.ts_vec_xyz(tsEig_v1_c.time,[v1_rot v1_rot(:,1)*0]);
+
+%e1 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,1,:)));
+%e2 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,2,:)));
+%e3 = irf.ts_vec_xyz(gsePi3.time,squeeze(Trot(:,3,:)));
+
+%tsTrot = irf.ts_vec_xyz(gsePi3.time,[gsePi3.data(:,1,1), gsePi3.data(:,2,2), gsePi3.data(:,3,3)*0]);
+%e1 = tsTrot.norm;
+
+c_eval('fi?_e1 = PD_cleaned.elim(elim).reduce(''1D'',tsEig_v1_c_3D);',ic)
+c_eval('fi?_M = PD_cleaned.elim(elim).reduce(''1D'',M);',ic)
+c_eval('fi?_e1_ = PD.elim(elim).reduce(''1D'',M);',ic)
+c_eval('fi?_M_ = PD.elim(elim).reduce(''1D'',M);',ic)
+
 %% Randomly remove cingle counts based on an average number of counts per energy level at lowe energies
 tint = time_xline + [-10 10];
 elim = [0 500];
