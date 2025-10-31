@@ -1,0 +1,57 @@
+E = linspace(1,100,100);
+F = linspace(0,10,50);
+
+C = @(E,F) 40*E.*F.^0.5./(16+E);
+
+[EE,FF] = ndgrid(E,F);
+
+SS = C(EE,FF);
+hca = subplot(1,1,1);
+contourf(hca,EE,FF,SS)
+%shading(hca,'flat')
+hca.XLabel.String = 'E (eV)';
+hca.YLabel.String = 'F (mW/m^2)';
+hcb = colorbar(hca);
+hcb.YLabel.String = {'Conductance (toy values)','C = F^{1/2}40E/(16+E)'};
+
+
+%%
+
+I = linspace(0,500,400);
+E = linspace(0,30,50);
+
+FWIC = @(E,I) E.*I/2000;
+F13 = @(E,I) (E+3).*10.*I.^0.4/100;
+
+[EE,II] = ndgrid(E,I);
+
+nrows = 3;
+isub = 1;
+
+hca = subplot(nrows,1,isub); isub = isub + 1;
+FFWIC = FWIC(EE,II);
+contourf(hca,EE,II,FFWIC,[1 1])
+%shading(hca,'flat')
+hca.XLabel.String = 'E (eV)';
+hca.YLabel.String = 'I ()';
+hcb = colorbar(hca);
+
+hca = subplot(nrows,1,isub); isub = isub + 1;
+FF13 = F13(EE,II);
+contourf(hca,EE,II,FF13,[1 1])
+%shading(hca,'flat')
+hca.XLabel.String = 'E (eV)';
+hca.YLabel.String = 'I ()';
+hcb = colorbar(hca);
+hca.YLim = [0 20];
+
+
+hca = subplot(nrows,1,isub); isub = isub + 1;
+FF13 = F13(EE,II);
+FFWIC = FWIC(EE,II);
+FF = FFWIC./FF13;
+contourf(hca,EE,II,(FF))
+%shading(hca,'flat')
+hca.XLabel.String = 'E (eV)';
+hca.YLabel.String = 'I ()';
+hcb = colorbar(hca);

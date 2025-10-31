@@ -99,6 +99,8 @@ gseJzBy_ne_mVm_curl = -1*gseJcurl.z*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/u
 c_eval('wpi? = (ne?*1e6*units.e^2/units.mp/units.eps0).^0.5;',ic)
 c_eval('di? = 1e-3*(units.c/wpi?);',ic)
 
+c_eval('vA? = (gseB?.resample(ne?).abs2*1e-18/units.mp/units.mu0/(ne?*1e6)).^0.5*1e-3;',ic)
+
 
 
 % counts = (P/Perr)^2
