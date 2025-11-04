@@ -1,0 +1,23 @@
+% 
+elim_lowE = [0 200];
+av_counts = mean(sum(iPDist3_counts.nan2zero.data,[3 4]),1);
+av_counts_lowE = mean(sum(iPDist3_counts.elim(elim_lowE).nan2zero.data,[3 4]),1);
+av_counts_lowE_1 = mean(av_counts_lowE);
+
+f_per_count = iPDist3./iPDist3_cou
+
+
+
+fontsize = 14;
+
+hca = subplot(1,1,1);
+plot(hca,iPDist3_counts.depend{1}(1,:),av_counts)
+hold(hca,'on')
+hl = plot(hca,iPDist3_counts.elim(elim_lowE).depend{1}(1,:),av_counts_lowE,'*');
+hold(hca,'off')
+hca.XLabel.String = 'Energy (eV)';
+hca.YLabel.String = 'Counts';
+hca.Title.String = 'Counts summed over angles and averaged over time';
+hca.XScale = 'log';
+irf_legend(hca,{sprintf('mean counts at low energies: %.2f',av_counts_lowE_1)},[0.02 0.98],'color',hl.Color,'fontsize',fontsize)
+hca.FontSize = fontsize;

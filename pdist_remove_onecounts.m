@@ -14,7 +14,7 @@ ipdist_elim = iPDist3.elim(elim);
 
 epdist = ePDist3.movmean(nMovMean).tlim(time_xline + 10*[-1 1]);
 %%
-
+% nan2zero
 moms_e = mms.psd_moments(epdist,scPot3);
 moms_i = mms.psd_moments(ipdist,scPot3);
 moms_i_clean = mms.psd_moments(ipdist_clean,scPot3);

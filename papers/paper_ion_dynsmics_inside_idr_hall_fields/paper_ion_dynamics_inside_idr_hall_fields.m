@@ -291,7 +291,7 @@ c_eval('fi?_M = PD_cleaned.elim(elim).reduce(''1D'',M);',ic)
 c_eval('fi?_e1_ = PD.elim(elim).reduce(''1D'',M);',ic)
 c_eval('fi?_M_ = PD.elim(elim).reduce(''1D'',M);',ic)
 
-%% Randomly remove cingle counts based on an average number of counts per energy level at lowe energies
+%% Randomly remove single counts based on an average number of counts per energy level at low energies
 tint = time_xline + [-10 10];
 elim = [0 500];
 pdist_counts_elim = iPDist3_counts.elim(elim).tlim(tint);
