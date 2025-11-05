@@ -2045,13 +2045,28 @@ close(vidfile);
 fT = 30;
 tint = time_xline_ion + 0.5*fT*[-1 1];
 
-nMovMean = 7;
+nMovMean = 4;
+c_eval('pdist_all = iPDist?.tlim(tint);',ic)
 c_eval('pdist_cleaned = iPDist?.movmean(nMovMean,''removeonecounts'',iPDist?_counts).tlim(tint);',ic)
 pdist_cleaned = PD.tlim(tint);
-c_eval('pdist_original = iPDist?.movmean(nMovMean).tlim(tint);',ic)
+c_eval('pdist_movmean = iPDist?.movmean(nMovMean).tlim(tint);',ic)
 c_eval('pdist_diff = pdist_cleaned; pdist_diff.data = pdist_movmean.data - pdist_cleaned.data;',ic)
 pdist_diff.data(pdist_diff.data<0) = 0;
+%%
+if 1
+  nMovMean = nMean(1);
 
+  pdist_original = PD_orig;
+  pdist_cleaned = PD_new;
+  pdist_diff = PD_diff;
+
+  %pdist_original = PD2_orig.movMean(nMovMean);
+  %pdist_cleaned = PD2_new;
+  %pdist_diff = PD2_diff;
+  
+end
+
+%%
 pmoms_c = mms.psd_moments(pdist_cleaned,scPot3,'energyrange',[300 Inf]);
 pmoms_o = mms.psd_moments(pdist_original,scPot3,'energyrange',[300 Inf]);
 pmoms_d = mms.psd_moments(pdist_diff,scPot3,'energyrange',[300 Inf]);
@@ -2066,6 +2081,7 @@ mvaP_d = lmn*pmoms_d.P_psd*lmn'';
 [tsEig_val_d, tsEig_v1_d, tsEig_v2_d] = mvaP_d.eig([1 2]);
 
 %%
+units = irf_units;
 elows_tmp = tsElow; elows_tmp.data = movmean(elows_tmp.data,nMovMean);
 elows_all = elows_tmp.tlim(tint);
 
@@ -2091,7 +2107,7 @@ if 1 % vi
 end
 
 isub = 1;
-% nSmooth = 1; % specified further doen
+% nSmooth = 1; % specified further down
 
 
 irf_zoom(h1,'x',tint_figure_zoom_incl_sep)
@@ -2116,12 +2132,13 @@ open(vidfile);
      
 clear F
 times = pdist_all.time;
-for it = 1:28:times.length %1:nMovMean:times.length
+for it = 1:14:times.length %1:nMovMean:times.length
   time = times(it);
   
   pdist_c = pdist_cleaned.tlim(time+0.5*0.151*[-1 1]);
   pdist_o = pdist_original.tlim(time+0.5*0.151*[-1 1]);
   pdist_d = pdist_diff.tlim(time+0.5*0.151*[-1 1]);
+  pdist = pdist_o;
   tint_dist = pdist.time + 0.5*0.150*nMovMean*[-1 1];
   elow = max(tsElow.tlim(tint_dist).data);  
   

@@ -12,7 +12,7 @@ ipdist_clean = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts);
 ipdist_clean_elim = iPDist3.movmean(nMovMean,'RemoveOneCounts',iPDist3_counts).elim(elim);
 ipdist_elim = iPDist3.elim(elim);
 
-epdist = ePDist3.movmean(nMovMean).tlim(time_xline + 10*[-1 1]);
+%epdist = ePDist3.movmean(nMovMean).tlim(time_xline + 10*[-1 1]);
 %%
 % nan2zero
 moms_e = mms.psd_moments(epdist,scPot3);
