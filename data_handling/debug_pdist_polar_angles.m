@@ -2,7 +2,7 @@
 dpol = 11.25;
 pol_center = dpol/2:dpol:180;
 pol_edges = 0:dpol:180;
-
+  
 dv_pol1 = sind(pol_center)*dpol*pi/180;
 dv_pol2 = cosd(pol_edges(1:(end-1))) - cosd(pol_edges(2:end));
 

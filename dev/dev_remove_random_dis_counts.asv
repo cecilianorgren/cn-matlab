@@ -24,6 +24,8 @@ for it = 1:PD.length
   it
   for iE = 1:32
     if sum(PD_counts.data(it,iE,:)) == N_rem_per_elevel
+      PD.data(it,iE,:,:) = 0; % remove all
+    end
 
     nRem = N_rem_per_elevel;
     iRem = 0;
@@ -84,8 +86,11 @@ hca.Title.String = 'Counts per energy level (summed over time)';
 %% Smooth data then remove, now in space as well, before it was only averaged in time
 nMean = [7 2 2 2];
 nMean = [7 2 2 2];
-nMean = [4 2 2 1];
-%nMean = [4 1 5 5];
+nMean = [5 2 2 2];
+nMean = [4 3 3 3];
+nMean = [4 3 3 3];
+nMean = [5 1 2 2];
+nMean = [7 1 1 1];
 nPad = [0 0 nMean(3) 0];
 nThresh = 2;
 
@@ -140,8 +145,11 @@ PD2_new = PD.clone(PD.time,data_clean);
 PD2_diff = PD.clone(PD.time,PD2_orig.data-PD2_new.data);
 
 
+tsElow = iPDist3.find_noise_energy_limit(05).movmean(30);
+
 fontsize = 18;
-h = irf_plot(4);
+%h = irf_plot(5);
+[h,h2] = initialize_combined_plot('leftright',5,3,2,0.5,'vertical');
 if 1 % counts ion
   hca = irf_panel('ion counts orig omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
@@ -149,6 +157,8 @@ if 1 % counts ion
   hca.YScale = 'log'; 
   hcb.YLabel.String = {'Counts'};
   irf_legend(hca,'Original',[0.98 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
+  hold(hca,'on'); irf_plot(hca,tsElow,'k'); hold(hca,'off')
+  
 end
 if 1 % counts ion
   hca = irf_panel('ion counts orig averaged omni');
@@ -158,6 +168,7 @@ if 1 % counts ion
   hcb.YLabel.String = {'Counts'};
   irf_legend(hca,{sprintf('Window = [%.0f,%.0f,%.0f,%.0f]',nMean(1),nMean(2),nMean(3),nMean(4));sprintf('N < %g removed',nThresh)},[0.02 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
   irf_legend(hca,'Averaged',[0.98 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
+  hold(hca,'on'); irf_plot(hca,tsElow,'k'); hold(hca,'off')
 end
 if 1 % counts ion
   hca = irf_panel('ion counts clean omni');
@@ -167,6 +178,7 @@ if 1 % counts ion
   hcb.YLabel.String = {'Counts'};
   irf_legend(hca,{sprintf('Window = [%.0f,%.0f,%.0f,%.0f]',nMean(1),nMean(2),nMean(3),nMean(4));sprintf('N < %g removed',nThresh)},[0.02 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
   irf_legend(hca,'One-counts removed',[0.98 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
+  hold(hca,'on'); irf_plot(hca,tsElow,'k'); hold(hca,'off')
 end
 if 1 % counts ion
   hca = irf_panel('ion counts diff omni');
@@ -176,6 +188,7 @@ if 1 % counts ion
   hcb.YLabel.String = {'Counts'};
   irf_legend(hca,{sprintf('Window = [%.0f,%.0f,%.0f,%.0f]',nMean(1),nMean(2),nMean(3),nMean(4));sprintf('N < %g removed',nThresh)},[0.02 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
   irf_legend(hca,'Averaged minus one-counts removed',[0.98 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
+  hold(hca,'on'); irf_plot(hca,tsElow,'k'); hold(hca,'off')
 end
 if 0 % deflux ion
   hca = irf_panel('ion counts orig omni');
@@ -213,24 +226,183 @@ if 0 % deflux ion
   irf_legend(hca,'Averaged minus one-counts removed',[0.98 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
 end
 
-if 1 % compare densities, averaged
+if 0 % compare densities, averaged
   hca = irf_panel('densities');
-  irf_plot(hca,{PD_orig.n,PD_clean.n,PD_diff.n})
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{ne3,ni3,PD_orig.elim([1000 Inf]).n,PD_new.elim([1000 Inf]).n,PD_diff.elim([1000 Inf]).n},'comp')
   hca.YLabel.String = 'n (cc)';
+  irf_legend(hca,{'ne (FPI)','ni (FPI)','Original','One-counts removed','Averaged minus one-counts removed'},[0.98 0.98])
 end
-if 1 % compare densities
-  hca = irf_panel('densities');
-  irf_plot(hca,{PD2_orig.n,PD2_clean.n,PD2_diff.n})
+if 0 % compare densities
+  hca = irf_panel('densities 2');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{ne3,ni3,PD2_orig.elim([1000 Inf]).n,PD2_new.elim([1000 Inf]).n,PD2_diff.elim([1000 Inf]).n},'comp')
   hca.YLabel.String = 'n (cc)';
-  irf_legend(hca,{''})
+  irf_legend(hca,{'ne (FPI)','ni (FPI)','Original','One-counts removed','Averaged minus one-counts removed'},[0.98 0.98])
+end
+if 1 % compare densities, less lines
+  hca = irf_panel('densities 2 _');
+  set(hca,'ColorOrder',mms_colors('1234b'))
+  irf_plot(hca,{ne3,PD2_orig.elim([1000 Inf]).n,PD2_new.elim([1000 Inf]).n,PD2_diff.elim([1000 Inf]).n},'comp')
+  hca.YLabel.String = 'n (cc)';
+  irf_legend(hca,{'ne (FPI)','Original','One-counts removed','Averaged minus one-counts removed'},[0.98 0.98])
 end
 c_eval('h(?).FontSize = fontsize;',1:numel(h))
-hlinks = linkprop(h,{'CLim','YLim'});
+hlinks = linkprop(h(1:3),{'CLim','YLim'});
 colormap(flipdim(irf_colormap('Spectral'),1))
 %h(1).CLim = [-4 -0.5];
 %h(1).CLim = [-28 -20];
 hb = findobj(gcf,'type','colorbar'); %hb = hb(end:-1:1);
 %c_eval('hb(?).YLabel.String = ''DEFlux'';',1:numel(hb))
+irf_plot_axis_align(h)
+irf_zoom(h,'x',[iPDist3.time.start iPDist3.time.stop])
+c_eval('h(?).Layer = ''top'';',1:numel(h))
+h(end).XTickLabelRotation = 0;
+
+time = time_xline;
+% Make 2D reduced plots
+
+
+isub = 1;
+
+tint_tmp = time + 7*0.5*0.151*[-1 1]+-5;
+if exist('hmark1','var'); delete(hmark1); end
+c_eval('hmark1 = irf_pl_mark(h,tint_tmp,[0.5 0.5 0.5]);',1:numel(h))
+scaxis_scale = 2500;
+
+emask_mat = [tsElow.data*0 tsElow.data];
+
+pd_orig = PD2_orig.mask({emask_mat}).tlim(tint_tmp);
+pd_new = PD2_new.mask({emask_mat}).tlim(tint_tmp);
+pd_diff = PD2_diff.mask({emask_mat}).tlim(tint_tmp);
+pres_orig = pd_orig.p;
+pres_new = pd_new.p;
+pres_diff = pd_diff.p;
+[eig_val_orig, eig_v1_orig, eig_v2_orig] = pres_orig.eig([1 2]);
+[eig_val_new, eig_v1_new, eig_v2_new] = pres_new.eig([1 2]);
+[eig_val_diff, eig_v1_diff, eig_v2_diff] = pres_diff.eig([1 2]);
+
+hca = h2(isub); isub = isub + 1;
+vdf = pd_orig.reduce('2D',L,M);
+vdf.plot_plane(hca)
+hca.XLabel.String = 'v_L (km/s)';
+hca.YLabel.String = 'v_M (km/s)';
+
+if 1 % plot eigenvectors
+  hold(hca,'on')  
+  EV1 = mean(eig_v1_orig.data,1);
+  EV2 = mean(eig_v2_orig.data,1);
+  eigval = mean(eig_val_orig.data,1);
+  quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+  quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+  hold(hca,'off')
+  irf_legend(hca,sprintf('eig1/eig2=%.2f',eigval(1)/eigval(2)),[0.98 0.98],'color','k')
+end
+
+hca = h2(isub); isub = isub + 1;
+vdf = pd_new.reduce('2D',L,M);
+vdf.plot_plane(hca)
+hca.XLabel.String = 'v_L (km/s)';
+hca.YLabel.String = 'v_M (km/s)';
+
+if 1 % plot eigenvectors
+  hold(hca,'on')  
+  EV1 = mean(eig_v1_new.data,1);
+  EV2 = mean(eig_v2_new.data,1);
+  eigval = mean(eig_val_new.data,1);
+  quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+  quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+  hold(hca,'off')
+  irf_legend(hca,sprintf('eig1/eig2=%.2f',eigval(1)/eigval(2)),[0.98 0.98],'color','k')
+end
+
+hca = h2(isub); isub = isub + 1;
+vdf = pd_diff.reduce('2D',L,M);
+vdf.plot_plane(hca)
+hca.XLabel.String = 'v_L (km/s)';
+hca.YLabel.String = 'v_M (km/s)';
+
+if 1 % plot eigenvectors
+  hold(hca,'on')  
+  EV1 = mean(eig_v1_diff.data,1);
+  EV2 = mean(eig_v2_diff.data,1);
+  eigval = mean(eig_val_diff.data,1);
+  quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+  quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+  hold(hca,'off')
+  irf_legend(hca,sprintf('eig1/eig2=%.2f',eigval(1)/eigval(2)),[0.98 0.98],'color','k')
+end
+
+tint_tmp = time + 7*0.5*0.151*[-1 1]+5;
+if exist('hmark2','var'); delete(hmark2); end
+c_eval('hmark2 = irf_pl_mark(h,tint_tmp,[0.5 0.5 0.5]);',1:numel(h))
+
+pd_orig = PD2_orig.mask({emask_mat}).tlim(tint_tmp);
+pd_new = PD2_new.mask({emask_mat}).tlim(tint_tmp);
+pd_diff = PD2_diff.mask({emask_mat}).tlim(tint_tmp);
+pres_orig = pd_orig.p;
+pres_new = pd_new.p;
+pres_diff = pd_diff.p;
+[eig_val_orig, eig_v1_orig, eig_v2_orig] = pres_orig.eig([1 2]);
+[eig_val_new, eig_v1_new, eig_v2_new] = pres_new.eig([1 2]);
+[eig_val_diff, eig_v1_diff, eig_v2_diff] = pres_diff.eig([1 2]);
+
+hca = h2(isub); isub = isub + 1;
+vdf = pd_orig.reduce('2D',L,M);
+vdf.plot_plane(hca)
+hca.XLabel.String = 'v_L (km/s)';
+hca.YLabel.String = 'v_M (km/s)';
+
+if 1 % plot eigenvectors
+  hold(hca,'on')  
+  EV1 = mean(eig_v1_orig.data,1);
+  EV2 = mean(eig_v2_orig.data,1);
+  eigval = mean(eig_val_orig.data,1);
+  quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+  quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+  hold(hca,'off')
+  irf_legend(hca,sprintf('eig1/eig2=%.2f',eigval(1)/eigval(2)),[0.98 0.98],'color','k')
+end
+
+hca = h2(isub); isub = isub + 1;
+vdf = pd_new.reduce('2D',L,M);
+vdf.plot_plane(hca)
+hca.XLabel.String = 'v_L (km/s)';
+hca.YLabel.String = 'v_M (km/s)';
+
+if 1 % plot eigenvectors
+  hold(hca,'on')  
+  EV1 = mean(eig_v1_new.data,1);
+  EV2 = mean(eig_v2_new.data,1);
+  eigval = mean(eig_val_new.data,1);
+  quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+  quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+  hold(hca,'off')
+  irf_legend(hca,sprintf('eig1/eig2=%.2f',eigval(1)/eigval(2)),[0.98 0.98],'color','k')
+end
+
+hca = h2(isub); isub = isub + 1;
+vdf = pd_diff.reduce('2D',L,M);
+vdf.plot_plane(hca)
+hca.XLabel.String = 'v_L (km/s)';
+hca.YLabel.String = 'v_M (km/s)';
+
+if 1 % plot eigenvectors
+  hold(hca,'on')  
+  EV1 = mean(eig_v1_diff.data,1);
+  EV2 = mean(eig_v2_diff.data,1);
+  eigval = mean(eig_val_diff.data,1);
+  quiver(hca,-EV1(1)*scaxis_scale,-EV1(2)*scaxis_scale,2*EV1(1)*scaxis_scale,2*EV1(2)*scaxis_scale,0,'color',colors(1,:),'linewidth',2)
+  quiver(hca,-EV2(1)*scaxis_scale,-EV2(2)*scaxis_scale,2*EV2(1)*scaxis_scale,2*EV2(2)*scaxis_scale,0,'color',colors(2,:),'linewidth',2)
+  hold(hca,'off')
+  irf_legend(hca,sprintf('eig1/eig2=%.2f',eigval(1)/eigval(2)),[0.98 0.98],'color','k')
+end
+
+compact_panels(h2,0.002,0.002)
+c_eval('h2(?).FontSize = fontsize-0;',1:numel(h2))
+c_eval('axis(h2(?),''square'');',1:numel(h2))
+hlinks = linkprop(h2,{'CLim','YLim','XLim'});
+c_eval('h2(?).XLim = [-2500 2500]; h2(?).YLim = [-2500 2500];',1:numel(h2))
 %%
 
 data_pad_mean = smooth3(data_pad,'box',nMean);

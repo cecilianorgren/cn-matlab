@@ -252,11 +252,6 @@ PD_diff = PD_orig+-PD_clean;
 
 tsElow = PD_orig.find_noise_energy_limit(5).movmean(30);
 emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
-
-PD_orig_notmasked = PD_orig;
-PD_clean_notmasked = PD_clean;
-PD_diff_notmasked = PD_diff;
-
 PD_orig = PD_orig.mask({emask_mat});
 PD_clean = PD_clean.mask({emask_mat});
 PD_diff = PD_diff.mask({emask_mat});
@@ -265,7 +260,7 @@ c_eval('fi?_L = PD_clean.reduce(''1D'',L);',ic)
 c_eval('fi?_M = PD_clean.reduce(''1D'',M);',ic)
 c_eval('fi?_N = PD_clean.reduce(''1D'',N);',ic)
 
-v_cut_L = -170;
+v_cut_L = 
 c_eval('fi?_L_pos_neg = PD_clean.reduce(''1D'',L,''vg_edges'',v_cut_L+[-3000, 0, 3000]);',ic)
 
 
@@ -428,13 +423,13 @@ tsFLratio = irf.ts_scalar(fi3_L_elow.time,f_L_ratio);
 end
 
 
-sum_neg = fi3_L_pos_neg.data(:,1);
-sum_pos = fi3_L_pos_neg.data(:,2);
+sum_neg = fi3_L_pos_neg_elow.data(:,1);
+sum_pos = fi3_L_pos_neg_elow.data(:,2);
 sum_all = sum_neg + sum_pos;
 ratio_neg = sum_neg./sum_all;
 ratio_pos = sum_pos./sum_all;
-tsFneg = irf.ts_scalar(fi3_L.time,ratio_neg);
-tsFpos = irf.ts_scalar(fi3_L.time,ratio_pos);
+tsFneg = irf.ts_scalar(fi3_L_elow.time,ratio_neg);
+tsFpos = irf.ts_scalar(fi3_L_elow.time,ratio_pos);
 
 tsFaway = tsFneg.tlim(tint_left).combine(tsFpos.tlim(tint_right)); tsFaway.name = 'Away';
 tsFtowa = tsFpos.tlim(tint_left).combine(tsFneg.tlim(tint_right)); tsFtowa.name = 'Towards';
@@ -878,7 +873,7 @@ end
 if 1 % dEFlux ion
   hca = irf_panel('ion dEF omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('specrec = PD_clean_notmasked.deflux.omni.specrec;',ic)
+  c_eval('specrec = iPDist?.deflux.omni.specrec;',ic)
   specrec.p(specrec.p==0) = NaN;  
   irf_spectrogram(hca,specrec,'donotfitcolorbarlabel')
   hca.YScale = 'log'; 
@@ -1024,12 +1019,12 @@ end
 if 1
   hca = irf_panel('fraction away from x line');
   set(hca,'ColorOrder',mms_colors('1234'))
-  ts1 = irf.ts_scalar(fi3_L_pos_neg.time,fi3_L_pos_neg.data(:,1)./sum(fi3_L_pos_neg.data(:,:),2));
-  ts2 = irf.ts_scalar(fi3_L_pos_neg.time,fi3_L_pos_neg.data(:,2)./sum(fi3_L_pos_neg.data(:,:),2));
+  ts1 = irf.ts_scalar(fi3_L_pos_neg_elow.time,fi3_L_pos_neg_elow.data(:,1)./sum(fi3_L_pos_neg_elow.data(:,:),2));
+  ts2 = irf.ts_scalar(fi3_L_pos_neg_elow.time,fi3_L_pos_neg_elow.data(:,2)./sum(fi3_L_pos_neg_elow.data(:,:),2));
   irf_plot(hca,{ts1,ts2},'comp')
   hca.YLabel.String = {'Fraction','of ions'};
   irf_legend(hca,{'moving tailward    ','      moving Earthward'},[0.3 0.6])
-  hca.YTick = [0:0.25:1];
+
 end
 if 0 % max shear direction
   hca = irf_panel('fi e1');
@@ -1983,7 +1978,7 @@ times_utc = [...%'2017-07-11T22:33:25.000Z';...
 end
 
 PD_orig = iPDist3;
-nMean = [7,3,3,3]; nThresh = 4;
+nMean = [3,3,3,3]; nThresh = 3;
 PD_clean = PD_orig.remove_noise(nMean,nThresh,iPDist3_counts);
 %PD_clean = PD_orig.remove_noise([4 3 3 3],4,iPDist3_counts);
 %PD_clean = iPDist3.remove_noise([7 1 1 1],2,iPDist3_counts);
@@ -2026,12 +2021,12 @@ if 1 % Calculate eigenvectors
 
 end
 
- %% Plot
+%% Plot
 nRows = 4;
 nCols = size(times_utc,1);
-[h1,h] = initialize_combined_plot('topbottom',1,nRows,nCols,0.3,'vertical');
+[h1,h] = initialize_combined_plot('topbottom',3,nRows,nCols,0.3,'vertical');
 
-vL_Xline = 1*-170;
+vL_Xline = 0*-170;
 
 isub = 1;
 tint_zoom = irf.tint('2017-07-11T22:33:24.00Z/2017-07-11T22:34:40.00Z'); %20151112071854
@@ -2060,7 +2055,7 @@ irf_legend(hca,{'L','M','N'},[0.98 0.98]);
 hca.YLabel.Interpreter = 'tex';
 end
 
-if 0 % tsEig_v1_c
+if 1 % tsEig_v1_c
   hca = h1(isub); isub = isub + 1;
   hca.ColorOrder = mms_colors('xyz');
   irf_plot(hca,{tsEig_v1_c.tlim(tint)})
@@ -2073,7 +2068,7 @@ if 0 % tsEig_v1_c
   irf_legend(hca,{'L','M'},[0.98 0.98]);
   hca.YLabel.Interpreter = 'tex';
 end
-if 0 % tsEig_val ratio
+if 1 % tsEig_val ratio
   hca = h1(isub); isub = isub + 1;
   hca.ColorOrder = mms_colors('xyz');
   eig_ratio = irf.ts_scalar(tsEig_val_c.time,tsEig_val_c.data(:,1)./tsEig_val_c.data(:,2));
@@ -2093,7 +2088,6 @@ isub = 1;
 irf_zoom(h1,'x',tint_figure_zoom_incl_sep+[+10 -10])
 
 pdist_all = PD_clean;
-pdist_all.data(:,:,:,[ ]) = 0;
 time = time_vdf;
 
 fontsize_leg = 9;
@@ -2110,11 +2104,11 @@ vint_N = [-Inf Inf];
 times = EpochTT(times_utc);
 for it = 1:times.length%(1)
   time = times(it);
-  time = time+-12*0+-2;
+  time = time+-12*0+0;
   
   
   pdist = pdist_all.tlim(time+nMean(1)*0.5*0.151*[-1 1]);
-  tint_dist = [pdist.time.start pdist.time.stop] + 0.5*0.150*1*[-1 1];
+  tint_dist = [pdist.time.start pdist.time.stop] + 0.5*0.150*nMean(1)*[-1 1];
   
   % Calculate eigenvectors and values
   p_tmp = pdist.p;
@@ -2489,12 +2483,11 @@ c_eval('h(?).FontSize = 8;',1:numel(h))
 
 
 for ip = 3:nRows:numel(h)
-  vmax = -2000;
-  patch(h(ip),[-3000 vmax vmax -3000],[-3000 -3000 -vmin -vmin],colors(2,:),...
+  patch(h(ip),[-3000 3000 3000 -3000],[-3000 -3000 -vmin -vmin],colors(2,:),...
     'facealpha',0.1,'edgecolor',colors(2,:));
   %h(ip).Children = circshift(h(ip).Children,1);
 
-  patch(h(ip),[-3000 vmax vmax -3000],[3000 3000 vmin vmin],colors(1,:),...
+  patch(h(ip),[-3000 3000 3000 -3000],[3000 3000 vmin vmin],colors(1,:),...
     'facealpha',0.1,'edgecolor',colors(1,:));
   h(ip).Children = circshift(h(ip).Children,1);
 end
@@ -2561,12 +2554,11 @@ c_eval('h1(?).XTickLabelRotation = 0;',1:numel(h1))
 c_eval('h1(?).XLabel = [];',1:(numel(h1)-1))
 
 dy = 0.0848;
-%dy = 0.05;
-h1(1).Position = [0.300    0.7730    0.4000    dy];
-%h1(1).Position = [0.300    0.8730    0.4000    dy];
+dy = 0.05;
+h1(1).Position = [0.300    0.8730    0.4000    dy];
 %h1(2).Position = [0.1700    0.7672    0.3000    0.0848];
-%h1(2).Position = [0.300    0.8730-dy    0.4000    dy];
-%h1(3).Position = [0.300    0.8730-dy*2    0.4000    dy];
+h1(2).Position = [0.300    0.8730-dy    0.4000    dy];
+h1(3).Position = [0.300    0.8730-dy*2    0.4000    dy];
 
 %hca.CLim = [-9.5 -7.5];
 h(1).CLim = [-10 -7.5];
