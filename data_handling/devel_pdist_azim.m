@@ -11,7 +11,7 @@ lmn_vi = [L_vi; M_vi; N_vi];
 
 
 L_gse = [1 0 0];
-M_gse = [0 1 0];
+M_gse = [0 1 0]; 
 N_gse = [0 0 1];
 lmn_gse = [L_gse; M_gse; N_gse];
 
@@ -39,12 +39,18 @@ c_eval('pdist_cleaned = iPDist?.movmean(nMovMean,''removeonecounts'',iPDist?_cou
 %% Make PDist objects
 % Test if the 360 deg spectrogram works
 PD_orig = pdist_cleaned;
-PD_shift_eye = PD_orig.shift_many([-170 0 0],200,[1 0 0; 0 1 0; 0 0 1],ic);
+%PD_shift_eye = PD_orig.shift_many([-170 0 0],200,[1 0 0; 0 1 0; 0 0 1],ic);
+%PD_shift_lmn = PD_orig.shift_many([-170 0 0],200,lmn,ic);
+%PD_shift_nlm = PD_orig.shift_many([-170 0 0],200,circshift(lmn,1,1),ic);
+%PD_shift_mnl = PD_orig.shift_many([-170 0 0],200,circshift(lmn,2,1),ic);
+%PD_shift_mnl_large = PD_orig.shift_many([-2000 0 0],200,circshift(lmn,2,1),ic);
+%PD_noshift_mnl = PD_orig.shift_many([0 0 0],200,circshift(lmn,2,1),ic);
+PD_shift_eye = PD_orig.shift([-170 0 0],200,[1 0 0; 0 1 0; 0 0 1],ic);
 PD_shift_lmn = PD_orig.shift_many([-170 0 0],200,lmn,ic);
 PD_shift_nlm = PD_orig.shift_many([-170 0 0],200,circshift(lmn,1,1),ic);
 PD_shift_mnl = PD_orig.shift_many([-170 0 0],200,circshift(lmn,2,1),ic);
 PD_shift_mnl_large = PD_orig.shift_many([-2000 0 0],200,circshift(lmn,2,1),ic);
-PD_noshift_mnl = PD_orig.shift_many([0 0 0],200,circshift(lmn,2,1),ic);
+PD_noshift_mnl = PD_orig.shift_many([0 
 
 dir_pitch = irf.ts_vec_xyz(iPDist3.time,repmat(N,iPDist3.length,1));
 iPitch_orig  = PD_orig.pitchangles(dir_pitch,12);
@@ -168,11 +174,11 @@ for it = 1:nt
   E(E<elow) = 0;
   %dn(vM<0) = 0;
   %dn(vLN<1500) = 0;  
-  
-  [dn_tot_ edges_ mid_ loc_] = histcn([theta_NL],azimuth_edges,'AccumData',dn,'Fun',@sum);
-  [dn_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dn,'Fun',@sum);
-  [dv_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dv,'Fun',@sum);
-  [df_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',df,'Fun',@sum);
+  fun = @sum;
+  [dn_tot_ edges_ mid_ loc_] = histcn([theta_NL],azimuth_edges,'AccumData',dn,'Fun',fun);
+  [dn_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dn,'Fun',fun);
+  [dv_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dv,'Fun',fun);
+  [df_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',df,'Fun',fun);
   % for iloc = 1:nAzimuth    
   %   dv_tot_all(it,iloc) = sum(MP(it).dv(loc==iloc));
   %   df_tot_all(it,iloc) = sum(MP(it).df(loc==iloc));
@@ -199,6 +205,8 @@ f_tot = dn_tot_all./d3v_tot_az_bin;
 
 iAzim_ = PDist(PD.time,f_tot,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
 iAzim_.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_ = iAzim_*to_SI;
 %iAzim_.units = 's^3/m^6';
 eval(sprintf('iAzim_%04.0f = iAzim_;',abs(vL_shift)));
 %iAzim_ = PDist(PD.time,f_tot_1,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
@@ -270,7 +278,7 @@ pcolor(hca,th_bot_cumsum_norm'); shading(hca,'flat')
 
 %% Plot
 tint_plot = time_xline_ion + 25*[-1 1];
-elim = [1500 Inf];
+%elim = [1500 Inf];
 fontsize = 12;
 h = irf_plot(2);
 
@@ -327,11 +335,13 @@ if 0 % iAzim_999
 end
 
 h(end).XTickLabelRotation = 0;
-colormap('parula')
+colormap(irf_colormap('magma'))
+%colormap('parula')
 %colormap(pic_colors('candy4'))
 %colormap(flipdim(pic_colors('thermal'),1))
 irf_plot_axis_align(h)
 irf_zoom(h,'x',tint_plot)
+
 
 c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
 c_eval('h(?).CLim = [-30 -26];',1:numel(h))
@@ -379,6 +389,8 @@ axis(hca,'equal')
 %% Plot for paper
 
 tint_plot = [iAzim_0170.time.start iAzim_0170.time.stop];
+tint_plot = tint_figure_zoom_incl_sep;
+
 times_utc = [...%'2017-07-11T22:33:25.000Z';...
              '2017-07-11T22:33:50.582Z';...
              %'2017-07-11T22:34:00.582Z';...
@@ -389,16 +401,19 @@ times_utc = [...%'2017-07-11T22:33:25.000Z';...
              '2017-07-11T22:34:15.940Z'];
 
 
-time = EpochTT(times_utc(2,:)); % Time of example distribution
+time = EpochTT(times_utc(1,:)); % Time of example distribution
 
 h1 = irf_plot(2);
 
-h1(1).Position = [0.5 0.75 0.4 0.15];
-h1(2).Position = [0.5 0.15 0.4 0.6];
+h1(1).Position = [0.5 0.75 0.44 0.15];
+h1(2).Position = [0.5 0.15 0.44 0.6];
 
 h2 = subplot(1,2,1);
 h2.Position = [0.1 0.15 0.5 0.5];
-h2.Position = [0.1181    0.2759    0.2267    0.5810];
+%h2.Position = [0.1181    0.2759    0.2267    0.5810];
+h2.Position = [0.1581    0.2759    0.2267    0.5810];
+
+fontsize = 14;
 
 
 if 1 % Vi
@@ -412,7 +427,9 @@ end
 if 1 % iAzim_170
   hca = irf_panel('azim iAzim_170');
   specrec = iAzim_0170.elim(elim).tlim(tint_plot).specrec('pitchangle');
-  irf_spectrogram(hca,specrec,'donotfitcolorbarlabel'); 
+  specrec.p = smooth2(specrec.p,0,0);
+  [hca_, hcb] = irf_spectrogram(hca,specrec,'donotfitcolorbarlabel'); 
+  hcb.YLabel.String = 'log_{10} f_i (s^3/m^6)';
   hca.Layer = 'top';
   hca.YTick = -180:30:180;
   hold(hca,'on')
@@ -421,15 +438,16 @@ if 1 % iAzim_170
   hold(hca,'off')  
   hca.YLabel.String = '\theta_{LN} (deg)';
   hca.YLabel.Interpreter = 'tex';
-  irf_legend(hca,{sprintf('v_L -> v_L-(%g km/s)',iAzim_0170.ancillary.v_shift)},[0.98 0.98],'color','k','fontsize',12)
+  %irf_legend(hca,{sprintf('v_L -> v_L-(%g km/s)',iAzim_0170.ancillary.v_shift)},[0.98 0.98],'color','k','fontsize',12)
   hca.XGrid = 'on'; hca.YGrid = 'on';
-  hca.CLim = [-30 -26];
+  %hca.CLim = [-30 -26]+30;
+  hca.CLim = [1 4];
 end
 
 irf_plot_axis_align(h1)
 h1(1).YLim(1) = [-799];
 
-
+vL_xline_use = vL_Xline;
 
 elim = [000 Inf];
 %elim = [200 Inf];
@@ -472,15 +490,15 @@ pdist_all = pdist_cleaned;
     hca = h2(isub); isub = isub + 1;
     %vdf = pdist_nobg.reduce('2D',[L_vi],[N_vi]);
     vdf = pdist.reduce('2D',[Ldsl],[Ndsl],'vint',vint_M);
-    vdf.depend{1} = vdf.depend{1} - vL_Xline;
-    vdf.ancillary.vx_edges = vdf.ancillary.vx_edges - vL_Xline;
+    vdf.depend{1} = vdf.depend{1} - 1*vL_xline_use;
+    vdf.ancillary.vx_edges = vdf.ancillary.vx_edges - 1*vL_xline_use;
     position = hca.Position;
     vdf.plot_plane(hca,'smooth',nSmooth,'contour',nContours)
     hca.Position = position;
     axis(hca,'square')
-    hca.XLabel.String = 'v_L (km/s)';
-    %hca.XLabel.String = 'v_L-v_{L}^{Xline} (km/s)';
-    hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
+    %hca.XLabel.String = 'v_L (km/s)';
+    hca.XLabel.String = 'v_L-v_{L}^{Xline} (km/s)';
+    %hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
     hca.YLabel.String = 'v_N (km/s)';
     if 1 % plot ExB
       hold(hca,'on')
@@ -506,12 +524,12 @@ pdist_all = pdist_cleaned;
       %%
       hold(hca,'on')      
       ang = linspace(0,360,361);
-      r = 2200;
+      r = 2500;
       color_grid = ([0.9 0.9 0.9]-0.3)*0;
-      x0 = vL_shift;
+      x0 = vL_Xline-vL_xline_use;
       y0 = 0;
       %plot(hca,x0 + r*cosd(ang), y0 + r*sind(ang),'color',color_grid)
-      plot(hca,x0 + 1500*cosd(ang), y0 + 1500*sind(ang),'color',color_grid)
+      plot(hca,x0 + 2500*cosd(ang), y0 + 2500*sind(ang),'color',color_grid)
       %plot(hca,x0 + 2000*cosd(ang), y0 + 2000*sind(ang),'color',color_grid)
       plot(hca,x0,0,'kx',x0,0,'ko','linewidth',2)
       angs = -180:30:180;
@@ -524,7 +542,7 @@ pdist_all = pdist_cleaned;
           plot(hca,xx,yy,'color',color_grid,'linestyle','-')
 
         end
-        text_margin = 1.3;
+        text_margin = 1.15;
         if angs(ia) == 180
           ht = text(hca,xx(2)*text_margin,yy(2)*text_margin,{sprintf('%4.f^o',angs(ia))}, ...
             'color','k','VerticalAlignment','bottom','HorizontalAlignment','center', ...
@@ -555,14 +573,26 @@ colormap(cmap)
 %colormap(pic_colors('candy4'))
 %colormap(flipdim(pic_colors('thermal'),1))
 
+
 irf_zoom(h1,'x',tint_plot)
+h1(1).YLim = [-799 399];
 
 irf_legend(h2,'(a)',[-0.05 1.05],'color','k','fontsize',16)
 irf_legend(h1(1),'(b)',[-0.1 1.01],'color','k','fontsize',16)
 irf_legend(h1(2),'(c)',[-0.1 1.0],'color','k','fontsize',16)
 
 %h(1).Title.String = sprintf('L = [%.2f,%.2f,%.2f]; M = [%.2f,%.2f,%.2f]; N = [%.2f,%.2f,%.2f];',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3));
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+c_eval('h(?).FontSize = fontsize;',1:numel(h))
 
+%c_eval('hmark(?) = irf_pl_mark(h1(?),time_xline,''k'',''linestyle'',''-.'',''linewidth'',2); ;',1:numel(h1))
+drawnow
+c_eval('hmark(?) = irf_pl_mark(h1(?),time_xline,''k'',''linestyle'','':'',''linewidth'',4); ;',1:numel(h1))
+
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+hl = findobj(gcf,'type','line');
+c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
+c_eval('h(?).LineWidth = 1.5;',1:numel(h))
 
 %%
 

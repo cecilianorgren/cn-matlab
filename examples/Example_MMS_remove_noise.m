@@ -10,7 +10,8 @@ c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr
 PD_orig = iPDist3;
 nMean = [3,3,3,3]; nThresh = 2;
 nMean = [5,3,3,3]; nThresh = 3;
-nMean = [7,3,3,3]; nThresh = 4;
+nMean = [5,3,3,3]; nThresh = 3;
+%nMean = [7,3,3,3]; nThresh = 4;
 PD_clean = PD_orig.remove_noise([4 3 3 3],4,iPDist3_counts);
 %PD_clean = iPDist3.remove_noise([7 1 1 1],2,iPDist3_counts);
 PD_clean = PD_orig.remove_noise(nMean,nThresh,iPDist3_counts);
@@ -45,7 +46,7 @@ end
 if 1 % deflux ion
   hca = irf_panel('ion counts clean omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  [hs, hcb] = irf_spectrogram(hca,PD_new.deflux.omni.specrec,'donotfitcolorbarlabel');
+  [hs, hcb] = irf_spectrogram(hca,PD_clean.deflux.omni.specrec,'donotfitcolorbarlabel');
   irf_legend(hca,{sprintf('Window = [%.0f,%.0f,%.0f,%.0f]',nMean(1),nMean(2),nMean(3),nMean(4));sprintf('N < %g removed',nThresh)},[0.02 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
   irf_legend(hca,'Cleaned',[0.98 0.1],'fontsize',fontsize,'color','k','backgroundcolor','w')
   hca.YScale = 'log';
