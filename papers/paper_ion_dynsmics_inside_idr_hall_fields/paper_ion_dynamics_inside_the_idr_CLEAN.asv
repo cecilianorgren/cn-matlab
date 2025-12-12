@@ -2853,35 +2853,16 @@ isub = 1;
     data2 = mean(data2,1);
 
     hca.ColorOrder = colors;
+    idx_neg = v_center<0;
+    data1x = [v_center(idx_neg) v_center(idx_neg(end:-1:1))];
+    data1y = [data1 data1*0];
 
-    idx = v_center<0;
-    data1_x = [v_center(idx) v_center(idx(end:-1:1)) v_center(idx(1))];
-    data1_y = [data1(idx) data1(idx)*0 0];
-    
-    idx = v_center>0;
-    data2_x = [v_center(idx) v_center(idx(end:-1:1)) v_center(idx(1))];
-    data2_y = [data2(idx) data2(idx)*0 0];
+    idx2 = c_center<0;
+    data1x = [v_center(idx2) v_center(idx2(end:-1:1))];
+    data2y = [data1 data1*0];
 
-    idx = v_center<0;
-    data3_x = [v_center(idx) v_center(idx(end:-1:1))];
-    data3_y = [data2(idx) data2(idx)*0];
-    
-    idx = v_center>0;
-    data4_x = [v_center(idx) v_center(idx(end:-1:1))];
-    data4_y = [data2(idx) data2(idx)*0];
-
-    patch(hca,data1_x,data1_y,colors(1,:),...
-        'facealpha',0.3,'edgecolor',colors(1,:)*0);
-    hold(hca,'on')
-    patch(hca,data2_x,data2_y,colors(2,:),...
-        'facealpha',0.3,'edgecolor',colors(2,:)*0);
-    %patch(hca,data3_x,data3_y,colors(3,:),...
-    %    'facealpha',0.3,'edgecolor',colors(3,:)*0);
-    %patch(hca,data4_x,data4_y,colors(4,:),...
-    %    'facealpha',0.3,'edgecolor',colors(4,:)*0);
-    hold(hca,'off')
-
-    %plot(hca,v_center,data1,v_center,data2,'linewidth',2)    
+    patch(hca,)
+    plot(hca,v_center,data1,v_center,data2,'linewidth',2)    
     hca.XLabel.String = 'v_M (km/s)';
     
     axis(hca,'square')
