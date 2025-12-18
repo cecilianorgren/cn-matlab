@@ -227,6 +227,7 @@ N = lmn(3,:);
 lmn = [L; M; N];
 %lmn
 
+
 %% Rotate into LMN
 c_eval('mvaVixB? = gseVixB?*lmn''; mvaVixB?.name = ''Vi x B LMN'';',ic)
 c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''Ve x B LMN'';',ic)
@@ -356,9 +357,26 @@ MP = PD.macroparticles('ntot',nMP,'scpot',Vsc);
 vL_shift = vL_xline*1;
 %vL_shift = -999;
 E_edges = [PD.ancillary.energy(1,1) - PD.ancillary.delta_energy_minus(1,1), PD.ancillary.energy(1,:) + PD.ancillary.delta_energy_plus(1,:)];
+E_minus = E_edges(1:end-1);
+E_plus = E_edges(2:end);
+v_minus = sqrt(2*units.e*E_minus/units.mp); % m/s
+v_plus = sqrt(2*units.e*E_plus/units.mp); % m/s
+d_vel = (v_plus.^3 - v_minus.^3)/3; % (m/s)^3
+d_vel_tot = (v_plus(end).^3 - v_minus(1).^3)/3; % (m/s)^3
+
+%d3v = d_vel_mat.*d_azim.*d_polar_mat; % (m/s)^3
+
 nEnergy = numel(E_edges)-1;
-azimuth_edges = -180:5:180;
+dazim = 5;
+azimuth_edges = -180:dazim:180;
 nAzimuth = numel(azimuth_edges)-1;
+
+
+d_vel_mat = repmat(d_vel,nt,1,nAzimuth);
+d2v = d_vel_mat.*dazim; % (m/s)^3
+
+d_vel_tot_mat = repmat(d_vel_tot,nt,nAzimuth);
+d2v_intE = d_vel_tot_mat.*dazim; % (m/s)^3 ????
 
 dn_tot_all_ = zeros(nt,nAzimuth);
 dv_tot_all_ = zeros(nt,nAzimuth);
@@ -366,8 +384,8 @@ dn_tot_all = zeros(nt,nEnergy,nAzimuth);
 df_tot_all = zeros(nt,nEnergy,nAzimuth);
 dv_tot_all = zeros(nt,nEnergy,nAzimuth);
 for it = 1:nt
-  elow = tsElow.resample(PD(it).time).data;
-  dv = MP(it).dv;
+  %elow = tsElow.resample(PD(it).time).data;
+  dv = MP(it).dv; % same units as the original f (I think)
   df = MP(it).df;
   dn = df.*dv;
   vx = MP(it).vx;
@@ -377,10 +395,10 @@ for it = 1:nt
   vM = [vx vy vz]*M';
   vN = [vx vy vz]*N';
   theta_NL = atan2d(vN,vL);
-  v2 = (vL.^2 + vM.^2 + vN.^2)*1e6; % (m/s)^2
-  vLN = sqrt(vL.^2 + vN.^2); % (km/s)^2
-  E = units.mp*v2/2/units.eV; % eV
-  E(E<elow) = 0;
+  v2 = (vL.^2 + vM.^2 + vN.^2)*1e6; % (cm/s)^2 -> (m/s)^2
+  vLN = sqrt(vL.^2 + vN.^2)*1e3; % (m/s)^1 -- It's the energy corresponding to this one should use, because the end results will be a reduced cylinder
+  E = units.mp*vLN.^2/2/units.eV; % eV
+  %E(E<elow) = 0;
   %dn(vM<0) = 0;
   %dn(vLN<1500) = 0;  
   fun = @sum;
@@ -394,6 +412,8 @@ for it = 1:nt
   %   df_tot_all(it,iloc) = sum(MP(it).df(loc==iloc));
   % end
   dn_tot_all_(it,:) = dn_tot_;
+  dv_tot_all_(it,:) = dv_tot_;
+
 
   dn_tot_all(it,:,:) = dn_tot;
   dv_tot_all(it,:,:) = dv_tot;
@@ -411,6 +431,10 @@ d3v_tot = sum(PD.d3v('mat'),[2:4]);
 d3v_tot_az_bin_ = repmat(d3v_tot/nAzimuth,[1,nAzimuth]);
 f_tot_2_ = dn_tot_all_./d3v_tot_az_bin_;
 
+% Not seperated by E, 2
+f_tot_3_ = dn_tot_all./d2v;
+
+
 % iAzim__ = PDist(PD.time,f_tot,'azimuthangle',mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
 % iAzim__.ancillary.v_shift = vL_shift;
 % to_SI = (1e2*1e3)^6;
@@ -422,8 +446,19 @@ f_tot_2_ = dn_tot_all_./d3v_tot_az_bin_;
 d3v_tot_per_E = sum(PD.d3v('mat'),[3:4]);
 d3v_tot_az_bin = repmat(d3v_tot_per_E/nAzimuth,[1,1,nAzimuth]);
 %f_tot_1 = dn_tot_all./dv_tot_all;
-f_tot = dn_tot_all./d3v_tot_az_bin;
+f_tot = dn_tot_all./d3v_tot_az_bin; 
 
+% Seperated by E 2
+%f_tot_1 = dn_tot_all./dv_tot_all;
+f_tot_3 = dn_tot_all./dv_tot_all;
+
+% Seperated by E 3
+%f_tot_1 = dn_tot_all./dv_tot_all;
+f_tot_4 = dn_tot_all./d2v; % (1/cm^3)/(m^2/s^2) = (s^2/m) or (s^2/cm), or a combinaiton, need to recheck units 
+
+% NOT Seperated by E 4
+%f_tot_1 = dn_tot_all./dv_tot_all;
+f_tot_5 = dn_tot_all_./d2v_intE; % (1/cm^3)/(m^2/s^2) = (s^2)*(m^2/cm^3) = (s^2)*(m^2/cm^3)
 
 iAzim_ = PDist(PD.time,f_tot,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
 iAzim_.ancillary.v_shift = vL_shift;
@@ -433,7 +468,28 @@ iAzim_ = iAzim_*to_SI;
 eval(sprintf('iAzim_%04.0f = iAzim_;',abs(vL_shift)));
 %iAzim_ = PDist(PD.time,f_tot_1,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
 
+iAzim_2 = PDist(PD.time,f_tot_3,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_2.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_2 = iAzim_2*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_2_%04.0f = iAzim_2;',abs(vL_shift)));
 
+iAzim_3 = PDist(PD.time,f_tot_4,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_3.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_3 = iAzim_3*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_3_%04.0f = iAzim_3;',abs(vL_shift)));
+
+f_tmp = reshape(f_tot_5,size(f_tot_5,1),1,size(f_tot_5,2));
+f_tmp = repmat(f_tmp,1,2,1);
+iAzim_4 = PDist(PD.time,f_tmp,'azimuthangle',PD.depend{1}(:,[10 11]),mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_4.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_4 = iAzim_4*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_4_%04.0f = iAzim_4;',abs(vL_shift)));
 %% Noise-handling: Figure 1
 h = irf_plot(7);
 
@@ -1047,8 +1103,11 @@ if 1 % Vi
 end
 if 1 % iAzim_170
   hca = irf_panel('azim iAzim_170');
-  specrec = iAzim_0170.tlim(tint_plot).specrec('pitchangle');
+  ts = iAzim_3.mask({[tsElow.data*0 tsElow.data*1]});
+  ts = iAzim_4;
+  specrec = ts.tlim(tint_plot).specrec('pitchangle');
   specrec.p = smooth2(specrec.p,0,0);
+  %specrec.df = 1;
   [hca_, hcb] = irf_spectrogram(hca,specrec,'donotfitcolorbarlabel'); 
   hcb.YLabel.String = 'log_{10} f_i (s^3/m^6)';
   hca.Layer = 'top';
@@ -1183,7 +1242,7 @@ colormap(cmap)
 
 irf_zoom(h1,'x',tint_plot)
 h1(1).YLim = [-799 399];
-h1(2).CLim = [1 4];
+%h1(2).CLim = [1 4];
 
 irf_legend(h2,'(a)',[-0.05 1.05],'color','k','fontsize',16)
 irf_legend(h1(1),'(b)',[-0.1 1.01],'color','k','fontsize',16)
@@ -1906,7 +1965,7 @@ elim = [000 Inf];
 nMovMean = 5;
 c_eval('pdist_all = PD_clean;',ic)
 
-fontsize_leg = 9;
+fontsize_leg = 10;
 fontsize = 10;
 
 time = time_pdist;
@@ -1934,7 +1993,8 @@ colors = pic_colors('matlab');
 nSmooth = 0;
 nContours = 0;
 
-h = setup_subplots(2,2);
+%h = setup_subplots(2,2);
+clear h;
 h(1) = subplot(2,4,[1 2 5 6]);
 h(2) = subplot(2,4,[3 4]);
 h(3) = subplot(2,4,[7 8]);
@@ -1946,11 +2006,13 @@ isub = 1;
     vdf_MN = pdist.reduce('2D',[Mdsl],[Ndsl]);
     vdf = vdf_MN;
     position = hca.Position;
-    vdf.plot_plane(hca,'smooth',nSmooth,'contour',nContours)
+    vdf.plot_plane(hca,'smooth',nSmooth,'contour',nContours, '10^3 km/s')
     hca.Position = position;
+    hcb = findobj(gcf,'type','colorbar');
+    hcb.Location = 'northoutside';
     axis(hca,'square')
-    hca.XLabel.String = 'v_M (km/s)';
-    hca.YLabel.String = 'v_N (km/s)';
+    hca.XLabel.String = 'v_M (10^3 km/s)';
+    hca.YLabel.String = 'v_N (10^3 km/s)';
     if 1 % plot ExB
       hold(hca,'on')
       hbulk = plot(hca,mean(vExB.y.data,1)*1e0,mean(vExB.z.data,1)*1e0,'ok','MarkerFaceColor','w','markersize',5);
@@ -1961,7 +2023,7 @@ isub = 1;
       quiver(-scaxis(2)*scaxis_scale,-scaxis(3)*scaxis_scale,2*scaxis(2)*scaxis_scale,2*scaxis(3)*scaxis_scale,0,'k','linewidth',1)
       hold(hca,'off') 
     end
-    vlim = 2500;
+    vlim = 2500*1e-3;
     hca.XLim = vlim*[-1 1];
     hca.YLim = vlim*[-1 1];
     if 0
@@ -1999,6 +2061,7 @@ isub = 1;
     colormap(irf_colormap('magma'))
   end
       
+  vscale = 1e3;
   if 1 % 1D at a certain vn range, patches
     hca = h(isub); isub = isub + 1;
 
@@ -2050,12 +2113,12 @@ isub = 1;
     data4_x = [v_center(idx) v_center(idx(end:-1:1))];
     data4_y = [data2(idx) data2(idx)*0];
     
-    plot(hca,v_center,mean(data1,1),'k')
+    plot(hca,v_center/vscale,mean(data1,1),'k')
     hold(hca,'on')
     
-    patch(hca,data1_x,data1_y,colors(1,:),...
+    patch(hca,data1_x/vscale,data1_y,colors(1,:),...
         'facealpha',0.3,'edgecolor',colors(1,:)*0);
-    patch(hca,data2_x,data2_y,colors(2,:),...
+    patch(hca,data2_x/vscale,data2_y,colors(2,:),...
         'facealpha',0.3,'edgecolor',colors(2,:)*0);
     
     %patch(hca,data3_x,data3_y,colors(3,:),...
@@ -2065,7 +2128,7 @@ isub = 1;
     hold(hca,'off')
 
     %plot(hca,v_center,data1,v_center,data2,'linewidth',2)    
-    hca.XLabel.String = 'v_M (km/s)';
+    hca.XLabel.String = 'v_M (10^3 km/s)';
     
     axis(hca,'square')
     hca.YLabel.String = 'f_i(v_M) (s/m^4)';
@@ -2082,10 +2145,10 @@ isub = 1;
       [0.98 0.98],'fontsize',fontsize_leg,'color','k')
   
     vlim = 1499;
-    hca.XLim = vlim*[-1 1];  
+    hca.XLim = vlim*[-1 1]/vscale;  
     hca.XGrid = 'on';
     hca.YGrid = 'on';
-    hca.XTick = [-2000:500:2000];
+    hca.XTick = [-2000:500:2000]/vscale;
     hca.XTickLabelRotation = 0;
     hca.Box = 'on';
     if 0 % dashed line
@@ -2183,11 +2246,14 @@ isub = 1;
     data4_y = [data2(idx) data2(idx)*0];
     
 
-    patch(hca,data3_x,data3_y,colors(3,:),...
-        'facealpha',0.3,'edgecolor',colors(3,:)*0);
+    plot(hca,v_center/vscale,mean(data2,1),'k')
     hold(hca,'on')
-    patch(hca,data4_x,data4_y,colors(4,:),...
+
+    patch(hca,data3_x/vscale,data3_y,colors(3,:),...
+        'facealpha',0.3,'edgecolor',colors(3,:)*0);    
+    patch(hca,data4_x/vscale,data4_y,colors(4,:),...
         'facealpha',0.3,'edgecolor',colors(4,:)*0);
+    hold(hca,'off')
     
     %patch(hca,data3_x,data3_y,colors(3,:),...
     %    'facealpha',0.3,'edgecolor',colors(3,:)*0);
@@ -2213,10 +2279,10 @@ isub = 1;
       [0.98 0.98],'fontsize',fontsize_leg,'color','k')
   
     vlim = 1499;
-    hca.XLim = vlim*[-1 1];  
+    hca.XLim = vlim*[-1 1]/vscale;  
     hca.XGrid = 'on';
     hca.YGrid = 'on';
-    hca.XTick = [-2000:500:2000];
+    hca.XTick = [-2000:500:2000]/vscale;
     hca.XTickLabelRotation = 0;
     hca.Box = 'on';
     if 0 % dashed line
@@ -2370,14 +2436,17 @@ isub = 1;
     end
   end
   
- %
+
+h(1).Position(3) = 0.32;
+h(1).Position(1) = 0.17;
 for ip = 1:numel(h)
   hca = h(ip);
   %axis(hca,'square')
-  hca.Position(3) = 0.25;
+%  hca.Position(3) = 0.25;
 end
+c_eval('h(?).FontSize = fontsize;',1:numel(h))
 c_eval('h(?).LineWidth = 1.5;',1:numel(h))
-h(1).Title.String = sprintf('%s - %s',tint_dist(1).utc('HH:MM:SS.mmm'),tint_dist(2).utc('SS.mmm'));
+%h(1).Title.String = sprintf('%s - %s',tint_dist(1).utc('HH:MM:SS.mmm'),tint_dist(2).utc('SS.mmm'));
 %compact_panels(h,0.01,0.2)
 
 irf_legend(0,{sprintf('L=[%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3)),sprintf('nMean=[%g,%g,%g,%g], nThresh = %g',nMean(1),nMean(2),nMean(3),nMean(4),nThresh)},[0.05 1])
