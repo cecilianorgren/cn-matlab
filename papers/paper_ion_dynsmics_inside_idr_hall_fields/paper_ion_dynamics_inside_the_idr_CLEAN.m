@@ -333,18 +333,18 @@ f_fb = @(B,L,v) f_wb(B,L,v)/2/pi;
 f_Tb = @(B,L,v) f_fb(B,L,v).^(-1);
 
 B0 = 5e-9;
-L = 600e3;
-L = 200e3;
-L = 1170e3;
-L = 1170e3/4;
-L = 400e3;
-L = 800e3;
+L_ = 600e3;
+L_ = 200e3;
+L_ = 1170e3;
+L_ = 1170e3/4;
+L_ = 400e3;
+L_ = 800e3;
 v = 1000e3;
-wb = f_wb(B0,L,v);
-fb = f_fb(B0,L,v);
-Tb = f_Tb(B0,L,v);
+wb = f_wb(B0,L_,v);
+fb = f_fb(B0,L_,v);
+Tb = f_Tb(B0,L_,v);
 
-disp(sprintf('B = %g nT, L = %g km, v = %g km/s: wb = %.2f rad/s, fb = %.2f Hz, Tb = %.2f s, Tb/2 = %.2f s',B0*1e9,L*1e-3,v*1e-3,wb,fb,Tb,Tb/2))
+disp(sprintf('B = %g nT, L = %g km, v = %g km/s: wb = %.2f rad/s, fb = %.2f Hz, Tb = %.2f s, Tb/2 = %.2f s',B0*1e9,L_*1e-3,v*1e-3,wb,fb,Tb,Tb/2))
 
 %% Calculate azimuthal distribution in the LM plane (using macroparticles)
 units = irf_units;
@@ -355,141 +355,76 @@ Vsc = scPot3.resample(PD);
 nMP = 5000;
 MP = PD.macroparticles('ntot',nMP,'scpot',Vsc);
 vL_shift = vL_xline*1;
+%vL_shift = 0;
 %vL_shift = -999;
 E_edges = [PD.ancillary.energy(1,1) - PD.ancillary.delta_energy_minus(1,1), PD.ancillary.energy(1,:) + PD.ancillary.delta_energy_plus(1,:)];
 E_minus = E_edges(1:end-1);
 E_plus = E_edges(2:end);
 v_minus = sqrt(2*units.e*E_minus/units.mp); % m/s
 v_plus = sqrt(2*units.e*E_plus/units.mp); % m/s
-d_vel = (v_plus.^3 - v_minus.^3)/3; % (m/s)^3
-d_vel_tot = (v_plus(end).^3 - v_minus(1).^3)/3; % (m/s)^3
-
-%d3v = d_vel_mat.*d_azim.*d_polar_mat; % (m/s)^3
+% Cylindrical volume element v*dv*dtheta
+% vol = (v2^2-v1^2)/2*Delta_theta
+d_vel = (v_plus.^2 - v_minus.^2)/2; % (m/s)^2
 
 nEnergy = numel(E_edges)-1;
-dazim = 5;
+dazim = 10;
 azimuth_edges = -180:dazim:180;
 nAzimuth = numel(azimuth_edges)-1;
 
-
+% 2D volume, radial-azmiuthal bins
 d_vel_mat = repmat(d_vel,nt,1,nAzimuth);
-d2v = d_vel_mat.*dazim; % (m/s)^3
+d2v = d_vel_mat.*dazim*pi/180; % (m/s)^2
 
-d_vel_tot_mat = repmat(d_vel_tot,nt,nAzimuth);
-d2v_intE = d_vel_tot_mat.*dazim; % (m/s)^3 ????
 
-dn_tot_all_ = zeros(nt,nAzimuth);
-dv_tot_all_ = zeros(nt,nAzimuth);
 dn_tot_all = zeros(nt,nEnergy,nAzimuth);
-df_tot_all = zeros(nt,nEnergy,nAzimuth);
-dv_tot_all = zeros(nt,nEnergy,nAzimuth);
+%df_tot_all = zeros(nt,nEnergy,nAzimuth);
+%dv_tot_all = zeros(nt,nEnergy,nAzimuth);
+
 for it = 1:nt
-  %elow = tsElow.resample(PD(it).time).data;
+  Ltmp = tsLdsl3(it);
+  Mtmp = tsMdsl3(it);
+  Ntmp = tsNdsl3(it);
+
   dv = MP(it).dv; % same units as the original f (I think)
   df = MP(it).df;
   dn = df.*dv;
   vx = MP(it).vx;
   vy = MP(it).vy;
   vz = MP(it).vz;
-  vL = [vx vy vz]*L' - vL_shift;
-  vM = [vx vy vz]*M';
-  vN = [vx vy vz]*N';
+  vL = [vx vy vz]*Ltmp.data' - 1*vL_shift;
+  %vL = [vx vy vz]*Ltmp.data' - -1000;
+  vM = [vx vy vz]*Mtmp.data';
+  vN = [vx vy vz]*Ntmp.data';
   theta_NL = atan2d(vN,vL);
   v2 = (vL.^2 + vM.^2 + vN.^2)*1e6; % (cm/s)^2 -> (m/s)^2
   vLN = sqrt(vL.^2 + vN.^2)*1e3; % (m/s)^1 -- It's the energy corresponding to this one should use, because the end results will be a reduced cylinder
   E = units.mp*vLN.^2/2/units.eV; % eV
-  %E(E<elow) = 0;
-  %dn(vM<0) = 0;
-  %dn(vLN<1500) = 0;  
+  % E(E<elow) = 0;
+  % dn(vM<0) = 0;
+  % dn(vLN<1500) = 0;  
   fun = @sum;
-  [dn_tot_ edges_ mid_ loc_] = histcn([theta_NL],azimuth_edges,'AccumData',dn,'Fun',fun);
-  [dv_tot_ edges_ mid_ loc_] = histcn([theta_NL],azimuth_edges,'AccumData',dv,'Fun',fun);
   [dn_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dn,'Fun',fun);
-  [dv_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dv,'Fun',fun);
-  [df_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',df,'Fun',fun);
-  % for iloc = 1:nAzimuth    
-  %   dv_tot_all(it,iloc) = sum(MP(it).dv(loc==iloc));
-  %   df_tot_all(it,iloc) = sum(MP(it).df(loc==iloc));
-  % end
-  dn_tot_all_(it,:) = dn_tot_;
-  dv_tot_all_(it,:) = dv_tot_;
-
+  %[dv_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dv,'Fun',fun);
+  %[df_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',df,'Fun',fun);
 
   dn_tot_all(it,:,:) = dn_tot;
-  dv_tot_all(it,:,:) = dv_tot;
-  df_tot_all(it,:,:) = df_tot;
-  
+  %dv_tot_all(it,:,:) = dv_tot;
+  %df_tot_all(it,:,:) = df_tot;
 end
 
-% Not seperated by E
-d3v_tot = sum(PD.d3v('mat'),[2:4]);
-d3v_tot_az_bin_ = repmat(d3v_tot/nAzimuth,[1,nAzimuth]);
-f_tot_2_ = dn_tot_all_./d3v_tot_az_bin_;
+%f_tot = dn_tot_all./d2v; % [1/cm^3]/[m^2/s^2]
 
-% Not seperated by E, 2
-d3v_tot = sum(PD.d3v('mat'),[2:4]);
-d3v_tot_az_bin_ = repmat(d3v_tot/nAzimuth,[1,nAzimuth]);
-f_tot_2_ = dn_tot_all_./d3v_tot_az_bin_;
+% [dn_tot_all] = cm^-3
+% [d2v] = m^2/s^2
+% cm^-3/(cm^2/s^2) = s^2/cm^5, reduced along one dimension
+f_tot = dn_tot_all*1e6./d2v; 
 
-% Not seperated by E, 2
-f_tot_3_ = dn_tot_all./d2v;
+iAzim = PDist(PD.time,f_tot,'azimuthangle',PD.depend{1},mid{2}); % scaling factor applied above, units in s^2/cm^5
+iAzim.ancillary.v_shift = vL_shift;
+to_SI = 1;%(1e2)^5; % s^2/cm^5 -> s^2/m^5
+iAzim = iAzim*to_SI;
+iAzim.units = 's^2/m^5';
 
-
-% iAzim__ = PDist(PD.time,f_tot,'azimuthangle',mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
-% iAzim__.ancillary.v_shift = vL_shift;
-% to_SI = (1e2*1e3)^6;
-% iAzim__ = iAzim_*to_SI;
-% %iAzim_.units = 's^3/m^6';
-% eval(sprintf('iAzim__%04.0f = iAzim__;',abs(vL_shift)));
-
-% Seperated by E
-d3v_tot_per_E = sum(PD.d3v('mat'),[3:4]);
-d3v_tot_az_bin = repmat(d3v_tot_per_E/nAzimuth,[1,1,nAzimuth]);
-%f_tot_1 = dn_tot_all./dv_tot_all;
-f_tot = dn_tot_all./d3v_tot_az_bin; 
-
-% Seperated by E 2
-%f_tot_1 = dn_tot_all./dv_tot_all;
-f_tot_3 = dn_tot_all./dv_tot_all;
-
-% Seperated by E 3
-%f_tot_1 = dn_tot_all./dv_tot_all;
-f_tot_4 = dn_tot_all./d2v; % (1/cm^3)/(m^2/s^2) = (s^2/m) or (s^2/cm), or a combinaiton, need to recheck units 
-
-% NOT Seperated by E 4
-%f_tot_1 = dn_tot_all./dv_tot_all;
-f_tot_5 = dn_tot_all_./d2v_intE; % (1/cm^3)/(m^2/s^2) = (s^2)*(m^2/cm^3) = (s^2)*(m^2/cm^3)
-
-iAzim_ = PDist(PD.time,f_tot,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
-iAzim_.ancillary.v_shift = vL_shift;
-to_SI = (1e2*1e3)^6;
-iAzim_ = iAzim_*to_SI;
-%iAzim_.units = 's^3/m^6';
-eval(sprintf('iAzim_%04.0f = iAzim_;',abs(vL_shift)));
-%iAzim_ = PDist(PD.time,f_tot_1,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
-
-iAzim_2 = PDist(PD.time,f_tot_3,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
-iAzim_2.ancillary.v_shift = vL_shift;
-to_SI = (1e2*1e3)^6;
-iAzim_2 = iAzim_2*to_SI;
-%iAzim_.units = 's^3/m^6';
-eval(sprintf('iAzim_2_%04.0f = iAzim_2;',abs(vL_shift)));
-
-iAzim_3 = PDist(PD.time,f_tot_4,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
-iAzim_3.ancillary.v_shift = vL_shift;
-to_SI = (1e2*1e3)^6;
-iAzim_3 = iAzim_3*to_SI;
-%iAzim_.units = 's^3/m^6';
-eval(sprintf('iAzim_3_%04.0f = iAzim_3;',abs(vL_shift)));
-
-f_tmp = reshape(f_tot_5,size(f_tot_5,1),1,size(f_tot_5,2));
-f_tmp = repmat(f_tmp,1,2,1);
-iAzim_4 = PDist(PD.time,f_tmp,'azimuthangle',PD.depend{1}(:,[10 11]),mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
-iAzim_4.ancillary.v_shift = vL_shift;
-to_SI = (1e2*1e3)^6;
-iAzim_4 = iAzim_4*to_SI;
-%iAzim_.units = 's^3/m^6';
-eval(sprintf('iAzim_4_%04.0f = iAzim_4;',abs(vL_shift)));
 %% Noise-handling: Figure 1
 h = irf_plot(7);
 
@@ -1064,7 +999,7 @@ irf_legend(0,{sprintf('L=[%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,
 irf_plot_axis_align
 
 %% Figure: Azimuthal angle (LN plane) spectrogram
-
+ 
 tint_plot = [iAzim_0170.time.start iAzim_0170.time.stop];
 tint_plot = tint_figure_zoom_incl_sep;
 
@@ -1077,8 +1012,20 @@ times_utc = [...%'2017-07-11T22:33:25.000Z';...
              %'2017-07-11T22:34:20.940Z';...
              '2017-07-11T22:34:15.940Z'];
 
+times_utc = [...%'2017-07-11T22:33:45.000Z';...
+             '2017-07-11T22:33:54.582Z';...
+             %'2017-07-11T22:34:00.582Z';...
+             %'2017-07-11T22:33:58.062Z';...
+             '2017-07-11T22:34:00.502Z';...
+             '2017-07-11T22:34:03.000Z';...
+             '2017-07-11T22:34:05.500Z';...
+             %'2017-07-11T22:34:08.540Z';...
+             %'2017-07-11T22:34:20.940Z';...
+             '2017-07-11T22:34:10.000Z';...
+             '2017-07-11T22:34:20.000Z'];
 
-time = EpochTT(times_utc(1,:)); % Time of example distribution
+iVDF = 1;
+time = EpochTT(times_utc(iVDF,:)); % Time of example distribution
 
 h1 = irf_plot(2);
 
@@ -1090,8 +1037,9 @@ h2.Position = [0.1 0.15 0.5 0.5];
 %h2.Position = [0.1181    0.2759    0.2267    0.5810];
 h2.Position = [0.1581    0.2759    0.2267    0.5810];
 
-fontsize = 14;
-
+fontsize = 10;
+elim = [2000 10000];
+vlim_data = sqrt(2*elim*units.eV/(units.mp))*1e-3; % km/s
 
 if 1 % Vi
   hca = irf_panel('Vi LMN');
@@ -1103,8 +1051,9 @@ if 1 % Vi
 end
 if 1 % iAzim_170
   hca = irf_panel('azim iAzim_170');
-  ts = iAzim_3.mask({[tsElow.data*0 tsElow.data*1]});
-  ts = iAzim_4;
+  ts = iAzim.mask({[tsElow.data*0 tsElow.data*1]});
+  ts = ts.elim(elim);
+  %ts = iAzim_4;
   specrec = ts.tlim(tint_plot).specrec('pitchangle');
   specrec.p = smooth2(specrec.p,0,0);
   %specrec.df = 1;
@@ -1120,6 +1069,7 @@ if 1 % iAzim_170
   hca.YLabel.Interpreter = 'tex';
   %irf_legend(hca,{sprintf('v_L -> v_L-(%g km/s)',iAzim_0170.ancillary.v_shift)},[0.98 0.98],'color','k','fontsize',12)
   hca.XGrid = 'on'; hca.YGrid = 'on';
+  %hca.XGrid = 'off'; hca.YGrid = 'off';
   %hca.CLim = [-30 -26]+30;
   %hca.CLim = [1 4];
 end
@@ -1127,7 +1077,7 @@ end
 irf_plot_axis_align(h1)
 h1(1).YLim(1) = [-799];
 
-vL_xline_use = vL_xline;
+vL_xline_use = iAzim.ancillary.v_shift;
 
 
 pdist = PD_clean.tlim(time+nMean(1)*0.15*0.5*[-1 1]);
@@ -1152,6 +1102,7 @@ nSmooth = 0;
 nContours = 0;
 
   isub = 1;
+    vlim = vlim_data(2)*2.3;
   if 1 % f(L,N)
     hca = h2(isub); isub = isub + 1;
     %vdf = pdist_nobg.reduce('2D',[L_vi],[N_vi]);
@@ -1177,7 +1128,6 @@ nContours = 0;
       quiver(-scaxis(1)*scaxis_scale,-scaxis(3)*scaxis_scale,2*scaxis(1)*scaxis_scale,2*scaxis(3)*scaxis_scale,0,'k','linewidth',1)
       hold(hca,'off') 
     end
-    vlim = 3500;
     hca.XLim = vlim*[-1 1];
     hca.YLim = vlim*[-1 1];
     hca.XTick = -4000:2000:4000;
@@ -1186,13 +1136,58 @@ nContours = 0;
     hca.YMinorGrid = 'on';
     %hca.XMinorTick = -4000:2000:4000;
     %hca.YMinorTick = -3000:1000:3000;
-    if 1 % add circular grid
+    if 1 % add elim circular markings and angular marking combined
+      hold(hca,'on')      
+      ang = linspace(0,360,361);
+      color_grid = ([0.9 0.9 0.9]-0.3)*0;
+      plot(hca,vlim_data(1)*cosd(ang), vlim_data(1)*sind(ang),'color',color_grid,'linestyle','-')
+      plot(hca,vlim_data(2)*cosd(ang), vlim_data(2)*sind(ang),'color',color_grid,'linestyle','-')
+
+      angs = -180:30:180;
+      for ia = 1:numel(angs)
+        xx = vlim_data*cosd(angs(ia));
+        yy = vlim_data*sind(angs(ia));
+        if abs(angs(ia)) == 90
+          plot(hca,xx,yy,'color',color_grid,'linestyle','--','linewidth',2)
+        else
+          plot(hca,xx,yy,'color',color_grid,'linestyle','-')
+
+        end
+        text_margin = 1.9;
+        if angs(ia) == 180
+          ht = text(hca,xx(2)*text_margin,yy(2)*text_margin,{sprintf('%4.f^o',angs(ia))}, ...
+            'color',[0 0 0]+0.0,'VerticalAlignment','bottom','HorizontalAlignment','center', ...
+            'backgroundcolor','none');
+        elseif angs(ia) == -180
+          ht = text(hca,xx(2)*text_margin,yy(2)*text_margin,{sprintf('%g^o',angs(ia))}, ...
+            'color',[0 0 0]+0.0,'VerticalAlignment','top','HorizontalAlignment','center', ...
+            'backgroundcolor','none');
+        else
+          ht = text(hca,xx(2)*text_margin,yy(2)*text_margin,sprintf('%4.f^o',angs(ia)), ...
+            'color',[0 0 0]+0.0,'VerticalAlignment','middle','HorizontalAlignment','center', ...
+            'backgroundcolor','none');
+        end
+
+      end
+      
+      hold(hca,'off')
+    end
+    if 0 % add elim circular markings
+      hold(hca,'on')      
+      ang = linspace(0,360,361);
+      color_grid = ([0.9 0.9 0.9]-0.3)*0;
+      plot(hca,vlim_data(1)*cosd(ang), vlim_data(1)*sind(ang),'color',color_grid,'linestyle','--')
+      plot(hca,vlim_data(2)*cosd(ang), vlim_data(2)*sind(ang),'color',color_grid,'linestyle','--')
+      hold(hca,'off')
+    end
+    if 0 % add circular grid
       %%
       hold(hca,'on')      
       ang = linspace(0,360,361);
       r = 2500;
       color_grid = ([0.9 0.9 0.9]-0.3)*0;
       x0 = vL_xline-vL_xline_use;
+      x0 = 0;
       y0 = 0;
       %plot(hca,x0 + r*cosd(ang), y0 + r*sind(ang),'color',color_grid)
       plot(hca,x0 + 2500*cosd(ang), y0 + 2500*sind(ang),'color',color_grid)
@@ -1227,6 +1222,7 @@ nContours = 0;
       
       hold(hca,'off')
     end
+  
   end
 
 
@@ -1244,9 +1240,9 @@ irf_zoom(h1,'x',tint_plot)
 h1(1).YLim = [-799 399];
 %h1(2).CLim = [1 4];
 
-irf_legend(h2,'(a)',[-0.05 1.05],'color','k','fontsize',16)
-irf_legend(h1(1),'(b)',[-0.1 1.01],'color','k','fontsize',16)
-irf_legend(h1(2),'(c)',[-0.1 1.0],'color','k','fontsize',16)
+irf_legend(h2,'(a)',[-0.13 1.05],'color','k','fontsize',fontsize+2)
+irf_legend(h1(1),'(b)',[-0.13 1.01],'color','k','fontsize',fontsize+2)
+irf_legend(h1(2),'(c)',[-0.13 1.0],'color','k','fontsize',fontsize+2)
 
 %h(1).Title.String = sprintf('L = [%.2f,%.2f,%.2f]; M = [%.2f,%.2f,%.2f]; N = [%.2f,%.2f,%.2f];',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3));
 h = findobj(gcf,'type','axes'); h = h(end:-1:1);
@@ -6488,3 +6484,156 @@ irf_zoom(h1,'x',tint_zoom)
 
 
 
+
+
+
+%% Calculate azimuthal distribution in the LM plane (using macroparticles), non cleaned
+units = irf_units;
+PD = PD_clean;
+
+nt = PD.length;
+Vsc = scPot3.resample(PD);
+nMP = 5000;
+MP = PD.macroparticles('ntot',nMP,'scpot',Vsc);
+vL_shift = vL_xline*1;
+%vL_shift = -999;
+E_edges = [PD.ancillary.energy(1,1) - PD.ancillary.delta_energy_minus(1,1), PD.ancillary.energy(1,:) + PD.ancillary.delta_energy_plus(1,:)];
+E_minus = E_edges(1:end-1);
+E_plus = E_edges(2:end);
+v_minus = sqrt(2*units.e*E_minus/units.mp); % m/s
+v_plus = sqrt(2*units.e*E_plus/units.mp); % m/s
+% Cylindrical volume element v*dv*dtheta
+% vol = (v2^2-v1^2)/2*Delta_theta
+d_vel = (v_plus.^2 - v_minus.^2)/2; % (m/s)^2
+d_vel_tot = (v_plus(end).^2 - v_minus(1).^2)/2; % (m/s)^2
+
+%d3v = d_vel_mat.*d_azim.*d_polar_mat; % (m/s)^3
+
+nEnergy = numel(E_edges)-1;
+dazim = 5;
+azimuth_edges = -180:dazim:180;
+nAzimuth = numel(azimuth_edges)-1;
+
+
+d_vel_mat = repmat(d_vel,nt,1,nAzimuth);
+d2v = d_vel_mat.*dazim*pi/180; % (m/s)^2
+
+d_vel_tot_mat = repmat(d_vel_tot,nt,nAzimuth);
+d2v_intE = d_vel_tot_mat.*dazim; % (m/s)^3 ????
+
+dn_tot_all_ = zeros(nt,nAzimuth);
+dv_tot_all_ = zeros(nt,nAzimuth);
+dn_tot_all = zeros(nt,nEnergy,nAzimuth);
+df_tot_all = zeros(nt,nEnergy,nAzimuth);
+dv_tot_all = zeros(nt,nEnergy,nAzimuth);
+
+for it = 1:nt
+  %elow = tsElow.resample(PD(it).time).data;
+  dv = MP(it).dv; % same units as the original f (I think)
+  df = MP(it).df;
+  dn = df.*dv;
+  vx = MP(it).vx;
+  vy = MP(it).vy;
+  vz = MP(it).vz;
+  vL = [vx vy vz]*L' - vL_shift;
+  vM = [vx vy vz]*M';
+  vN = [vx vy vz]*N';
+  theta_NL = atan2d(vN,vL);
+  v2 = (vL.^2 + vM.^2 + vN.^2)*1e6; % (cm/s)^2 -> (m/s)^2
+  vLN = sqrt(vL.^2 + vN.^2)*1e3; % (m/s)^1 -- It's the energy corresponding to this one should use, because the end results will be a reduced cylinder
+  E = units.mp*vLN.^2/2/units.eV; % eV
+  %E(E<elow) = 0;
+  %dn(vM<0) = 0;
+  %dn(vLN<1500) = 0;  
+  fun = @sum;
+  [dn_tot_ edges_ mid_ loc_] = histcn([theta_NL],azimuth_edges,'AccumData',dn,'Fun',fun);
+  [dv_tot_ edges_ mid_ loc_] = histcn([theta_NL],azimuth_edges,'AccumData',dv,'Fun',fun);
+  [dn_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dn,'Fun',fun);
+  [dv_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',dv,'Fun',fun);
+  [df_tot edges mid loc] = histcn([E, theta_NL],E_edges,azimuth_edges,'AccumData',df,'Fun',fun);
+  % for iloc = 1:nAzimuth    
+  %   dv_tot_all(it,iloc) = sum(MP(it).dv(loc==iloc));
+  %   df_tot_all(it,iloc) = sum(MP(it).df(loc==iloc));
+  % end
+  dn_tot_all_(it,:) = dn_tot_;
+  dv_tot_all_(it,:) = dv_tot_;
+
+
+  dn_tot_all(it,:,:) = dn_tot;
+  dv_tot_all(it,:,:) = dv_tot;
+  df_tot_all(it,:,:) = df_tot;
+  
+end
+
+% Not seperated by E
+d3v_tot = sum(PD.d3v('mat'),[2:4]);
+d3v_tot_az_bin_ = repmat(d3v_tot/nAzimuth,[1,nAzimuth]);
+f_tot_2_ = dn_tot_all_./d3v_tot_az_bin_;
+
+% Not seperated by E, 2
+d3v_tot = sum(PD.d3v('mat'),[2:4]);
+d3v_tot_az_bin_ = repmat(d3v_tot/nAzimuth,[1,nAzimuth]);
+f_tot_2_ = dn_tot_all_./d3v_tot_az_bin_;
+
+% Not seperated by E, 2
+f_tot_3_ = dn_tot_all./d2v;
+
+
+% iAzim__ = PDist(PD.time,f_tot,'azimuthangle',mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+% iAzim__.ancillary.v_shift = vL_shift;
+% to_SI = (1e2*1e3)^6;
+% iAzim__ = iAzim_*to_SI;
+% %iAzim_.units = 's^3/m^6';
+% eval(sprintf('iAzim__%04.0f = iAzim__;',abs(vL_shift)));
+
+% Seperated by E
+d3v_tot_per_E = sum(PD.d3v('mat'),[3:4]);
+d3v_tot_az_bin = repmat(d3v_tot_per_E/nAzimuth,[1,1,nAzimuth]);
+%f_tot_1 = dn_tot_all./dv_tot_all;
+f_tot = dn_tot_all./d3v_tot_az_bin; 
+
+% Seperated by E 2
+%f_tot_1 = dn_tot_all./dv_tot_all;
+f_tot_3 = dn_tot_all./dv_tot_all;
+
+% Seperated by E 3
+% [dn_tot_all] = cm^-3
+% [d2v] = m^2/s^2
+f_tot_4_ = dn_tot_all./(d2v*1e4); % cm^-3/(cm^2/s^2) = s^2/cm^5, reduced along one dimension
+
+
+
+% NOT Seperated by E 4
+%f_tot_1 = dn_tot_all./dv_tot_all;
+f_tot_5 = dn_tot_all_./d2v_intE; % (1/cm^3)/(m^2/s^2) = (s^2)*(m^2/cm^3) = (s^2)*(m^2/cm^3)
+
+iAzim_ = PDist(PD.time,f_tot,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_ = iAzim_*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_%04.0f = iAzim_;',abs(vL_shift)));
+%iAzim_ = PDist(PD.time,f_tot_1,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+
+iAzim_2 = PDist(PD.time,f_tot_3,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_2.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_2 = iAzim_2*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_2_%04.0f = iAzim_2;',abs(vL_shift)));
+
+iAzim_3 = PDist(PD.time,f_tot_4_,'azimuthangle',PD.depend{1},mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_3.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_3 = iAzim_3*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_3_%04.0f = iAzim_3;',abs(vL_shift)));
+
+f_tmp = reshape(f_tot_5,size(f_tot_5,1),1,size(f_tot_5,2));
+f_tmp = repmat(f_tmp,1,2,1);
+iAzim_4 = PDist(PD.time,f_tmp,'azimuthangle',PD.depend{1}(:,[10 11]),mid{2}); % scaling factor to go from 1/m^6 -> 1/cm^6
+iAzim_4.ancillary.v_shift = vL_shift;
+to_SI = (1e2*1e3)^6;
+iAzim_4 = iAzim_4*to_SI;
+%iAzim_.units = 's^3/m^6';
+eval(sprintf('iAzim_4_%04.0f = iAzim_4;',abs(vL_shift)));
