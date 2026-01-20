@@ -36,37 +36,6 @@ data = fetch(conn,query);
 
 %%
 data_cell = cellfun(@(x)str2num(x),data.shear,'UniformOutput',false);
-data_vec = cat(1,data_cell{:});
+data_mat = 
 
-histogram(data_vec)
-
-%% Find magnetopause events
-
-flag_mp = find_flag(data.FlagStr,'mp');
-
-% Shear for those events
-shear_cell = cellfun(@(x) str2num(x),data.shear,'UniformOutput',false);
-shear_vec = cat(1,shear_cell{:});
-
-% Beta_up for those events
-bup_cell = cellfun(@(x) str2num(x),data.beta_up,'UniformOutput',false);
-%bup_vec = cat(1,bup_cell{:});
-bup_vec = [bup_cell{:}]';
-
-idx_mp = find(flag_mp);
-idx_shear45 = find(shear_vec>45);
-idx_bup = find(bup_vec>20);
-
-idx = intersect(idx_mp,idx_shear45);
-idx = intersect(idx,idx_bup);
-
-h = setup_subplots(1,2);
-isub = 1;
-
-hca = h(isub); isub = isub + 1;
-data_tmp = bup_vec(idx);
-histogram(hca,data_tmp,0:.5:20)
-
-hca = h(isub); isub = isub + 1;
-data_tmp = shear_vec(idx);
-histogram(hca,data_tmp,45:5:180)
+histogram(data.shear)
