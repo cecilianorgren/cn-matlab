@@ -1,0 +1,31 @@
+% In terminal: set up tunnel
+% ssh -p899 -L 3308:localhost:3306 mmsteam@81.169.221.160 
+% password: mms_issi$2026
+
+% Download JAVA driver
+% https://dev.mysql.com/downloads/connector/j/
+% I put mine in my matlab directory
+
+% Add to path, I out this is my startup.m file
+javaaddpath('/Users/cecilianorgren/MATLAB/cn-matlab/mathworks/mysql-connector-j-9.6.0/mysql-connector-j-9.6.0.jar')
+
+
+% Enter details for database
+dbname   = 'MMS'; % database name
+username = 'mmsteam'; % database user name
+password = ''; % no password for database
+
+conn = database( ...
+    dbname, ...
+    username, ...
+    password, ...
+    'Vendor', 'MySQL', ...
+    'Server', '127.0.0.1', ...
+    'PortNumber', 3308);
+
+conn.Message % empty if no error
+isopen(conn)
+
+%% Some queries
+fetch(conn, 'SELECT DATABASE()')
+fetch(conn, 'SHOW TABLES')
