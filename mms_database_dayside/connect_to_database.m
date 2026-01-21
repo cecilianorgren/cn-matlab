@@ -35,10 +35,14 @@ query = 'SELECT * from GP_tmp';
 data = fetch(conn,query);
 
 %%
+query = "SELECT X,Y,Z from GP_tmp WHERE shear>45 AND Bup>20 AND FlagStr REGEXP '(^|,)mp(,|$)';";
+data = fetch(conn,query);
+
+%%
 data_cell = cellfun(@(x)str2num(x),data.shear,'UniformOutput',false);
 data_vec = cat(1,data_cell{:});
 
-histogram(data_vec)
+histogram(data_vec,45:2:180)
 
 %% Find magnetopause events
 
@@ -70,3 +74,25 @@ histogram(hca,data_tmp,0:.5:20)
 hca = h(isub); isub = isub + 1;
 data_tmp = shear_vec(idx);
 histogram(hca,data_tmp,45:5:180)
+
+%%
+query = "SELECT X,Y,Z from GP_tmp WHERE shear>45 AND Bup>20 AND FlagStr REGEXP '(^|,)mp(,|$)';";
+data = fetch(conn,query);
+
+X = cellfun(@(x)str2num(x),data.X,'UniformOutput',false);
+X = cat(1,X{:});
+
+Y = cellfun(@(x)str2num(x),data.Y,'UniformOutput',false);
+Y = cat(1,Y{:});
+
+Z = cellfun(@(x)str2num(x),data.Z,'UniformOutput',false);
+Z = cat(1,Z{:});
+
+x_edges = 0:1:20;
+y_edges =-15:1:15;
+[N] = histcn([X, Y],x_edges,y_edges);
+
+localuser = '';
+data_R = load(['/Users/' localuser '/Data/MMS/DB_Lalti/Proba_full_mms1_pos.mat']);
+
+
