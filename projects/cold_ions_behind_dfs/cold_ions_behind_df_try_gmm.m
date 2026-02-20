@@ -497,20 +497,22 @@ h = setup_subplots(3,3,'horizontal');
 isub = 1;
 
 hca = h(isub); isub = isub + 1;
-histogram(hca,min(cat(1,db.T_min_after{:})'),0:50:2000)
-hca.XLabel.String = 'min(T)';
+histogram(hca,min(cat(1,db.T_min_after{:})'),0:100:2000)
+hca.XLabel.String = 'min_K(min_i((T_{after}))';
 hca.YLabel.String = 'Counts';
+yyaxis(hca,'right')
+hca = gca;
 
 hca = h(isub); isub = isub + 1;
 histogram(hca,max(cat(1,db.T_min_after{:})'),0:50:2000)
-hca.XLabel.String = 'min(T)';
+hca.XLabel.String = 'max_K(min_i(T_{after}))';
 hca.YLabel.String = 'Counts';
 
 hca = h(isub); isub = isub + 1;
 T_min_plot = cat(1,db.T_max_before{:});
 plot(hca,db.id_df,T_min_plot','-')
 hca.XLabel.String = 'id';
-hca.YLabel.String = 'max(T_{before})';
+hca.YLabel.String = 'max_i(T_{before})';
 
 hca = h(isub); isub = isub + 1;
 T_min_plot = cat(1,db.T_min_after{:});

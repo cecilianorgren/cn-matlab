@@ -452,16 +452,16 @@ for id = 1:numel(ids)
   maxK = size(T_mat_before{1},2);
   for K = 1:maxK
     diag_el_before = [];
-    diag_el_before = [];
+    diag_el_after = [];
     T_mat_before_tmp = T_mat_before{1}{K};
     T_mat_after_tmp = T_mat_before{1}{K};
     for iK = 1:K
-      diag_el_before = [diag_el_before diag(T_mat_before_tmp(:,:,iK))]
+      diag_el_before = [diag_el_before diag(T_mat_before_tmp(:,:,iK))];
       diag_el_after = [diag_el_before diag(T_mat_after_tmp(:,:,iK))];
     end
 
-    T_min_comp_before_tmp(K) = min(diag_el_before);
-    T_min_comp_after_tmp(K) = min(diag_el_after);
+    T_min_comp_before_tmp(K) = min(diag_el_before(:));
+    T_min_comp_after_tmp(K) = min(diag_el_after(:));
     1;
   %T_max_before{ids(id),1} = cellfun(@(x)max(x),T_scalar_before{:});
   %T_max_after{ids(id),1} = cellfun(@(x)max(x),T_scalar_after{:});
@@ -470,7 +470,7 @@ for id = 1:numel(ids)
   T_min_comp_after(ids(id),1) = {T_min_comp_after_tmp};
 end
 
-%table_ci = addvars(table_ci,T_min_comp_before,T_min_comp_after);
+table_ci = addvars(table_ci,T_min_comp_before,T_min_comp_after);
 %table_ci = removevars(table_ci,["T_min_comp_before","T_min_comp_after"]);
 %% Some post-processing, remove K=5 which was there by mistake
 %db = table_ci(table_ci.id_df>0,:); % remove all empty values
@@ -498,12 +498,12 @@ isub = 1;
 
 hca = h(isub); isub = isub + 1;
 histogram(hca,min(cat(1,db.T_min_after{:})'),0:50:2000)
-hca.XLabel.String = 'min(T)';
+hca.XLabel.String = 'min(T_{after})';
 hca.YLabel.String = 'Counts';
 
 hca = h(isub); isub = isub + 1;
 histogram(hca,max(cat(1,db.T_min_after{:})'),0:50:2000)
-hca.XLabel.String = 'min(T)';
+hca.XLabel.String = 'max(min(T_{after}))';
 hca.YLabel.String = 'Counts';
 
 hca = h(isub); isub = isub + 1;
