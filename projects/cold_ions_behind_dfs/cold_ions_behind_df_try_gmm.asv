@@ -70,8 +70,8 @@ nDF = numel(db_table_df.time);
 iDFs = [9 128];
 iDFs = 217:nDF;
 %iDFs = 87;
-iDFs = 17;
-doPrint = 0;
+iDFs = 23:nDF;
+doPrint = 1;
 doPlot = 1;
 for iDF = iDFs%87%iDFs(1)
   try
@@ -124,7 +124,9 @@ for iDF = iDFs%87%iDFs(1)
   nt = times.length;
   %clear gm ntot T T_scalar;
   
-%
+% 
+  T_mat = cell(nt,nGroupsMax);
+  T_scalar = cell(nt,nGroupsMax);
   for it = 1:nt
     time = times(it);
     pdist = PD.tlim(time+0.5*0.150*[-1 1]);
@@ -188,7 +190,7 @@ for iDF = iDFs%87%iDFs(1)
   T_max = cellfun(@(x)max(x),T_scalar);
 
   % Add results to table
-  if 0
+  if 1
   table_ci.id_df(iDF) = iDF;
   table_ci.t_ff_start(iDF) = t_ff_start.utc;
   table_ci.t_ff_stop(iDF) = t_ff_stop.utc;
@@ -266,7 +268,7 @@ for iDF = iDFs%87%iDFs(1)
       hca.XLim = vlim*[-1 1];
       hca.YLim = vlim*[-1 1];
       hold(hca,'on')
-      quiver(hca,-B(1)*vlim,-B(2)*vlim,B(1)*2*vlim,B(2)*2*vlim,0,'k')
+      quiver(hca,-B(1)*vlim,-B(3)*vlim,B(1)*2*vlim,B(3)*2*vlim,0,'k')
       hold(hca,'off')
     end
     if 1 % Plot fits for each K
@@ -428,17 +430,70 @@ end
 %% Some post-processing
 db = table_ci(table_ci.id_df>0,:); % remove all empty values
 ids = db.id_df;
-for ids = 1:numel(ids)
-  T_scalar =  db.T_scalar;
-  T_max_before(ids) = cellfun(@(x)max(x),T_scalar);  
+T_max_before = {};
+T_max_after = {};
+T_min_comp_before = {};
+T_min_comp_after = {};
+for id = 1:numel(ids)
+  T_scalar_before =  db.T_scalar_before(id);
+  T_scalar_after  =  db.T_scalar_after(id);
+  T_max_before{ids(id),1} = cellfun(@(x)max(x),T_scalar_before{:});
+  T_max_after{ids(id),1} = cellfun(@(x)max(x),T_scalar_after{:});
 end
 
+%% Some post-processing, find the coldest component, not coldest scalar
+db = table_ci(table_ci.id_df>0,:); % remove all empty values
+ids = db.id_df;
+T_min_comp_before = cell(size(table_ci,1),1);
+T_min_comp_after = cell(size(table_ci,1),1);
+for id = 1:numel(ids)
+  T_mat_before =  db.T_before(id);
+  T_mat_after  =  db.T_after(id);
+  maxK = size(T_mat_before{1},2);
+  for K = 1:maxK
+    diag_el_before = [];
+    diag_el_before = [];
+    T_mat_before_tmp = T_mat_before{1}{K};
+    T_mat_after_tmp = T_mat_before{1}{K};
+    for iK = 1:K
+      diag_el_before = [diag_el_before diag(T_mat_before_tmp(:,:,iK))]
+      diag_el_after = [diag_el_before diag(T_mat_after_tmp(:,:,iK))];
+    end
+
+    T_min_comp_before_tmp(K) = min(diag_el_before);
+    T_min_comp_after_tmp(K) = min(diag_el_after);
+    1;
+  %T_max_before{ids(id),1} = cellfun(@(x)max(x),T_scalar_before{:});
+  %T_max_after{ids(id),1} = cellfun(@(x)max(x),T_scalar_after{:});
+  end
+  T_min_comp_before(ids(id),1) = {T_min_comp_before_tmp};
+  T_min_comp_after(ids(id),1) = {T_min_comp_after_tmp};
+end
+
+%table_ci = addvars(table_ci,T_min_comp_before,T_min_comp_after);
+%table_ci = removevars(table_ci,["T_min_comp_before","T_min_comp_after"]);
+%% Some post-processing, remove K=5 which was there by mistake
+%db = table_ci(table_ci.id_df>0,:); % remove all empty values
+if 0
+%for id = 1:numel(ids)
+  for ivar = 5:size(table_ci,2)
+    
+    var = table_ci.(ivar);
+    %var = var{1};
+    if iscell(var)
+      table_ci.(ivar) = cellfun(@(x) x(1:end-1),var,'UniformOutput',false);
+    elseif isnumeric(var)
+      table_ci(it,ivar) = var(1:4);
+    end
+  end
+%end
+end
 %% Plot some general statistics :)
 db = table_ci(table_ci.id_df>0,:); % remove all empty values
 %  check if difference in temperature between components is a good
 %  indicator
 
-h = setup_subplots(3,2,'horizontal');
+h = setup_subplots(3,3,'horizontal');
 isub = 1;
 
 hca = h(isub); isub = isub + 1;
@@ -451,12 +506,18 @@ histogram(hca,max(cat(1,db.T_min_after{:})'),0:50:2000)
 hca.XLabel.String = 'min(T)';
 hca.YLabel.String = 'Counts';
 
+hca = h(isub); isub = isub + 1;
+T_min_plot = cat(1,db.T_max_before{:});
+plot(hca,db.id_df,T_min_plot','-')
+hca.XLabel.String = 'id';
+hca.YLabel.String = 'max(T_{before})';
 
 hca = h(isub); isub = isub + 1;
 T_min_plot = cat(1,db.T_min_after{:});
 plot(hca,db.id_df,T_min_plot','-')
 hca.XLabel.String = 'id';
-hca.YLabel.String = 'min(T)';
+hca.YLabel.String = 'min(T_{after})';
+
 
 if 0
 hca = h(isub); isub = isub + 1;
@@ -474,34 +535,84 @@ hca.XLabel.String = 'min(T)/max(T)';
 hca.YLabel.String = 'Counts';
 
 hca = h(isub); isub = isub + 1;
-minT = min(cat(1,db.T_min_after{:})');
-maxT = max(cat(1,db.T_min_after{:})');
+minT = min(cat(1,db.T_min_before{:})');
+maxT = max(cat(1,db.T_min_before{:})');
 idx = kmeans([minT', maxT'],4);
-idx = idx*0;
-
+idx = idx*0+1;
 scatter(hca,minT,maxT,20,idx,'filled')
-hca.XLabel.String = 'min(T)';
-hca.YLabel.String = 'max(T)';
-axis(hca,'square')
+hold(hca,'on')
+maxlim = max([hca.XLim, hca.YLim]);
+plot(hca,[0 maxlim],[0 maxlim],'k')
+hold(hca,'off')
+hca.XLabel.String = 'min(T_{before})';
+hca.YLabel.String = 'max(T_{before})';
 axis(hca,'equal')
+axis(hca,'square')
 hca.XLim(1) = 0;
 hca.YLim(1) = 0;
 hca.Box = 'on';
 hca.XGrid = 'on';
 hca.YGrid = 'on';
+colormap(hca,[0 0 0])
+
+hca = h(isub); isub = isub + 1;
+minT = min(cat(1,db.T_min_after{:})');
+minT_comp = min(cat(1,db.T_min_comp_after{:})');
+scatter(hca,minT,minT_comp,20,idx,'filled')
+hold(hca,'on')
+maxlim = max([hca.XLim, hca.YLim]);
+plot(hca,[0 maxlim],[0 maxlim],'k')
+hold(hca,'off')
+hca.XLabel.String = 'min(T_{after})';
+hca.YLabel.String = 'min(T_{after}^{comp})';
+axis(hca,'equal')
+axis(hca,'square')
+hca.XLim(1) = 0;
+hca.YLim(1) = 0;
+hca.Box = 'on';
+hca.XGrid = 'on';
+hca.YGrid = 'on';
+colormap(hca,[0 0 0])
+
+hca = h(isub); isub = isub + 1;
+minT = min(cat(1,db.T_min_after{:})');
+maxT = max(cat(1,db.T_max_after{:})');
+minT_comp = min(cat(1,db.T_min_comp_after{:})');
+%maxT = max(cat(1,db.T_max_after{:})');
+idx = kmeans([minT', maxT'],4);
+idx = idx*0+1;
+scatter(hca,minT,maxT,20,idx,'filled')
+hold(hca,'on')
+scatter(hca,minT_comp,maxT,20,idx+2,'filled')
+maxlim = max([hca.XLim, hca.YLim]);
+plot(hca,[0 maxlim],[0 maxlim],'k')
+hold(hca,'off')
+hca.XLabel.String = 'min(T_{after})';
+hca.YLabel.String = 'max(T_{after})';
+axis(hca,'equal')
+axis(hca,'square')
+hca.XLim(1) = 0;
+hca.YLim(1) = 0;
+hca.Box = 'on';
+hca.XGrid = 'on';
+hca.YGrid = 'on';
+colormap(hca,[0 0 0])
 
 
 hca = h(isub); isub = isub + 1;
-maxTafter = min(cat(1,db.T_max_after{:})');
+maxTafter = max(cat(1,db.T_max_after{:})');
 maxTbefore = max(cat(1,db.T_max_before{:})');
 idx = kmeans([minT', maxT'],4);
 idx = idx*0;
-
 scatter(hca,maxTafter,maxTbefore,20,'k','filled')
+hold(hca,'on')
+maxlim = max([hca.XLim, hca.YLim]);
+plot(hca,[0 maxlim],[0 maxlim],'k')
+hold(hca,'off')
 hca.XLabel.String = 'max(T_{after})';
 hca.YLabel.String = 'max(T_{before})';
-axis(hca,'square')
 axis(hca,'equal')
+axis(hca,'square')
 hca.XLim(1) = 0;
 hca.YLim(1) = 0;
 hca.Box = 'on';
