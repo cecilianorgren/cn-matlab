@@ -45,7 +45,7 @@ db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 
 %% Generate string
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2023-01-01T00:00:00.00Z');
-files = mms.db_list_files('mms1_fpi_brst_l2_des-dist',tint_all);
+%files = mms.db_list_files('mms1_fpi_brst_l2_des-dist',tint_all);
 
 
 %
@@ -71,6 +71,9 @@ for it = 1:tstart.length
     string_split = split(file.name,'_');
     str_sync_cell{count} = "--include='*" + "_" + string_split{6} + "*.cdf'\ ";
     str_sync_str = str_sync_str + "--include='*" + "_" + string_split{6} + "*.cdf'\ ";
+    if mod(count,10)
+      disp(str_sync_str)
+    end
   end
 end
 disp(str_sync_str)
