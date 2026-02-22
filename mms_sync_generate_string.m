@@ -74,9 +74,10 @@ for it = 1:tstart.length
     count = count + 1;
     string_split = split(file.name,'_');
     str_sync_cell{count} = "--include='*" + "_" + string_split{6} + "*.cdf'\ ";
-    str_sync_str = str_sync_str + "--include='*" + "fpi_brst_l2_dis-dist_" + string_split{6} + "*.cdf'\ ";
-    str_sync_str = str_sync_str + "--include='*" + "fgm_brst_l2_" + string_split{6} + "*.cdf'\ ";
-    str_sync_str = str_sync_str + "--include='*" + "edp_brst_l2_scpot_" + string_split{6} + "*.cdf'\ ";
+    str_sync_str = str_sync_str + "--include='*" + "_" + string_split{6} + "*.cdf'\ ";
+    %str_sync_str = str_sync_str + "--include='*" + "fpi_brst_l2_dis-dist_" + string_split{6} + "*.cdf'\ ";
+    %str_sync_str = str_sync_str + "--include='*" + "fgm_brst_l2_" + string_split{6} + "*.cdf'\ ";
+    %str_sync_str = str_sync_str + "--include='*" + "edp_brst_l2_scpot_" + string_split{6} + "*.cdf'\ ";
     if mod(count,10)
       %disp(str_sync_str)
     end
