@@ -1348,6 +1348,7 @@ times_utc = [...%'2017-07-11T22:33:25.000Z';...
 end
 
 vdf_legs = {'I','II','III','IV','V','VI'};
+vdf_legs = {'A','B','C','D','E','F'};
 % Plot
 nRows = 4;
 nCols = size(times_utc,1);
@@ -1680,7 +1681,7 @@ for it = 1:times.length%(1)
     hca.XLabel.String = 'v_M (km/s)';
     
     if it == 6
-      irf_legend(hca,'(1/2)f_i(v_M)',[0.98 0.98],'k')
+      irf_legend(hca,'(1/2)f_i(v_M)',[0.98 0.98],'color','k','fontsize',fontsize_leg)
     end
     axis(hca,'square')
     hca.YLabel.String = 'f_i(v_M) (s/m^4)';
@@ -1729,13 +1730,18 @@ for ip = 3:nRows:numel(h)
   h(ip).Children = circshift(h(ip).Children,4);
 end
 
-irf_legend(h1(1),'(a)',[0.02 0.98],'k')
-irf_legend(h1(2),'(b)',[0.02 0.98],'k')
+irf_legend(h1(1),'(a)',[0.02 0.98],'color','k','fontsize',fontsize)
+irf_legend(h1(2),'(b)',[0.02 0.98],'color','k','fontsize',fontsize)
 for it = 1:times.length  
-    irf_legend(h(1+(it-1)*4),sprintf('(c%g)',it),[0.02 0.98],'k')
-    irf_legend(h(2+(it-1)*4),sprintf('(d%g)',it),[0.02 0.98],'k')
-    irf_legend(h(3+(it-1)*4),sprintf('(e%g)',it),[0.02 0.98],'k')
-    irf_legend(h(4+(it-1)*4),sprintf('(f%g)',it),[0.02 0.98],'k')
+    %irf_legend(h(1+(it-1)*4),sprintf('(c%g)',it),[0.02 0.98],'k')
+    %irf_legend(h(2+(it-1)*4),sprintf('(d%g)',it),[0.02 0.98],'k')
+    %irf_legend(h(3+(it-1)*4),sprintf('(e%g)',it),[0.02 0.98],'k')
+    %irf_legend(h(4+(it-1)*4),sprintf('(f%g)',it),[0.02 0.98],'k')
+
+    irf_legend(h(1+(it-1)*4),sprintf('(c%s)',vdf_legs{it}),[0.02 0.98],'color','k','fontsize',fontsize)
+    irf_legend(h(2+(it-1)*4),sprintf('(d%s)',vdf_legs{it}),[0.02 0.98],'color','k','fontsize',fontsize)
+    irf_legend(h(3+(it-1)*4),sprintf('(e%s)',vdf_legs{it}),[0.02 0.98],'color','k','fontsize',fontsize)
+    irf_legend(h(4+(it-1)*4),sprintf('(f%s)',vdf_legs{it}),[0.02 0.98],'color','k','fontsize',fontsize)
 end
 
 if 1 % add B scale quiver
@@ -1743,7 +1749,7 @@ if 1 % add B scale quiver
   hold(h(17),'on')   
   quiver(h(17),1,2,1,0,0,'k','linewidth',2,'MaxHeadSize',0.5)
   %irf_legend(h(17),sprintf('B=%g nT',1*B_scale),[0.5 0.98],'k')
-  text(h(17),0.9,2,sprintf('%g nT',1*B_scale),'color','k','HorizontalAlignment','right')
+  text(h(17),0.9,2,sprintf('%g nT',1*B_scale),'color','k','HorizontalAlignment','right','fontsize',fontsize_leg)
   hold(h(17),'on')
 end
 %colormap(pic_colors('candy_gray'))
@@ -1798,7 +1804,9 @@ c_eval('h(?).XTickLabelRotation = 0;',1:numel(h))
 
 
 c_eval('h(?).Layer = ''top'';',1:numel(h))
-c_eval('h(?).GridLineWidth = 1;',1:numel(h))
+c_eval('h(?).GridLineWidth = 0.5;',1:numel(h))
+c_eval('h(?).LineWidth = 0.5;',1:numel(h))
+c_eval('h1(?).LineWidth = 0.5;',1:numel(h1))
 
 c_eval('h1(?).XTickLabelRotation = 0;',1:numel(h1))
 c_eval('h1(?).XLabel = [];',1:(numel(h1)-1))
@@ -1831,10 +1839,12 @@ h(4).YTickMode = 'auto';
 h(4).YLabel.String = 'f_i(v_M) (s/m^4)';
 c_eval('h(?).XGrid = ''on''; h(?).YGrid = ''on'';',1:numel(h))
 
+c_eval('h1(?).FontSize = fontsize;',1:numel(h1))
+
 hl = findobj(gcf,'type','line');
-c_eval('hl(?).LineWidth = 1.5;',1:numel(hl))
+c_eval('hl(?).LineWidth = 1.;',1:numel(hl))
 hall = findobj(gcf,'type','axes'); hall = hall(end:-1:1);
-c_eval('hall(?).LineWidth = 1.5;',1:numel(hall))
+c_eval('hall(?).LineWidth = 1.;',1:numel(hall))
 
 irf_legend(0,{sprintf('L=[%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3)),sprintf('nMean=[%g,%g,%g,%g], nThresh = %g',nMean(1),nMean(2),nMean(3),nMean(4),nThresh)},[0.05 1])
 
