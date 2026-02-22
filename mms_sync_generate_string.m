@@ -43,6 +43,9 @@ time_df_ttns(~db_table_ff.is_df) = NaN;
 db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 
 
+db_table_df = db_table_ff(db_table_ff.is_df==1,:);
+nDF = numel(db_table_df.time);
+
 %% Generate string
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2023-01-01T00:00:00.00Z');
 %files = mms.db_list_files('mms1_fpi_brst_l2_des-dist',tint_all);
