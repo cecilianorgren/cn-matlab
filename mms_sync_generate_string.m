@@ -55,9 +55,16 @@ tstop = EpochTT(db_table_df.tstop_ttns);
 str_sync_cell = {};
 str_sync_str = "";
 count = 0;
-for it = 1:tstart.length
+for it = 33%1:tstart.length
   tint = [tstart(it) tstop(it)];
-  file = mms.db_list_files('mms1_fpi_brst_l2_des-dist',tint);
+  %file = mms.db_list_files('mms1_fpi_brst_l2_des-dist',tint);
+  try
+    [filepath, filename] = mms.get_filepath(['mms1_fpi_brst_l2_dis-dist'], tint(1));
+  catch
+    disp(sprintft('%g: No file. Continuing.',it)
+  end
+  file.path = filepath;
+  file.name = filename;
   if not(isempty(file))
     count = count + 1;
     string_split = split(file.name,'_');
@@ -65,6 +72,7 @@ for it = 1:tstart.length
     str_sync_str = str_sync_str + "--include='*" + "_" + string_split{6} + "*.cdf'\ ";
   end
 end
-%time_epochtt = EpochTT(int64(db_table_df(33,end).t_df));
+disp(str_sync_str)
 
+%time_epochtt = EpochTT(int64(db_table_df(33,end).t_df));
 %file = mms.db_list_files('mms1_fpi_brst_l2_des-dist',time_epochtt);
