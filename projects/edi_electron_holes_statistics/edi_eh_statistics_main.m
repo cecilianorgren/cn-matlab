@@ -1,8 +1,8 @@
 %% Load data
 ic = 1:4;
 tint = irf.tint('2017-07-06T13:53:03.00Z/2017-07-06T13:55:33.00Z');
-%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
 db_info = datastore('mms_db');
 
 c_eval('gseB?  = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
@@ -16,7 +16,7 @@ c_eval('ePitch?_flux_edi = mms.get_data(''Flux-amb-pm2_edi_brst_l2'',tint,?);',i
 
 %% Cross-correlate EDI and EDP
 
-% High-pass filter integrated E field, to avoid difting due to DC field
+% High-pass filter integrated E field, to avoid drifting due to DC field
 c_eval('A?_000 = ePitch?_flux_edi.palim([0 15]);',ic)
 c_eval('A?_180 = ePitch?_flux_edi.palim([165 180]);',ic)
 

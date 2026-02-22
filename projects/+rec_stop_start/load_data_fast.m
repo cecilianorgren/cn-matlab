@@ -4,7 +4,8 @@ tint_fast = irf.tint('2017-07-25T20:00:00.00Z/2017-07-25T24:00:00.00Z');
 % Load datastore
 localuser = datastore('local','user');
 %mms.db_init('local_file_db',[' /Users/' localuser '/data']);
-mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db');   
 
 %%
@@ -16,7 +17,7 @@ c_eval('gseVi?_fast = mms.get_data(''Vi_gse_fpi_fast_l2'',tint_fast,?);',ic);
 c_eval('gseVe?_fast = mms.get_data(''Ve_gse_fpi_fast_l2'',tint_fast,?);',ic);
 c_eval('gseE?_fast = mms.get_data(''E_gse_edp_fast_l2'',tint_fast,?);',ic);
 
-c_eval('gseVExB?_srvy = gseE?_fast.resample(gseB?_srvy).cross(gseB?_srvy);',ic)
+c_eval('gseVExB?_srvy = gseE?_fast.resample(gseB?_srvy).cross(gseB?_srvy)/gseB?_srvy.abs/gseB?_srvy.abs*1e3;',ic)
 %c_eval('gseVExB?_srvy = cross(gseE?_fast.resample(gseB?_srvy.time),gseB?)/gseB?_srvy.abs2*1e3; gseVExB?_srvy.units = '''';',ic) % km/s
 
 c_eval('ne?_fast = mms.get_data(''Ne_fpi_fast_l2'',tint_fast,?);',ic);

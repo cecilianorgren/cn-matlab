@@ -6,10 +6,12 @@ ic = 1:4;
 
 localuser = datastore('local','user');
 localuser = 'cecilia';
+localuser = 'cecilianorgren';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
+mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db'); 
 
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
@@ -22,7 +24,7 @@ tint_action = irf.tint('2017-07-25T22:09:30.00Z/2017-07-25T22:11:00.00Z');
 % Time from file name
 fileId = '20170725220853';
 
-iFile = find(cellfun(@(s) contains(s,fileId),{files.name}));
+%iFile = find(cellfun(@(s) contains(s,fileId),{files.name}));
 
 %%
 if 0
@@ -32,9 +34,11 @@ iFile = 1;
 fileId = '20170709173053';
 end
 
-tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
+%tint = [files(iFile-1).start files(iFile).stop] + [1 -1];
 
 %tint = irf.tint('2017-07-09T17:30:00.00Z/2017-07-09T17:35:00.00Z');
+
+tint = irf.tint('2017-07-25T22:07:00.00Z/2017-07-25T22:11:30.00Z');
 
 
 % Event path
@@ -105,7 +109,7 @@ c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic) 
 c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic);
-% Pressure, FAC
+%% Pressure, FAC
 c_eval('facPe? = mms.rotate_tensor(gsePe?,''fac'',gseB?); facPe?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
 c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)
 c_eval('facPi? = mms.rotate_tensor(gsePi?,''fac'',gseB?); facPi?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
@@ -343,6 +347,7 @@ gseGradPene.data(abs(gseGradPene.data)>100) = NaN;
 %%
 
 c_eval('iPitch? = iPDist?.pitchangles(dmpaB?,12);',ic_dist)
+c_eval('ePitch? = ePDist?.pitchangles(dmpaB?,12);',ic_dist)
 
 disp('Done loading data.')
 

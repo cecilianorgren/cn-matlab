@@ -1,0 +1,111 @@
+%% Load DB table
+localuser = 'cecilianorgren';
+%file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_b_gsm_2017-2022.nc'];
+
+file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
+%data = load(file);
+file_csv = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.csv'];
+tlim = readtable(file_csv);
+tstart = tlim.Var1; tstart.TimeZone = "UTCLeapSeconds";
+tstop = tlim.Var2;  tstop.TimeZone = "UTCLeapSeconds";
+
+tstart_ttns = convertTo(tstart, 'tt2000');
+tstop_ttns = convertTo(tstop, 'tt2000');
+t_duration_s = double((tstop_ttns - tstart_ttns))*1e-9;
+
+%ncdisp(file)
+
+info = ncinfo(file);
+vars = {info.Variables.Name};
+nvars = numel(vars);
+
+clear db
+for ivar = 1:nvars
+  db.(vars{ivar}) = ncread(file,vars{ivar});
+end
+
+db_table_ff = struct2table(db);
+% Add stop time of slow
+db_table_ff = addvars(db_table_ff,tstart_ttns,tstop_ttns,t_duration_s,'After','time');
+
+
+t0_ff = EpochTT('2017-05-05T19:41:44.790324');
+% time: microseconds since 2017-05-05T19:41:44.790324
+time_ff_ttns = t0_ff.ttns + db_table_ff.time*1e3;
+db_table_ff.time = time_ff_ttns; % rewrite time in ttns
+
+
+t0_df = EpochTT('2017-05-19T03:06:44.458185978');
+% t_df: nanoseconds since  2017-05-19T03:06:44.458185978
+time_df_ttns = double(t0_df.ttns + int64(db_table_ff.t_df));
+time_df_ttns(~db_table_ff.is_df) = NaN;
+db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
+
+%% Loop events and plot brief overview
+units = irf_units;
+ic = 1;
+
+
+db_table_df = db_table_ff(db_table_ff.is_df==1,:);
+nDF = numel(db_table_df.time);
+
+doPrint = 1;
+for iDF = 93%221:nDF
+  disp(iDF)
+  % Define time
+  t0 = EpochTT(db_table_df.time(iDF));
+  T =  db_table_df.t_duration_s(iDF);  
+  tint = t0 + [0 T] + 5*[-1 1];
+  tDF = EpochTT(int64(db_table_df.t_df(iDF)));
+
+  % Load data
+  c_eval('gseB = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',ic);
+  if isempty(gseB); disp('Skipping.'); continue; end
+  c_eval('gseVi = mms.get_data(''Vi_gse_fpi_brst_l2'',tint,?);',ic);
+  if isempty(gseVi); disp('Skipping.'); continue; end
+  %c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+  c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+  %c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic)
+  %c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr?.data).^2;',ic)
+
+  %% Prep data
+  tsElow = iPDist.find_noise_energy_limit(5).movmean(15);
+  emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
+  PD = iPDist.mask({emask_mat});
+
+  %% Plot B and i
+  fontsize = 13;
+
+  h = irf_plot(3);
+  
+  hca = irf_panel('B');
+  hca.ColorOrder = mms_colors('xyza');
+  irf_plot(hca,{gseB.x,gseB.y,gseB.z},'comp')
+  hca.YLabel.String = 'B (nT)';
+
+  hca = irf_panel('Vi');
+  hca.ColorOrder = mms_colors('xyza');
+  irf_plot(hca,{gseVi.x,gseVi.y,gseVi.z},'comp')
+  hca.YLabel.String = 'v_i (nT)';
+
+  hca = irf_panel('ion deflux omni');
+  irf_spectrogram(hca,PD.deflux.omni.specrec,'log')
+  hca.YScale = "log";
+  hca.Color = [0 0 0] + 0.95;
+  
+  hmark = irf_pl_mark(h,tDF,'k','linewidth',1);
+  %userdata = get(gcf,'userdata');
+  text(h(1),hmark(1).XData(1),h(1).YLim(2)*0.99,'DF','VerticalAlignment','bottom', "HorizontalAlignment","center",'FontSize',fontsize)
+
+  irf_plot_axis_align
+  irf_zoom(h,'x',[PD.time.start PD.time.stop])
+  c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
+  h(end).XTickLabelRotation = 0;
+  c_eval('h(?).FontSize = fontsize;',1:numel(h))
+  colormap([flipdim(irf_colormap('Spectral'),1)])
+
+  drawnow
+  if doPrint 
+    cn.print(sprintf('%df_id%04.0f_t0_%s',iDF,t0.utc('yyyy-mm-ddTHH:MM:SS')))
+  end
+end

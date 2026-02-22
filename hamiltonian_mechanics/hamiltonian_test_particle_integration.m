@@ -535,7 +535,7 @@ zvec = b*linspace(-4,4,100);
 %AY0 = Ay(X,Y,Z);
 
 
-B0 = 10e-9;
+B0 = 30e-9;
 E0 = 11e-3;
 % Integrate orbits
 m = units.mp;
@@ -544,17 +544,19 @@ q = units.e;
 Bx = @(x,y,z) 0;
 By = @(x,y,z) -B0*(z/b).*exp(-z.^2/b.^2);
 Bz = @(x,y,z) z*0;
-Ex = @(x,y,z) z*0;
-Ey = @(x,y,z) z*0;
+Ex = @(x,y,z) z*0 - E0*0.02;
+Ey = @(x,y,z) z*0+0*E0*0.05;
 Ez = @(x,y,z) -E0*(z/b).*exp(-z.^2/b.^2);
 Ax = @(x,y,z,t) B0*(b/2).*exp(-z.^2/b.^2);
 phiz = @(x,y,z) E0*(b/2).*exp(-z.^2/b.^2);
 
 options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,xvec([1 end])),...
                  'AbsTol',1e-6);
-options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,1,[-40 40]),...
-                 'AbsTol',1e-12);
-options = odeset('AbsTol',1e-12);
+options = odeset('Events', @(t,xyz) eom_box_edge(t,xyz,3,[0 Inf]),...
+                 'AbsTol',1e-6);
+options = odeset('Events', @(t_,xyz_) eom_box_edge(t_,xyz_,3,[-50*1e3 1500*1e3]),...
+                 'AbsTol',whos1e-12);
+%options = odeset('AbsTol',1e-12);
 %options = odeset();
 EoM = @(t,xyz) eom(t,xyz,m,q,Ex,Ey,Ez,Bx,By,Bz); 
 tstart = 0;
@@ -609,9 +611,10 @@ if 1 % Figure 1
   hca = h(isub); isub = isub + 1;
   plot(hca, ...
     zvec*1e-3,By(0,0,zvec)*1e9,...
-    zvec*1e-3,Ez(0,0,zvec)*1e3,'--')
+    zvec*1e-3,Ez(0,0,zvec)*1e3,'--',...
+    zvec*1e-3,Ey(0,0,zvec)*1e3,'--')
   hca.XLabel.String = 'z (km)';
-  irf_legend(hca,{'B_y','E_z'},[0.02 0.98], 'fontsize',fontsize)
+  irf_legend(hca,{'B_y','E_z','E_y'},[0.02 0.98], 'fontsize',fontsize)
 
   if 0
     hca = h(isub); isub = isub + 1;
@@ -622,7 +625,7 @@ if 1 % Figure 1
   end
 
   hca = h(isub); isub = isub + 1;
-  plot(hca,zvec*1e-3,Ax(0,0,zvec,0))
+  plot(hca,zvec*1e-3,Ax(0,0,zvec,0),p(ip).z*1e-3,-p(ip).vx*m/q,'--')
   hca.XLabel.String = 'z (km)';
   hca.YLabel.String = 'A_x (...)';
 
@@ -630,7 +633,7 @@ if 1 % Figure 1
 
   phi_from_ez = -gradient(phiz(0,0,zvec),zvec);
   phi_from_ez = cumtrapz(zvec,Ez(0,0,zvec));
-  plot(hca,zvec*1e-3,phiz(0,0,zvec), zvec*1e-3,phi_from_ez,'--')
+  plot(hca,zvec*1e-3,phiz(0,0,zvec), zvec*1e-3,phi_from_ez,'--',-p(ip).z*1e-3,0.5*m*(p(ip).vx.^2 + p(ip).vy.^2 + p(ip).vz.^2)/units.eV,':')
   hca.XLabel.String = 'z (km)';
   hca.YLabel.String = '\phi_z (V)';
 

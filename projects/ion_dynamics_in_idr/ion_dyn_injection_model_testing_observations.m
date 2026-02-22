@@ -23,7 +23,7 @@ switch event
   case 2 % 1
     tint = irf.tint('2017-07-03T05:26:13.00Z/2017-07-03T05:27:03.00Z'); % vertical crossing, come cold ions I think
   case 3  % 1
-    tint = irf.tint('2017-07-03T21:54:03.00Z/2017-07-03T21:55:53.00Z'); % only skimming, cold ions
+    tint = irf.tint('2017-07-03T21: 54:03.00Z/2017-07-03T21:55:53.00Z'); % only skimming, cold ions
   case 4 % 1, vold vx = 0, little warmer vx = 7-800, warmer at >800
     tint = irf.tint('2017-07-06T00:54:03.00Z/2017-07-06T00:56:03.00Z'); % cold ions, my 2020 separatrix paper
   case 5 % 1, had some striated ions in vx
@@ -53,6 +53,8 @@ switch event
 end
 
 
+ic = 1;
+ic_dist = 1;
 
 str_tint = tint(1).utc('yyyymmdd_HHMMSS');
 %% Load data
@@ -106,7 +108,7 @@ c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E
 ic = ic_dist;
 disp('Preparing reduced distributions...')
 vint = [-Inf Inf];
-iELim = [50 40000]; % for tail
+iELim = [00 40000]; % for tail
 eELim = [100 40000]; % for tail
 
 
@@ -118,6 +120,12 @@ eELim = [100 40000]; % for tail
 c_eval('if1Dx? = iPDist?.elim(iELim).reduce(''1D'',[1 0 0],''vint'',vint,''scpot'',scPot?);',ic)
 c_eval('if1Dy? = iPDist?.elim(iELim).reduce(''1D'',[0 1 0],''vint'',vint,''scpot'',scPot?);',ic)
 c_eval('if1Dz? = iPDist?.elim(iELim).reduce(''1D'',[0 0 1],''vint'',vint,''scpot'',scPot?);',ic)
+%%
+nMovMean = 3;
+c_eval('iPDist?_rem1c = iPDist?.movmean(nMovMean,''RemoveOneCounts'',iPDist?_counts);',ic)
+c_eval('if1Dx?_rem1c = iPDist?_rem1c.elim(iELim).reduce(''1D'',[1 0 0],''vint'',vint,''scpot'',scPot?);',ic)
+c_eval('if1Dy?_rem1c = iPDist?_rem1c.elim(iELim).reduce(''1D'',[0 1 0],''vint'',vint,''scpot'',scPot?);',ic)
+c_eval('if1Dz?_rem1c = iPDist?_rem1c.elim(iELim).reduce(''1D'',[0 0 1],''vint'',vint,''scpot'',scPot?);',ic)
 
 %c_eval('e1 = gseB?.norm.resample(ePDist?);',ic)
 %c_eval('ef1Dpar? = ePDist?.elim(eELim).reduce(''1D'',e1,''vint'',vint,''scpot'',scPot?);',ic)
@@ -442,7 +450,7 @@ if 1
 end
 %% Figure: Overview 1 + reduced 2D VDFs
 %h = irf_plot(9);
-[h,h2] = initialize_combined_plot('leftright',9,3,1,0.6,'vertical');
+[h,h2] = initialize_combined_plot('leftright',10,3,1,0.6,'vertical');
 
 
 %for dt = 0%1:0.150:2%-1:0.150:1%:0.15%-20:20
@@ -457,14 +465,37 @@ switch event
 
     time1 = irf_time('2017-07-06T13:54:40.000Z','utc>EpochTT'); % 
     time2 = irf_time('2017-07-06T13:54:45.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T13:54:36.000Z','utc>EpochTT'); % thicker region of potential pickup
+    time2 = irf_time('2017-07-06T13:54:50.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T13:54:47.000Z','utc>EpochTT'); % thinner region of potential pickup
+    time2 = irf_time('2017-07-06T13:54:50.000Z','utc>EpochTT'); % 
+
+
+    time1 = irf_time('2017-07-06T13:54:00.000Z','utc>EpochTT'); % thinner region of potential pickup
+    time2 = irf_time('2017-07-06T13:54:05.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T13:53:54.000Z','utc>EpochTT'); % thinner region of potential pickup
+    time2 = irf_time('2017-07-06T13:53:58.000Z','utc>EpochTT'); % 
   case 8 % large vi oscillations at sepaatrix
 
     time1 = irf_time('2017-07-06T14:09:40.000Z','utc>EpochTT'); % 
     time2 = irf_time('2017-07-06T14:10:10.000Z','utc>EpochTT'); % 
 
 
-    time1 = irf_time('2017-07-06T14:10:00.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T14:09:20.000Z','utc>EpochTT'); % exhaust pickup 1
+    time2 = irf_time('2017-07-06T14:09:30.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T14:09:40.000Z','utc>EpochTT'); % exhaust pickup 1
+    time2 = irf_time('2017-07-06T14:09:55.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T14:10:00.000Z','utc>EpochTT'); % separatrix oscillations
     time2 = irf_time('2017-07-06T14:10:10.000Z','utc>EpochTT'); % 
+
+    time1 = irf_time('2017-07-06T14:10:00.000Z','utc>EpochTT'); % separatrix oscillations
+    time2 = irf_time('2017-07-06T14:10:15.000Z','utc>EpochTT'); % 
   case 10 % large cold ion drifts    
     time = irf_time('2017-07-06T15:43:53.000Z','utc>EpochTT'); % 
     time = irf_time('2017-07-06T15:42:58.312490966Z','utc>EpochTT');
@@ -479,8 +510,9 @@ switch event
 end
     %time = time + dt;
 
-nMovMean = 5;
+nMovMean = 3;
 fontsize = 12;
+iPDist = iPDist1_rem1c;
 
 if 1 % B GSE
   hca = irf_panel('B GSE');
@@ -523,6 +555,15 @@ if 0 % E GSE
   irf_legend(hca,{'\perp,z','\perp,y','\perp,z','||'},[0.98 0.98],'fontsize',fontsize);
 end 
 
+if 1 % ne
+  hca = irf_panel('ne');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('irf_plot(hca,{ne?},''comp'');',ic)  
+  
+  hca.YLabel.String = {'n_e (cc)'};
+  set(hca,'ColorOrder',mms_colors('1'))
+  %irf_legend(hca,{'x','y','z'},[0.98 0.98],'fontsize',fontsize);
+end
 if 1 % Ve, GSE
   hca = irf_panel('Ve gse');
   set(hca,'ColorOrder',mms_colors('xyza'))
@@ -597,7 +638,7 @@ end
 if 1 % dEFlux ion
   hca = irf_panel('ion dEF omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_spectrogram(hca,iPDist?.deflux.omni.specrec,''donotfitcolorbarlabel'');',ic)  
+  c_eval('irf_spectrogram(hca,iPDist.omni.specrec,''donotfitcolorbarlabel'');',ic)  
   hca.YScale = 'log'; 
   hca.NextPlot = "add";
   c_eval('irf_plot(hca,irf.ts_scalar(tint,iELim(1)*[1 1]),''k--'')',ic) 
@@ -636,7 +677,7 @@ end
 if 1 % fi red x
   hca = irf_panel('fi x');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('specrec = if1Dx?.specrec;',ic)
+  c_eval('specrec = if1Dx?_rem1c.specrec;',ic)
   %specrec.f = specrec.f - v_xline;
   c_eval('irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)  
   
@@ -657,7 +698,7 @@ end
 if 1 % fi red y
   hca = irf_panel('fi y');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_spectrogram(hca,if1Dy?.specrec,''donotfitcolorbarlabel'');',ic)  
+  c_eval('irf_spectrogram(hca,if1Dy?_rem1c.specrec,''donotfitcolorbarlabel'');',ic)  
   
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
@@ -673,7 +714,7 @@ end
 if 1 % fi red z
   hca = irf_panel('fi z');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('irf_spectrogram(hca,if1Dz?.specrec,''donotfitcolorbarlabel'');',ic)  
+  c_eval('irf_spectrogram(hca,if1Dz?_rem1c.specrec,''donotfitcolorbarlabel'');',ic)  
   
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
@@ -788,7 +829,8 @@ if 1
   %%
   linkprop(h((numel(h)-2):end),{'YLim'})
   linkprop(h((numel(h)-2):end),{'CLim'})
-  h(end).CLim = [-4 -1];
+  %h(end).CLim = [-4 -1];
+  h(end).CLim = [-4 -0.5];
   h(end).YLim = [-600 600];
   h(end).YLim = [-800 800];
   h(end).YLim = 2*[-1000 1000];
@@ -799,21 +841,37 @@ end
 vlim = 700;
 nAv = nMovMean;
 nAv = 1;
-iELim = [200 Inf];
-time = time1;
+
+iELim = [20 Inf];
+
+%time1 = irf_time('2017-07-06T13:53:58.000Z','utc>EpochTT'); % 
+
+%time2 = irf_time('2017-07-06T13:54:00.000Z','utc>EpochTT'); % 
+%time2 = time1 + 0.5;
+
+time = time1+-0;
+
 T = (time2-time1);
-for dt = 0:1*0.150:T%-1.5:0.150:1.5%-10:1:10
+Tmid = time1 + 0.5*T;
+TAv = T-2*0; 
+%TAv = TAv+-2.5;
+vg = -2200:50:2200;
+%for dt = 0:1*0.150:T%-1.5:0.150:1.5%-10:1:10
+for dt = 0.5*T
   %%
   time_tmp = time + dt;
-  tint_tmp = time_tmp+0.150*0.5*nAv*[-1 1];
+  %tint_tmp = time_tmp+0.150*0.5*nAv*[-1 1];
+  tint_tmp = time_tmp+TAv*0.5*[-1 1];
   %tint_tmp = tint_tmp + dt;
 
   if exist('hmark','var'), delete(hmark); end
-  hmark = irf_pl_mark(h,tint_tmp,'k');
+  hmark = irf_pl_mark(h,tint_tmp,'k','facealpha',0.5);
   
   c_eval('vExB = mean(gseVExB?.tlim(tint_tmp).data,1);',ic)
+  c_eval('vExB_all = gseVExB?.resample(iPDist?).tlim(tint_tmp).data;',ic)
   
-  c_eval('vdf = iPDist?.tlim(tint_tmp).elim(iELim);',ic)
+  %c_eval('vdf = iPDist?.tlim(tint_tmp).elim(iELim);',ic)
+  c_eval('vdf = iPDist?_rem1c.tlim(tint_tmp).elim(iELim);',ic)
   
   isub = 1;
   
@@ -825,6 +883,7 @@ for dt = 0:1*0.150:T%-1.5:0.150:1.5%-10:1:10
   hca.YLabel.String = 'v_y (km/s)';
   hca.NextPlot = "add";
   plot(hca,vExB(1),vExB(2),'ks','MarkerSize',10,'LineWidth',5)
+  plot(hca,vExB_all(:,1),vExB_all(:,2),'k.','MarkerSize',10,'LineWidth',5)
   hca.NextPlot = "replace";
   
   hca = h2(isub); isub = isub + 1;
@@ -834,22 +893,24 @@ for dt = 0:1*0.150:T%-1.5:0.150:1.5%-10:1:10
   hca.YLabel.String = 'v_z (km/s)';
   hca.NextPlot = "add";
   plot(hca,vExB(1),vExB(3),'ks','MarkerSize',10,'LineWidth',5)
+  plot(hca,vExB_all(:,1),vExB_all(:,3),'k.','MarkerSize',10,'LineWidth',5)
   hca.NextPlot = "replace";
   
   hca = h2(isub); isub = isub + 1;
-  vdf_ref_2d = vdf.reduce('2D',[0 1 0],[0 0 1]);
+  vdf_ref_2d = vdf.reduce('2D',[0 1 0],[0 0 1],'vg',vg);
   vdf_ref_2d.plot_plane(hca);
   hca.XLabel.String = 'v_y (km/s)';
   hca.YLabel.String = 'v_z (km/s)';
   hca.NextPlot = "add";
   plot(hca,vExB(2),vExB(3),'ks','MarkerSize',10,'LineWidth',5)
+  %plot(hca,vExB_all(:,2),vExB_all(:,3),'k.','MarkerSize',10,'LineWidth',5)
   hca.NextPlot = "replace";
   
   linkprop(h2,{'CLim','YLim','XLim'})
   h2(1).XLim = vlim*[-1 1];
   h2(1).YLim = vlim*[-1 1];
 
-  cn.print(sprintf([str_tint '_2dvdf_vlim700_time=%s'],time_tmp.utc('HHMMSS_mmm')))
+  %cn.print(sprintf([str_tint '_2dvdf_vlim700_time=%s'],time_tmp.utc('HHMMSS_mmm')))
 
 end
 
