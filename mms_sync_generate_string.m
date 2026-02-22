@@ -3,7 +3,7 @@
 localuser = 'cecilia';
 %file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_b_gsm_2017-2022.nc'];
 
-file = ['/home/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
+file_nc = ['/home/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
 %data = load(file);
 file_csv = ['/home/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.csv'];
 tlim = readtable(file_csv);
@@ -16,13 +16,13 @@ t_duration_s = double((tstop_ttns - tstart_ttns))*1e-9;
 
 %ncdisp(file)
 
-info = ncinfo(file);
+info = ncinfo(file_nc);
 vars = {info.Variables.Name};
 nvars = numel(vars);
 
 clear db
 for ivar = 1:nvars
-  db.(vars{ivar}) = ncread(file,vars{ivar});
+  db.(vars{ivar}) = ncread(file_nc,vars{ivar});
 end
 
 db_table_ff = struct2table(db);
