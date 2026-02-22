@@ -62,7 +62,7 @@ for it = 1:tstart.length
   try
     [filepath, filename] = mms.get_filepath(['mms1_fpi_brst_l2_dis-dist'], tint(1));
   catch
-    disp(sprintft('%g: No file. Continuing.',it)
+    disp(sprintft('%g: No file. Continuing.',it))
   end
   file.path = filepath;
   file.name = filename;
