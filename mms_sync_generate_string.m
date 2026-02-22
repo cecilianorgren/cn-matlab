@@ -59,7 +59,7 @@ str_sync_cell = {};
 str_sync_str = "";
 count = 0;
 for it = 1:tstart.length
-  disp('it = %g',it)
+  disp(sprintf('it = %g',it))
   tint = [tstart(it) tstop(it)];
   %file = mms.db_list_files('mms1_fpi_brst_l2_des-dist',tint);
   try
