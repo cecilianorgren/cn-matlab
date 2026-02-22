@@ -78,7 +78,7 @@ for it = 1:tstart.length
     str_sync_str = str_sync_str + "--include='*" + "fgm_brst_l2_" + string_split{6} + "*.cdf'\ ";
     str_sync_str = str_sync_str + "--include='*" + "edp_brst_l2_scpot_" + string_split{6} + "*.cdf'\ ";
     if mod(count,10)
-      disp(str_sync_str)
+      %disp(str_sync_str)
     end
   end
 end
