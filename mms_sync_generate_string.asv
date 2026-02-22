@@ -1,11 +1,11 @@
 %% Load DB table
 %localuser = 'cecilianorgren';
-localuser = 'cecilia';
+localuser 
 %file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_b_gsm_2017-2022.nc'];
 
-file = ['/home/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
+file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
 %data = load(file);
-file_csv = ['/home/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.csv'];
+file_csv = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.csv'];
 tlim = readtable(file_csv);
 tstart = tlim.Var1; tstart.TimeZone = "UTCLeapSeconds";
 tstop = tlim.Var2;  tstop.TimeZone = "UTCLeapSeconds";
