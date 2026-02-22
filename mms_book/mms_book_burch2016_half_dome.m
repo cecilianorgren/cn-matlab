@@ -1,7 +1,7 @@
  %% Load data
 % units = irf_units;
 irf.log('critical')
-ic = 2:3:4;
+ic = [2 3 4];
 
 localuser = 'cno062';
 %localuser = 'cecilia';
@@ -1382,4 +1382,68 @@ if 0 % Put axis at origin, missing labels, i.e. v_L (km/s)
   
   hold(gca,'off')
 end
+
+
+
+%% Make reduced distributions, to check for counterstreaming electrons or not
+ic = 3;
+
+tint_red = irf.tint('2015-10-16T13:07:00.00Z/2015-10-16T13:07:05.00Z');
+elim = [21 Inf];
+c_eval('feL? = ePDist?.elim(elim).tlim(tint_red).reduce(''1D'',tsLdsl?,''scpot'',scPot?);',ic)
+c_eval('feM? = ePDist?.elim(elim).tlim(tint_red).reduce(''1D'',tsMdsl?,''scpot'',scPot?);',ic)
+c_eval('feN? = ePDist?.elim(elim).tlim(tint_red).reduce(''1D'',tsNdsl?,''scpot'',scPot?);',ic)
+
+
+c_eval('mvaB? = gseB?*[Lgse; Mgse; Ngse]'';',ic)
+
+%%  Plot reduced distributions
+
+ic = 3;
+h = irf_plot(5);
+
+hca = irf_panel('B');
+irf_plot(hca,{mvaB2.x,mvaB2.y,mvaB2.z},'comp')
+
+
+hca = irf_panel('eDEF');
+c_eval('specrec = ePDist?.tlim(tint_red).deflux.omni.specrec;',ic)
+irf_spectrogram(hca,specrec)
+hca.YScale = 'log';
+
+hca = irf_panel('feL');
+c_eval('specrec = feL?.specrec;',ic)
+irf_spectrogram(hca,specrec)
+
+hca = irf_panel('feM');
+c_eval('specrec = feM?.specrec;',ic)
+irf_spectrogram(hca,specrec)
+
+
+hca = irf_panel('feN');
+c_eval('specrec = feN?.specrec;',ic)
+irf_spectrogram(hca,specrec)
+
+irf_zoom(h,'x',tint_red)
+irf_zoom(h,'y')
+irf_plot_axis_align
+hlinks = linkprop(h([3:5]),{'YLim','CLim'});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
