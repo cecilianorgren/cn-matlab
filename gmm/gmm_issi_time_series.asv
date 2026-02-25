@@ -59,6 +59,7 @@ t_ff_stop = string([]);
 t_df = string([]);
 table_ci = table(id_df,t_ff_start,t_ff_stop,t_df,gm_before,gm_after,T_before,T_after,T_scalar_before,T_scalar_after,T_min_before,T_min_after);
 end
+
 %% Loop events and plot brief overview
 units = irf_units;
 ic = 1;
@@ -73,9 +74,9 @@ iDFs = 217:nDF;
 %iDFs = 87;
 iDFs = 17;23:nDF;
 iDFs = 101:nDF;
-iDFs = 1:50;
+iDFs = 57;
 doPrint = 0;
-doPlot = 1;
+doPlot = 0;
 for iDF = iDFs%87%iDFs(1)
   try
   disp(iDF)
@@ -103,17 +104,15 @@ for iDF = iDFs%87%iDFs(1)
   tsElow = PD_use.find_noise_energy_limit(5).movmean(15);
   emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
   PD = PD_use.mask({emask_mat});
-  %nMovMean = 5; % Number of distributions for the moving average
-  %PD = PD.movmean(3);
+  nMovMean = 3; % Number of distributions for the moving average
+  PD = PD.movmean(nMovMean);
 
   %% Do the Gaussian Mixture Model
-  nMP = 200000; % Number of macroparticles
+  nMP = 100000; % Number of macroparticles
   nGroupsMax = 4;  % number of classes/groups for kmeans and gmm
-  tShift = 5; % apply to two times, before and after DF
+  tint_df = tDF + [0 5]; % apply to two times, before and after DF
 
-  tPreDF  = tDF + -tShift;
-  tPostDF = tDF + +tShift;
-  times = [tPreDF tPostDF];
+  times = PD.tlim(tint_df).time;
 
   % Initial guess
   initial_guess = [0 -1000 -1000;...
@@ -126,8 +125,7 @@ for iDF = iDFs%87%iDFs(1)
 
   nt = times.length;
   %clear gm ntot T T_scalar;
-  
-% 
+  %
   T_mat = cell(nt,nGroupsMax);
   T_scalar = cell(nt,nGroupsMax);
   for it = 1:nt
@@ -193,7 +191,7 @@ for iDF = iDFs%87%iDFs(1)
   T_max = cellfun(@(x)max(x),T_scalar);
 
   % Add results to table
-  if 1
+  if 0
   table_ci.id_df(iDF) = iDF;
   table_ci.t_ff_start(iDF) = t_ff_start.utc;
   table_ci.t_ff_stop(iDF) = t_ff_stop.utc;
@@ -210,9 +208,40 @@ for iDF = iDFs%87%iDFs(1)
   table_ci.T_max_after(iDF) = {T_max(2,:)};
   end
 
+  if doPlot
+    %%
+    fontsize = 13;
+    vlim = 2500;
+    nMC = 500;
+  
+    nvx = 101; nvy = 102; nvz = 103;
+    xvec = linspace(-vlim,vlim,nvx); dvx = xvec(2)-xvec(1);
+    yvec = linspace(-vlim,vlim,nvy); dvy = yvec(2)-yvec(1);
+    zvec = linspace(-vlim,vlim,nvz); dvz = zvec(2)-zvec(1);
+    [X,Y,Z] = ndgrid(xvec,yvec,zvec);
+    XYZ = [X(:) Y(:) Z(:)];
+
+    K = 4;
+    for ii = 1:size(gm,1)
+      for iComp = 1:K
+        mu = gm{it,K}.mu;
+        Sigma = gm{it,K}.Sigma;
+          
+        Ftmp = gm{ii,K}.ComponentProportion(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
+        F{iComp} = reshape(Ftmp,size(X));  
+        Ftot = Ftot + F{iComp};
+        fx(it,:,iComp) = sum(F{iComp},[2 3]);
+        fy(it,:,iComp) = sum(F{iComp},[1 3]);
+        fz(it,:,iComp) = sum(F{iComp},[1 2]);
+      end
+    end
+    for iComp = 1:K
+      tsFx{iComp} = 
+    end
+  end
 
   % Plot results  
-  if doPlot
+  if doPlot*0
     fontsize = 13;
     vlim = 2500;
     nMC = 500;

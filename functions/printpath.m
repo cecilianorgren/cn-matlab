@@ -30,6 +30,10 @@ if days
     directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory_root = '/Users/cecilianorgren/IRFU Dropbox/Cecilia Norgren/Days/';
     directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
+  else % temporary
+    directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
+    directory_root = '/Users/cecilianorgren/IRFU Dropbox/Cecilia Norgren/Days/';
+    directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
   end 
   if ~exist(directory,'dir')
     %eval(['mkdir ', directory])

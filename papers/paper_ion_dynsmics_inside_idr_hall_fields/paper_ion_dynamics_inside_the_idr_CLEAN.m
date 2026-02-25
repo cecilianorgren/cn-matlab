@@ -1,14 +1,15 @@
 %% Set up database 
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Users/cno062/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Volumes/mms');
 %db_info = datastore('mms_db');
 
 units = irf_units;
 % Torbert event 
-ic = 3;
+ic = 1;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z');
+tint = irf.tint('2017-07-09T17:31:00.00Z/2017-07-09T17:33:00.00Z');
 
 %% Load data
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
