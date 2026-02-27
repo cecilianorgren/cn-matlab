@@ -22,9 +22,9 @@ hca.Title.String = 'Particle weight';
 hca.YLabel.String = 'Counts';
 
 hca = subplot(2,2,3);
-histogram(hca,MPf.vz,-3000:50:3000,'Normalization','pdf')
+histogram(hca,MPf.vx,-3000:100:3000,'Normalization','pdf')
 hold(hca,'on')
-histogram(hca,MPc.vz,-3000:50:3000,'Normalization','pdf')
+histogram(hca,MPc.vx,-3000:100:3000,'Normalization','pdf')
 hold(hca,'off')
 irf_legend(hca,{'Equal dn for all MPs','1 count per MP'}',[0.98 0.98])
 hca.XLabel.String = 'v_x (km/s)';

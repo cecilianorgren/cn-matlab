@@ -64,6 +64,7 @@ end
 units = irf_units;
 ic = 1;
 
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
@@ -80,7 +81,7 @@ iDFs = 57;
 doPrint = 0;
 doPlot = 1;
 for iDF = iDFs%87%iDFs(1)
-  try
+  %try
   disp(iDF)
   % Define time
   t0 = EpochTT(db_table_df.time(iDF));
@@ -103,14 +104,17 @@ for iDF = iDFs%87%iDFs(1)
   %% Prep data
   %PD_use = iPDist_counts; % iPDist
   PD_use = iPDist; % iPDist
-  tsElow = PD_use.find_noise_energy_limit(5).movmean(15);
+
+  nMovMean = 7; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
+
+  %tsElow = PD_use.find_noise_energy_limit(5).movmean(15);
+  tsElow = iPDist_counts.find_noise_energy_limit_counts(5,nMovMean);
   emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
   PD = PD_use.mask({emask_mat});
-  nMovMean = 7; % Number of distributions for the moving average
   PD = PD.movmean(nMovMean);
   PD = PD(1:nMovMean:PD.length);
-  %delete(hca)
-  %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
+%  delete(hca)
+  irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   
   %% Do the Gaussian Mixture Model
   tint_df = tDF + [-5 100]; % apply to two times, before and after DF
@@ -287,7 +291,7 @@ for iDF = iDFs%87%iDFs(1)
         tsV{iComp} = irf.ts_vec_xyz(times, [vx(:,iComp),vy(:,iComp),vz(:,iComp)]);
         tsN{iComp} = irf.ts_scalar(times, n(:,iComp));
       end
-      tsFx_tot = PDist(times,fx_tot,'1Dcart',xvec);
+      tsFx_tot =th PDist(times,fx_tot,'1Dcart',xvec);
       tsFy_tot = PDist(times,fy_tot,'1Dcart',yvec);
       tsFz_tot = PDist(times,fz_tot,'1Dcart',zvec);
       
@@ -394,9 +398,9 @@ for iDF = iDFs%87%iDFs(1)
     end
 
   end
-  catch
-    disp(sprintf('Skipping idf=%g due to error.',iDF)) 
-  end
+  %catch
+  %  disp(sprintf('Skipping idf=%g due to error.',iDF)) 
+  %end
 end
 
 %% Some post-processing
