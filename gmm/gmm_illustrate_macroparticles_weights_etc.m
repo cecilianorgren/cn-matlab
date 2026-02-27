@@ -1,5 +1,5 @@
-totcounts = nansum(iPDist_counts(1).data(:));
-MPc = iPDist_counts(1).elim([100 Inf]).macroparticles('ntot',totcounts,'skipzero',1,'counts');
+totcounts = nansum(iPDist_counts(1).elim([100 Inf]).data(:));
+MPc = iPDist_counts(1).elim([100 Inf]).macroparticles('ntot',totcounts,'skipzero',1,'ntot_division','counts');
 MPf = iPDist(1).elim([100 Inf]).macroparticles('ntot',1e6,'skipzero',1);
 
 hca = subplot(1,1,1);
@@ -12,7 +12,8 @@ hca.XLabel.String = 'v_x (km/s)';
 hca.YLabel.String = 'Probability distribution function';
 
 %%
-nMP = [1e5 2e5 5e5 1e6 2e6 5e6];
+%nMP = [1e5 2e5 5e5 1e6 2e6 5e6];
+nMP = [1e5 1e6 1e7];
 clear MPf;
 for iMP = 1:numel(nMP)
   MPf{iMP} = iPDist(1).elim([100 Inf]).macroparticles('ntot',nMP(iMP),'skipzero',1);
@@ -22,12 +23,48 @@ dn = cellfun(@(x) x.df.*x.dv, MPf, 'UniformOutput', false);
 
 NMP = numel(nMP);
 h = setup_subplots(NMP,1);
+
 isub = 1;
 for iMP = 1:NMP
   hca = h(isub); isub = isub + 1;
-  histogram(hca,dn{iMP},20,'Normalization','cdf')
+  histogram(hca,dn{iMP}/max(dn{iMP}),50,'Normalization','cdf')
   hca.XLabel.String = 'dn=dfv';
   hca.YLabel.String = 'CDF';
   irf_legend(hca,sprintf('n_{MP} = %g',nMP(iMP)),[0.02 0.7],'k')
 end
 
+compact_panels(h,0.12,0.02,1)
+%compact_panels(h,0.02,0.02,0)
+
+%%
+%nMP = [1e5 2e5 5e5 1e6 2e6 5e6];
+nMP = [1e6 2e6 5e6];
+clear MPf;
+for iMP = 1:numel(nMP)
+  MPf{iMP} = iPDist(1).elim([100 Inf]).macroparticles('ntot',nMP(iMP),'skipzero',1);
+end
+
+dn = cellfun(@(x) x.df.*x.dv, MPf, 'UniformOutput', false);
+
+NMP = numel(nMP);
+hca = setup_subplots(1,1);
+hold(hca,'on')
+
+isub = 1;
+for iMP = 1:NMP
+  %hca = h(isub); isub = isub + 1;
+  histogram(hca,dn{iMP}/max(dn{iMP}),50,'Normalization','cdf')
+  hca.XLabel.String = 'dn/max(dn) [dn = dfv]';
+  hca.YLabel.String = 'CDF(dn)';
+  %irf_legend(hca,sprintf('n_{MP} = %g',nMP(iMP)),[0.02 0.7],'k')
+  hca.Title.String = 'Macroparticle weight = partial density, dn';
+end
+irf_legend(hca,["N_{MP} = " + nMP'],[0.02 0.8])
+hold(hca,'off')
+
+hca.Box = 'on';
+hca.YScale = 'log';
+%compact_panels(hca,0.12,0.02,1)
+%compact_panels(h,0.02,0.02,0)
+
+%%

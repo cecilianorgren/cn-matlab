@@ -74,9 +74,11 @@ iDFs = 217:nDF;
 %iDFs = 87;
 iDFs = 17;23:nDF;
 iDFs = 101:nDF;
+iDFs = [1 6 9 10 13 21 25 35 38];
+iDFs = 37;
 iDFs = 57;
 doPrint = 0;
-doPlot = 0;
+doPlot = 1;
 for iDF = iDFs%87%iDFs(1)
   try
   disp(iDF)
@@ -104,390 +106,296 @@ for iDF = iDFs%87%iDFs(1)
   tsElow = PD_use.find_noise_energy_limit(5).movmean(15);
   emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
   PD = PD_use.mask({emask_mat});
-  nMovMean = 3; % Number of distributions for the moving average
+  nMovMean = 7; % Number of distributions for the moving average
   PD = PD.movmean(nMovMean);
-
+  PD = PD(1:nMovMean:PD.length);
+  %delete(hca)
+  %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
+  
   %% Do the Gaussian Mixture Model
-  nMP = 100000; % Number of macroparticles
-  nGroupsMax = 4;  % number of classes/groups for kmeans and gmm
-  tint_df = tDF + [0 5]; % apply to two times, before and after DF
-
-  times = PD.tlim(tint_df).time;
-
-  % Initial guess
-  initial_guess = [0 -1000 -1000;...
-                   0 -1000 +1000;...
-                   0 +1000 -1000;...
-                   0 +1000 +1000;...
-                   0  0000  0000;...
-                   0  0000  0000]*0.1;
-
-
-  nt = times.length;
-  %clear gm ntot T T_scalar;
-  %
-  T_mat = cell(nt,nGroupsMax);
-  T_scalar = cell(nt,nGroupsMax);
-  for it = 1:nt
-    time = times(it);
-    pdist = PD.tlim(time+0.5*0.150*[-1 1]);
-    %nMP = nansum(round(pdist.data(~isnan(pdist.data)))); % total number of counts
+  tint_df = tDF + [-5 100]; % apply to two times, before and after DF
+  times = PD.tlim(tint_df).time.start:nMovMean*0.150:PD.tlim(tint_df).time.stop;
+  nMP = 100000; % Number of macroparticles  
+  
+  for Ks = [2 3]
+    nGroupsMax = Ks;  % number of classes/groups for kmeans and gmm
+    K = Ks;
+  
+    % Initial guess
+    initial_guess = [0 -1000 -1000;...
+                     0 -1000 +1000;...
+                     0 +1000 -1000;...
+                     0 +1000 +1000;...
+                     0  0000  0000;...
+                     0  0000  0000]*0.1;
+  
     
-    scpot = mean(scPot.tlim(time + 0.5*0.15*[-1 1]).data,1);
-    scpot = irf.ts_scalar(time,scpot);
-    B = mean(gseB.tlim(time + 0.5*0.15*[-1 1]).data,1); B = B/norm(B);
+ 
+    nt = times.length; 
     
-    for nGroups = 1:nGroupsMax
-      MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);
-      nMP = numel(MP.dv);
-      MP.dn = MP.df.*MP.dv;
-      V_dbcs = [MP.vx, MP.vy, MP.vz]; 
-      
-      % Need to rotate these into the specified coordinate system  
-      % The rotation is not done exactly right, due to not taking into account
-      % differences between dbcs and gse. To do in the future
-      %V = V_dbcs*lmn';
-      V = V_dbcs;
-      MP.vx = V(:,1);
-      MP.vy = V(:,2);
-      MP.vz = V(:,3);
-      %MP
-          
-      S.mu = initial_guess(1:nGroups,:);
-      S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-      S.ComponentProportion = repmat(1,[1,nGroups]);
-
-      options = statset('Display','final','MaxIter',1500,'TolFun',1e-5);
-
-
-      X = [MP.vx, MP.vy, MP.vz];
-      %X(sqrt(sum(X.^2,2))>1000,:) = [];
-      %gm{it,nGroups} = fitgmdist(X,nGroups,'Start',S,'SharedCovariance',false,'Options',options);
-      gm{it,nGroups} = fitgmdist(X,nGroups,'Start','randSample','SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
-
-       
-      %X = [MP.vx, MP.vy, MP.vz];   
-      %S.mu = gm{it,nGroups}.mu;
-      %S.Sigma = gm{it,nGroups}.Sigma;
-      %S.ComponentProportion = gm{it,nGroups}.ComponentProportion;
-      %gm{it,nGroups} = fitgmdist(X,nGroups,'Start','randSample','SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
-      
-      ntot(it) = sum(MP.df.*MP.dv); % cc;
-
-      % Extract som physical quantities
-      vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-      cov_T_mat = units.mp*vt2/2/units.eV;
-      T_mat{it,nGroups} = cov_T_mat;
-      for iGroup = 1:nGroups % Lopp through gaussion components
-        T_scalar{it,nGroups}(iGroup) = trace(T_mat{it,nGroups}(:,:,iGroup))/3;
-      end
-     
-    end    
-  end
-
-  % Diagnose cold-ion quantities
-  % Find coldest temperature for each it, K
-  T_min = cellfun(@(x)min(x),T_scalar);
-  T_max = cellfun(@(x)max(x),T_scalar);
-
-  % Add results to table
-  if 0
-  table_ci.id_df(iDF) = iDF;
-  table_ci.t_ff_start(iDF) = t_ff_start.utc;
-  table_ci.t_ff_stop(iDF) = t_ff_stop.utc;
-  table_ci.t_df(iDF) = tDF.utc;
-  table_ci.gm_before(iDF) = {gm(1,:)};
-  table_ci.gm_after(iDF) ={gm(2,:)};
-  table_ci.T_before(iDF) = {T_mat(1,:)};
-  table_ci.T_after(iDF) = {T_mat(2,:)};
-  table_ci.T_scalar_before(iDF) = {T_scalar(1,:)};
-  table_ci.T_scalar_after(iDF) = {T_scalar(2,:)};
-  table_ci.T_min_before(iDF) = {T_min(1,:)};
-  table_ci.T_min_after(iDF) = {T_min(2,:)};
-  table_ci.T_max_before(iDF) = {T_max(1,:)};
-  table_ci.T_max_after(iDF) = {T_max(2,:)};
-  end
-
-  if doPlot
-    %%
-    fontsize = 13;
-    vlim = 2500;
-    nMC = 500;
-  
-    nvx = 101; nvy = 102; nvz = 103;
-    xvec = linspace(-vlim,vlim,nvx); dvx = xvec(2)-xvec(1);
-    yvec = linspace(-vlim,vlim,nvy); dvy = yvec(2)-yvec(1);
-    zvec = linspace(-vlim,vlim,nvz); dvz = zvec(2)-zvec(1);
-    [X,Y,Z] = ndgrid(xvec,yvec,zvec);
-    XYZ = [X(:) Y(:) Z(:)];
-
-    K = 4;
-    for ii = 1:size(gm,1)
-      for iComp = 1:K
-        mu = gm{it,K}.mu;
-        Sigma = gm{it,K}.Sigma;
-          
-        Ftmp = gm{ii,K}.ComponentProportion(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-        F{iComp} = reshape(Ftmp,size(X));  
-        Ftot = Ftot + F{iComp};
-        fx(ii,:,iComp) = sum(F{iComp},[2 3]);
-        fy(ii,:,iComp) = sum(F{iComp},[1 3]);
-        fz(ii,:,iComp) = sum(F{iComp},[1 2]);
-      end
-    end
-    
-    for iComp = 1:K
-      tsFx{iComp} = PDist(times,fx(:,:,iComp),'1Dcart',xvec);
-      tsFy{iComp} = PDist(times,fy(:,:,iComp),'1Dcart',yvec);
-      tsFz{iComp} = PDist(times,fz(:,:,iComp),'1Dcart',zvec);
-    end
-
-
-    h = irf_plot(6);
-
-    hca = irf_panel('B');
-    irf_plot(hca,gseB)
-
-    hca = irf_panel('fvx mms');
-    %vdfx = PD.reduce('1D',[1 0 0]);
-    %vdfx = PD.reduce('1D',[1 0 0]);
-    vdf = PD.reduce('1D',[0 0 1]);
-    irf_spectrogram(hca,vdf.specrec,'log')     
-   
-
-
-    for iComp = 1:K
-      hca = irf_panel(sprintf('B%g',iComp));
-      specrec = tsFz{iComp}.specrec('velocity');
-      irf_spectrogram(hca,specrec,'log')      
-    end
-    colormap(flipdim(irf_colormap(hca,"spectral"),1))
-
-    irf_zoom(h,'x',tint)
-  end
-
-
-
-  
-
-  % Plot results  
-  if doPlot*0
-    fontsize = 13;
-    vlim = 2500;
-    nMC = 500;
-  
-    xvec = linspace(-vlim,vlim,101); dvx = xvec(2)-xvec(1);
-    yvec = linspace(-vlim,vlim,102); dvy = yvec(2)-yvec(1);
-    zvec = linspace(-vlim,vlim,103); dvz = zvec(2)-zvec(1);
-    [X,Y,Z] = ndgrid(xvec,yvec,zvec);
-    XYZ = [X(:) Y(:) Z(:)];
-  
-    [h1,h2] = initialize_combined_plot('topbottom',3,2,5,0.3,'vertical');
-    
-    hca = irf_panel('B');
-    hca.ColorOrder = mms_colors('xyza');
-    irf_plot(hca,{gseB.x,gseB.y,gseB.z},'comp')
-    hca.YLabel.String = 'B (nT)';
-  
-    hca = irf_panel('Vi');
-    hca.ColorOrder = mms_colors('xyza');
-    irf_plot(hca,{gseVi.x,gseVi.y,gseVi.z},'comp')
-    hca.YLabel.String = 'v_i (nT)';
-  
-    hca = irf_panel('ion deflux omni');
-    irf_spectrogram(hca,PD.deflux.omni.specrec,'log')
-    hca.YScale = "log";
-    hca.Color = [0 0 0] + 0.95;
-    
-    hmark = irf_pl_mark(h1,tDF,'k','linewidth',1);
-    %userdata = get(gcf,'userdata');
-    text(h1(1),hmark(1).XData(1),h1(1).YLim(2)*0.99,'DF','VerticalAlignment','bottom', "HorizontalAlignment","center",'FontSize',fontsize)
-  
-    irf_plot_axis_align
-    irf_zoom(h1,'x',[PD.time.start PD.time.stop])
-    c_eval('h1(?).YLabel.Interpreter = ''tex'';',1:numel(h1))
-    h1(end).XTickLabelRotation = 0;
-    c_eval('h1(?).FontSize = fontsize;',1:numel(h1))
-    colormap([flipdim(irf_colormap('Spectral'),1)])
-  
+    %T_mat = cell(nt,nGroupsMax);
+    %T_scalar = cell(nt,nGroupsMax);
+    clear gm
+    tic
     for it = 1:nt
-      hmark_tmp = irf_pl_mark(h1,times(it),'r');
-      text(h1(1),hmark_tmp(1).XData(1),h1(1).YLim(2)*1.5,sprintf('VDF%g',it),'VerticalAlignment','bottom', "HorizontalAlignment","center",'FontSize',fontsize)
-    end
-    
-    isub = 1;
-    % 2D vdfs  
-    for it = 1:nt
-      hca = h2(isub); isub = isub + 1;
+      if mod(it,10)==0; disp([it+"/" + nt]); end
       time = times(it);
       pdist = PD.tlim(time+0.5*0.150*[-1 1]);
-      vdf = pdist.reduce('2D',[0.99 0 0],[0 0 0.99]);
-      vdf.plot_plane(hca)
-      hca.Title.String = sprintf('VDF%g',it);
-      hca.XLabel.String = 'v_x (km/s)';
+      %nMP = nansum(round(pdist.data(~isnan(pdist.data)))); % total number of counts
+      
+      scpot = mean(scPot.tlim(time + 0.5*0.15*[-1 1]).data,1);
+      scpot = irf.ts_scalar(time,scpot);
+      B = mean(gseB.tlim(time + 0.5*0.15*[-1 1]).data,1); B = B/norm(B);
+      
+      for nGroups = nGroupsMax %1:nGroupsMax
+        MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);
+        nMP = numel(MP.dv);
+        MP.dn = MP.df.*MP.dv;
+        V_dbcs = [MP.vx, MP.vy, MP.vz]; 
+        
+        % Need to rotate these into the specified coordinate system  
+        % The rotation is not done exactly right, due to not taking into account
+        % differences between dbcs and gse. To do in the future
+        %V = V_dbcs*lmn';
+        V = V_dbcs;
+        MP.vx = V(:,1);
+        MP.vy = V(:,2);
+        MP.vz = V(:,3);
+        %MP
+            
+        if it == 1
+          S = 'randSample';
+        else
+          clear S
+          S.mu = gm{it-1,K}.mu;
+          S.Sigma = gm{it-1,K}.Sigma;
+          S.ComponentProportion = gm{it-1,K}.ComponentProportion;        
+          %S.mu = initial_guess(1:nGroups,:);
+          %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
+          %S.ComponentProportion = repmat(1,[1,nGroups]);
+          if any(S.ComponentProportion==0); S = 'randSample'; end
+        end
+        
+  
+        %options = statset('Display','final','MaxIter',1500,'TolFun',1e-5);
+        options = statset('MaxIter',150,'TolFun',1e-5);
+  
+  
+        X = [MP.vx, MP.vy, MP.vz];
+        %X(sqrt(sum(X.^2,2))>1000,:) = [];
+        %gm{it,nGroups} = fitgmdist(X,nGroups,'Start',S,'SharedCovariance',false,'Options',options);
+        gm{it,nGroups} = fitgmdist(X,nGroups,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
+  
+        ntot(it) = sum(MP.df.*MP.dv); % cc;
+  
+        % Extract som physical quantities
+        vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
+        cov_T_mat = units.mp*vt2/2/units.eV;
+        T_mat{it,nGroups} = cov_T_mat;
+        for iGroup = 1:nGroups % Lopp through gaussion components
+          T_scalar{it,nGroups}(iGroup) = trace(T_mat{it,nGroups}(:,:,iGroup))/3;
+        end
+       
+      end    
+    end
+    toc
+    % Diagnose cold-ion quantities
+    % Find coldest temperature for each it, K
+    %T_min = cellfun(@(x)min(x),T_scalar);
+    %T_max = cellfun(@(x)max(x),T_scalar);
+  
+    % Add results to table
+    if 0
+    table_ci.id_df(iDF) = iDF;
+    table_ci.t_ff_start(iDF) = t_ff_start.utc;
+    table_ci.t_ff_stop(iDF) = t_ff_stop.utc;
+    table_ci.t_df(iDF) = tDF.utc;
+    table_ci.gm_before(iDF) = {gm(1,:)};
+    table_ci.gm_after(iDF) ={gm(2,:)};
+    table_ci.T_before(iDF) = {T_mat(1,:)};
+    table_ci.T_after(iDF) = {T_mat(2,:)};
+    table_ci.T_scalar_before(iDF) = {T_scalar(1,:)};
+    table_ci.T_scalar_after(iDF) = {T_scalar(2,:)};
+    table_ci.T_min_before(iDF) = {T_min(1,:)};
+    table_ci.T_min_after(iDF) = {T_min(2,:)};
+    table_ci.T_max_before(iDF) = {T_max(1,:)};
+    table_ci.T_max_after(iDF) = {T_max(2,:)};
+    end
+  
+    if doPlot
+      %%
+      fontsize = 13;
+      vlim = 2500;
+      nMC = 500;
+    
+      nvx = 101; nvy = 102; nvz = 103;
+      xvec = linspace(-vlim,vlim,nvx); dvx = xvec(2)-xvec(1);
+      yvec = linspace(-vlim,vlim,nvy); dvy = yvec(2)-yvec(1);
+      zvec = linspace(-vlim,vlim,nvz); dvz = zvec(2)-zvec(1);
+      [X,Y,Z] = ndgrid(xvec,yvec,zvec);
+      XYZ = [X(:) Y(:) Z(:)];
+  
+      Ftot = zeros(size(X));
+      %K = 4;
+      clear fx fy fz vx vy vz Txx Tyy Tzz T_tens 
+      T_tens = zeros(times.length,3,3,K);
+      vx = zeros(times.length,K);
+      vy = zeros(times.length,K);
+      vz = zeros(times.length,K);
+      n = zeros(times.length,K);
+      for ii = 1:size(gm,1)
+        [~,isort] = sort(gm{ii,K}.mu(:,3)); % vz
+        [~,isort] = sort(squeeze(gm{ii,K}.Sigma(1,1,:)+gm{ii,K}.Sigma(2,2,:)+gm{ii,K}.Sigma(3,3,:))); % Ts
+        mu = gm{ii,K}.mu(isort,:);
+        Sigma = gm{ii,K}.Sigma(:,:,isort);
+        compProp = gm{ii,K}.ComponentProportion(isort);
+        for iComp = 1:K          
+          Ftmp = compProp(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
+          Ftmp = Ftmp;
+          F{iComp} = reshape(Ftmp,size(X));  
+          Ftot = Ftot + F{iComp};
+          fx(ii,:,iComp) = sum(F{iComp},[2 3])*ntot(ii)*dvy*dvz*1e3;
+          fy(ii,:,iComp) = sum(F{iComp},[1 3])*ntot(ii)*dvx*dvz*1e3;
+          fz(ii,:,iComp) = sum(F{iComp},[1 2])*ntot(ii)*dvx*dvy*1e3;
+  
+          vx(ii,iComp) = mu(iComp,1);
+          vy(ii,iComp) = mu(iComp,2);
+          vz(ii,iComp) = mu(iComp,3);
+  
+          n(ii,iComp) = compProp(iComp)*ntot(ii) ;
+  
+          %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
+          %cov_T_mat = units.mp*vt2/2/units.eV;
+          %T_mat{it,nGroups} = cov_T_mat;
+          T_tens(ii,:,:,:) = Sigma*1e6*units.mp/2/units.eV;
+          %Tyy(ii,iComp) = gm{it,nGroups}.Sigma(2,2)*1e6*units.mp/2/units.eV;
+          %Tzz(ii,iComp) = gm{it,nGroups}.Sigma(3,3)*1e6*units.mp/2/units.eV;
+        end
+      end
+  %
+  
+      fx_tot =  sum(fx,3);
+      fy_tot =  sum(fy,3);
+      fz_tot =  sum(fz,3);
+      
+      clear tsFx tsFy tsFz tsT tsV tsN
+      for iComp = 1:K
+        tsFx{iComp} = PDist(times,fx(:,:,iComp),'1Dcart',xvec); tsFx{iComp}.units = 's/m^4';
+        tsFy{iComp} = PDist(times,fy(:,:,iComp),'1Dcart',yvec); tsFy{iComp}.units = 's/m^4';
+        tsFz{iComp} = PDist(times,fz(:,:,iComp),'1Dcart',zvec); tsFz{iComp}.units = 's/m^4';
+        tsT{iComp} = irf.ts_tensor_xyz(times, T_tens(:,:,:,iComp));
+        tsV{iComp} = irf.ts_vec_xyz(times, [vx(:,iComp),vy(:,iComp),vz(:,iComp)]);
+        tsN{iComp} = irf.ts_scalar(times, n(:,iComp));
+      end
+      tsFx_tot = PDist(times,fx_tot,'1Dcart',xvec);
+      tsFy_tot = PDist(times,fy_tot,'1Dcart',yvec);
+      tsFz_tot = PDist(times,fz_tot,'1Dcart',zvec);
+      
+      n_vec = cellfun(@(x) x.data, tsN, 'UniformOutput', false);
+      tsN_tot = irf.ts_scalar(times,sum(cat(2,n_vec{:}),2))
+  
+  
+      h = irf_plot(7);
+  
+      hca = irf_panel('B');
+      irf_plot(hca,gseB)
+      hca.YLabel.String = 'B (nT)';
+  
+      hca = irf_panel('fvx mms');
+      %vdfx = PD.reduce('1D',[1 0 0]);
+      %vdfx = PD.reduce('1D',[1 0 0]);
+      vdf = PD.reduce('1D',[0 0 1]);
+      irf_spectrogram(hca,vdf.specrec,'log')   
+      hca.YLabel.String = 'v_z (km/s)';  
+      irf_legend(hca,'MMS',[0.98 0.98],'k')
+     
+      hca = irf_panel('Fz tot');
+      specrec = tsFz_tot.specrec('velocity');
+      irf_spectrogram(hca,specrec,'log')    
       hca.YLabel.String = 'v_z (km/s)';
-      axis(hca,'square')
-      hca.XLim = vlim*[-1 1];
-      hca.YLim = vlim*[-1 1];
-      hold(hca,'on')
-      quiver(hca,-B(1)*vlim,-B(3)*vlim,B(1)*2*vlim,B(3)*2*vlim,0,'k')
-      hold(hca,'off')
-    end
-    if 1 % Plot fits for each K
-      for it = 1:nt
-        hca = h2(isub); isub = isub + 1;
-        time = times(it);
-        pdist = PD.tlim(time+0.5*0.150*[-1 1]);
-        vdf = pdist.reduce('1D',[0 0 1],'nMC',nMC);
-        plot(hca,vdf.depend{1},vdf.data,'linewidth',1.5)
-        hold(hca,'on')
-        %%
-        for K = 1:nGroupsMax
-          mu = gm{it,K}.mu;
-          Sigma = gm{it,K}.Sigma;
-          gmPDF = @(x,y,z) arrayfun(@(x0,y0,z0) pdf(gm{it,K},[x0 y0 z0]),x,y,z);
-          
-          Ftot = X*0;
-          for iComp = 1:K
-            Ftmp = gm{it,K}.ComponentProportion(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-            F{iComp} = reshape(Ftmp,size(X));  
-            Ftot = Ftot + F{iComp};
-          end
-          Fplot = squeeze(sum(Ftot,[1 2]))*ntot(it)*dvx*dvy*1e3;     
-          plot(hca,zvec,Fplot)
-        end
-        %%
-        hca.XLabel.String = 'v_z (km/s)';
-        hca.YLabel.String = 'f(v_z) (s/m^4)';
-        irf_legend(hca,["Observed" "K="+(1:nGroupsMax)]',[0.98 0.98],'fontsize',fontsize)
-      end
-      hold(hca,'off')
-    end
+      irf_legend(hca,'GMM',[0.98 0.98],'k')
   
-    if 1 % Plot component fits for one K
-      K = 2;
-      for it = 1:nt
-        hca = h2(isub); isub = isub + 1;
-        time = times(it);
-        pdist = PD.tlim(time+0.5*0.150*[-1 1]);
-        vdf = pdist.reduce('1D',[0 0 1],'nMC',nMC);
-        plot(hca,vdf.depend{1},vdf.data,'linewidth',1.5)
+      if 1 % Tscalar of individual components      
+        hca = irf_panel('T comp');
+        ts = cellfun(@(x){x.xx+x.yy+x.zz},tsT);
+        irf_plot(hca,ts,'comp')      
+        hca.YLabel.String = 'T (eV)';       
+        hca.YScale ='log';
+        irf_zoom(hca,'y')
+        irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
+      end
+      if 1 % v of coldest (first) component
+        hca = irf_panel('v 1');
+        iComp = 1;
+        tsVcold = irf.ts_vec_xyz(tsV{iComp}.time,[tsV{iComp}.x.data tsV{iComp}.y.data tsV{iComp}.z.data]);      
+        irf_plot(hca,{tsVcold.x, tsVcold.y, tsVcold.z},'comp')
+        hca.YLabel.String = sprintf('v_{%g} (km/s)',iComp);
+        irf_legend(hca,{'v_x','v_y','v_z'},[0.98 0.98])
+      end
+      if 1 % v of second coldest (second) component
+        hca = irf_panel('v 2');
+        iComp = 2;
+        tsVcold = irf.ts_vec_xyz(tsV{iComp}.time,[tsV{iComp}.x.data tsV{iComp}.y.data tsV{iComp}.z.data]);      
+        irf_plot(hca,{tsVcold.x, tsVcold.y, tsVcold.z},'comp')
+        hca.YLabel.String = sprintf('v_{%g} (km/s)',iComp);
+        irf_legend(hca,{'v_x','v_y','v_z'},[0.98 0.98])
+      end
+      if 1 % n of individual components      
+        hca = irf_panel('n comp');
+        irf_plot(hca,tsN,'comp');      
         hold(hca,'on')
-        mu = gm{it,K}.mu;
-        Sigma = gm{it,K}.Sigma;
-        gmPDF = @(x,y,z) arrayfun(@(x0,y0,z0) pdf(gm{it,K},[x0 y0 z0]),x,y,z);
-        
-        Ftot = X*0;
+        irf_plot(hca,tsN_tot,'comp','k');
+        hold(hca,'off')
+        hca.YLabel.String = 'n (cm^{-3})';
+        hca.YLabel.Interpreter = 'tex';
+      end
+      if 0 % vx of individual components      
+        hca = irf_panel('vx comp');
+        tsVx = cellfun(@(x){x.x},tsV);
+        irf_plot(hca,tsVx,'comp')      
+        hca.YLabel.String = 'v_x (km/s)';        
+      end
+      if 0 % vy of individual components      
+        hca = irf_panel('vy comp');
+        tsVy = cellfun(@(x){x.y},tsV);
+        irf_plot(hca,tsVy,'comp')      
+        hca.YLabel.String = 'v_y (km/s)';        
+      end
+      if 0 % vz of individual components      
+        hca = irf_panel('vz comp');
+        tsVz = cellfun(@(x){x.z},tsV);
+        irf_plot(hca,tsVz,'comp')      
+        hca.YLabel.String = 'v_z (km/s)';        
+      end
+  
+  
+      if 0 % f(vz) of individual components
         for iComp = 1:K
-          Ftmp = gm{it,K}.ComponentProportion(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-          F{iComp} = reshape(Ftmp,size(X));  
-          Ftot = Ftot + F{iComp};
-          Fplot = squeeze(sum(F{iComp},[1 2]))*ntot(it)*dvx*dvy*1e3;  
-          plot(hca,zvec,Fplot)  
+          hca = irf_panel(sprintf('Fz %g',iComp));
+          specrec = tsFz{iComp}.specrec('velocity');
+          irf_spectrogram(hca,specrec,'log')      
         end
-        Fplot = squeeze(sum(Ftot,[1 2]))*ntot(it)*dvx*dvy*1e3;     
-        plot(hca,zvec,Fplot)
-        hca.XLabel.String = 'v_z (km/s)';
-        hca.YLabel.String = 'f(v_z) (s/m^4)';
-        irf_legend(hca,["Observed" "iComp = "+(1:K) "All comp."]',[0.98 0.98],'fontsize',fontsize)
-        irf_legend(hca,["Observed","T = "+round(T_scalar{it,K})+" eV", "..."]',[0.02 0.98],'fontsize',fontsize)
       end
-      hold(hca,'off')
-    end
+      
+      hlinks = linkprop(h(2:3),{'CLim','YLim'});
   
-    if 1 % Plot component fits for one K
-      K = 3;
-      for it = 1:nt
-        hca = h2(isub); isub = isub + 1;
-        time = times(it);
-        pdist = PD.tlim(time+0.5*0.150*[-1 1]);
-        vdf = pdist.reduce('1D',[0 0 1],'nMC',nMC);
-        plot(hca,vdf.depend{1},vdf.data,'linewidth',1.5)
-        hold(hca,'on')
-        mu = gm{it,K}.mu;
-        Sigma = gm{it,K}.Sigma;
-        gmPDF = @(x,y,z) arrayfun(@(x0,y0,z0) pdf(gm{it,K},[x0 y0 z0]),x,y,z);
-        
-        Ftot = X*0;
-        for iComp = 1:K
-          Ftmp = gm{it,K}.ComponentProportion(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-          F{iComp} = reshape(Ftmp,size(X));  
-          Ftot = Ftot + F{iComp};
-          Fplot = squeeze(sum(F{iComp},[1 2]))*ntot(it)*dvx*dvy*1e3;  
-          plot(hca,zvec,Fplot)  
-        end
-        Fplot = squeeze(sum(Ftot,[1 2]))*ntot(it)*dvx*dvy*1e3;     
-        plot(hca,zvec,Fplot)
-        hca.XLabel.String = 'v_z (km/s)';
-        hca.YLabel.String = 'f(v_z) (s/m^4)';
-        irf_legend(hca,["Observed" "iComp = "+(1:K) "All comp."]',[0.98 0.98],'fontsize',fontsize)
-        irf_legend(hca,["Observed","T = "+round(T_scalar{it,K})+" eV", "..."]',[0.02 0.98],'fontsize',fontsize)
-      end
-      hold(hca,'off')
-    end
+      h(1).Title.String = sprintf('K = %g',K);
+      colormap(flipdim(irf_colormap(hca,"spectral"),1))
+      h(end).XTickLabelRotation = 0;
+      irf_zoom(h,'x',[tsN{1}.time.start tsN{1}.time.stop]+[-5 5])
+      irf_plot_axis_align
+      c_eval('h(?).FontSize = 12;',1:numel(h))    
+      hl = findobj(gcf,'type','line')
+      c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+      c_eval('h(?).LineWidth = 1;',1:numel(h))
   
-    if 1 % Plot component fits for one K
-      K = 4;
-      for it = 1:nt
-        hca = h2(isub); isub = isub + 1;
-        time = times(it);
-        pdist = PD.tlim(time+0.5*0.150*[-1 1]);
-        vdf = pdist.reduce('1D',[0 0 1],'nMC',nMC);
-        plot(hca,vdf.depend{1},vdf.data,'linewidth',1.5)
-        hold(hca,'on')
-        mu = gm{it,K}.mu;
-        Sigma = gm{it,K}.Sigma;
-        gmPDF = @(x,y,z) arrayfun(@(x0,y0,z0) pdf(gm{it,K},[x0 y0 z0]),x,y,z);
-        
-        Ftot = X*0;
-        for iComp = 1:K
-          Ftmp = gm{it,K}.ComponentProportion(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-          F{iComp} = reshape(Ftmp,size(X));  
-          Ftot = Ftot + F{iComp};
-          Fplot = squeeze(sum(F{iComp},[1 2]))*ntot(it)*dvx*dvy*1e3;  
-          plot(hca,zvec,Fplot)  
-        end
-        Fplot = squeeze(sum(Ftot,[1 2]))*ntot(it)*dvx*dvy*1e3;     
-        plot(hca,zvec,Fplot)
-        hca.XLabel.String = 'v_z (km/s)';
-        hca.YLabel.String = 'f(v_z) (s/m^4)';
-        irf_legend(hca,["Observed" "iComp = "+(1:K) "All comp."]',[0.98 0.98],'fontsize',fontsize)
-        irf_legend(hca,["Observed","T = "+round(T_scalar{it,K})+" eV", "..."]',[0.02 0.98],'fontsize',fontsize)
-      end
-      hold(hca,'off')
+      drawnow
+      cn.print(sprintf('gmm_iDF=%04.f_K=%g',iDF,K))
     end
-  
-    if 0 % BIC
-      hca = h2(isub); isub = isub + 1;
-      bic = cellfun(@(x)x.BIC,gm);
-      plot(hca,1:nGroupsMax,bic,'*')
-      hca.XLim = [0.5 nGroupsMax+0.5];
-      hca.XLabel.String = 'K';
-      hca.YLabel.String = 'BIC';
-      irf_legend(hca,"VDF"+(1:nt),[0.98 0.98],'fontsize',fontsize)
-    end
-    if 0 % AIC and BIC
-      hca = h2(isub); isub = isub + 1;
-      aic = cellfun(@(x)x.AIC,gm);
-      bic = cellfun(@(x)x.BIC,gm);
-      plot(hca,1:nGroupsMax,aic,'*')
-      hca.XLim = [0.5 nGroupsMax+0.5];
-      hca.XLabel.String = 'K';
-      hca.YLabel.String = 'AIC';
-      hold(hca,'on')
-      plot(hca,1:nGroupsMax,bic,'s')
-      hold(hca,'off')  
-    end
-  
-    c_eval('axis(h2(?),''square'');',1:numel(h2))
-    compact_panels(h2,0.05,0.05,1)
-    drawnow
-    if doPrint 
-      cn.print(sprintf('gmm_vdf_df_id%04.0f_t0_%s_K234',iDF,time.utc('yyyymmdd_HHMMSS')))
-    end
+
   end
   catch
-    disp(sprintf('Skipping idf=%g due to error.',iDF))
+    disp(sprintf('Skipping idf=%g due to error.',iDF)) 
   end
 end
 
