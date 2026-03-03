@@ -119,17 +119,16 @@ PD_orig = iPDist1;
 PD_clean = PD_orig.remove_noise(nMean,nThresh,PD_counts);
 PD_diff = PD_orig+-PD_clean;
 
-matEmask = PD_counts.find_low_counts('counts',6,'nMovMean',[5 5],'output','mat');
+matElow = PD_counts.find_low_counts('counts',5,','output','mat');
 %emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
-tsElow = PD_counts.find_low_counts('counts',6,'nMovMean',[5 5],'output','energy');
 
 PD_orig_notmasked = PD_orig;
 PD_clean_notmasked = PD_clean;
 PD_diff_notmasked = PD_diff;
 
-PD_orig = PD_orig.mask('energy','mat',matEmask);
-PD_clean = PD_clean.mask('energy','mat',matEmask);
-PD_diff = PD_diff.mask('energy','mat',matEmask);
+PD_orig = PD_orig.mask('energy','mat',matElow);
+PD_clean = PD_clean.mask('energy','mat',matElow);
+PD_diff = PD_diff.mask('energy','mat',matElow);
 
 h = irf_plot({PD_orig.deflux.omni.specrec,PD_clean.deflux.omni.specrec}); c_eval('h(?).YScale = ''log'';',1:numel(h))
 

@@ -1,0 +1,13 @@
+spin_phase = mms.db_get_variable('mms1_ancillary_defatt','zphase',tint);
+%time = mms.db_get_variable('mms1_ancillary_defatt','time',tint);
+tsspin_phase = irf.ts_scalar(EpochTT(Phase.time),Phase.wphase)
+%%
+figure(10); irf_plot({gseJcurl,spin_phase})
+figure(11); plot(gseJcurl,spin_phase.resample(gseJcurl))
+%%
+%Phase = loadedFiles{1}.wphase(1:3000);
+pha0 = 0;
+phaStep = 15;
+phaOffs = 0;
+Phase =  [double(Phase_.time) Phase_.wphase];
+aa = irf_fixed_phase_epoch(Phase,pha0,phaStep,phaOffs);
