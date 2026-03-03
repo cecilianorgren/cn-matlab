@@ -75,13 +75,14 @@ iDFs = 217:nDF;
 %iDFs = 87;
 iDFs = 17;23:nDF;
 iDFs = 101:nDF;
-iDFs = [1 6 9 10 13 21 25 35 38];
-iDFs = 37;
-iDFs = 57;
-doPrint = 0;
+iDFs = [1 6 9 10 13 21 25 35 38 45 46 47 52 55 56 57 58 60 61 68 69 70 71 78 79 81 83 87 91];
+iDFs = [92 95 98 101 107 112 115 121 ];
+%iDFs = 37;
+%iDFs = 57;
+doPrint = 1;
 doPlot = 1;
 for iDF = iDFs%87%iDFs(1)
-  %try
+  try
   disp(iDF)
   % Define time
   t0 = EpochTT(db_table_df.time(iDF));
@@ -108,20 +109,25 @@ for iDF = iDFs%87%iDFs(1)
   nMovMean = 7; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 
   %tsElow = PD_use.find_noise_energy_limit(5).movmean(15);
-  tsElow = iPDist_counts.find_noise_energy_limit_counts(5,nMovMean);
-  emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
-  PD = PD_use.mask({emask_mat});
+  %tsElow = iPDist_counts.find_noise_energy_limit_counts(5,nMovMean);
+  mat = iPDist_counts.find_low_counts('counts',5,'nMovMean',[7 7],'output','mat');
+  ehigh = iPDist_counts.find_low_counts('counts',8,'nMovMean',[3 3],'output','energy');
+  %emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
+  %PD = PD_use.mask({emask_mat});
+  PD = PD_use.mask('energy','mat',mat);  
+  %PD = PD_use.mask('energy','max',ehigh);
+  %PD = PD_use;
   PD = PD.movmean(nMovMean);
   PD = PD(1:nMovMean:PD.length);
 %  delete(hca)
-  irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
+  %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   
   %% Do the Gaussian Mixture Model
   tint_df = tDF + [-5 100]; % apply to two times, before and after DF
   times = PD.tlim(tint_df).time.start:nMovMean*0.150:PD.tlim(tint_df).time.stop;
   nMP = 100000; % Number of macroparticles  
   
-  for Ks = [2 3]
+  for Ks = [2 3 4]
     nGroupsMax = Ks;  % number of classes/groups for kmeans and gmm
     K = Ks;
   
@@ -291,20 +297,23 @@ for iDF = iDFs%87%iDFs(1)
         tsV{iComp} = irf.ts_vec_xyz(times, [vx(:,iComp),vy(:,iComp),vz(:,iComp)]);
         tsN{iComp} = irf.ts_scalar(times, n(:,iComp));
       end
-      tsFx_tot =th PDist(times,fx_tot,'1Dcart',xvec);
+      tsFx_tot = PDist(times,fx_tot,'1Dcart',xvec);
       tsFy_tot = PDist(times,fy_tot,'1Dcart',yvec);
       tsFz_tot = PDist(times,fz_tot,'1Dcart',zvec);
       
       n_vec = cellfun(@(x) x.data, tsN, 'UniformOutput', false);
-      tsN_tot = irf.ts_scalar(times,sum(cat(2,n_vec{:}),2))
+      tsN_tot = irf.ts_scalar(times,sum(cat(2,n_vec{:}),2));
   
-  
-      h = irf_plot(7);
+  %%
+      h = irf_plot(8);
   
       hca = irf_panel('B');
       irf_plot(hca,gseB)
       hca.YLabel.String = 'B (nT)';
   
+      hca = irf_panel('omni');
+      irf_spectrogram(hca,PD.omni.deflux.specrec);      
+
       hca = irf_panel('fvx mms');
       %vdfx = PD.reduce('1D',[1 0 0]);
       %vdfx = PD.reduce('1D',[1 0 0]);
@@ -381,7 +390,7 @@ for iDF = iDFs%87%iDFs(1)
         end
       end
       
-      hlinks = linkprop(h(2:3),{'CLim','YLim'});
+      hlinks = linkprop(h(3:4),{'CLim','YLim'});
   
       h(1).Title.String = sprintf('K = %g',K);
       colormap(flipdim(irf_colormap(hca,"spectral"),1))
@@ -398,9 +407,9 @@ for iDF = iDFs%87%iDFs(1)
     end
 
   end
-  %catch
-  %  disp(sprintf('Skipping idf=%g due to error.',iDF)) 
-  %end
+  catch
+    disp(sprintf('Skipping idf=%g due to error.',iDF)) 
+  end
 end
 
 %% Some post-processing
