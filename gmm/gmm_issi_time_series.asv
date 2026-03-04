@@ -124,14 +124,14 @@ for iDF = iDFs%87%iDFs(1)
   %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   
   %% Reduce dist here, to only do it once for all the K
-  vdf_fz = PD.reduce('1D',[0 0 1]);
+  fz = PD.reduce('1D',[0 0 1]);
 
   %% Do the Gaussian Mixture Model
   tint_df = tDF + [-10 100]; % apply to two times, before and after DF
   times = PD.tlim(tint_df).time.start:nMovMean*0.150:PD.tlim(tint_df).time.stop;
   nMP = 100000; % Number of macroparticles  
   
-  for Ks = [5]
+  for Ks = [4]
     nGroupsMax = Ks;  % number of classes/groups for kmeans and gmm
     K = Ks;
   
@@ -176,105 +176,42 @@ for iDF = iDFs%87%iDFs(1)
         MP.vy = V(:,2);
         MP.vz = V(:,3);
         %MP
-        initialS = 'randSampl';
-        initialS = 'peaks';
-        initialS = 'previous';
-        switch initialS
-          case 'peaks'
-            dv = 50;
-            npeaks = K;
-            dv_peaks = 500:
-            [i,j,k,Fout] = find_peaks_iteratively_mp(MP,dv,npeaks,ceil(dv_peaks/max(dv)));
-            %F = Fout.F;
-            %xvec = Fout.vec{1};
-            %yvec = Fout.vec{2};
-            %zvec = Fout.vec{3};
-            %% continue from here
-            S.mu = zeros(K,3) + 1e3;          
-            S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
-            iMax = min([K numel(locs)]);
-            for ii = 1:iMax
-              vt2 = (w(ii)*1e3)^2; % m/s
-              S.Sigma(:,:,ii) = eye(3)*vt2;
-              S.mu(ii,3) = vdf_fz(it).depend{1}(1,locs(ii));
-            end
-          case 'peaks2'
-            peaks = imregionalmax(f);
-
-            % Get indices of peaks
-            [i,j,k] = find_peaks_iteratively(size(f), find(peaks));
             
-            % Peak values
-            peak_values = f(peaks);
-          case 'peaks_'
-            if it == 1
-              S = 'randSample';
-            else
-              clear S
-              v = vdf_fz(it).depend{1}(1,:);
-              dv = v(2)-v(1);
-              [pks,locs,w,p] = findpeaks(vdf_fz(it).data);
-              [~,isort] = sort(w); % sort by width to put the coldest first
-              pks = pks(isort);
-              locs = locs(isort);
-              w = w(isort);
-              p = p(isort);
-              
-              %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-              %cov_T_mat = units.mp*vt2/2/units.eV;
-              S.mu = zeros(K,3) + 1e3;          
-              S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
-              iMax = min([K numel(locs)]);
-              for ii = 1:iMax
-                vt2 = (w(ii)*1e3)^2; % m/s
-                S.Sigma(:,:,ii) = eye(3)*vt2;
-                S.mu(ii,3) = vdf_fz(it).depend{1}(1,locs(ii));
-              end
-              %S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = ones(1,K)/K;
-              %S.mu = initial_guess(1:nGroups,:);
-              %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-            end
-          case 'randSampl'
-              S = 'randSample';
-          case 'previous'
-            if it == 1
-              S = 'randSample';
-            elseif 0
-              clear S
-              v = vdf_fz(it).depend{1}(1,:);
-              dv = v(2)-v(1);
-              [pks,locs,w,p] = findpeaks(vdf_fz(it).data);
-              [~,isort] = sort(w); % sort by width to put the coldest first
-              pks = pks(isort);
-              locs = locs(isort);
-              w = w(isort);
-              p = p(isort);
-              
-              %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-              %cov_T_mat = units.mp*vt2/2/units.eV;
-              S.mu = zeros(K,3) + 1e3;          
-              S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
-              iMax = min([K numel(locs)]);
-              for ii = 1:iMax
-                vt2 = (w(ii)*1e3)^2; % m/s
-                S.Sigma(:,:,ii) = eye(3)*vt2;
-                S.mu(ii,3) = fz(it).depend{1}(1,locs(ii));
-              end
-              %S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = ones(1,K)/K;
-              %S.mu = initial_guess(1:nGroups,:);
-              %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-            else
-              clear S
-              S.mu = gm{it-1,K}.mu;
-              S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = gm{it-1,K}.ComponentProportion;        
-              %S.mu = initial_guess(1:nGroups,:);
-              %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-              %S.ComponentProportion = repmat(1,[1,nGroups]);
-              if any(S.ComponentProportion==0); S = 'randSample'; end
-            end
+        if it == 1
+          S = 'randSample';
+        elseif 1
+          clear S
+          v = fz(it).depend{1}(1,:);
+          dv = v(2)-v(1);
+          [pks,locs,w,p] = findpeaks(fz(it).data);
+          [~,isort] = sort(w); % sort by width to put the coldest first
+          pks = pks(isort);
+          locs = locs(isort);
+          w = w(isort);
+          p = p(isort);
+          
+          %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
+          %cov_T_mat = units.mp*vt2/2/units.eV;
+          S.mu = zeros(K,3);          
+          S.Sigma = zeros(3,3,K);
+          for ii = 1:K
+            vt2 = (w(ii)*1e3)^2; % m/s
+            S.Sigma(:,:,ii) = eye(3)*vt2;
+            S.mu(3,ii) = fz(it).depend{1}(1,locs);
+          end
+          %S.Sigma = gm{it-1,K}.Sigma;
+          S.ComponentProportion = ones(1,K)/K;
+          %S.mu = initial_guess(1:nGroups,:);
+          %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
+        else
+          clear S
+          S.mu = gm{it-1,K}.mu;
+          S.Sigma = gm{it-1,K}.Sigma;
+          S.ComponentProportion = gm{it-1,K}.ComponentProportion;        
+          %S.mu = initial_guess(1:nGroups,:);
+          %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
+          %S.ComponentProportion = repmat(1,[1,nGroups]);
+          if any(S.ComponentProportion==0); S = 'randSample'; end
         end
         
   
@@ -397,7 +334,7 @@ for iDF = iDFs%87%iDFs(1)
       tsN_tot = irf.ts_scalar(times,sum(cat(2,n_vec{:}),2));
   
   %%
-      h = irf_plot(9);
+      h = irf_plot(8);
   
       hca = irf_panel('B');
       hca.ColorOrder = mms_colors('xyza');
@@ -414,7 +351,7 @@ for iDF = iDFs%87%iDFs(1)
         %vdfx = PD.reduce('1D',[1 0 0]);
         %vdfx = PD.reduce('1D',[1 0 0]);
         % reduce just one before the loops
-        irf_spectrogram(hca,vdf_fz.specrec,'log')   
+        irf_spectrogram(hca,fz.specrec,'log')   
         hca.YLabel.String = 'v_z (km/s)';  
         irf_legend(hca,'MMS',[0.98 0.98],'k')
       end
@@ -426,7 +363,7 @@ for iDF = iDFs%87%iDFs(1)
   
       if 1 % Tscalar of individual components      
         hca = irf_panel('T comp');
-        hca.ColorOrder = mms_colors('1234b');
+        hca.ColorOrder = mms_colors('1234');
         ts = cellfun(@(x){x.xx+x.yy+x.zz},tsT);
         irf_plot(hca,ts,'comp')      
         hca.YLabel.String = 'T (eV)';       
@@ -435,37 +372,7 @@ for iDF = iDFs%87%iDFs(1)
         %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
         irf_legend(hca,"i = " + (1:K)',[1.01 0.98])
       end
-      if 1 % vx of individual components      
-        hca = irf_panel('vx comp');
-        hca.ColorOrder = mms_colors('1234b');
-        ts = cellfun(@(x){x.x},tsV);
-        irf_plot(hca,ts,'comp')      
-        hca.YLabel.String = 'v_x (km/s)';       
-        irf_zoom(hca,'y')
-        %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
-        irf_legend(hca,"i = " + (1:K)',[1.01 0.98])
-      end
-      if 1 % vy of individual components      
-        hca = irf_panel('vy comp');
-        hca.ColorOrder = mms_colors('1234b');
-        ts = cellfun(@(x){x.y},tsV);
-        irf_plot(hca,ts,'comp')      
-        hca.YLabel.String = 'v_y (km/s)';       
-        irf_zoom(hca,'y')
-        %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
-        irf_legend(hca,"i = " + (1:K)',[1.01 0.98])
-      end
-      if 1 % vz of individual components      
-        hca = irf_panel('vz comp');
-        hca.ColorOrder = mms_colors('1234b');
-        ts = cellfun(@(x){x.z},tsV);
-        irf_plot(hca,ts,'comp')      
-        hca.YLabel.String = 'v_z (km/s)';       
-        irf_zoom(hca,'y')
-        %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
-        irf_legend(hca,"i = " + (1:K)',[1.01 0.98])
-      end
-      if 0 % v of coldest (first) component
+      if 1 % v of coldest (first) component
         hca = irf_panel('v 1');
         iComp = 1;
         tsVcold = irf.ts_vec_xyz(tsV{iComp}.time,[tsV{iComp}.x.data tsV{iComp}.y.data tsV{iComp}.z.data]); 
@@ -474,7 +381,7 @@ for iDF = iDFs%87%iDFs(1)
         hca.YLabel.String = sprintf('v_{%g} (km/s)',iComp);
         irf_legend(hca,{'v_x','v_y','v_z'}',[1.01 0.98])
       end
-      if 0 % v of second coldest (second) component
+      if 1 % v of second coldest (second) component
         hca = irf_panel('v 2');
         iComp = 2;
         tsVcold = irf.ts_vec_xyz(tsV{iComp}.time,[tsV{iComp}.x.data tsV{iComp}.y.data tsV{iComp}.z.data]);  
@@ -485,7 +392,7 @@ for iDF = iDFs%87%iDFs(1)
       end
       if 1 % n of individual components      
         hca = irf_panel('n comp');
-        hca.ColorOrder = mms_colors('1234b');
+        hca.ColorOrder = mms_colors('1234');
         irf_plot(hca,tsN,'comp');      
         hold(hca,'on')
         irf_plot(hca,tsN_tot,'comp','k--');
@@ -526,7 +433,7 @@ for iDF = iDFs%87%iDFs(1)
       isFred = [isFred{:}];
       hlinks = linkprop(h(isFred),{'CLim','YLim'});
   
-      h(1).Title.String = sprintf('K = %g, Starting guess = %s',K, initialS);
+      h(1).Title.String = sprintf('K = %g',K);
       colormap(flipdim(irf_colormap(hca,"spectral"),1))
       h(end).XTickLabelRotation = 0;
       irf_zoom(h,'x',[tsN{1}.time.start tsN{1}.time.stop]+[-5 5])
@@ -538,8 +445,7 @@ for iDF = iDFs%87%iDFs(1)
 
       drawnow
       if doPrint
-        %cn.print(sprintf('gmm_iDF=%04.f_K=%g',iDF,K))
-        cn.print(sprintf('gmm_iDF=%04.f_K=%g_Tvxvyvz_%s',iDF,K,initialS))
+        cn.print(sprintf('gmm_iDF=%04.f_K=%g',iDF,K))
       end
     end
 
@@ -548,16 +454,6 @@ for iDF = iDFs%87%iDFs(1)
   %  disp(sprintf('Skipping idf=%g due to error.',iDF)) 
   %end
 end
-
-
-
-
-
-
-
-
-
-
 
 %% Some post-processing
 db = table_ci(table_ci.id_df>0,:); % remove all empty values

@@ -63,10 +63,13 @@ c_eval('defatt = defatt?;',ic)
 dt_scpot = scpot.time(2)-scpot.time(1);
 scpot = scpot.movmean(0.03/dt_scpot); % do some moving averaging
 
-if 1 % deflux omni i
-  hca = irf_panel('deflux omni i');
+if 1 % B
+  hca = irf_panel('B');
   hca.ColorOrder = mms_colors('xyz');
-  irf_spectrogram(hca,pdist_all.omni.deflux.specrec)
+  irf_plot(hca,{B.x,B.y,B.z},'comp')
+  hca.YLabel.String = 'B (nT)';
+  hca.ColorOrder = mms_colors('xyz');
+  irf_legend(hca,{'B_x','B_y','B_z'},[.98 0.05]);
   hca.YLabel.Interpreter = 'tex';
 end
 if 1 % vi
@@ -76,6 +79,12 @@ if 1 % vi
   hca.YLabel.String = 'v_i (km/s)';
   hca.ColorOrder = mms_colors('xyz');
   irf_legend(hca,{'v_x','v_y','v_z'},[.98 0.05]);
+  hca.YLabel.Interpreter = 'tex';
+end
+if 1 % deflux omni i
+  hca = irf_panel('deflux omni i');
+  hca.ColorOrder = mms_colors('xyz');
+  irf_spectrogram(hca,pdist_all.omni.deflux.specrec)
   hca.YLabel.Interpreter = 'tex';
 end
 
@@ -97,14 +106,14 @@ vint_N = [-Inf Inf];
 % Make a movie
 % replace filepath with the filepath you want
 directory_ = strrep(printpath,'\','');
-filepath = [directory_ 'testmovie.mp4'];
+filepath = [directory_ 'testmovie'];
 vidfile = VideoWriter(filepath,'MPEG-4');
 vidfile.FrameRate = 20;
 open(vidfile);
      
 clear F
 times = pdist_all.tlim(tint).time;
-for it = 10:10:times.length %1:nMovMean:times.length
+for it = 10:10:20%times.length %1:nMovMean:times.length
   time = times(it);
   
   pd = pdist_all.tlim(time+nMean(1)*0.5*0.151*[-1 1]);
@@ -151,12 +160,8 @@ for it = 10:10:times.length %1:nMovMean:times.length
     vdf.plot_plane(hca,'smooth',nSmooth,'contour',nContours)
     hca.Position = position;
     axis(hca,'square')
-    hca.XLabel.String = 'v_L (km/s)';
-    hca.XLabel.String = 'v_L-v_{L}^{Xline} (km/s)';
-    %hca.XLabel.String = sprintf(['v_L-(%g) (km/s)'],vL_Xline);
-    hca.YLabel.String = 'v_M (km/s)';
-%    vmin = sqrt(2*units.eV*min(elow)/units.mp)*1e-3;
-    %irf_legend(hca,sprintf('v>%.0f km/s',vmin),[0.02 0.98],'color','k','fontsize',10)
+    hca.XLabel.String = 'v_x (km/s)';
+    hca.YLabel.String = 'v_y (km/s)';
     if 0 % plot B direction
       xlim = hca.XLim;
       ylim = hca.YLim;
@@ -211,8 +216,8 @@ for it = 10:10:times.length %1:nMovMean:times.length
     vdf.plot_plane(hca,'smooth',nSmooth,'contour',nContours)
     hca.Position = position;
     axis(hca,'square')
-    hca.XLabel.String = 'v_L (km/s)';
-    hca.YLabel.String = 'v_N (km/s)';
+    hca.XLabel.String = 'v_x (km/s)';
+    hca.YLabel.String = 'v_z (km/s)';
     if 0 % plot ExB
       hold(hca,'on')
       hbulk = plot(hca,mean(vExB.x.data,1)*1e0,mean(vExB.z.data,1)*1e0,'ok','MarkerFaceColor','w','markersize',5);
@@ -237,8 +242,8 @@ for it = 10:10:times.length %1:nMovMean:times.length
     vdf.plot_plane(hca,'smooth',nSmooth,'contour',nContours)
     hca.Position = position;
     axis(hca,'square')
-    hca.XLabel.String = 'v_M (km/s)';
-    hca.YLabel.String = 'v_N (km/s)';
+    hca.XLabel.String = 'v_y (km/s)';
+    hca.YLabel.String = 'v_z (km/s)';
     if 0 % plot ExB
       hold(hca,'on')
       hbulk = plot(hca,mean(vExB.y.data,1)*1e0,mean(vExB.z.data,1)*1e0,'ok','MarkerFaceColor','w','markersize',5);
@@ -259,15 +264,15 @@ for it = 10:10:times.length %1:nMovMean:times.length
   if 1 % 1D f(vx)
     hca = h2(isub); isub = isub + 1;
     vdf = pd.reduce('1D',V1,'scpot',scpot);
-
     v_center = vdf.depend{1}(1,:);
-    plot(hca,v_center,data1)
+    plot(hca,v_center,mean(vdf.data,1))
     hca.XLabel.String = 'v_X (km/s)';
     hca.YLabel.String = 'f_i(v_x) (s/m^4)';
     axis(hca,'square')
     
     hca.XLim = vlim*[-1 1];  
   end
+  compact_panels(h2,0.1,0.1,1)
 
 
   %irf_legend(h(1),{sprintf('N = %g',nMovMean)},[0.02 1.01])
@@ -276,8 +281,8 @@ for it = 10:10:times.length %1:nMovMean:times.length
   c_eval('h2(?).FontSize = 13;',1:numel(h2))
   %colormap(pic_colors('candy6'))
   colormap(irf_colormap('magma'))
-  h2(1).CLim = [-10 -7.3];
-
+  h2(1).CLim = [-10 -6.];
+  h1(end).XTickLabelRotation = 0;
   set(gcf,'color','white');
 
   drawnow
