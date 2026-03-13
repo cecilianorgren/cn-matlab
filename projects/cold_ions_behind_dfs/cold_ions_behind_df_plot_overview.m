@@ -49,13 +49,14 @@ ic = 1;
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
 
-doPrint = 1;
-for iDF = 93%221:nDF
+doPrint = 0;
+for iDF = 21%221:nDF
   disp(iDF)
   % Define time
   t0 = EpochTT(db_table_df.time(iDF));
   T =  db_table_df.t_duration_s(iDF);  
   tint = t0 + [0 T] + 5*[-1 1];
+  %tint = tint + [-90 0];
   tDF = EpochTT(int64(db_table_df.t_df(iDF)));
 
   % Load data
@@ -65,47 +66,112 @@ for iDF = 93%221:nDF
   if isempty(gseVi); disp('Skipping.'); continue; end
   %c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
   c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
-  %c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic)
-  %c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr?.data).^2;',ic)
+  c_eval('iPDistErr = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic)
+  c_eval('iPDist_counts = iPDist; iPDist_counts.data = (iPDist.data./iPDistErr.data).^2;',ic)
+
+  c_eval('ePDist = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+
+  c_eval('gseTe = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
+  c_eval('gseTi = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic)
+  c_eval('ne = mms.get_data(''Ne_fpi_brst_l2'',tint,?);',1:4);
 
   %% Prep data
-  tsElow = iPDist.find_noise_energy_limit(5).movmean(15);
-  emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
-  PD = iPDist.mask({emask_mat});
-
-  %% Plot B and i
-  fontsize = 13;
-
-  h = irf_plot(3);
+  mat = iPDist_counts.find_low_counts('counts',5,'nMovMean',[7 7],'output','mat');
+  %ehigh = iPDist_counts.find_low_counts('counts',8,'nMovMean',[3 3],'output','energy');
+  %emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
+  %PD = PD_use.mask({emask_mat});
+  PD = iPDist.mask('energy','mat',mat);  
   
-  hca = irf_panel('B');
-  hca.ColorOrder = mms_colors('xyza');
-  irf_plot(hca,{gseB.x,gseB.y,gseB.z},'comp')
-  hca.YLabel.String = 'B (nT)';
 
-  hca = irf_panel('Vi');
-  hca.ColorOrder = mms_colors('xyza');
-  irf_plot(hca,{gseVi.x,gseVi.y,gseVi.z},'comp')
-  hca.YLabel.String = 'v_i (nT)';
-
-  hca = irf_panel('ion deflux omni');
-  irf_spectrogram(hca,PD.deflux.omni.specrec,'log')
-  hca.YScale = "log";
-  hca.Color = [0 0 0] + 0.95;
+  if 1 %% Plot B and i
+    fontsize = 13;
   
-  hmark = irf_pl_mark(h,tDF,'k','linewidth',1);
-  %userdata = get(gcf,'userdata');
-  text(h(1),hmark(1).XData(1),h(1).YLim(2)*0.99,'DF','VerticalAlignment','bottom', "HorizontalAlignment","center",'FontSize',fontsize)
+    h = irf_plot(6);
+    
+    hca = irf_panel('B');
+    hca.ColorOrder = mms_colors('xyza');
+    irf_plot(hca,{gseB.x,gseB.y,gseB.z},'comp')
+    hca.YLabel.String = 'B (nT)';
+  
+    hca = irf_panel('Vi');
+    hca.ColorOrder = mms_colors('xyza');
+    irf_plot(hca,{gseVi.x,gseVi.y,gseVi.z},'comp')
+    hca.YLabel.String = 'v_i (km/s)';
 
-  irf_plot_axis_align
-  irf_zoom(h,'x',[PD.time.start PD.time.stop])
-  c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
-  h(end).XTickLabelRotation = 0;
-  c_eval('h(?).FontSize = fontsize;',1:numel(h))
-  colormap([flipdim(irf_colormap('Spectral'),1)])
+    hca = irf_panel('n');
+    hca.ColorOrder = mms_colors('xyza');
+    irf_plot(hca,{ne,PD.n},'comp')
+    hca.YLabel.String = 'n (cm^{-3})';
+    irf_legend(hca,{'n_e (FPI)','n_i (dis-dist cleaned)'}',[0.98 0.98])
 
-  drawnow
-  if doPrint 
-    cn.print(sprintf('%df_id%04.0f_t0_%s',iDF,t0.utc('yyyy-mm-ddTHH:MM:SS')))
-  end
+    hca = irf_panel('T');
+    hca.ColorOrder = mms_colors('xyza');
+    irf_plot(hca,{gseTe.trace/2,gseTi.trace/2,PD.T.trace/3},'comp')
+    hca.YLabel.String = 'T (eV)';
+    irf_legend(hca,{'T_e','T_i','T_i (dis-dist cleaned)'},[0.98 0.98])
+  
+    hca = irf_panel('ion deflux omni');
+    irf_spectrogram(hca,PD.deflux.omni.specrec,'log')
+    hca.YScale = "log";
+    hca.Color = [0 0 0] + 0.95;
+    irf_legend(hca,{'dis-dist cleaned'}',[0.98 0.04],'k')
+    
+    hca = irf_panel('ele deflux omni');
+    irf_spectrogram(hca,ePDist.deflux.omni.specrec,'log')
+    hca.YScale = "log";
+    hca.Color = [0 0 0] + 0.95;
+    %irf_legend(hca,{'dis-dist cleaned'}',[0.98 0.04],'k')
+
+    hmark = irf_pl_mark(h,tDF,'k','linewidth',1);
+    %userdata = get(gcf,'userdata');
+    text(h(1),hmark(1).XData(1),h(1).YLim(2)*0.99,'DF','VerticalAlignment','bottom', "HorizontalAlignment","center",'FontSize',fontsize)
+  
+    irf_plot_axis_align
+    irf_zoom(h,'x',[PD.time.start PD.time.stop])
+    c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
+    h(end).XTickLabelRotation = 0;
+    c_eval('h(?).FontSize = fontsize;',1:numel(h))
+    colormap([flipdim(irf_colormap('Spectral'),1)])
+  
+    drawnow
+    if doPrint 
+      cn.print(sprintf('%df_id%04.0f_t0_%s_B_vi_n_T_DEF',iDF,t0.utc('yyyy-mm-ddTHH:MM:SS')))
+    end
+  end 
+  if 0 %% Plot B and i
+    fontsize = 13;
+  
+    h = irf_plot(3);
+    
+    hca = irf_panel('B');
+    hca.ColorOrder = mms_colors('xyza');
+    irf_plot(hca,{gseB.x,gseB.y,gseB.z},'comp')
+    hca.YLabel.String = 'B (nT)';
+  
+    hca = irf_panel('Vi');
+    hca.ColorOrder = mms_colors('xyza');
+    irf_plot(hca,{gseVi.x,gseVi.y,gseVi.z},'comp')
+    hca.YLabel.String = 'v_i (nT)';
+  
+    hca = irf_panel('ion deflux omni');
+    irf_spectrogram(hca,PD.deflux.omni.specrec,'log')
+    hca.YScale = "log";
+    hca.Color = [0 0 0] + 0.95;
+    
+    hmark = irf_pl_mark(h,tDF,'k','linewidth',1);
+    %userdata = get(gcf,'userdata');
+    text(h(1),hmark(1).XData(1),h(1).YLim(2)*0.99,'DF','VerticalAlignment','bottom', "HorizontalAlignment","center",'FontSize',fontsize)
+  
+    irf_plot_axis_align
+    irf_zoom(h,'x',[PD.time.start PD.time.stop])
+    c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
+    h(end).XTickLabelRotation = 0;
+    c_eval('h(?).FontSize = fontsize;',1:numel(h))
+    colormap([flipdim(irf_colormap('Spectral'),1)])
+  
+    drawnow
+    if doPrint 
+      cn.print(sprintf('%df_id%04.0f_t0_%s',iDF,t0.utc('yyyy-mm-ddTHH:MM:SS')))
+    end
+  end 
 end

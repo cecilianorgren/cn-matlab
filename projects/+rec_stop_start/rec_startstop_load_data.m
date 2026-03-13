@@ -9,9 +9,9 @@ localuser = 'cecilia';
 localuser = 'cecilianorgren';
 %mms.db_init('local_file_db','/Volumes/Fountain/Data/MMS');
 %mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
-mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
+%mms.db_init('local_file_db',['/Users/' localuser '/Data/MMS']);
 %mms.db_init('local_file_db',['/Volumes/DataRaid/MMS']);
-%mms.db_init('local_file_db',['/Volumes/mms']);
+mms.db_init('local_file_db',['/Volumes/mms']);
 db_info = datastore('mms_db'); 
 
 tint_all = irf.tint('2017-01-01T00:00:00.00Z/2018-01-01T00:00:00.00Z');
@@ -109,6 +109,7 @@ c_eval('gsePe? = mms.get_data(''Pe_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gseTe? = mms.get_data(''Te_gse_fpi_brst_l2'',tint,?);',ic)
 c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic) 
 c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic);
+
 %% Pressure, FAC
 c_eval('facPe? = mms.rotate_tensor(gsePe?,''fac'',gseB?); facPe?.units = ''nPa''; facPe?.coordinateSystem = ''FAC'';',ic)
 c_eval('facTe? = mms.rotate_tensor(gseTe?,''fac'',gseB?);',ic)

@@ -1,0 +1,16 @@
+function out = gmm_get_F(gm,X,Y,Z,ntot)
+
+[X,Y,Z] = ndgrid(X,Y,Z);
+XYZ = [X(:) Y(:) Z(:)];
+Ftot = zeros(size(X));
+mu = gm.mu; % km/s
+Sigma = gm.Sigma; % (km/s)^2
+compProp = gm.ComponentProportion;
+for iComp = 1:gm.NumComponents             
+  ntot_km3 = ntot*1e15; % cm^-3 -> km^-3
+  Ftmp = ntot_km3*compProp(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); % s^3/km^6      
+  Ftmp = reshape(Ftmp,size(X));  
+  Ftot = Ftot + Ftmp;
+  % sum(Ftot(:).*Fobs.dv(:)) = km^-3
+end
+out = Ftot;
