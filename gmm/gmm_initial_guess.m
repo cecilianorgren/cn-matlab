@@ -1,0 +1,126 @@
+function out = gmm_initial_guess(method,varargin)
+
+
+  
+% % Initial guess
+% initial_guess = [0 -1000 -1000;...
+%                  0 -1000 +1000;...
+%                  0 +1000 -1000;...
+%                  0 +1000 +1000;...
+%                  0  0000  0000;...
+%                  0  0000  0000]*0.1;
+
+switch method
+  case 'peaks'
+    dv = varargin{1}; % dv = 50;
+    npeaks = varargin{2}; % npeaks = K;
+    dv_peaks = varargin{3}; % dv_peaks = 500;
+    
+    [i,j,k,Fout] = find_peaks_iteratively_mp(MP,dv,npeaks,ceil(dv_peaks/max(dv)));
+    %F = Fout.F;
+    %xvec = Fout.vec{1};
+    %yvec = Fout.vec{2};
+    %zvec = Fout.vec{3};
+    %% continue from here
+    S.mu = zeros(K,3);
+    S.Sigma = zeros(3,3,K);
+    for ipeak = 1:npeaks
+      S.mu(ipeak,:) = [Fout.vec{1}(i(ipeak)) Fout.vec{1}(j(ipeak)) Fout.vec{1}(k(ipeak))];
+      vt2 = (50*1e3)^2; % m/s
+      S.Sigma(:,:,ipeak) = eye(3)*vt2;              
+    end
+    S.ComponentProportion = ones(1,K)/K;
+    % %%
+    % S.mu = zeros(K,3) + 1e3;          
+    % S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
+    % iMax = min([K numel(locs)]);
+    % for ii = 1:iMax
+    %   vt2 = (w(ii)*1e3)^2; % m/s
+    %   S.Sigma(:,:,ii) = eye(3)*vt2;
+    %   S.mu(ii,3) = vdf_fz(it).depend{1}(1,locs(ii));
+    % end
+  case 'peaks2'
+    peaks = imregionalmax(f);
+
+    % Get indices of peaks
+    [i,j,k] = find_peaks_iteratively(size(f), find(peaks));
+    
+    % Peak values
+    peak_values = f(peaks);
+  case 'peaks_'
+    if it == 1
+      S = 'randSample';
+    else
+      clear S
+      v = vdf_fz(it).depend{1}(1,:);
+      dv = v(2)-v(1);
+      [pks,locs,w,p] = findpeaks(vdf_fz(it).data);
+      [~,isort] = sort(w); % sort by width to put the coldest first
+      pks = pks(isort);
+      locs = locs(isort);
+      w = w(isort);
+      p = p(isort);
+      
+      %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
+      %cov_T_mat = units.mp*vt2/2/units.eV;
+      S.mu = zeros(K,3) + 1e3;          
+      S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
+      iMax = min([K numel(locs)]);
+      for ii = 1:iMax
+        vt2 = (w(ii)*1e3)^2; % m/s
+        S.Sigma(:,:,ii) = eye(3)*vt2;
+        S.mu(ii,3) = vdf_fz(it).depend{1}(1,locs(ii));
+      end
+      %S.Sigma = gm{it-1,K}.Sigma;
+      S.ComponentProportion = ones(1,K)/K;
+      %S.mu = initial_guess(1:nGroups,:);
+      %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
+    end
+  case 'randSampl'
+      S = 'randSample';
+  case 'previous'
+    gm = varargin{1};
+    it = find(cellfun(@(x)isempty(x),gm),1,'first');    
+    if it == 1
+      S = 'randSample';
+    elseif 0
+      clear S
+      v = vdf_fz(it).depend{1}(1,:);
+      dv = v(2)-v(1);
+      [pks,locs,w,p] = findpeaks(vdf_fz(it).data);
+      [~,isort] = sort(w); % sort by width to put the coldest first
+      pks = pks(isort);
+      locs = locs(isort);
+      w = w(isort);
+      p = p(isort);
+      
+      %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
+      %cov_T_mat = units.mp*vt2/2/units.eV;
+
+      S.mu = zeros(K,3) + 1e3;          
+      S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
+      iMax = min([K numel(locs)]);
+      for ii = 1:iMax
+        vt2 = (w(ii)*1e3)^2; % m/s
+        S.Sigma(:,:,ii) = eye(3)*vt2;
+        S.mu(ii,3) = fz(it).depend{1}(1,locs(ii));
+      end
+      %S.Sigma = gm{it-1,K}.Sigma;
+      S.ComponentProportion = ones(1,K)/K;
+      %S.mu = initial_guess(1:nGroups,:);
+      %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
+    else
+      gm = gm{iLast};
+      isort = gmm_sort(gm);
+      %[~,isort] = sort(squeeze(gm{it-1,K}.Sigma(1,1,:)+gm{it-1,K}.Sigma(2,2,:)+gm{it-1,K}.Sigma(3,3,:))); % Ts
+      S.mu = gm.mu(isort,:);
+      S.Sigma = gm.Sigma(:,:,isort);
+      S.ComponentProportion = gm.ComponentProportion(isort);        
+      %S.mu = initial_guess(1:nGroups,:);
+      %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
+      %S.ComponentProportion = repmat(1,[1,nGroups]);
+      if any(S.ComponentProportion==0); S = 'randSample'; end
+    end
+end
+ 
+out = S;

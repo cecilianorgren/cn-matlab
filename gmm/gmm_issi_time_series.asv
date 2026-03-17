@@ -64,7 +64,7 @@ end
 units = irf_units;
 ic = 1;
 
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
@@ -199,7 +199,7 @@ for iDF = iDFs%87%iDFs(1)
         % Fobs.edges = edges;
         % Fobs.mid = mid;
         % Fobs.dv = dvx*dvy*dvz;
-        Fobs = mp_3d_cart_vdf(MP,)
+        Fobs = mp_3d_cart_vdf(MP,-2500:50:2500,-2500:50:2500,-2500:50:2500);
         % sum(Fobs.dv(:)*Fobs.f(:)) = km^-3
         
         initialS = 'randSampl';
@@ -288,6 +288,7 @@ for iDF = iDFs%87%iDFs(1)
               
               %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
               %cov_T_mat = units.mp*vt2/2/units.eV;
+        
               S.mu = zeros(K,3) + 1e3;          
               S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
               iMax = min([K numel(locs)]);
@@ -302,9 +303,11 @@ for iDF = iDFs%87%iDFs(1)
               %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
             else
               clear S
-              S.mu = gm{it-1,K}.mu;
-              S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = gm{it-1,K}.ComponentProportion;        
+              isort = gmm_sort(gm(it-1,K));
+              %[~,isort] = sort(squeeze(gm{it-1,K}.Sigma(1,1,:)+gm{it-1,K}.Sigma(2,2,:)+gm{it-1,K}.Sigma(3,3,:))); % Ts
+              S.mu = gm{it-1,K}.mu(isort,:);
+              S.Sigma = gm{it-1,K}.Sigma(:,:,isort);
+              S.ComponentProportion = gm{it-1,K}.ComponentProportion(isort);        
               %S.mu = initial_guess(1:nGroups,:);
               %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
               %S.ComponentProportion = repmat(1,[1,nGroups]);
@@ -325,45 +328,18 @@ for iDF = iDFs%87%iDFs(1)
         ntot(it) = sum(MP.df.*MP.dv); % cc; [MP.dv] = (like input)^3 [MP.df] = like input
 
 
-        [~,isort] = sort(squeeze(gm{ii,K}.Sigma(1,1,:)+gm{ii,K}.Sigma(2,2,:)+gm{ii,K}.Sigma(3,3,:))); % Ts
-        
-  
-        %%
-        % Make a 3D cartesian dist, to compare with observed on, to calculate
-        % differences. 
+
+        isort = gmm_sort(gm(it,K)); % [~,isort] = sort(squeeze(gm{it,K}.Sigma(1,1,:)+gm{it,K}.Sigma(2,2,:)+gm{it,K}.Sigma(3,3,:))); % Ts
+       
+        % Make a 3D cartesian dist, to compare with observed on, to calculate differences. 
         % Use same grid as above:
-        [X,Y,Z] = ndgrid(Fobs.mid{:});
-        %if 1
+        %[X,Y,Z] = ndgrid(Fobs.mid{:});      
         Fgmm = gmm_get_F(gm{it,K},Fobs.mid{:},ntot(it));
-        %else
-        %XYZ = [X(:) Y(:) Z(:)];
-        %%Ftot_all = cell(1,size(gm,2));
-        %Ftot = zeros(size(X));
-        %mu = gm{it,K}.mu; % km/s
-        %Sigma = gm{it,K}.Sigma; % (km/s)^2
-        %compProp = gm{it,K}.ComponentProportion;
-        %for iComp = 1:K          
-        %  % mvnpdf units: (km/s)^(-3/2)
-        %  % to get in (cm/s)^(-3/2): (cm/s)^(-3/2) = (km/s*1e5)^(-3/2) = (km/s)^-(3/2)*1e5^-(3/2)          
-        %  ntot_km3 = ntot(it)*1e15;
-        %  Ftmp = ntot_km3*compProp(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); % s^3/km^6      
-        %  Ftmp = reshape(Ftmp,size(X));  
-        %  Ftot = Ftot + Ftmp;
-        %  % sum(Ftot(:).*Fobs.dv(:)) = km^-3
-        %end
-        %end
+
         % Caluclate difference
         Fdiff = Fobs.f-Fgmm;
         rmsF{it,nGroups} = sqrt(sum(Fdiff.^2,'all'));
         rmsFnorm{it,nGroups} = sqrt(sum(Fdiff.^2,'all'))/sum(Fobs.f,'all');
-1;
-        % Extract som physical quantities
-        %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-        %cov_T_mat = units.mp*vt2/2/units.eV;
-        %T_mat{it,nGroups} = cov_T_mat;
-        %for iGroup = 1:nGroups % Lopp through gaussion components
-        %  T_scalar{it,nGroups}(iGroup) = trace(T_mat{it,nGroups}(:,:,iGroup))/3;
-        %end
        
       end    
     end
@@ -402,83 +378,6 @@ for iDF = iDFs%87%iDFs(1)
       nMC = 500;
     
       [tsN,tsV,tsT,tsFx,tsFy,tsFz,tsN_tot,tsFx_tot,tsFy_tot,tsFz_tot] = gmm_get_moments_and_dists(times,gm(:,K),mid{:},ntot,isort);
-      %nvx = 101; nvy = 102; nvz = 103;
-      %xvec = linspace(-vlim,vlim,nvx); dvx = xvec(2)-xvec(1);
-      %yvec = linspace(-vlim,vlim,nvy); dvx = xvec(2)-xvec(1);
-      %zvec = linspace(-vlim,vlim,nvz); dvz = zvec(2)-zvec(1);
-      %[X,Y,Z] = ndgrid(xvec,yvec,zvec);
-      %XYZ = [X(:) Y(:) Z(:)];
-  %     [xvec, yvec, zvec] = Fobs.mid{:};
-  %     dvx = xvec(2)-xvec(1); 
-  %     dvx = xvec(2)-xvec(1);
-  %     dvz = zvec(2)-zvec(1);
-  %     nvx = numel(xvec);
-  %     nvy = numel(yvec);
-  %     nvz = numel(zvec);
-  % 
-  %     %K = 4;
-  %     clear fx fy fz vx vy vz Txx Tyy Tzz T_tens 
-  %     T_tens = zeros(times.length,3,3,K);
-  %     vx = zeros(times.length,K);
-  %     vy = zeros(times.length,K);
-  %     vz = zeros(times.length,K);
-  %     fx = zeros(nt,nvx,K);
-  %     fy = zeros(nt,nvy,K);
-  %     fz = zeros(nt,nvz,K);
-  %     n = zeros(times.length,K);
-  %     Ftot = zeros(size(X));
-  %     for ii = 1:nt
-  %       [~,isort] = sort(gm{ii,K}.mu(:,3)); % vz
-  %       [~,isort] = sort(squeeze(gm{ii,K}.Sigma(1,1,:)+gm{ii,K}.Sigma(2,2,:)+gm{ii,K}.Sigma(3,3,:))); % Ts
-  %       mu = gm{ii,K}.mu(isort,:);
-  %       Sigma = gm{ii,K}.Sigma(:,:,isort);
-  %       compProp = gm{ii,K}.ComponentProportion(isort);
-  %       for iComp = 1:K          
-  %         Ftmp = compProp(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-  %         Ftmp = Ftmp;
-  %         F{iComp} = reshape(Ftmp,size(X));  
-  %         Ftot = Ftot + F{iComp};
-  %         fx(ii,:,iComp) = sum(F{iComp},[2 3])*ntot(ii)*dvy*dvz*1e3;
-  %         fy(ii,:,iComp) = sum(F{iComp},[1 3])*ntot(ii)*dvx*dvz*1e3;
-  %         fz(ii,:,iComp) = sum(F{iComp},[1 2])*ntot(ii)*dvx*dvy*1e3;
-  % 
-  %         vx(ii,iComp) = mu(iComp,1);
-  %         vy(ii,iComp) = mu(iComp,2);
-  %         vz(ii,iComp) = mu(iComp,3);
-  % 
-  %         n(ii,iComp) = compProp(iComp)*ntot(ii) ;
-  % 
-  %         %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-  %         %cov_T_mat = units.mp*vt2/2/units.eV;
-  %         %T_mat{it,nGroups} = cov_T_mat;
-  %         T_tens(ii,:,:,:) = Sigma*1e6*units.mp/2/units.eV;
-  %         %Tyy(ii,iComp) = gm{it,nGroups}.Sigma(2,2)*1e6*units.mp/2/units.eV;
-  %         %Tzz(ii,iComp) = gm{it,nGroups}.Sigma(3,3)*1e6*units.mp/2/units.eV;
-  %       end
-  %     end
-  % %
-  % 
-  %     fx_tot =  sum(fx,3);
-  %     fy_tot =  sum(fy,3);
-  %     fz_tot =  sum(fz,3);
-  % 
-  %     clear tsFx tsFy tsFz tsT tsV tsN
-  %     for iComp = 1:K
-  %       tsFx{iComp} = PDist(times,fx(:,:,iComp),'1Dcart',xvec); tsFx{iComp}.units = 's/m^4';
-  %       tsFy{iComp} = PDist(times,fy(:,:,iComp),'1Dcart',yvec); tsFy{iComp}.units = 's/m^4';
-  %       tsFz{iComp} = PDist(times,fz(:,:,iComp),'1Dcart',zvec); tsFz{iComp}.units = 's/m^4';
-  %       tsT{iComp} = irf.ts_tensor_xyz(times, T_tens(:,:,:,iComp));
-  %       tsV{iComp} = irf.ts_vec_xyz(times, [vx(:,iComp),vy(:,iComp),vz(:,iComp)]);
-  %       tsN{iComp} = irf.ts_scalar(times, n(:,iComp));
-  %     end
-  %     tsFx_tot = PDist(times,fx_tot,'1Dcart',xvec);
-  %     tsFy_tot = PDist(times,fy_tot,'1Dcart',yvec);
-  %     tsFz_tot = PDist(times,fz_tot,'1Dcart',zvec);
-  % 
-  %     n_vec = cellfun(@(x) x.data, tsN, 'UniformOutput', false);
-  %     tsN_tot = irf.ts_scalar(times,sum(cat(2,n_vec{:}),2));
-  
-  %
       h = irf_plot(11);
   
       hca = irf_panel('B');

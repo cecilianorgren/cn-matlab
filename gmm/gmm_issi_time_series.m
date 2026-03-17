@@ -64,7 +64,7 @@ end
 units = irf_units;
 ic = 1;
 
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
@@ -79,9 +79,9 @@ iDFs = [1 6 9 10 13 21 25 35 38 45 46 47 52 55 56 57 58 60 61 68 69 70 71 78 79 
 iDFs = [92 95 98 101 107 112 115 121 ];
 %iDFs = 37;
 iDFs = 57;
-%iDFs = 21;
+iDFs = 21;
 doPrint = 1;
-doPlot = 1;
+doPlot = 0;
 for iDF = iDFs%87%iDFs(1)
   %try
   disp(iDF)
@@ -110,15 +110,9 @@ for iDF = iDFs%87%iDFs(1)
 
   nMovMean = 7; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 
-  %tsElow = PD_use.find_noise_energy_limit(5).movmean(15);
-  %tsElow = iPDist_counts.find_noise_energy_limit_counts(5,nMovMean);
   mat = iPDist_counts.find_low_counts('counts',5,'nMovMean',[7 7],'output','mat');
   ehigh = iPDist_counts.find_low_counts('counts',8,'nMovMean',[3 3],'output','energy');
-  %emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
-  %PD = PD_use.mask({emask_mat});
   PD = PD_use.mask('energy','mat',mat);  
-  %PD = PD_use.mask('energy','max',ehigh);
-  %PD = PD_use;
   PD = PD.movmean(nMovMean);
   PD = PD(1:nMovMean:PD.length);
 %  delete(hca)
@@ -133,245 +127,80 @@ for iDF = iDFs%87%iDFs(1)
   times = PD.tlim(tint_df).time;
   nMP = 100000; % Number of macroparticles  
   
-  clear gm rmsF rmsFnorm
-  for Ks = [2]
-    nGroupsMax = Ks;  % number of classes/groups for kmeans and gmm
-    K = Ks;
-  
-    % Initial guess
-    initial_guess = [0 -1000 -1000;...
-                     0 -1000 +1000;...
-                     0 +1000 -1000;...
-                     0 +1000 +1000;...
-                     0  0000  0000;...
-                     0  0000  0000]*0.1;
-  
-    
- 
-    nt = times.length; 
-    
-    %T_mat = cell(nt,nGroupsMax);
-    %T_scalar = cell(nt,nGroupsMax);
+  vecK = [2 3 4 5];
+  nK = numel(vecK);  
+  nt = times.length; 
+  clear gm rmsF rmsFnorm moms
+  gm = cell(nt,nK);
+  for iK = 1:nK
+    %nGroupsMax = Ks;  % number of classes/groups for kmeans and gmm
+    K = vecK(iK);          
     tic
     for it = 1:nt
       if mod(it,10)==0; disp([it+"/" + nt]); end
       time = times(it);
       pdist = PD.tlim(time+0.5*0.150*[-1 1]);
       %nMP = nansum(round(pdist.data(~isnan(pdist.data)))); % total number of counts
-      
-      scpot = mean(scPot.tlim(time + 0.5*0.15*[-1 1]).data,1);
-      scpot = irf.ts_scalar(time,scpot);
+            
+      scpot = irf.ts_scalar(time,mean(scPot.tlim(time + 0.5*0.15*[-1 1]).data,1));
       B = mean(gseB.tlim(time + 0.5*0.15*[-1 1]).data,1); B = B/norm(B);
       
-      for nGroups = nGroupsMax %1:nGroupsMax
-        MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);
-        nMP = numel(MP.dv);
-        MP.dn = MP.df.*MP.dv;
-        V_dbcs = [MP.vx, MP.vy, MP.vz]; 
-        
-        % Need to rotate these into the specified coordinate system  
-        % The rotation is not done exactly right, due to not taking into account
-        % differences between dbcs and gse. To do in the future
-        %V = V_dbcs*lmn';
-        V = V_dbcs;
-        MP.vx = V(:,1);
-        MP.vy = V(:,2);
-        MP.vz = V(:,3);
-        
-        % Make 3D cartesian dist, to calculate the
-        % % residue/root-mean-scquare difference/whatever quality
-        % dvx = 50; % km/s
-        % dvy = 50;
-        % dvz = 50;
-        % vmax = 2500;
-        % vx_edges = -vmax:dvx:vmax; % km/s
-        % vy_edges = -vmax:dvy:vmax; % km/s
-        % vz_edges = -vmax:dvz:vmax; % km/s
-        % [count edges mid loc] = histcn([MP.vx, MP.vy, MP.vz],vx_edges,vy_edges,vz_edges,'AccumData',MP.dn);
-        % dvx_cms = dvx*1e5; % cm/s
-        % dvy_cms = dvy*1e5;
-        % dvz_cms = dvz*1e5;
-        % %fcart = count/(dvx_cms*dvy_cms*dvz_cms); % cm^-3/(cm^3/s^3) = s^3/cm^6
-        % % [count] = cm^-3
-        % dn_km3 = 1e5^3*count; % cm^-3 -> km^-3
-        % fcart = dn_km3/(dvx*dvy*dvz);
-        % Fobs.f = fcart;
-        % Fobs.edges = edges;
-        % Fobs.mid = mid;
-        % Fobs.dv = dvx*dvy*dvz;
-        Fobs = mp_3d_cart_vdf(MP,-2500:50:2500,-2500:50:2500,-2500:50:2500);
-        % sum(Fobs.dv(:)*Fobs.f(:)) = km^-3
-        
-        initialS = 'randSampl';
-        initialS = 'peaks';
-        initialS = 'previous';
-        switch initialS
-          case 'peaks'
-            dv = 50;
-            npeaks = K;
-            dv_peaks = 500;
-            [i,j,k,Fout] = find_peaks_iteratively_mp(MP,dv,npeaks,ceil(dv_peaks/max(dv)));
-            %F = Fout.F;
-            %xvec = Fout.vec{1};
-            %yvec = Fout.vec{2};
-            %zvec = Fout.vec{3};
-            %% continue from here
-            S.mu = zeros(K,3);
-            S.Sigma = zeros(3,3,K);
-            for ipeak = 1:npeaks
-              S.mu(ipeak,:) = [Fout.vec{1}(i(ipeak)) Fout.vec{1}(j(ipeak)) Fout.vec{1}(k(ipeak))];
-              vt2 = (50*1e3)^2; % m/s
-              S.Sigma(:,:,ipeak) = eye(3)*vt2;              
-            end
-            S.ComponentProportion = ones(1,K)/K;
-            % %%
-            % S.mu = zeros(K,3) + 1e3;          
-            % S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
-            % iMax = min([K numel(locs)]);
-            % for ii = 1:iMax
-            %   vt2 = (w(ii)*1e3)^2; % m/s
-            %   S.Sigma(:,:,ii) = eye(3)*vt2;
-            %   S.mu(ii,3) = vdf_fz(it).depend{1}(1,locs(ii));
-            % end
-          case 'peaks2'
-            peaks = imregionalmax(f);
+      MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
+      nMP = numel(MP.dv);
+      MP.dn = MP.df.*MP.dv;
+      V_dbcs = [MP.vx, MP.vy, MP.vz]; 
+      ntot(it) = sum(MP.df.*MP.dv); % cc; [MP.dv] = (like input)^3 [MP.df] = like input
+      
+      % Need to rotate these into the specified coordinate system  
+      % The rotation is not done exactly right, due to not taking into account
+      % differences between dbcs and gse. To do in the future
+      %V = V_dbcs*lmn';
+      V = V_dbcs;
+      MP.vx = V(:,1);
+      MP.vy = V(:,2);
+      MP.vz = V(:,3);
+      
+      % Make 3D cartesian dist, to calculate the residue/root-mean-square difference/whatever quality.        
+      Fobs = mp_3d_cart_vdf(MP,-2500:50:2500,-2500:50:2500,-2500:50:2500); 
 
-            % Get indices of peaks
-            [i,j,k] = find_peaks_iteratively(size(f), find(peaks));
+      %for nGroups = nGroupsMax %1:nGroupsMax       
+      % Initial guess
+      initialS = 'randSampl';
+      initialS = 'peaks';
+      initialS = 'previous';
+      S = gmm_initial_guess(initialS,gm(:,K));
+
+      %options = statset('Display','final','MaxIter',1500,'TolFun',1e-5);
+      options = statset('MaxIter',150,'TolFun',1e-5);
+      
+      R = [MP.vx, MP.vy, MP.vz];
+      %gm{it,nGroups} = fitgmdist(X,nGroups,'Start',S,'SharedCovariance',false,'Options',options);
+      gm{it,iK} = fitgmdist(R,K,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
             
-            % Peak values
-            peak_values = f(peaks);
-          case 'peaks_'
-            if it == 1
-              S = 'randSample';
-            else
-              clear S
-              v = vdf_fz(it).depend{1}(1,:);
-              dv = v(2)-v(1);
-              [pks,locs,w,p] = findpeaks(vdf_fz(it).data);
-              [~,isort] = sort(w); % sort by width to put the coldest first
-              pks = pks(isort);
-              locs = locs(isort);
-              w = w(isort);
-              p = p(isort);
-              
-              %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-              %cov_T_mat = units.mp*vt2/2/units.eV;
-              S.mu = zeros(K,3) + 1e3;          
-              S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
-              iMax = min([K numel(locs)]);
-              for ii = 1:iMax
-                vt2 = (w(ii)*1e3)^2; % m/s
-                S.Sigma(:,:,ii) = eye(3)*vt2;
-                S.mu(ii,3) = vdf_fz(it).depend{1}(1,locs(ii));
-              end
-              %S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = ones(1,K)/K;
-              %S.mu = initial_guess(1:nGroups,:);
-              %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-            end
-          case 'randSampl'
-              S = 'randSample';
-          case 'previous'
-            if it == 1
-              S = 'randSample';
-            elseif 0
-              clear S
-              v = vdf_fz(it).depend{1}(1,:);
-              dv = v(2)-v(1);
-              [pks,locs,w,p] = findpeaks(vdf_fz(it).data);
-              [~,isort] = sort(w); % sort by width to put the coldest first
-              pks = pks(isort);
-              locs = locs(isort);
-              w = w(isort);
-              p = p(isort);
-              
-              %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-              %cov_T_mat = units.mp*vt2/2/units.eV;
-              S.mu = zeros(K,3) + 1e3;          
-              S.Sigma = repmat(eye(3,3),[1 1 K]) * 1e3;
-              iMax = min([K numel(locs)]);
-              for ii = 1:iMax
-                vt2 = (w(ii)*1e3)^2; % m/s
-                S.Sigma(:,:,ii) = eye(3)*vt2;
-                S.mu(ii,3) = fz(it).depend{1}(1,locs(ii));
-              end
-              %S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = ones(1,K)/K;
-              %S.mu = initial_guess(1:nGroups,:);
-              %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-            else
-              clear S
-              S.mu = gm{it-1,K}.mu;
-              S.Sigma = gm{it-1,K}.Sigma;
-              S.ComponentProportion = gm{it-1,K}.ComponentProportion;        
-              %S.mu = initial_guess(1:nGroups,:);
-              %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
-              %S.ComponentProportion = repmat(1,[1,nGroups]);
-              if any(S.ComponentProportion==0); S = 'randSample'; end
-            end
-        end
-        
-  
-        %options = statset('Display','final','MaxIter',1500,'TolFun',1e-5);
-        options = statset('MaxIter',150,'TolFun',1e-5);
-  
-        
-        R = [MP.vx, MP.vy, MP.vz];
-        %X(sqrt(sum(X.^2,2))>1000,:) = [];
-        %gm{it,nGroups} = fitgmdist(X,nGroups,'Start',S,'SharedCovariance',false,'Options',options);
-        gm{it,nGroups} = fitgmdist(R,nGroups,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
-        
-        ntot(it) = sum(MP.df.*MP.dv); % cc; [MP.dv] = (like input)^3 [MP.df] = like input
+      isort = gmm_sort(gm{it,iK}); % [~,isort] = sort(squeeze(gm{it,K}.Sigma(1,1,:)+gm{it,K}.Sigma(2,2,:)+gm{it,K}.Sigma(3,3,:))); % Ts
+     
+      % Make a 3D cartesian dist, to compare with observed on, to calculate differences. 
+      % Use same grid as above for Fobs:        
+      Fgmm = gmm_get_F(gm{it,iK},Fobs.mid{:},ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
 
-
-        [~,isort] = sort(squeeze(gm{ii,K}.Sigma(1,1,:)+gm{ii,K}.Sigma(2,2,:)+gm{ii,K}.Sigma(3,3,:))); % Ts
-        
-  
-        %%
-        % Make a 3D cartesian dist, to compare with observed on, to calculate
-        % differences. 
-        % Use same grid as above:
-        [X,Y,Z] = ndgrid(Fobs.mid{:});
-        %if 1
-        Fgmm = gmm_get_F(gm{it,K},Fobs.mid{:},ntot(it));
-        %else
-        %XYZ = [X(:) Y(:) Z(:)];
-        %%Ftot_all = cell(1,size(gm,2));
-        %Ftot = zeros(size(X));
-        %mu = gm{it,K}.mu; % km/s
-        %Sigma = gm{it,K}.Sigma; % (km/s)^2
-        %compProp = gm{it,K}.ComponentProportion;
-        %for iComp = 1:K          
-        %  % mvnpdf units: (km/s)^(-3/2)
-        %  % to get in (cm/s)^(-3/2): (cm/s)^(-3/2) = (km/s*1e5)^(-3/2) = (km/s)^-(3/2)*1e5^-(3/2)          
-        %  ntot_km3 = ntot(it)*1e15;
-        %  Ftmp = ntot_km3*compProp(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); % s^3/km^6      
-        %  Ftmp = reshape(Ftmp,size(X));  
-        %  Ftot = Ftot + Ftmp;
-        %  % sum(Ftot(:).*Fobs.dv(:)) = km^-3
-        %end
-        %end
-        % Caluclate difference
-        Fdiff = Fobs.f-Fgmm;
-        rmsF{it,nGroups} = sqrt(sum(Fdiff.^2,'all'));
-        rmsFnorm{it,nGroups} = sqrt(sum(Fdiff.^2,'all'))/sum(Fobs.f,'all');
-1;
-        % Extract som physical quantities
-        %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-        %cov_T_mat = units.mp*vt2/2/units.eV;
-        %T_mat{it,nGroups} = cov_T_mat;
-        %for iGroup = 1:nGroups % Lopp through gaussion components
-        %  T_scalar{it,nGroups}(iGroup) = trace(T_mat{it,nGroups}(:,:,iGroup))/3;
-        %end
-       
-      end    
+      % Caluclate difference
+      Fdiff = Fobs.f-Fgmm;
+      rmsF{it,iK} = sqrt(sum(Fdiff.^2,'all'));
+      rmsFnorm{it,iK} = sqrt(sum(Fdiff.^2,'all'))/sum(Fobs.f,'all');
+      
+      % This can be done afterwards, bevause R is the same for all.
+      idx = GM.cluster(R);
+      MP.("cluster"){K} = idx;
+      moms{it,iK} = gmm_moments_from_macroparticles(MP,idx,1);
+      %end    
     end
     toc
     % Diagnose cold-ion quantities
     % Find coldest temperature for each it, K
     %T_min = cellfun(@(x)min(x),T_scalar);
     %T_max = cellfun(@(x)max(x),T_scalar);
+    %%
+    %%
   
     % Add results to table
     if 0
@@ -391,7 +220,9 @@ for iDF = iDFs%87%iDFs(1)
     table_ci.T_max_after(iDF) = {T_max(2,:)};
     end
   
- 
+    [tsN,tsV,tsT,tsFx,tsFy,tsFz,tsN_tot,tsFx_tot,tsFy_tot,tsFz_tot] = gmm_get_moments_and_dists(times,gm(:,K),Fobs.mid{:},ntot,isort);
+      
+    %n_MP = cellfun(@(x)x.n,moms(:,2));
   
     if doPlot
       %%
@@ -401,84 +232,6 @@ for iDF = iDFs%87%iDFs(1)
       vlim = 2500;
       nMC = 500;
     
-      [tsN,tsV,tsT,tsFx,tsFy,tsFz,tsN_tot,tsFx_tot,tsFy_tot,tsFz_tot] = gmm_get_moments_and_dists(times,gm(:,K),mid{:},ntot,isort);
-      %nvx = 101; nvy = 102; nvz = 103;
-      %xvec = linspace(-vlim,vlim,nvx); dvx = xvec(2)-xvec(1);
-      %yvec = linspace(-vlim,vlim,nvy); dvx = xvec(2)-xvec(1);
-      %zvec = linspace(-vlim,vlim,nvz); dvz = zvec(2)-zvec(1);
-      %[X,Y,Z] = ndgrid(xvec,yvec,zvec);
-      %XYZ = [X(:) Y(:) Z(:)];
-  %     [xvec, yvec, zvec] = Fobs.mid{:};
-  %     dvx = xvec(2)-xvec(1); 
-  %     dvx = xvec(2)-xvec(1);
-  %     dvz = zvec(2)-zvec(1);
-  %     nvx = numel(xvec);
-  %     nvy = numel(yvec);
-  %     nvz = numel(zvec);
-  % 
-  %     %K = 4;
-  %     clear fx fy fz vx vy vz Txx Tyy Tzz T_tens 
-  %     T_tens = zeros(times.length,3,3,K);
-  %     vx = zeros(times.length,K);
-  %     vy = zeros(times.length,K);
-  %     vz = zeros(times.length,K);
-  %     fx = zeros(nt,nvx,K);
-  %     fy = zeros(nt,nvy,K);
-  %     fz = zeros(nt,nvz,K);
-  %     n = zeros(times.length,K);
-  %     Ftot = zeros(size(X));
-  %     for ii = 1:nt
-  %       [~,isort] = sort(gm{ii,K}.mu(:,3)); % vz
-  %       [~,isort] = sort(squeeze(gm{ii,K}.Sigma(1,1,:)+gm{ii,K}.Sigma(2,2,:)+gm{ii,K}.Sigma(3,3,:))); % Ts
-  %       mu = gm{ii,K}.mu(isort,:);
-  %       Sigma = gm{ii,K}.Sigma(:,:,isort);
-  %       compProp = gm{ii,K}.ComponentProportion(isort);
-  %       for iComp = 1:K          
-  %         Ftmp = compProp(iComp)*mvnpdf(XYZ, mu(iComp,:), Sigma(:,:,iComp)); 
-  %         Ftmp = Ftmp;
-  %         F{iComp} = reshape(Ftmp,size(X));  
-  %         Ftot = Ftot + F{iComp};
-  %         fx(ii,:,iComp) = sum(F{iComp},[2 3])*ntot(ii)*dvy*dvz*1e3;
-  %         fy(ii,:,iComp) = sum(F{iComp},[1 3])*ntot(ii)*dvx*dvz*1e3;
-  %         fz(ii,:,iComp) = sum(F{iComp},[1 2])*ntot(ii)*dvx*dvy*1e3;
-  % 
-  %         vx(ii,iComp) = mu(iComp,1);
-  %         vy(ii,iComp) = mu(iComp,2);
-  %         vz(ii,iComp) = mu(iComp,3);
-  % 
-  %         n(ii,iComp) = compProp(iComp)*ntot(ii) ;
-  % 
-  %         %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-  %         %cov_T_mat = units.mp*vt2/2/units.eV;
-  %         %T_mat{it,nGroups} = cov_T_mat;
-  %         T_tens(ii,:,:,:) = Sigma*1e6*units.mp/2/units.eV;
-  %         %Tyy(ii,iComp) = gm{it,nGroups}.Sigma(2,2)*1e6*units.mp/2/units.eV;
-  %         %Tzz(ii,iComp) = gm{it,nGroups}.Sigma(3,3)*1e6*units.mp/2/units.eV;
-  %       end
-  %     end
-  % %
-  % 
-  %     fx_tot =  sum(fx,3);
-  %     fy_tot =  sum(fy,3);
-  %     fz_tot =  sum(fz,3);
-  % 
-  %     clear tsFx tsFy tsFz tsT tsV tsN
-  %     for iComp = 1:K
-  %       tsFx{iComp} = PDist(times,fx(:,:,iComp),'1Dcart',xvec); tsFx{iComp}.units = 's/m^4';
-  %       tsFy{iComp} = PDist(times,fy(:,:,iComp),'1Dcart',yvec); tsFy{iComp}.units = 's/m^4';
-  %       tsFz{iComp} = PDist(times,fz(:,:,iComp),'1Dcart',zvec); tsFz{iComp}.units = 's/m^4';
-  %       tsT{iComp} = irf.ts_tensor_xyz(times, T_tens(:,:,:,iComp));
-  %       tsV{iComp} = irf.ts_vec_xyz(times, [vx(:,iComp),vy(:,iComp),vz(:,iComp)]);
-  %       tsN{iComp} = irf.ts_scalar(times, n(:,iComp));
-  %     end
-  %     tsFx_tot = PDist(times,fx_tot,'1Dcart',xvec);
-  %     tsFy_tot = PDist(times,fy_tot,'1Dcart',yvec);
-  %     tsFz_tot = PDist(times,fz_tot,'1Dcart',zvec);
-  % 
-  %     n_vec = cellfun(@(x) x.data, tsN, 'UniformOutput', false);
-  %     tsN_tot = irf.ts_scalar(times,sum(cat(2,n_vec{:}),2));
-  
-  %
       h = irf_plot(11);
   
       hca = irf_panel('B');
