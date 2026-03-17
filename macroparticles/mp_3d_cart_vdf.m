@@ -5,7 +5,7 @@ dvx = vx_edges(2)-vx_edges(1);
 dvy = vy_edges(2)-vy_edges(1);
 dvz = vz_edges(2)-vz_edges(1);
 
-[count edges mid loc] = histcn([MP.vx, MP.vy, MP.vz],vx_edges,vy_edges,vz_edges,'AccumData',MP.dn);
+[count edges mid loc] = histcn([MP.vx, MP.vy, MP.vz],vx_edges,vy_edges,vz_edges,'AccumData',MP.df.*MP.dv);
 dvx_cms = dvx*1e5; % cm/s
 dvy_cms = dvy*1e5;
 dvz_cms = dvz*1e5;

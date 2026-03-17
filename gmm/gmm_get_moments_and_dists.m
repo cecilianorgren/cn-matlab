@@ -1,11 +1,33 @@
-function varargout = gmm_get_moments_and_dists(times,gm,xmid,ymid,zmid,ntot,isort)
+function varargout = gmm_get_moments_and_dists(times,gm,xmid,ymid,zmid,ntot,varargin)
 
 units = irf_units;
 
 % Extract info
 nt = size(gm,1);
 K = gm{1}.NumComponents;
-if not(exist('isort','var')); isort = 1:K; end
+
+% Backward compatibility + options
+% Old signature: (..., ntot, isort)
+% New usage: (..., ntot, 'sort', true/false)
+doSort = false;
+isort_fixed = [];
+if ~isempty(varargin)
+  if isnumeric(varargin{1})
+    isort_fixed = varargin{1};
+    varargin = varargin(2:end);
+  end
+  for iarg = 1:2:numel(varargin)
+    switch lower(varargin{iarg})
+      case 'sort'
+        doSort = varargin{iarg+1};
+      otherwise
+        error('Unknown option: %s', varargin{iarg});
+    end
+  end
+end
+if isempty(isort_fixed)
+  isort_fixed = 1:K;
+end
 
 % Set up grid for vdf computation
 dvx = xmid(2)-xmid(1); 
@@ -29,6 +51,11 @@ n = zeros(nt,K);
 Ftot = zeros(size(X));
 
 for ii = 1:nt
+  if doSort
+    isort = gmm_sort(gm{ii});
+  else
+    isort = isort_fixed;
+  end
   mu = gm{ii}.mu(isort,:);
   Sigma = gm{ii}.Sigma(:,:,isort);
   compProp = gm{ii}.ComponentProportion(isort);
@@ -50,10 +77,7 @@ for ii = 1:nt
     % Density
     n(ii,iComp) = compProp(iComp)*ntot(ii);
     % Temperature tensor
-    %vt2 = gm{it,nGroups}.Sigma*1e6; % (km/s)^2 -> (m/s)^2
-    %cov_T_mat = units.mp*vt2/2/units.eV;
-    %T_mat{it,nGroups} = cov_T_mat;
-    T_tens(ii,:,:,:) = Sigma*1e6*units.mp/2/units.eV;
+    T_tens(ii,:,:,iComp) = Sigma(:,:,iComp)*1e6*units.mp/2/units.eV;
   end
 end
 

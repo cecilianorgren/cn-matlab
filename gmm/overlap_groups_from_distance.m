@@ -1,0 +1,68 @@
+function groups = overlap_groups_from_distance(D, threshold)
+%OVERLAP_GROUPS_FROM_DISTANCE Connected-component grouping under a distance threshold.
+%
+% groups = overlap_groups_from_distance(D, threshold)
+%
+% Inputs
+%   D         : either
+%               - numeric KxK distance matrix, or
+%               - cell array of distance matrices (nt x nK)
+%   threshold : scalar, edge exists if D(i,j) <= threshold
+%
+% Output
+%   groups : if D is numeric, a 1xNgroups cell array of index vectors
+%            if D is cell, a cell array of same size as D, where each entry
+%            is a 1xNgroups cell array of index vectors
+%
+% Notes
+% - Grouping is transitive (connected components), so if 1 overlaps 2 and 2
+%   overlaps 3 (even if 1 doesn't overlap 3), the group will be [1 2 3].
+
+if nargin < 2 || isempty(threshold)
+  error('threshold must be provided.');
+end
+
+if isnumeric(D)
+  groups = local_groups_one(D, threshold);
+elseif iscell(D)
+  groups = cell(size(D));
+  for it = 1:size(D,1)
+    for iK = 1:size(D,2)
+      if isempty(D{it,iK})
+        groups{it,iK} = {};
+      else
+        groups{it,iK} = local_groups_one(D{it,iK}, threshold);
+      end
+    end
+  end
+else
+  error('D must be numeric or cell array.');
+end
+
+end
+
+function groups = local_groups_one(D, threshold)
+K = size(D,1);
+if size(D,2) ~= K
+  error('D must be square.');
+end
+Adj = (D <= threshold);
+Adj(1:K+1:end) = false;
+unvisited = true(1,K);
+groups = {};
+for i = 1:K
+  if ~unvisited(i); continue; end
+  stack = i;
+  comp = [];
+  unvisited(i) = false;
+  while ~isempty(stack)
+    v = stack(end); stack(end) = [];
+    comp(end+1) = v; %#ok<AGROW>
+    nbrs = find(Adj(v,:) & unvisited);
+    unvisited(nbrs) = false;
+    stack = [stack nbrs]; %#ok<AGROW>
+  end
+  groups{end+1} = sort(comp); %#ok<AGROW>
+end
+end
+

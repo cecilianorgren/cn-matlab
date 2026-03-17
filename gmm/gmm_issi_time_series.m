@@ -64,7 +64,8 @@ end
 units = irf_units;
 ic = 1;
 
-mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
@@ -126,8 +127,10 @@ for iDF = iDFs%87%iDFs(1)
   %times = PD.tlim(tint_df).time.start:nMovMean*0.150:PD.tlim(tint_df).time.stop;
   times = PD.tlim(tint_df).time;
   nMP = 100000; % Number of macroparticles  
-  
-  vecK = [2 3 4 5];
+  %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
+  allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD));
+
+  vecK = [3 4 5];
   nK = numel(vecK);  
   nt = times.length; 
   clear gm rmsF rmsFnorm moms
@@ -139,26 +142,27 @@ for iDF = iDFs%87%iDFs(1)
     for it = 1:nt
       if mod(it,10)==0; disp([it+"/" + nt]); end
       time = times(it);
-      pdist = PD.tlim(time+0.5*0.150*[-1 1]);
+      %pdist = PD.tlim(time+0.5*0.150*[-1 1]);
       %nMP = nansum(round(pdist.data(~isnan(pdist.data)))); % total number of counts
             
-      scpot = irf.ts_scalar(time,mean(scPot.tlim(time + 0.5*0.15*[-1 1]).data,1));
-      B = mean(gseB.tlim(time + 0.5*0.15*[-1 1]).data,1); B = B/norm(B);
+      %scpot = irf.ts_scalar(time,mean(scPot.tlim(time + 0.5*0.15*[-1 1]).data,1));
+      %B = mean(gseB.tlim(time + 0.5*0.15*[-1 1]).data,1); B = B/norm(B);
       
-      MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
-      nMP = numel(MP.dv);
-      MP.dn = MP.df.*MP.dv;
-      V_dbcs = [MP.vx, MP.vy, MP.vz]; 
+      %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
+      %nMP = numel(MP.dv);
+      %MP.dn = MP.df.*MP.dv;
+      %V_dbcs = [MP.vx, MP.vy, MP.vz]; 
+      MP = allMP(it);
       ntot(it) = sum(MP.df.*MP.dv); % cc; [MP.dv] = (like input)^3 [MP.df] = like input
       
       % Need to rotate these into the specified coordinate system  
       % The rotation is not done exactly right, due to not taking into account
       % differences between dbcs and gse. To do in the future
       %V = V_dbcs*lmn';
-      V = V_dbcs;
-      MP.vx = V(:,1);
-      MP.vy = V(:,2);
-      MP.vz = V(:,3);
+      %V = V_dbcs;
+      %MP.vx = V(:,1);
+      %MP.vy = V(:,2);
+      %MP.vz = V(:,3);
       
       % Make 3D cartesian dist, to calculate the residue/root-mean-square difference/whatever quality.        
       Fobs = mp_3d_cart_vdf(MP,-2500:50:2500,-2500:50:2500,-2500:50:2500); 
@@ -168,7 +172,7 @@ for iDF = iDFs%87%iDFs(1)
       initialS = 'randSampl';
       initialS = 'peaks';
       initialS = 'previous';
-      S = gmm_initial_guess(initialS,gm(:,K));
+      S = gmm_initial_guess(initialS,gm(:,iK));
 
       %options = statset('Display','final','MaxIter',1500,'TolFun',1e-5);
       options = statset('MaxIter',150,'TolFun',1e-5);
@@ -188,10 +192,11 @@ for iDF = iDFs%87%iDFs(1)
       rmsF{it,iK} = sqrt(sum(Fdiff.^2,'all'));
       rmsFnorm{it,iK} = sqrt(sum(Fdiff.^2,'all'))/sum(Fobs.f,'all');
       
-      % This can be done afterwards, bevause R is the same for all.
-      idx = GM.cluster(R);
-      MP.("cluster"){K} = idx;
-      moms{it,iK} = gmm_moments_from_macroparticles(MP,idx,1);
+      % This can be done afterwards, because R is the same for all K.
+      %idx = gm{it,iK}.cluster(R);
+      %allMP(it).("cluster"){iK} = idx;
+      %moms{it,iK} = gmm_moments_from_macroparticles(MP,idx,1);
+      %allMP{it,iK} = MP;
       %end    
     end
     toc
@@ -220,7 +225,7 @@ for iDF = iDFs%87%iDFs(1)
     table_ci.T_max_after(iDF) = {T_max(2,:)};
     end
   
-    [tsN,tsV,tsT,tsFx,tsFy,tsFz,tsN_tot,tsFx_tot,tsFy_tot,tsFz_tot] = gmm_get_moments_and_dists(times,gm(:,K),Fobs.mid{:},ntot,isort);
+    [tsN,tsV,tsT,tsFx,tsFy,tsFz,tsN_tot,tsFx_tot,tsFy_tot,tsFz_tot] = gmm_get_moments_and_dists(times,gm(:,iK),Fobs.mid{:},ntot,'sort',true);
       
     %n_MP = cellfun(@(x)x.n,moms(:,2));
   
@@ -359,7 +364,7 @@ for iDF = iDFs%87%iDFs(1)
   
       if 1 % root mean square difference
         hca = irf_panel('rms F');
-        ts = irf.ts_scalar(times,cat(1,rmsFnorm{:,nGroups}));
+        ts = irf.ts_scalar(times,cat(1,rmsFnorm{:,iK}));
         irf_plot(hca,ts,'comp')      
         hca.YLabel.String = {'RMS(F_{o}-F_{m})','/sum(F_{o})'};
         hca.YLabel.Interpreter = 'tex';

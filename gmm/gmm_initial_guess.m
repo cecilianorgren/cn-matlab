@@ -110,7 +110,7 @@ switch method
       %S.mu = initial_guess(1:nGroups,:);
       %S.Sigma = repmat([500 10 10; 10 500 10; 10 10 500],[1 1 nGroups]);  
     else
-      gm = gm{iLast};
+      gm = gm{it-1};
       isort = gmm_sort(gm);
       %[~,isort] = sort(squeeze(gm{it-1,K}.Sigma(1,1,:)+gm{it-1,K}.Sigma(2,2,:)+gm{it-1,K}.Sigma(3,3,:))); % Ts
       S.mu = gm.mu(isort,:);
