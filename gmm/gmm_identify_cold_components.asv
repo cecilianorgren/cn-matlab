@@ -86,11 +86,7 @@ out.isCold_mat_unsorted = cell(nt,nK);
 out.vabs_kms_sorted = cell(nt,nK);
 
 for iK = 1:nK
-  for it = 1:nt    
-    K = gm{it,iK}.NumComponents;
-    isCold_mat_sorted = false(1,K);
-    isCold_mat_unsorted = false(1,K);
-
+  for it = 1:nt
     isort = gmm_sort(gm{it,iK});
     out.isort{it,iK} = isort;
   
@@ -126,7 +122,7 @@ for iK = 1:nK
         % Use a log10(T) gap that exceeds the threshold to separate cold vs hot.
         logT = log10(max(T_scalar, realmin));
         gaps = diff(logT);
-        out.gaps_log10{it,iK} = gaps(:);
+        out.gaps_log10{it} = gaps(:);
   
         if K == 1
           cold_sorted = 1;
@@ -169,18 +165,13 @@ for iK = 1:nK
         error('Unknown method: %s', method);
     end
   
-    isCold_mat_sorted(cold_sorted) = true;
-    isCold_mat_unsorted(isort(cold_sorted(:))) = true;
-
     out.cold_sorted{it,iK} = cold_sorted(:)';
     out.cold_unsorted{it,iK} = isort(cold_sorted(:))';
-    out.isCold_mat_sorted{it, iK} = isCold_mat_sorted;
-    out.isCold_mat_unsorted{it, iK} = isCold_mat_unsorted;
-    %out.isCold_mat_sorted(it, cold_sorted) = true;
-    %out.isCold_mat_unsorted(it, isort(cold_sorted(:))) = true;
+    out.isCold_mat_sorted(it, cold_sorted) = true;
+    out.isCold_mat_unsorted(it, isort(cold_sorted(:))) = true;
   end
 end
 
-%out.isCold_sorted = arrayfun(@(iComp) out.isCold_mat_sorted(:,iComp), 1:K, 'UniformOutput', false);
-%out.isCold_unsorted = arrayfun(@(iComp) out.isCold_mat_unsorted(:,iComp), 1:K, 'UniformOutput', false);
+out.isCold_sorted = arrayfun(@(iComp) out.isCold_mat_sorted(:,iComp), 1:K, 'UniformOutput', false);
+out.isCold_unsorted = arrayfun(@(iComp) out.isCold_mat_unsorted(:,iComp), 1:K, 'UniformOutput', false);
 

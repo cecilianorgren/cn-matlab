@@ -31,7 +31,7 @@ w = w(:); mu = mu(:); sig = sig(:);
 w = w./sum(w);
 
 % Choose which components to merge (subset S)
-S = [1 2];   % merge these into one equivalent Gaussian
+S = [1 2 3 4];   % merge these into one equivalent Gaussian
 
 % Bhattacharyya overlap diagnostics (1D)
 % Bhattacharyya distance between N(mu1,s1^2) and N(mu2,s2^2):
