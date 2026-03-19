@@ -155,13 +155,16 @@ for it = 1:nt
       SigmaM(:,:,m) = SigS;
     end
 
+    % Error if ComponentProportion == 0 so put it to a very small value
+    wM(wM==0) = 1e-12;
+
     % Renormalize weights to sum to 1 for gmdistribution
     if sum(wM) > 0
       wMnorm = wM./sum(wM);
     else
       wMnorm = ones(1,M)./M;
     end
-
+    
     mu_out{it,iK} = muM;
     Sigma_out{it,iK} = SigmaM;
     w_out{it,iK} = wMnorm;

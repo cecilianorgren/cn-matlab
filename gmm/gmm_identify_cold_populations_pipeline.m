@@ -67,7 +67,7 @@ h1(end).XTickLabelRotation = 0;
 iK = 3;
 K = vecK(iK);
 
-for it = 1:5:nt
+for it = 120%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -105,27 +105,33 @@ for it = 1:5:nt
   hca.XLabel.String = 'v (km/s)';
   hca.YLabel.String = sprintf('f (%s)','...');
   legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-  irf_legend(gca,legs',[0.98 0.98])
+  irf_legend(hca,legs',[0.98 0.98])
+  irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
+
 
 
   hca = h2(isub); isub = isub + 1;  
   dv = 50;
   vvec = -2500:50:2500;
   [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-  nGroups = numel(groups{it,iK});
-  gmmFcomp_z = zeros(nGroups,numel(vvec));
-  for iGroup = 1:nGroups
-    
-  end
-  gmmFtot_z = squeeze(sum(gmmFtot,[1 2]));%*(dv*dv*1e6)*1e-18;
   gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
-  plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
-  hca.Title.String = {sprintf('Gaussian Mixture Model'),'merged \mu, \Sigma, w'};
+  nGroups = numel(groups{it,iK});
+  gmmFcomp_z_grouped = zeros(numel(vvec),nGroups);
+  for iGroup = 1:nGroups
+    group_tmp = groups{it,iK}{iGroup};
+    gmmFcomp_z_grouped(:,iGroup) = sum(gmmFcomp_z(:,group_tmp),2);    
+  end
+  plot(hca,vvec,gmmFcomp_z_grouped,vvec,sum(gmmFcomp_z_grouped,2),'k')
+  %gmmFtot_z = squeeze(sum(gmmFtot,[1 2]));%*(dv*dv*1e6)*1e-18;
+  %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
+  %plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
+  hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
   hca.XLabel.String = 'v (km/s)';
   hca.YLabel.String = sprintf('f (%s)','...');
   legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-  irf_legend(gca,legs',[0.98 0.98])
+  irf_legend(hca,legs',[0.98 0.98])
+  irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
   c_eval('axis(h2(?),''square'');',1:numel(h2))
-  cn.print(sprintf('gmm_iDF=%04.f_it=%04.f_K=%g_merged_stein_thresh=%.2f',iDF,it,K,steinThresh))
+  %cn.print(sprintf('gmm_iDF=%04.f_it=%04.f_K=%g_merged_stein_thresh=%.2f',iDF,it,K,steinThresh))
 end
