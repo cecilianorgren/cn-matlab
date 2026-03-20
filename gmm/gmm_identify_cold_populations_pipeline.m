@@ -1,15 +1,23 @@
-steinThresh = 0.3;
-steinThresh = 0.3;
+distanceThresh = 2;
+%steinThresh = 0.3;
+flag_distance = 'stein';
+flag_distance = 'bhattacharyya';
+
 % 1) distances (temperature/covariance similarity)
-sd = stein_distance(gm, 'sort', true);
+switch flag_distance
+  case 'stein'
+    sd = stein_distance(gm, 'sort', true);
+  case 'bhattacharyya'
+    sd = bhattacharyya_distance(gm, 'sort', true);
+end
 % 2) overlap groups (transitive)
-groups = overlap_groups_from_distance(sd.D, steinThresh);
+groups = overlap_groups_from_distance(sd.D, distanceThresh);
 % 3) merge groups (moment-matched)
 merged = gmm_merge_components(gm, groups, 'isort', sd.isort);
 % 4) identify cold on merged GMM
 coldMerged = gmm_identify_cold_components(merged.gmMerged, ...
   'method','knee','gapPick','last','minGapLog10',0.3,'maxColdK',2,'minColdK',0, ...
-  'minWeight',0.01,'minVabs',300);
+  'minWeight',0.01,'minVabs',200);
 % 5) keep only cold components that were NOT merged (singleton groups)
 cold = gmm_cold_singletons_from_merged(merged, coldMerged);
 % cold.coldOriginal{it} and cold.isColdOriginal_mat are what you want
@@ -35,10 +43,10 @@ isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_ke
 %  tsVcold{ik}.data(isNotCold,:)= NaN;
 %end
 
-%% Make a time loop to plot the results
+% Make a time loop to plot the results
 directory_ = strrep(printpath,'\','');
 
-[h1,h2] = initialize_combined_plot('topbottom',2,1,4,0.5,'vertical');
+[h1,h2] = initialize_combined_plot('topbottom',3,1,4,0.5,'vertical');
 
 if 1 % B
   hca = irf_panel('B');
@@ -57,6 +65,17 @@ if 1 % fred by mms
   hca.YLabel.String = 'v_z (km/s)';  
   irf_legend(hca,'MMS',[0.98 0.98],'k')
 end
+if 1 % fred by mms
+  hca = irf_panel('is cold');
+  hca.ColorOrder = pic_colors('matlab');
+  %vdfx = PD.reduce('1D',[1 0 0]);
+  %vdfx = PD.reduce('1D',[1 0 0]);
+  % reduce just one before the loops
+  irf_plot(hca,isCold,'*')
+  hca.YLabel.String = 'cold flag';  
+  legs = "K=" + cellfun(@(x)x.NumComponents,gm(1,:));
+  irf_legend(hca,legs,[0.98 0.98],'k')
+end
 
 irf_zoom(h1,'x',tint)
 irf_plot_axis_align(h1)
@@ -64,10 +83,10 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-iK = 3;
+iK = 2;
 K = vecK(iK);
 
-for it = 120%1:5:nt
+for it = 153%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -93,6 +112,12 @@ for it = 120%1:5:nt
   hca.YLabel.String = sprintf('f (%s)','...');
   legs = arrayfun(@(x) sprintf('%g',x),1:K,'UniformOutput',false);
   irf_legend(hca,legs',[0.98 0.98])
+  if 1 % print the distances
+    %toprint = cellstr("" + sd.D{it,iK});
+    toprint = arrayfun(@(x) sprintf('%01.2f',x),sd.D{it,iK},'UniformOutput',false);
+    toprint = num2str(sd.D{it,iK}, '%5.2f')
+    irf_legend(hca,toprint,[0.02 0.98],'color','k','fontsize',9)    
+  end
 
   hca = h2(isub); isub = isub + 1;  
   dv = 50;
@@ -101,12 +126,13 @@ for it = 120%1:5:nt
   gmmFtot_z = squeeze(sum(gmmFtot,[1 2]));%*(dv*dv*1e6)*1e-18;
   gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
   plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
-  hca.Title.String = {sprintf('Gaussian Mixture Model'),'merged \mu, \Sigma, w'};
+  %hca.Title.String = {sprintf('Gaussian Mixture Model'),'merged \mu, \Sigma, w'};
+  hca.Title.String = {'Merged by law of shared \mu, \Sigma, w',sprintf('D_{Stein}<%g',distanceThresh)};
   hca.XLabel.String = 'v (km/s)';
   hca.YLabel.String = sprintf('f (%s)','...');
   legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
   irf_legend(hca,legs',[0.98 0.98])
-  irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
+  %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
 
 
 
@@ -125,12 +151,14 @@ for it = 120%1:5:nt
   %gmmFtot_z = squeeze(sum(gmmFtot,[1 2]));%*(dv*dv*1e6)*1e-18;
   %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
   %plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
-  hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
+  %
+  hca.Title.String = {'Summed f',sprintf('D_{Stein}<%g',distanceThresh)};
+  %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
   hca.XLabel.String = 'v (km/s)';
   hca.YLabel.String = sprintf('f (%s)','...');
   legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
   irf_legend(hca,legs',[0.98 0.98])
-  irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
+  %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
   c_eval('axis(h2(?),''square'');',1:numel(h2))
   %cn.print(sprintf('gmm_iDF=%04.f_it=%04.f_K=%g_merged_stein_thresh=%.2f',iDF,it,K,steinThresh))

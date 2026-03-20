@@ -55,7 +55,7 @@ end
 [nt, nK] = size(gm_cell);
 out = struct();
 out.sort = doSort;
-out.DB = cell(nt, nK);
+out.D = cell(nt, nK);
 out.isort = cell(nt, nK);
 out.minDB = nan(nt, nK);
 out.meanDB = nan(nt, nK);
@@ -117,7 +117,7 @@ for it = 1:nt
       end
     end
 
-    out.DB{it,iK} = DB;
+    out.D{it,iK} = DB;
 
     tmp = DB;
     tmp(1:K+1:end) = NaN;
@@ -128,7 +128,7 @@ end
 
 % If input was a single gmdistribution, collapse outputs for convenience
 if isa(gm, 'gmdistribution')
-  out.DB = out.DB{1,1};
+  out.D = out.D{1,1};
   out.isort = out.isort{1,1};
   out.minDB = out.minDB(1,1);
   out.meanDB = out.meanDB(1,1);

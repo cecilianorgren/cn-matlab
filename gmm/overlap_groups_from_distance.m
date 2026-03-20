@@ -52,15 +52,18 @@ unvisited = true(1,K);
 groups = {};
 for i = 1:K % Loop over components
   if ~unvisited(i); continue; end
-  stack = i;
+  stack = i; % starts as the first component
   comp = [];
   unvisited(i) = false; % This is basically to do for i = 1:K; for j = i:K?
   while ~isempty(stack)
     v = stack(end); stack(end) = [];
-    comp(end+1) = v; %#ok<AGROW>
-    nbrs = find(Adj(v,:) & unvisited);
+    comp(end+1) = v; 
+    nbrs = find(Adj(v,:) & unvisited); % find if the active component satisfies the distance to any other component
     unvisited(nbrs) = false;
-    stack = [stack nbrs]; %#ok<AGROW>
+    % lets say 1 is connected to 4, then 4 is added to the stack and then 
+    % next loop one checks what is connected to 4. If more than one number 
+    % satisfies the criteria, one runs trough that stack one by one.
+    stack = [stack nbrs]; 
   end
   groups{end+1} = sort(comp); %#ok<AGROW>
 end

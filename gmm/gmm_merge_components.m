@@ -145,7 +145,7 @@ for it = 1:nt
         for ii = 1:numel(S)
           k = S(ii);
           dmu = (mu0(k,:) - muS)';
-          SigS = SigS + w0(k) * (Sigma0(:,:,k) + (dmu*dmu'));
+          SigS = SigS + w0(k) * (Sigma0(:,:,k) + (dmu*dmu')); % law of shared covariances
         end
         SigS = SigS / wS;
       end

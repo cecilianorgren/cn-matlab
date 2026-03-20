@@ -82,6 +82,7 @@ for it = 1:nt
     else
       isort = 1:K;
     end
+    %isort = reshape(isort,permute(size(isort),[2 1]));
     out.isort{it,iK} = isort;
 
     Sigma = g.Sigma(:,:,isort); % 3x3xK

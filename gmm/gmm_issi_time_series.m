@@ -124,13 +124,14 @@ for iDF = iDFs%87%iDFs(1)
 
   %% Do the Gaussian Mixture Model
   tint_df = tDF + [-10 100]+ [-90 0]; % apply to two times, before and after DF
+  tint_df = tint;
   %times = PD.tlim(tint_df).time.start:nMovMean*0.150:PD.tlim(tint_df).time.stop;
   times = PD.tlim(tint_df).time;
   nMP = 100000; % Number of macroparticles  
   %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
   allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD));
 
-  vecK = [5];
+  vecK = [4 5 6];
   nK = numel(vecK);  
   nt = times.length; 
   clear gm rmsF rmsFnorm moms
