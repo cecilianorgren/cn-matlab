@@ -22,6 +22,10 @@ if days
     directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory_root = '/Users/cecilianorgren/IRFU Dropbox/Cecilia Norgren/Days/';
     directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
+  elseif strfind(computername,'swarmy.irfu.se')
+    directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
+    directory_root = '/Users/cecilianorgren/IRFU Dropbox/Cecilia Norgren/Days/';
+    directory = [directory_root, datestr(now,'yyyy-mm-dd'), extrapath];
   elseif strfind(computername,'Mac')
     directory_root = '/Users/cecilianorgren/IRFU\ Dropbox/Cecilia\ Norgren/Days/';
     directory_root = '/Users/cecilianorgren/IRFU Dropbox/Cecilia Norgren/Days/';

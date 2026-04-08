@@ -7,9 +7,9 @@ mms.db_init('local_file_db','/Volumes/mms');
 
 units = irf_units;
 % Torbert event 
-ic = 1;
+ic = 3;
 tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z');
-tint = irf.tint('2017-07-09T17:31:00.00Z/2017-07-09T17:33:00.00Z');
+%tint = irf.tint('2017-07-09T17:31:00.00Z/2017-07-09T17:33:00.00Z');
 
 %% Load data
 c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
@@ -111,6 +111,7 @@ c_eval('vA? = (gseB?.resample(ne?).abs2*1e-18/units.mp/units.mu0/(ne?*1e6)).^0.5
 
 
 c_eval('EdotB? = (gseE?.resample(gseB?).x*gseB?.x + gseE?.resample(gseB?).y*gseB?.y + gseE?.resample(gseB?).z*gseB?.z)*1e-3*1e-9;',ic)
+
 %% Clean distributions, do it once hear so it will be the same for all
 nMean = [5,3,3,3]; nThresh = 3;
 
@@ -119,19 +120,27 @@ PD_orig = iPDist1;
 PD_clean = PD_orig.remove_noise(nMean,nThresh,PD_counts);
 PD_diff = PD_orig+-PD_clean;
 
-matEmask = PD_counts.find_low_counts('counts',6,'nMovMean',[5 5],'output','mat');
+counts = 5;
+nMovMean = [7 7];
+matEmask = PD_counts.find_low_counts('counts',counts,'nMovMean',nMovMean,'output','mat');
 %emask_mat = [tsElow.data*0 tsElow.data]; % setting all datapoints within these energy bounds to nan, effectively applying a lower energy limit
-tsElow = PD_counts.find_low_counts('counts',6,'nMovMean',[5 5],'output','energy');
+tsElow = PD_counts.find_low_counts('counts',counts,'nMovMean',nMovMean,'output','energy');
 
 PD_orig_notmasked = PD_orig;
 PD_clean_notmasked = PD_clean;
 PD_diff_notmasked = PD_diff;
 
-PD_orig = PD_orig.mask('energy','mat',matEmask);
-PD_clean = PD_clean.mask('energy','mat',matEmask);
-PD_diff = PD_diff.mask('energy','mat',matEmask);
+PD_orig_mask = PD_orig.mask('energy','mat',matEmask);
+PD_clean_mask = PD_clean.mask('energy','mat',matEmask);
+PD_diff_mask = PD_diff.mask('energy','mat',matEmask);
 
-h = irf_plot({PD_orig.deflux.omni.specrec,PD_clean.deflux.omni.specrec}); c_eval('h(?).YScale = ''log'';',1:numel(h))
+h = irf_plot({PD_orig.deflux.omni.specrec,PD_clean_notmasked.deflux.omni.specrec,PD_clean_mask.deflux.omni.specrec}); c_eval('h(?).YScale = ''log'';',1:numel(h))
+hlinks = linkprop(h,{'CLim','YLim'});
+
+
+PD_orig = PD_orig_mask;
+PD_clean = PD_clean_mask;
+PD_diff = PD_diff_mask;
 
 %% Define times, etc... things that are common for the entire study
 tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z');
@@ -627,7 +636,8 @@ end
 if 1 % dEFlux ion
   hca = irf_panel('ion dEF omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
-  c_eval('specrec = PD_clean_notmasked.deflux.omni.specrec;',ic)
+  %c_eval('specrec = PD_clean_notmasked.deflux.omni.specrec;',ic)
+  c_eval('specrec = PD_clean.deflux.omni.specrec;',ic)
   specrec.p(specrec.p==0) = NaN;  
   irf_spectrogram(hca,specrec,'donotfitcolorbarlabel')
   hca.YScale = 'log'; 
