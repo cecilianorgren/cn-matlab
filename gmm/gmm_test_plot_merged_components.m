@@ -11,7 +11,7 @@
 % - plots 1D marginals (e.g. along vz) for original + merged
 
 %% Choose which distribution
-it = 41;
+it = 51;
 iK = 3;
 g = gm{it,iK};
 
