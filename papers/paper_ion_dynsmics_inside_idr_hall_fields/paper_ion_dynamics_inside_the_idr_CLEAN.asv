@@ -1930,18 +1930,12 @@ times_utc = [...%'2017-07-11T22:33:45.000Z';...
              '2017-07-11T22:34:10.000Z';...
              '2017-07-11T22:34:20.000Z'];
 
-
-
-
-
 h = subplot(1,1,1);
 isub = 1;
-it = 5;
-time = EpochTT(times_utc(it,:));
- %time = times(it);
+it = 2;
+ time = times(it);
  time
   
- pdist_all = PD_clean;
   
   pdist = pdist_all.tlim(time+nMean(1)*0.5*0.151*[-1 1]);
   tint_dist = [pdist.time.start pdist.time.stop] + 0.5*0.150*1*[-1 1];
@@ -1985,7 +1979,7 @@ time = EpochTT(times_utc(it,:));
     hca.YLabel.String = 'v_M (10^3 km/s)';
     vmin = sqrt(2*units.eV*min(elow)/units.mp)*1e-3;
     %irf_legend(hca,sprintf('v>%.0f km/s',vmin),[0.02 0.98],'color','k','fontsize',10)
-    if 0 % plot B direction
+    if 1 % plot B direction
       xlim = hca.XLim;
       ylim = hca.YLim;
       hold(hca,'on')
@@ -2005,7 +1999,7 @@ time = EpochTT(times_utc(it,:));
         hca.YLim = ylim;
         B_ = B_(1:2);
     end     
-    if 0 % plot ExB
+    if 1 % plot ExB
       hold(hca,'on')
       hbulk = plot(hca,mean(vExB.x.data,1)/vscale,mean(vExB.y.data,1)/vscale,'ok','MarkerFaceColor','w','markersize',5);
       hold(hca,'off')    
