@@ -29,6 +29,7 @@ c_eval('gseVixB? = cross(gseVi?*1e3,gseB?.resample(gseVi?.time)*1e-9)*1e3; gseVi
 c_eval('gseVexB? = cross(gseVe?*1e3,gseB?.resample(gseVe?.time)*1e-9)*1e3; gseVexB?.units = '''';',ic) % mV/m
 
 c_eval('gseVexB? = cross(gseVe?*1e3,gseB?.resample(gseVe?.time)*1e-9)*1e3; gseVexB?.units = '''';',ic) % mV/m
+c_eval('gseVixB? = cross(gseVi?*1e3,gseB?.resample(gseVi?.time)*1e-9)*1e3; gseVixB?.units = '''';',ic) % mV/m
 c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic);
 c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic);
 
@@ -43,11 +44,11 @@ c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_
 
 
 %c_eval('[enflux_new, enflux_BG, idist_new, idist_BG, Ni_new, gseVi_new, gsePi_new,Ni_bg, EnergySpectr_bg, Pres_bg, EnergySpectr_bg_self]= mms.remove_ion_penetrating_radiation_bg(iPDist?);',ic)
-
+%%
 c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
 c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
 
-c_eval('B?inf = irf.ts_scalar(gseB?.time,sqrt(gseB?.abs2.data*1e-18 + 1e-9*gsePi?.resample(gseB?).trace.data/3*(2*units.mu0)))*1e9;',ic)
+%c_eval('B?inf = irf.ts_scalar(gseB?.time,sqrt(gseB?.abs2.data*1e-18 + 1e-9*gsePi?.resample(gseB?).trace.data/3*(2*units.mu0)))*1e9;',ic)
 
 
 c_eval('[gseE?par,gseE?perp] = irf_dec_parperp(gseB?,gseE?); gseE?par.name = ''E par''; gseE?perp.name = ''E perp'';',ic)
@@ -58,7 +59,13 @@ c_eval('gseJi? = units.e*ne?*gseVi?.resample(ne?.time)*1e3*1e6*1e9; gseJi?.units
 c_eval('gseJ? = (gseJe?+gseJi?);',1:4);
 
 c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
-[Jcurl,divB,gseB,JxB,gseCurvB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
+[Jcurl,divB,gseB,JxB,BdivB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
+[gseCurvB,BB]=c_4_grad('gseR?brsttime','gseB?','curvature');
+[BdivB,BB]=c_4_grad('gseR?brsttime','gseB?','bdivb');
+c_eval('gseB?norm = gseB?.norm;',1:4)
+[bdivb,BB]=c_4_grad('gseR?brsttime','gseB?norm','bdivb');
+curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
+
 
 gseJcurl = irf.ts_vec_xyz(Jcurl.time,Jcurl.data); gseJcurl.coordinateSystem = 'GSE';
 gseJcurl.data = gseJcurl.data*1e9; Jcurl.units = 'nAm^{-2}';
@@ -96,6 +103,22 @@ gseJzBx_ne_mVm_curl =    gseJcurl.z*gseB.x*1e-18/(neav.resample(gseJcurl)*1e6)/u
 gseJxBz_ne_mVm_curl = -1*gseJcurl.x*gseB.z*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
 gseJyBz_ne_mVm_curl =    gseJcurl.y*gseB.z*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
 gseJzBy_ne_mVm_curl = -1*gseJcurl.z*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
+
+c_eval('wci? = units.e*gseB?.abs*1e-9/units.mp;',ic) % rad/s
+c_eval('vti? = sqrt(2*gseTi?.trace*units.eV/3/units.mp);',ic) % m/s
+c_eval('vti?perp = (2*(facTi?.yy+facTi?.zz).*units.eV/2/units.mp)^0.5; vti?perp = irf.ts_scalar(vti?perp.time,vti?perp.data);',ic) % m/s
+c_eval('ri? = 1e-3*vti?perp/wci?.resample(vti?perp);',ic) % km
+c_eval('ri?_Ttot = 1e-3*vti?/wci?.resample(vti?);',ic) % km
+
+c_eval('kappai? = (curvBradius.resample(ri?)/ri?)^0.5;',ic)
+% kappa^2 = R_B/R_c
+% R_c = v/w_c = sqrt(2E/m)/w_c
+% kappa^2 = R_B/(sqrt(2E/m)/w_c) = R_B*w_c*sqrt(m/2E)= R_B*w_c*sqrt(m/2)/sqrt(E)
+% sqrt(E) = R_B*w_c*sqrt(m/2)/kappa^2
+%E_kappa=1 = (R_B*w_c*sqrt(m/2))^2 = R_B^2*w_c^2*m/2
+%E_kappa = (R_B*w_c*sqrt(m/2))^2 = R_B^2*w_c^2*m/2/kappa^4
+E_kappa1 = 1e6*curvBradius^2*wci3.resample(curvBradius)^2*units.mp/2/units.eV;
+
 
 % intertial length
 c_eval('wpi? = (ne?*1e6*units.e^2/units.mp/units.eps0).^0.5;',ic)
@@ -245,13 +268,13 @@ lmn = [L; M; N];
 %% Rotate into LMN
 c_eval('mvaVixB? = gseVixB?*lmn''; mvaVixB?.name = ''Vi x B LMN'';',ic)
 c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''Ve x B LMN'';',ic)
-c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
+%c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
 c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';',ic)
-c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
-c_eval('mvaVe?perp = gseVe?perp*lmn''; mvaVe?perp.name = ''Ve perp LMN'';',ic)
+%c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
+%c_eval('mvaVe?perp = gseVe?perp*lmn''; mvaVe?perp.name = ''Ve perp LMN'';',ic)
 
 
 c_eval('mvaJ? = gseJ?*lmn'';',1:4)
@@ -2534,6 +2557,197 @@ c_eval('h(?).LineWidth = 1.5;',1:numel(h))
 irf_legend(0,{sprintf('L=[%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,%.2f]',L(1),L(2),L(3),M(1),M(2),M(3),N(1),N(2),N(3)),sprintf('nMean=[%g,%g,%g,%g], nThresh = %g',nMean(1),nMean(2),nMean(3),nMean(4),nThresh)},[0.05 1])
 
 %%
+%% Curvature plot
+h = irf_plot(4);
+
+n_rows = numel(h);
+new_yheight = 0.18;
+for iax = 1:n_rows
+  h(iax).Position(4) = new_yheight;  
+  h(iax).Position(2) = 0.15 + (new_yheight + 0)*(n_rows-iax);
+end
+
+color_nan = [0.9 0.9 0.9]+0.1;
+fontsize = 12;
+
+if 1 % B lmn
+  hca = irf_panel('B LMN');
+  set(hca,'ColorOrder',mms_colors('xyza'))  
+  c_eval('irf_plot(hca,{mvaB?.x,mvaB?.y,mvaB?.z},''comp'');',ic)
+  %hca.YLabel.String = {'B','(nT)'};
+  hca.YLabel.String = {'B (nT)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.98],'fontsize',fontsize);
+end 
+if 1 % fi red N
+  hca = irf_panel('fi N');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  c_eval('specrec = fi?_N.specrec; ',ic)
+  specrec.p(specrec.p==0) = NaN;
+  c_eval('irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)  
+  
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
+  
+  
+  hca.NextPlot = "add";
+  %c_eval('irf_plot(hca,mvaVi?.z,''k-'')',ic)
+  hca.NextPlot = "replace";
+
+  %hca.YLabel.String = {'v_{iN}','(km/s)'};
+  hca.YLabel.String = {'v_{iN} (km/s)'};
+  hca.Color = color_nan;
+  hca.CLim = [-4   -1];
+end
+
+if 0 % curvB lmn
+  hca = irf_panel('curvB LMN');
+  set(hca,'ColorOrder',mms_colors('xyza')) 
+  irf_plot(hca,{mvaCurvB.x,mvaCurvB.y,mvaCurvB.z},'comp');
+  hca.YLabel.String = {'Magnetic','curvature','(1/km)'};
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_legend(hca,{'L','M','N'},[0.98 0.98],'fontsize',fontsize);
+end 
+
+if 1 % curvB radius and rhoi
+  hca = irf_panel('curvB radius');
+  set(hca,'ColorOrder',mms_colors('123')) 
+  irf_plot(hca,{curvBradius.resample(ri3),ri3},'comp');
+  hca.YScale = 'log';
+  %hca.YLabel.String = {'Radius','(km)'};
+  hca.YLabel.String = {'Radius (km)'};
+  hca.YTick = 10.^(-5:7);
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'R_B ','\rho_i (T_i)'},[0.98 0.98],'fontsize',fontsize);
+  hca.YMinorGrid = 'off';
+end 
+if 0 % gyro radius
+  hca = irf_panel('gyro radius');
+  set(hca,'ColorOrder',mms_colors('xyza')) 
+  irf_plot(hca,{ri3},'comp');
+  hca.YScale = 'log';
+  hca.YLabel.String = {'\rho_i','(km)'};
+  hca.YTick = 10.^(-5:7);
+  set(hca,'ColorOrder',mms_colors('xyza'))
+end 
+if 0 % kappa
+  hca = irf_panel('kappa');
+  set(hca,'ColorOrder',mms_colors('123')) 
+  irf_plot(hca,{kappai3},'comp');
+  hca.YScale = 'log';
+  hca.YLabel.String = {'kappa'};
+  hca.YTick = 10.^(-5:7);
+  set(hca,'ColorOrder',mms_colors('123'))
+  irf_legend(hca,{'\kappa (T_i)'},[0.02 0.1],'fontsize',fontsize,'color','k');
+end 
+
+if 1 % dEFlux ion
+  hca = irf_panel('ion dEF omni');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  %c_eval('specrec = PD_clean_notmasked.deflux.omni.specrec;',ic)
+  c_eval('specrec = PD_clean.deflux.omni.specrec;',ic)
+  specrec.p(specrec.p==0) = NaN;  
+  irf_spectrogram(hca,specrec,'donotfitcolorbarlabel')
+  hca.YScale = 'log'; 
+
+  hold(hca,'on')
+ 
+  irf_plot(hca,{E_kappa1.resample(ri3)},'comp');
+  irf_legend(hca,{'E(\kappa=1)'},[0.02 0.1],'fontsize',fontsize+2,'color','k');
+  hold(hca,'off')  
+  %hca.YLabel.String = {'E_i','(eV)'};
+  hca.YLabel.String = {'E_i (eV)'};
+  hca.YLabel.Interpreter = 'tex';
+  hca.Color = color_nan;  
+  hca.XGrid = 'off';
+  hca.YGrid = 'off';
+end
+
+
+if 0 % E at kappa=1
+  hca = irf_panel('E at kappa = ...');
+  set(hca,'ColorOrder',mms_colors('xyza')) 
+  irf_plot(hca,{E_kappa1.resample(ri3)},'comp');
+  hca.YScale = 'log';
+  hca.YLabel.String = {'E','(eV)'};
+  hca.YTick = 10.^(-5:7);
+  set(hca,'ColorOrder',mms_colors('xyza'))
+end 
+
+irf_plot_axis_align
+%irf_zoom(h,'x',tint_figure)
+%irf_zoom(h,'x',tint_figure_zoom)
+irf_zoom(h,'x',tint_figure_zoom_incl_sep)
+irf_pl_mark(h,time_xline+0,'black','linestyle','-.')
+
+
+%irf_zoom(h(1:4),'y')
+%irf_zoom(h([1 3]),'y')
+h(1).YLim = [-9.99 12];
+h(3).YLim = [1.01*10^1 5*10^4];
+colormap(irf_colormap('magma'))
+h(end).XTickLabelRotation = 0;
+
+if 0 % automatic label placement
+  legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
+  nInd = 1;
+  for ii = 1:numel(h)
+    %irf_legend(h(ii),legends{nInd},[0.01 0.98],'color',[0 0 0],'fontsize',fontsize+1)
+    irf_legend(h(ii),legends{nInd},[-0.15 0.95],'color',[0 0 0],'fontsize',fontsize+1,'verticalalignment','bottom')
+    nInd = nInd + 1;
+    %h(ii).FontSize = 16;
+    %h(ii).YLabel.Position(1) = -0.10;
+  end
+end
+if 1 % manual label placement
+  irf_legend(h(1),'a)',[0.02 0.98],'color',[0 0 0],'fontsize',fontsize+1)
+  irf_legend(h(2),'b)',[0.02 0.98],'color',[0 0 0]+1,'fontsize',fontsize+1)
+  irf_legend(h(3),'c)',[0.02 0.98],'color',[0 0 0],'fontsize',fontsize+1)
+  irf_legend(h(4),'d)',[0.02 0.6],'color',[0 0 0],'fontsize',fontsize+1)
+end
+
+% Add length on top
+if 1
+  %ax2 = axes('position',h(1).position);
+  %delete(ax2)
+  ax2 = axes('Position',h(1).Position,'XAxisLocation','top','YAxisLocation','right','color','none','TickDir','out');
+  userdata = get(gcf,'userdata');
+  %
+  di = mean(di3.tlim(time_xline+5*[-1 1]).data,1);
+  tstart = irf_time(userdata.t_start_epoch,'epoch>EpochTT');
+  dt = time_xline - tint_figure_zoom_incl_sep(1);
+  dt = time_xline - tstart;
+%dt = 0;
+
+
+
+  xlim_s = h(1).XLim-1*dt; % time
+  
+  xlim_km = xlim_s*170;
+  xlim_di = xlim_km/di;
+  
+  %xdata = (xlim_km(1):1000:xlim_km(end))/170;
+  %xdata = (-10000:1000:10000)/170;
+  
+  xdata_di = -100:1:100;
+  
+  ax2.XTick = xdata_di+0*dt/di;
+
+  ax2.XLim = xlim_di+0*dt/di;
+
+  ax2.XLabel.String = 'd_i';
+  ax2.XAxisLocation = 'top';
+  ax2.YAxisLocation = 'right';
+  ax2.YTick = [];
+  ax2.XTickLabelRotation = 0;
+  ax2.FontSize = fontsize;
+
+%%
+end
+
+hl = findobj(gcf,'type','line');
+c_eval('hl(?).LineWidth = 1.;',1:numel(hl))
+
 %%
 %%
 %% Figure, overplot different timesas patches

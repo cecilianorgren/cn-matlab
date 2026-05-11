@@ -1,6 +1,4 @@
 % In terminal: set up tunnel
-% ssh -p899 -L 3308:localhost:3306 mmsteam@81.169.221.160 
-% password: mms_issi$2026
 
 % Download JAVA driver
 % https://dev.mysql.com/downloads/connector/j/

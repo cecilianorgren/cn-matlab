@@ -1,4 +1,4 @@
-distanceThresh = 2;
+distanceThresh = 1.5;
 %steinThresh = 0.3;
 flag_distance = 'stein';
 flag_distance = 'bhattacharyya';
@@ -16,7 +16,7 @@ groups = overlap_groups_from_distance(sd.D, distanceThresh);
 merged = gmm_merge_components(gm, groups, 'isort', sd.isort);
 % 4) identify cold on merged GMM
 coldMerged = gmm_identify_cold_components(merged.gmMerged, ...
-  'method','knee','gapPick','last','minGapLog10',0.3,'maxColdK',2,'minColdK',0, ...
+  'method','knee','gapPick','last','minGapLog10',10^-0.5,'maxColdK',2,'minColdK',0, ...
   'minWeight',0.01,'minVabs',200);
 % 5) keep only cold components that were NOT merged (singleton groups)
 cold = gmm_cold_singletons_from_merged(merged, coldMerged);
@@ -83,7 +83,7 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-iK = 2;
+iK = 1;
 K = vecK(iK);
 
 for it = 153%1:5:nt
