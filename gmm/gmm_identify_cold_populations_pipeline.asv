@@ -1,6 +1,6 @@
 
-flag_distance = 'stein';         distanceThresh = 0.2;
-flag_distance = 'bhattacharyya'; distanceThresh = 1.7;
+flag_distance = 'stein';         distanceThresh = 0.7;
+%flag_distance = 'bhattacharyya'; distanceThresh = 1.0;
 
 % 1) distances (temperature/covariance similarity)
 switch flag_distance
@@ -48,7 +48,7 @@ isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_ke
 % Make a time loop to plot the results
 directory_ = strrep(printpath,'\','');
 
-iK = 2;
+iK = 1;
 K = vecK(iK);
 
 ts_ngroups_vs_threshold = irf.ts_scalar(times,cat(1,ngroups_vs_threshold{:,iK}));
@@ -108,7 +108,7 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-for it = 97;147;%1:5:nt
+for it = 153;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -116,23 +116,18 @@ for it = 97;147;%1:5:nt
   gm_orig_tmp = gm{it,iK};
   gm_merged_tmp = merged.gmMerged{it,iK};
 
-  % Original gmm
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,vdf_fz.depend{1}(it,:),vdf_fz.data(it,:))
+  hca.Title.String = 'Observed';
+  hca.XLabel.String = 'v (km/s)';
+  hca.YLabel.String = sprintf('f (%s)',vdf_fz.units);
+
+  hca = h2(isub); isub = isub + 1;  
   dv = 50;
   vvec = -2500:50:2500;
   [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
   gmmFtot_z = squeeze(sum(gmmFtot,[1 2]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
   gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
-
-  hca = h2(isub); isub = isub + 1;
-  hca.ColorOrder = mms_colors('1234');
-  plot(hca,vdf_fz.depend{1}(it,:),vdf_fz.data(it,:),vvec,gmmFtot_z)
-  hca.Title.String = 'Observed + Total GMM';
-  hca.XLabel.String = 'v (km/s)';
-  hca.YLabel.String = sprintf('f (%s)',vdf_fz.units);
-  hca.ColorOrder = mms_colors('1234');
-  irf_legend(hca,{'Obs.','GMM'},[0.02 0.98])
-
-  hca = h2(isub); isub = isub + 1;  
   plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
   hca.Title.String = {sprintf('Gaussian Mixture Model, K=%g',K)};
   hca.XLabel.String = 'v (km/s)';
@@ -150,9 +145,9 @@ for it = 97;147;%1:5:nt
   dv = 50;
   vvec = -2500:50:2500;
   [gmmFtot, gmmFcomp] = gmm_get_F(gm_merged_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-  gmmFtot_z = squeeze(sum(gmmFtot,[1 2]))*(dv*dv*1e6)*1e-18;
-  gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]))*(dv*dv*1e6)*1e-18;
-  plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k',vdf_fz.depend{1}(it,:),vdf_fz.data(it,:),'k--')
+  gmmFtot_z = squeeze(sum(gmmFtot,[1 2]));%*(dv*dv*1e6)*1e-18;
+  gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
+  plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
   %hca.Title.String = {sprintf('Gaussian Mixture Model'),'merged \mu, \Sigma, w'};
   hca.Title.String = {'Merged by law of shared \mu, \Sigma, w',sprintf('D_{Stein}<%g',distanceThresh)};
   hca.XLabel.String = 'v (km/s)';
@@ -167,14 +162,14 @@ for it = 97;147;%1:5:nt
   dv = 50;
   vvec = -2500:dv:2500;
   [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-  gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]))*(dv*dv*1e6)*1e-18;
+  gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
   nGroups = numel(groups{it,iK});
   gmmFcomp_z_grouped = zeros(numel(vvec),nGroups);
   for iGroup = 1:nGroups
     group_tmp = groups{it,iK}{iGroup};
     gmmFcomp_z_grouped(:,iGroup) = sum(gmmFcomp_z(:,group_tmp),2);    
   end
-  plot(hca,vvec,gmmFcomp_z_grouped,vvec,sum(gmmFcomp_z_grouped,2),'k',vdf_fz.depend{1}(it,:),vdf_fz.data(it,:),'k--')
+  plot(hca,vvec,gmmFcomp_z_grouped,vvec,sum(gmmFcomp_z_grouped,2),'k')
   %gmmFtot_z = squeeze(sum(gmmFtot,[1 2]));%*(dv*dv*1e6)*1e-18;
   %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
   %plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
