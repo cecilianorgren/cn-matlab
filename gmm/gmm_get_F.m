@@ -1,7 +1,27 @@
-function varargout = gmm_get_F(gm,X,Y,Z,ntot)
+function varargout = gmm_get_F(gm,vx,vy,vz,ntot,varargin)
 
-[X,Y,Z] = ndgrid(X,Y,Z);
+isortOpt = [];
+doGroup = 0;
+if ~isempty(varargin)
+  for iarg = 1:2:numel(varargin)
+    switch lower(varargin{iarg})
+      case 'isort'
+        isortOpt = varargin{iarg+1};
+      case 'group'
+        groups = varargin{iarg+1};
+        doGroup = 1;
+      otherwise
+        error('Unknown option: %s', varargin{iarg});
+    end
+  end
+end
+
+
+[X,Y,Z] = ndgrid(vx,vy,vz);
 XYZ = [X(:) Y(:) Z(:)];
+%dvx = vx(2)-vx(1);
+%dvy = vy(2)-vy(1);
+%dvz = vz(2)-vz(1);
 
 mu = gm.mu; % km/s
 Sigma = gm.Sigma; % (km/s)^2
@@ -18,10 +38,25 @@ for iComp = 1:gm.NumComponents
   Fcomp(:,:,:,iComp)  = Ftmp;
   % sum(Ftot(:).*Fobs.dv(:)) = km^-3
 end
+
+if doGroup
+  nGroups = numel(groups);
+  Fgrouped = zeros([size(X) nGroups]);
+  for iGroup = 1:nGroups
+    group_tmp = groups{iGroup};
+    Fgrouped(:,:,:,iGroup) = sum(Fcomp(:,:,:,group_tmp),4);    
+  end
+end
+
+
 switch nargout
   case 1
     varargout{1} = Ftot;
   case 2
     varargout{1} = Ftot;
     varargout{2} = Fcomp;
+  case 3
+    varargout{1} = Ftot;
+    varargout{2} = Fcomp;
+    varargout{3} = Fgrouped;
 end

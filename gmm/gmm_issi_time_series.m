@@ -120,7 +120,10 @@ for iDF = iDFs%87%iDFs(1)
   %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   
   %% Reduce dist here, to only do it once for all the K
+  %vdf_fx = PD.reduce('1D',[1 0 0]);
+  %vdf_fy = PD.reduce('1D',[0 1 0]);
   vdf_fz = PD.reduce('1D',[0 0 1]);
+
 
   %% Do the Gaussian Mixture Model
   tint_df = tDF + [-10 100]+ [-90 0]; % apply to two times, before and after DF
