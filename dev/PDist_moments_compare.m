@@ -13,12 +13,12 @@ c_eval('gseTi? = mms.get_data(''Ti_gse_fpi_brst_l2'',tint,?);',ic);
 c_eval('gsePi? = mms.get_data(''Pi_gse_fpi_brst_l2'',tint,?);',ic);
 
 %% Remove noise
-nMean = [5,3,3,3]; nThresh = 3;
+nMean = [5,3,3,3]; nThresh = 5;
 
 c_eval('PD_counts = iPDist?_counts;',ic)
 c_eval('PD_orig = iPDist?;',ic)
 
-nCounts = 5;
+nCounts = 3;
 nMovMean = [7 7];
 matEmask = PD_counts.find_low_counts('counts',nCounts,'nMovMean',nMovMean,'output','mat');
 
@@ -26,8 +26,8 @@ PD_notmasked = PD_orig;
 
 PD_masked = PD_orig.mask('energy','mat',matEmask);
 
-h = irf_plot({PD_orig.deflux.omni.specrec,PD_masked.deflux.omni.specrec}); c_eval('h(?).YScale = ''log'';',1:numel(h))
-hlinks = linkprop(h,{'CLim','YLim'});
+%h = irf_plot({PD_orig.deflux.omni.specrec,PD_masked.deflux.omni.specrec}); c_eval('h(?).YScale = ''log'';',1:numel(h))
+%hlinks = linkprop(h,{'CLim','YLim'});
 
 
 
@@ -42,8 +42,10 @@ v = PD_masked.vel;
 p_orig = PD_orig.p;
 p = PD_masked.p;
 
-t_orig = (p_orig*1e-9/(n_orig*1e6))/units.eV;
-t = (p*1e-9/(n*1e6))/units.eV;
+%t_orig = (p_orig*1e-9/(n_orig*1e6))/units.eV;
+%t = (p*1e-9/(n*1e6))/units.eV;
+t_orig = PD_orig.T;
+t = PD_masked.T;
 %%
 h = irf_plot(6);
 
@@ -58,7 +60,8 @@ irf_legend(hca,{'clean VDF'},[0.98 0.05],'color','k')
 hca = irf_panel('n');
 irf_plot(hca,{n_orig,n,ni3,ne3},'comp')
 hca.YLabel.String = 'n (cc)';
-irf_legend(hca,{'orig VDF','clean VDF','n_i FPI','n_e FPI'},[0.98 0.98])
+irf_legend(hca,{'orig VDF','clean VDF','n_i FPI','n_e FPI'},[0.98 0.05])
+hca.YLim(2) = 1.2*max(ni3.data);
 
 hca = irf_panel('v');
 irf_plot(hca,{v_orig.x,v.x,gseVi3.x},'comp')
@@ -75,6 +78,11 @@ irf_plot(hca,{t_orig.trace/3,t.trace/3,gseTi3.trace/3},'comp')
 hca.YLabel.String = 'T (eV)';
 irf_legend(hca,{'orig VDF','clean VDF','FPI'},[0.98 0.98])
 
+colormap([flipdim(irf_colormap('Spectral'),1)])
+
 irf_plot_axis_align
 irf_zoom(h,'x',tint)
 h(end).XTickLabelRotation = 0;
+
+%irf_legend(0,{sprintf('nMean=[%g,%g,%g,%g], nThresh = %g',nMean(1),nMean(2),nMean(3),nMean(4),nThresh)},[0.05 1])
+irf_legend(0,{sprintf('nMean=[%g,%g], nThresh = %g',nMovMean(1),nMovMean(2),nCounts)},[0.05 1])

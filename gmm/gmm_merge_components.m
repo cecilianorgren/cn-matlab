@@ -81,7 +81,7 @@ groups_unsorted_out = cell(nt,nK);
 groupWeights_out = cell(nt,nK);
 
 for it = 1:nt
-  if it == 97;
+  if it == 97
     1;
   end
   for iK = 1:nK
