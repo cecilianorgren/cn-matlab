@@ -56,6 +56,7 @@ ts_ngroups_vs_threshold = irf.ts_scalar(times,cat(1,ngroups_vs_threshold{:,iK}))
 ts_ngroups_vs_threshold.userData.specrec_f = distanceThreshVec;
 
 [h1,h2] = initialize_combined_plot('topbottom',4,3,4,0.4,'horizontal');
+fontsize = 10;
 
 if 1 % B
   hca = irf_panel('B');
@@ -63,7 +64,7 @@ if 1 % B
   irf_plot(hca,{gseB.x, gseB.y, gseB.z},'comp')
   hca.YLabel.String = 'B (nT)';
   hca.ColorOrder = mms_colors('xyza');
-  irf_legend(hca,{'B_x','B_y','B_z'},[0.98 0.98])
+  irf_legend(hca,{'B_x','B_y','B_z'},[0.98 0.98],'fontsize',fontsize-1)
 end
 if 1 % fred by mms
   hca = irf_panel('fred z mms');
@@ -72,7 +73,7 @@ if 1 % fred by mms
   % reduce just one before the loops
   irf_spectrogram(hca,vdf_fz.specrec,'log')   
   hca.YLabel.String = 'v_z (km/s)';  
-  irf_legend(hca,'MMS',[0.98 0.98],'k')
+  irf_legend(hca,'MMS',[0.98 0.98],'color','k','fontsize',fontsize-1)
 end
 if 1 % fred by mms
   hca = irf_panel('is cold');
@@ -83,7 +84,7 @@ if 1 % fred by mms
   irf_plot(hca,isCold,'*')
   hca.YLabel.String = 'cold flag';  
   legs = "K=" + cellfun(@(x)x.NumComponents,gm(1,:));
-  irf_legend(hca,legs,[0.98 0.98],'k')
+  irf_legend(hca,legs,[0.98 0.98],'color','k','fontsize',fontsize-1)
 end
 if 1 % n groups based on threshold
   hca = irf_panel('ngroups based on threshold');
@@ -108,7 +109,7 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-for it = 147;%1:5:nt
+for it = 127;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -155,7 +156,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = sprintf('f (%s)',vdf_fx.units);
     hca.ColorOrder = mms_colors('1234');
-    irf_legend(hca,{'Obs.','GMM'},[0.02 0.98])
+    irf_legend(hca,{'Obs.','GMM'},[0.02 0.98],'fontsize',fontsize-1)
   
     hca = h2(isub); isub = isub + 1;  
     plot(hca,vvec,gmmFcomp_x,vvec,gmmFtot_x,'k')
@@ -163,7 +164,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = arrayfun(@(x) sprintf('%g',x),1:K,'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     if 1 % print the distances
       %toprint = cellstr("" + sd.D{it,iK});
       toprint = arrayfun(@(x) sprintf('%01.2f',x),sd.D{it,iK},'UniformOutput',false);
@@ -187,12 +188,12 @@ for it = 147;%1:5:nt
     %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
     %plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
     %
-    hca.Title.String = {'Summed f',sprintf('D_{Stein}<%g',distanceThresh)};
+    hca.Title.String = {'Summed f',sprintf('D_{%s}<%g',flag_distance,distanceThresh)};
     %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
     hca.XLabel.String = 'v (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
     hca = h2(isub); isub = isub + 1;  
@@ -207,7 +208,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
   
 
@@ -228,7 +229,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_y (km/s)';
     hca.YLabel.String = sprintf('f (%s)',vdf_fy.units);
     hca.ColorOrder = mms_colors('1234');
-    irf_legend(hca,{'Obs.','GMM'},[0.02 0.98])
+    irf_legend(hca,{'Obs.','GMM'},[0.02 0.98],'fontsize',fontsize-1)
   
     hca = h2(isub); isub = isub + 1;  
     plot(hca,vvec,gmmFcomp_y,vvec,gmmFtot_y,'k')
@@ -236,7 +237,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_y (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = arrayfun(@(x) sprintf('%g',x),1:K,'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     if 1 % print the distances
       %toprint = cellstr("" + sd.D{it,iK});
       toprint = arrayfun(@(x) sprintf('%01.2f',x),sd.D{it,iK},'UniformOutput',false);
@@ -261,12 +262,12 @@ for it = 147;%1:5:nt
     %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
     %plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
     %
-    hca.Title.String = {'Summed f',sprintf('D_{Stein}<%g',distanceThresh)};
+    hca.Title.String = {'Summed f',sprintf('D_{%s}<%g',flag_distance,distanceThresh)};
     %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
     hca.XLabel.String = 'v_y (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
     hca = h2(isub); isub = isub + 1;  
@@ -281,7 +282,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
   
 
@@ -303,7 +304,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_z (km/s)';
     hca.YLabel.String = sprintf('f (%s)',vdf_fz.units);
     hca.ColorOrder = mms_colors('1234');
-    irf_legend(hca,{'Obs.','GMM'},[0.02 0.98])
+    irf_legend(hca,{'Obs.','GMM'},[0.02 0.98],'fontsize',fontsize-1)
   
     hca = h2(isub); isub = isub + 1;  
     plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
@@ -311,7 +312,7 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_z (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = arrayfun(@(x) sprintf('%g',x),1:K,'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     if 1 % print the distances
       %toprint = cellstr("" + sd.D{it,iK});
       toprint = arrayfun(@(x) sprintf('%01.2f',x),sd.D{it,iK},'UniformOutput',false);
@@ -335,12 +336,12 @@ for it = 147;%1:5:nt
     %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]));%*(dv*dv*1e6)*1e-18;
     %plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k')
     %
-    hca.Title.String = {'Summed f',sprintf('D_{Stein}<%g',distanceThresh)};
+    hca.Title.String = {'Summed f',sprintf('D_{%s}<%g',flag_distance,distanceThresh)};
     %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
     hca.XLabel.String = 'v (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
     hca = h2(isub); isub = isub + 1;  
@@ -355,14 +356,14 @@ for it = 147;%1:5:nt
     hca.XLabel.String = 'v_z (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
     legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
-    irf_legend(hca,legs',[0.98 0.98])
+    irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
   
 
   end
 
-
-
+  c_eval('h1(?).FontSize = fontsize;',1:numel(h1));
+  c_eval('h2(?).FontSize = fontsize;',1:numel(h2));
   c_eval('h2(?).Title = [];',5:numel(h2));
   c_eval('axis(h2(?),''square'');',1:numel(h2))
   %cn.print(sprintf('gmm_iDF=%04.f_it=%04.f_K=%g_merged_stein_thresh=%.2f',iDF,it,K,steinThresh))
