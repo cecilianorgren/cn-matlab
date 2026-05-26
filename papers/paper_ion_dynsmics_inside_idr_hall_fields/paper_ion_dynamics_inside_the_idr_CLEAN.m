@@ -2645,7 +2645,9 @@ if 1 % dEFlux ion
   hca = irf_panel('ion dEF omni');
   set(hca,'ColorOrder',mms_colors('xyza'))
   %c_eval('specrec = PD_clean_notmasked.deflux.omni.specrec;',ic)
-  c_eval('specrec = PD_clean.deflux.omni.specrec;',ic)
+  c_eval('pdist_perp = PD_clean.pitchangles(dmpaB?,90+[-30 30]);',ic)
+  specrec = pdist_perp.deflux.specrec;
+  %specrec = PD_clean.deflux.omni.specrec;
   specrec.p(specrec.p==0) = NaN;  
   irf_spectrogram(hca,specrec,'donotfitcolorbarlabel')
   hca.YScale = 'log'; 
@@ -2653,10 +2655,16 @@ if 1 % dEFlux ion
   hold(hca,'on')
  
   irf_plot(hca,{E_kappa1.resample(ri3)},'comp');
-  irf_legend(hca,{'E(\kappa=1)'},[0.02 0.1],'fontsize',fontsize+2,'color','k');
+  %irf_legend(hca,{'E(\kappa=1)'},[0.02 0.1],'fontsize',fontsize+2,'color','k');
+  %irf_legend(hca,{'E(\kappa=1)'},[0.02 0.1],'fontsize',fontsize+2,'color','k');
+  irf_legend(hca,{'\kappa<1'},[0.7 0.12],'fontsize',fontsize+2,'color','k');
+  irf_legend(hca,{'\kappa>1'},[0.2 0.12],'fontsize',fontsize+2,'color','k');
+  %annotation('textarrow',[0.35 0.4],0.24*[1 1],'String','\kappa = 1','fontsize',fontsize+2)
+  annotation('textarrow',[0.35 0.4]+0.11,0.18*[1 1],'String','\kappa = 1','fontsize',fontsize+3)
   hold(hca,'off')  
   %hca.YLabel.String = {'E_i','(eV)'};
   hca.YLabel.String = {'E_i (eV)'};
+  hca.YLabel.String = {'E_{i\perp} (eV)'};
   hca.YLabel.Interpreter = 'tex';
   hca.Color = color_nan;  
   hca.XGrid = 'off';
