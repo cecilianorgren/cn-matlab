@@ -1,0 +1,79 @@
+function out = merge_gaussians_maxwellianity(gm)
+
+
+dv = 50;
+vvec = -2500:50:2500;
+[X,Y,Z] = ndgrid(vvec,vvec,vvec);
+XYZ = [X(:) Y(:) Z(:)];
+
+[nt, nK] = size(gm);
+
+rmsF = cell(nt,nK);
+
+for it = 1:nt
+  for iK = 1:nK
+    g = gm{it,iK};    
+    K = g.NumComponents;
+    rmsnorm = zeros(K,K);
+    xyz_tot = gmm_monte_carlo_sampling(g,N,1:K);
+    for ik1 = 1:K
+      for ik2 = (ik1+1):K   
+        kvec = [ik1 ik2];
+        if 1 % generate points randomnly from the distribution
+          N = 100000;
+          g_merg = gmm_merge_components(g, {kvec});
+          w_merg = sum(g.ComponentProportion(kvec));
+          xyz_p = gmm_monte_carlo_sampling(g,N,kvec); % generate points from the components specified in kvec
+          xyz_q = gmm_monte_carlo_sampling(g_merg.gmMerged,round(N*w_merg),1); % generate points from the components specified in kvec
+          [ptot, pcomp, p] = gmm_evaluate_f(g,xyz_p,1,'group',{kvec}); % evaluate f at xyz
+          [q, ~] = gmm_evaluate_f(g_merg.gmMerged,xyz_p,w_merg); % evaluate f at xyz
+          
+          gmmFsummed = p;
+          Fdiff = p-q;
+        else % generate points on a grid
+          g_merg = gmm_merge_components(g, {kvec});
+          [g_Ftot, g_Fcomp, g_Fgrouped] = gmm_get_F(g,XYZ,1,'group',{kvec}); 
+          w = sum(g.ComponentProportion(kvec));
+          [gmerg_Ftot, gmerg_Fcomp] = gmm_get_F(g_merg.gmMerged,XYZ,w);
+          
+          % Caluclate difference (maxwellianity)
+          gmmFsummed = squeeze(sum(g_Fcomp(:,:,:,kvec),4));
+          Fdiff = gmerg_Ftot-gmmFsummed;
+        end
+
+        rmsnorm(ik1,ik2) = sqrt(sum(Fdiff.^2,'all'))/sqrt(sum(gmmFsummed.^2,'all'));
+        rmsnorm(ik2,ik1) = rmsnorm(ik1,ik2);
+        if 1
+          %%
+          vmax = max(sqrt(sum(XYZ(:).^2,2)));
+          vmax = round(vmax*50)/50;
+          vvec = -vmax:50:vmax;
+          [pdf_tot,~,mid] = histcn(xyz_tot(:,3), vvec);
+          [pdf_p,~,mid] = histcn(xyz_p(:,3), vvec);
+          [pdf_q,~,mid] = histcn(xyz_q(:,3), vvec);
+  
+          figure; 
+          hca = subplot(1,1,1);
+                    
+          plot(hca,mid{1},pdf_tot,mid{1},pdf_p,mid{1},pdf_q);
+          legend(hca,{'Total, all components',sprintf('Summed components, ik = %g + %g',kvec(1),kvec(2)),sprintf('Merged, ik = %g + %g',kvec(1),kvec(2))})
+
+          %legend(hca,{sprintf('ik = %g + %g',kvec(1),kvec(2)),})
+          %legend(hca,{'Individual Gaussians summed','Merged into one Gaussian','Difference','Original components'},'box','off')
+          %irf_legend(hca,{sprintf('ik = %g + %g',kvec(1),kvec(2)),sprintf('Sum(|Fmerge-Fsum|/|Fsum|)=%03.2f',rmsnorm(ik1,ik2))}',[0.02 0.98],'k')
+        end
+        if 0
+          figure; 
+          hca = subplot(1,1,1);
+          plot(hca,vvec,squeeze(sum(gmmFsummed,[1 3])),vvec,squeeze(sum(gmerg_Ftot,[1 3])),vvec,squeeze(sum(Fdiff,[1 3])),vvec,squeeze(sum(g_Fcomp(:,:,:,kvec),[1 3])),'k--')
+          %legend(hca,{sprintf('ik = %g + %g',kvec(1),kvec(2)),})
+          legend(hca,{'Individual Gaussians summed','Merged into one Gaussian','Difference','Original components'},'box','off')
+          irf_legend(hca,{sprintf('ik = %g + %g',kvec(1),kvec(2)),sprintf('Sum(|Fmerge-Fsum|/|Fsum|)=%03.2f',rmsnorm(ik1,ik2))}',[0.02 0.98],'k')
+        end
+      end
+    end
+    rmsFnorm{it,iK} = rmsnorm;
+  end
+end
+
+out.D = rmsFnorm;

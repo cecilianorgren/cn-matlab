@@ -1,0 +1,31 @@
+tic; sd_mc = merge_gaussians_maxwellianity(gm(:,1),'montecarlo'); t_mc = toc;
+tic; sd_grid = merge_gaussians_maxwellianity(gm(:,1),'grid'); t_grid = toc;
+
+%%
+aa_grid = cellfun(@(x) unique(x), sd_grid.D, 'UniformOutput', false);
+bb_grid = cat(1,aa_grid{:});
+cc_grid = bb_grid(bb_grid>0);
+
+aa_mc = cellfun(@(x) unique(x), sd_mc.D, 'UniformOutput', false);
+bb_mc = cat(1,aa_mc{:});
+cc_mc = bb_mc(bb_mc>0);
+
+hca = subplot(2,1,1);
+vec = 0:0.02:0.5;
+histogram(hca,cc_grid,vec)
+hold(hca,'on')
+histogram(cc_mc,vec)
+hold(hca,'off')
+legend(hca,{sprintf('D^{grid}, t = %g',t_grid),sprintf('D^{MC}, t = %g',t_mc)})
+hca.Title.String = sprintf('N^{dists} = %g',numel(sd_mc.D));
+
+hca = subplot(1,2,2);
+vec = 0:0.02:1;
+plot(hca,cc_grid,cc_mc,'.')
+hca.XLabel.String = 'D^{grid}';
+hca.YLabel.String = 'D^{MC}';
+hca.XGrid = 'on';
+hca.YGrid = 'on';
+axis(hca,'equal')
+axis(hca,'square')
+hca.Title.String = sprintf('N^{dists} = %g',numel(sd_mc.D));

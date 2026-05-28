@@ -4,19 +4,6 @@ c_eval('gseE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_gse_brst_l
 c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
 c_eval('gseVExB? = cross(gseE?.resample(gseB?.time),gseB?)/gseB?.abs/gseB?.abs*1e3; gseVExB?.units = '''';',ic) % km/s
 c_eval('tsVExB = gseVExB?.resample(tsV{1});',ic)
-
-c_eval('gseR? = mms.get_data(''R_gse'',tint+[-30 30],?);',1:4)
-%%
-c_eval('gseR?brsttime = gseR?.resample(gseB?);',1:4)
-[Jcurl,divB,gseB,JxB,BdivB,gseDivPb] = c_4_j('gseR?brsttime','gseB?');
-[gseCurvB,BB]=c_4_grad('gseR?brsttime','gseB?','curvature');
-[BdivB,BB]=c_4_grad('gseR?brsttime','gseB?','bdivb');
-c_eval('gseB?norm = gseB?.norm;',1:4)
-[bdivb,BB]=c_4_grad('gseR?brsttime','gseB?norm','bdivb');
-curvBradius = 1/gseCurvB.abs; curvBradius.name = 'R_c';
-wci = units.e*gseB.abs*1e-9/units.mp; % rad/s
-%c_eval('kappai? = (curvBradius.resample(ri?)/ri?)^0.5;',ic)
-E_kappa1 = 1e6*curvBradius^2*wci.resample(curvBradius)^2*units.mp/2/units.eV;
 %%
 figure(77)
 h = setup_subplots(2,2);
@@ -57,28 +44,6 @@ hold(hca,'off')
 axis(hca,'equal')
 axis(hca,'square')
 
-
-hca = h(isub); isub = isub + 1;
-
-iK = 1;
-vx = tsV{iK}.x.data - tsVExB.x.data;
-vy = tsV{iK}.y.data - tsVExB.y.data;
-vz = tsV{iK}.z.data - tsVExB.z.data;
-ss = tsT{iK}.trace.data/3*0+5;
-scatter3(hca,vx,vy,vz,ss)
-hold(hca,'on')
-iK = 2;
-vx = tsV{iK}.x.data - tsVExB.x.data;
-vy = tsV{iK}.y.data - tsVExB.y.data;
-vz = tsV{iK}.z.data - tsVExB.z.data;
-ss = tsT{iK}.trace.data/3*0+5;
-scatter3(hca,vx,vy,vz,ss)
-hold(hca,'off')
-hca.XLabel.String = 'v_x (km/s)';
-hca.YLabel.String = 'v_y (km/s)';
-hca.ZLabel.String = 'v_z (km/s)';
-axis(hca,'equal')
-axis(hca,'square')
 
 
 hca = h(isub); isub = isub + 1;

@@ -64,8 +64,8 @@ end
 units = irf_units;
 ic = 1;
 
-mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
@@ -78,8 +78,8 @@ iDFs = 17;23:nDF;
 iDFs = 101:nDF;
 iDFs = [1 6 9 10 13 21 25 35 38 45 46 47 52 55 56 57 58 60 61 68 69 70 71 78 79 81 83 87 91];
 iDFs = [92 95 98 101 107 112 115 121 ];
-%iDFs = 37;
-iDFs = 57;
+iDFs = 37;
+%iDFs = 57;
 %iDFs = 10;
 doPrint = 1;
 doPlot = 0;
@@ -120,8 +120,8 @@ for iDF = iDFs%87%iDFs(1)
   %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   
   %% Reduce dist here, to only do it once for all the K
-  %vdf_fx = PD.reduce('1D',[1 0 0]);
-  %vdf_fy = PD.reduce('1D',[0 1 0]);
+  vdf_fx = PD.reduce('1D',[1 0 0]);
+  vdf_fy = PD.reduce('1D',[0 1 0]);
   vdf_fz = PD.reduce('1D',[0 0 1]);
 
 
@@ -134,7 +134,7 @@ for iDF = iDFs%87%iDFs(1)
   %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
   allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD));
 
-  vecK = [2];
+  vecK = [3 4];
   nK = numel(vecK);  
   nt = times.length; 
   clear gm rmsF rmsFnorm moms
@@ -293,6 +293,11 @@ for iDF = iDFs%87%iDFs(1)
         hca.ColorOrder = mms_colors('1234ba');
         ts = cellfun(@(x){x.x},tsV);
         irf_plot(hca,ts,'comp')      
+        if 0
+          hold(hca,'on')
+          irf_plot(hca,gseVExB1.x.resample(gseVi))
+          hold(hca,'off')
+        end
         hca.YLabel.String = 'v_x (km/s)';       
         irf_zoom(hca,'y')
         %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
@@ -302,7 +307,12 @@ for iDF = iDFs%87%iDFs(1)
         hca = irf_panel('vy comp');
         hca.ColorOrder = mms_colors('1234ba');
         ts = cellfun(@(x){x.y},tsV);
-        irf_plot(hca,ts,'comp')      
+        irf_plot(hca,ts,'comp')
+        if 0
+          hold(hca,'on')
+          irf_plot(hca,gseVExB1.y.resample(gseVi))
+          hold(hca,'off')
+        end
         hca.YLabel.String = 'v_y (km/s)';       
         irf_zoom(hca,'y')
         %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])
@@ -313,6 +323,11 @@ for iDF = iDFs%87%iDFs(1)
         hca.ColorOrder = mms_colors('1234ba');
         ts = cellfun(@(x){x.z},tsV);
         irf_plot(hca,ts,'comp')      
+        if 0
+          hold(hca,'on')
+          irf_plot(hca,gseVExB1.z.resample(gseVi))
+          hold(hca,'off')
+        end
         hca.YLabel.String = 'v_z (km/s)';       
         irf_zoom(hca,'y')
         %irf_legend(hca,arrayfun(@(x) "Comp " + x,1:K,'UniformOutput',false)',[1.01 0.98])

@@ -1,6 +1,7 @@
 
 flag_distance = 'stein';         distanceThresh = 0.2;
-flag_distance = 'bhattacharyya'; distanceThresh = 1.4;
+flag_distance = 'bhattacharyya'; distanceThresh = 0.4;
+flag_distance = 'bhattacharyya_term1'; distanceThresh = 0.3;
 
 % 1) distances (temperature/covariance similarity)
 switch flag_distance
@@ -8,6 +9,8 @@ switch flag_distance
     sd = stein_distance(gm, 'sort', true);
   case 'bhattacharyya'
     sd = bhattacharyya_distance(gm, 'sort', true);
+  case 'bhattacharyya_term1'
+    sd = onlydrift_distance(gm, 'sort', true);
 end
 % 2a) find the number of final goups based on threshold
 distanceThreshVec = 0:0.1:4;
@@ -49,7 +52,7 @@ isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_ke
 % Make a time loop to plot the results
 directory_ = strrep(printpath,'\','');
 
-iK = 2;
+iK = 1;
 K = vecK(iK);
 
 ts_ngroups_vs_threshold = irf.ts_scalar(times,cat(1,ngroups_vs_threshold{:,iK}));
