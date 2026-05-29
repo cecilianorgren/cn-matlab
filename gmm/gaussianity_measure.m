@@ -1,35 +1,29 @@
-w = [0.5 0.5]; 
-%w = w/sum(w);
-%w = [ 0.1354    0.3520];
-%w = w/norm(w);
-mu = [000 0 0; 00 0 0];
-Sig = repmat(eye(3,3),[1 1 2])*200^2;
-vt1 = 100;
-vt2 = 200;
-Sig = cat(3,diag([vt1^2 vt1^2 vt1^2]),diag([vt2^2 vt2^2 vt2^2]));
+function varargout = gaussianity_measure(g_o,N,vvec)
 
-if 0
-  kvec = [1 2];
-  mu = gm{it,iK}.mu(kvec,:);
-  Sig = gm{it,iK}.Sigma(:,:,kvec);
-  w = gm{it,iK}.ComponentProportion(kvec);
+if ~exist('N','var')
+  N = 10000;
 end
 
-[wS,muS,SigS] = total_covariance(w,mu,Sig);
+g_o.NumComponents = numel(g_o.w);
+g_o.ComponentProportion = g_o.w;
 
-vvec = -2000:50:2000;
+g_m = total_covariance(g_o.w,g_o.mu,g_o.Sigma);
+g_m.ComponentProportion = g_m.w;
+g_m.NumComponents = 1;
+
+
+%vvec = -2000:50:2000;
 [X,Y,Z] = ndgrid(vvec,vvec,vvec);
-
 XYZ = [X(:) Y(:) Z(:)];
 
 Ftot = zeros(size(X));
-Fcomp = zeros([size(X) numel(w)]);
+Fcomp = zeros([size(X) numel(g_o.w)]);
 
-Fmerg = wS*mvnpdf(XYZ, muS, SigS);
+Fmerg = g_m.w*mvnpdf(XYZ, g_m.mu, g_m.Sigma);
 Fmerg = reshape(Fmerg,size(X));  
 
-for iComp = 1:numel(w)
-  Ftmp = w(iComp)*mvnpdf(XYZ, mu(iComp,:), Sig(:,:,iComp));
+for iComp = 1:numel(g_o.w)
+  Ftmp = g_o.w(iComp)*mvnpdf(XYZ, g_o.mu(iComp,:), g_o.Sigma(:,:,iComp));
   Ftmp = reshape(Ftmp,size(X));  
   Ftot = Ftot + Ftmp;
   Fcomp(:,:,:,iComp)  = Ftmp; 
@@ -39,39 +33,35 @@ p_grid = squeeze(sum(Fcomp(:,:,:,1:2),4));
 q_grid = Fmerg;
 
 % Sample particles from distributions
-g_o.ComponentProportion = w;
-g_o.mu = mu;
-g_o.Sigma = Sig;
-g_o.NumComponents = 2;
-
-g_m.ComponentProportion = wS;
-g_m.mu = muS;
-g_m.Sigma = SigS;
-g_m.NumComponents = 1;
-
-N = 100000;
-xyz_p_o =  gmm_monte_carlo_sampling(g_o,N,1:2);
-xyz_p_o1 = gmm_monte_carlo_sampling(g_o,round(N*w(1)/sum(w)),1);
-xyz_p_o2 = gmm_monte_carlo_sampling(g_o,round(N*w(2)/sum(w)),2);
+%g_o
+%g_m
+xyz_p_o =  gmm_monte_carlo_sampling(g_o,N,1:g_o.NumComponents);
 xyz_p_m =  gmm_monte_carlo_sampling(g_m,N,1);
 
 % Evaluate gaussianity
-%p_ = w(1)*(xyz_p_o, g_o.mu, g_o.Sigma);
-p1 = w(1)*mvnpdf(xyz_p_o, g_o.mu(1,:), g_o.Sigma(:,:,1));
-p2 = w(2)*mvnpdf(xyz_p_o, g_o.mu(2,:), g_o.Sigma(:,:,2));
-p = p1 + p2;
-% xyz_p_o = [xyz_p_o1; xyz_p_o2]; % all points generated from comp 1 and 2, ... this puts them in the wrong order, so can't be used!!!
-q = sum(w)*mvnpdf(xyz_p_o, g_m.mu(1,:), g_m.Sigma(:,:,1));
+p = zeros(N,1);
+for ik = 1:g_o.NumComponents
+  ptmp = g_o.w(ik)*mvnpdf(xyz_p_o, g_o.mu(ik,:), g_o.Sigma(:,:,ik));
+  p = p + ptmp;
+end
 
-[~, ~, p_] = gmm_evaluate_f(g_o,xyz_p_o,1,'group',{[1 2]});
-[q_, ~] = gmm_evaluate_f(g_m,xyz_p_o,1); % evaluate f at xyz
+q = sum(g_m.w)*mvnpdf(xyz_p_o, g_m.mu(1,:), g_m.Sigma(:,:,1));
+
+%[~, ~, p_] = gmm_evaluate_f(g_o,xyz_p_o,1,'group',{[1 2]});
+%[q_, ~] = gmm_evaluate_f(g_m,xyz_p_o,1); % evaluate f at xyz
 % Calculate rms
 rms_mc = sqrt(sum((p-q).^2,'all'))/sqrt(sum(p.^2,'all'));
 rms_grid = sqrt(sum((p_grid-q_grid).^2,'all'))/sqrt(sum(p_grid.^2,'all'));
 
-rms_mc = sum(abs(p-q),'all')/sum(abs(p),'all');
-rms_grid = sum(abs(p_grid-q_grid),'all')/sum(abs(p_grid),'all');
 
+
+varargout{1} = rms_mc;
+varargout{2} = rms_grid;
+
+
+
+
+if 0 % plot
 idim_vec = 1:3;
 
 h = setup_subplots(numel(idim_vec),2);
@@ -104,3 +94,4 @@ end
 
 %h = findobj(gcf,'type','axes'); h = h(end:-1:1);
 linkprop(h,{'XLim'});
+end

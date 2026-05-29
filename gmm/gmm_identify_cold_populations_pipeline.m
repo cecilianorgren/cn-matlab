@@ -1,7 +1,8 @@
 
-flag_distance = 'stein';         distanceThresh = 0.2;
-flag_distance = 'bhattacharyya'; distanceThresh = 0.4;
+flag_distance = 'stein';               distanceThresh = 0.2;
+flag_distance = 'bhattacharyya';       distanceThresh = 0.4;
 flag_distance = 'bhattacharyya_term1'; distanceThresh = 0.3;
+flag_distance = 'gaussianity';         distanceThresh = 0.3;
 
 % 1) distances (temperature/covariance similarity)
 switch flag_distance
@@ -11,9 +12,14 @@ switch flag_distance
     sd = bhattacharyya_distance(gm, 'sort', true);
   case 'bhattacharyya_term1'
     sd = onlydrift_distance(gm, 'sort', true);
+  case 'gaussianity'
+    tic;
+    sd = merge_gaussians_maxwellianity(gm,'method','montecarlo'); 
+    t_mc = toc;
 end
+%%
 % 2a) find the number of final goups based on threshold
-distanceThreshVec = 0:0.1:4;
+distanceThreshVec = 0:0.1:1;
 ngroups_vs_threshold = ngroups_from_threshold(sd.D,distanceThreshVec);
 % 2) overlap groups (transitive)
 groups = overlap_groups_from_distance(sd.D, distanceThresh);
@@ -49,6 +55,7 @@ isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_ke
 %  tsVcold{ik}.data(isNotCold,:)= NaN;
 %end
 
+%%
 % Make a time loop to plot the results
 directory_ = strrep(printpath,'\','');
 
@@ -57,6 +64,7 @@ K = vecK(iK);
 
 ts_ngroups_vs_threshold = irf.ts_scalar(times,cat(1,ngroups_vs_threshold{:,iK}));
 ts_ngroups_vs_threshold.userData.specrec_f = distanceThreshVec;
+
 
 [h1,h2] = initialize_combined_plot('topbottom',4,3,4,0.4,'horizontal');
 fontsize = 10;
@@ -112,7 +120,7 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-for it = 127;%1:5:nt
+for it = 63;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 

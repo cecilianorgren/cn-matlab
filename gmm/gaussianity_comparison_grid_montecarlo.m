@@ -1,5 +1,5 @@
-tic; sd_mc = merge_gaussians_maxwellianity(gm(:,1),'montecarlo'); t_mc = toc;
-tic; sd_grid = merge_gaussians_maxwellianity(gm(:,1),'grid'); t_grid = toc;
+tic; sd_mc = merge_gaussians_maxwellianity(gm(:,2),'montecarlo'); t_mc = toc;
+tic; sd_grid = merge_gaussians_maxwellianity(gm(:,2),'grid'); t_grid = toc;
 
 %%
 aa_grid = cellfun(@(x) unique(x), sd_grid.D, 'UniformOutput', false);
@@ -11,7 +11,7 @@ bb_mc = cat(1,aa_mc{:});
 cc_mc = bb_mc(bb_mc>0);
 
 hca = subplot(1,2,1);
-vec = 0:0.02:1;
+vec = 0:0.02:1.1;
 histogram(hca,cc_grid,vec)
 hold(hca,'on')
 histogram(cc_mc,vec)

@@ -79,7 +79,7 @@ iDFs = 101:nDF;
 iDFs = [1 6 9 10 13 21 25 35 38 45 46 47 52 55 56 57 58 60 61 68 69 70 71 78 79 81 83 87 91];
 iDFs = [92 95 98 101 107 112 115 121 ];
 iDFs = 37;
-%iDFs = 57;
+iDFs = 57;
 %iDFs = 10;
 doPrint = 1;
 doPlot = 0;
@@ -134,7 +134,7 @@ for iDF = iDFs%87%iDFs(1)
   %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
   allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD));
 
-  vecK = [3 4];
+  vecK = [5 6];
   nK = numel(vecK);  
   nt = times.length; 
   clear gm rmsF rmsFnorm moms

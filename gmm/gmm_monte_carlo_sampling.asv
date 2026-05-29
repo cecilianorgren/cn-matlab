@@ -14,15 +14,10 @@ Ncum = 0;
 for ik = 1:numel(group)
   Nk = round(N*w(ik)); % Generate particles based on component proportion
   p(Ncum+[1:Nk],:) = mvnrnd(mu(ik,:), Sigma(:,:,ik),Nk);
-  Ncum = Ncum + Nk;
-  
+  disp([mu(ik,:), Sigma(:,:,ik)])
   %histogram(p(Ncum+[1:Nk],1),-2500:50:2500)
   %hold on
-  
-  %disp(mu(ik,:))
-  %disp(Sigma(:,:,ik))
-  %disp(p(1,:))
+  Ncum = Ncum + Nk;
 end
-
 
 out = p;

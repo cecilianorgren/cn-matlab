@@ -1,4 +1,5 @@
 function varargout = gmm_evaluate_f(gm,XYZ,ntot,varargin)
+% Evaluate the value of mvnpdf at the positions xyz
 
 isortOpt = [];
 doGroup = 0;
