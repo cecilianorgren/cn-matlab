@@ -18,7 +18,7 @@ switch flag_distance
     t_mc = toc;
 end
 %%
-distanceThresh = 0.4;
+distanceThresh = 0.3;
 % 2a) find the number of final goups based on threshold
 distanceThreshVec = 0:0.1:1;
 ngroups_vs_threshold = ngroups_from_threshold(sd.D,distanceThreshVec);
@@ -60,7 +60,7 @@ isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_ke
 % Make a time loop to plot the results
 directory_ = strrep(printpath,'\','');
 
-iK = 1;
+iK = 2;
 K = vecK(iK);
 
 ts_ngroups_vs_threshold = irf.ts_scalar(times,cat(1,ngroups_vs_threshold{:,iK}));
