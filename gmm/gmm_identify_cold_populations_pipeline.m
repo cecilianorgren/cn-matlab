@@ -37,6 +37,11 @@ cold = gmm_cold_singletons_from_merged(merged, coldMerged);
 
 isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_kept));
 
+
+% Calculate the final difference between the original gm and the merged gm
+
+
+
 %tsCold_knee = irf.ts_scalar(times,int64(outCold_knee.isCold_mat_sorted));
 %tsCold_knee.data(tsCold_knee.data==0) = NaN;
 
@@ -121,7 +126,7 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-for it = 81;%1:5:nt
+for it = 86;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
