@@ -5,6 +5,7 @@ doSort = false;
 method = 'montecarlo';
 N = 100000;
 vvec = -2500:50:2500;
+have_options = 0;
 
 nargs = numel(varargin);
 if nargs > 0, have_options = 1; args = varargin(:); end

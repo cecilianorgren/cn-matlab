@@ -126,7 +126,7 @@ h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
 
-for it = 86;%1:5:nt
+for it = 81;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -157,14 +157,15 @@ for it = 86;%1:5:nt
   gmmFtot_y_merg = squeeze(sum(gmmFtot_merg,[1 3]))*(dv*dv*1e6)*1e-18;
   gmmFtot_z_merg = squeeze(sum(gmmFtot_merg,[1 2]))*(dv*dv*1e6)*1e-18;
 
+  dd = gmm_compare_vdfs(gm_orig_tmp,gm_merg_tmp);
 
   if 1 % f(vx)
     % Original gmm
     dv = 50;
     vvec = -2500:50:2500;
-    [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-    gmmFtot_x = squeeze(sum(gmmFtot,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
-    gmmFcomp_x = squeeze(sum(gmmFcomp,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+    %[gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
+    %gmmFtot_x = squeeze(sum(gmmFtot,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+    %gmmFcomp_x = squeeze(sum(gmmFcomp,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
   
     hca = h2(isub); isub = isub + 1;
     hca.ColorOrder = mms_colors('1234');
@@ -173,7 +174,7 @@ for it = 86;%1:5:nt
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = sprintf('f (%s)',vdf_fx.units);
     hca.ColorOrder = mms_colors('1234');
-    irf_legend(hca,{'Obs.','GMM','GMM merged'}',[0.02 0.98],'fontsize',fontsize-1)
+    irf_legend(hca,{'Obs.','GMM','GMM merged',sprintf('diff = %5.3f',dd)}',[0.02 0.98],'fontsize',fontsize-1)
   
     hca = h2(isub); isub = isub + 1;  
     plot(hca,vvec,gmmFcomp_x,vvec,gmmFtot_x,'k')
