@@ -29,9 +29,9 @@ elseif iscell(D)
   for it = 1:size(D,1)
     for iK = 1:size(D,2)
       if isempty(D{it,iK})
-        groups{it,iK} = {};
+        groups{it,iK} = {{}};
       else
-        groups{it,iK} = local_groups_one(D{it,iK}, threshold);
+        groups{it,iK} = {local_groups_one(D{it,iK}, threshold)};
       end
     end
   end

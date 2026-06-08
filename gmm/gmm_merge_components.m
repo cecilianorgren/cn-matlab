@@ -72,18 +72,21 @@ if ~iscell(groups_cell)
 end
 
 [nt, nK] = size(gm_cell);
+if iscell(groups_cell{1}{1})
+  nG = numel(groups_cell{1});
+end
 
-gmMerged = cell(nt,nK);
-mu_out = cell(nt,nK);
-Sigma_out = cell(nt,nK);
-w_out = cell(nt,nK);
-groups_unsorted_out = cell(nt,nK);
-groupWeights_out = cell(nt,nK);
+gmMerged = cell(nt,nK,nG);
+mu_out = cell(nt,nK,nG);
+Sigma_out = cell(nt,nK,nG);
+w_out = cell(nt,nK,nG);
+groups_unsorted_out = cell(nt,nK,nG);
+groupWeights_out = cell(nt,nK,nG);
 
 for it = 1:nt
   if it == 97
     1;
-  end
+  end  
   for iK = 1:nK
     g = gm_cell{it,iK};
     if isempty(g)
@@ -92,87 +95,88 @@ for it = 1:nt
     if ~isa(g, 'gmdistribution')
       error('gm{%d,%d} is not a gmdistribution.', it, iK);
     end
-
-    gs = groups_cell{it,iK};
-    if isempty(gs)
-      % default: no merging, keep as-is
-      gs = arrayfun(@(k) k, 1:g.NumComponents, 'UniformOutput', false);
-    end
-    if ~iscell(gs)
-      error('groups{%d,%d} must be a cell array of index vectors.', it, iK);
-    end
-
-    isort = [];
-    if ~isempty(isort_cell)
-      isort = isort_cell{it,iK};
-    end
-    if ~isempty(isort)
-      % Map sorted indices -> original (unsorted) indices
-      gs_unsorted = cellfun(@(S) isort(S), gs, 'UniformOutput', false);
-    else
-      gs_unsorted = gs;
-    end
-    groups_unsorted_out{it,iK} = gs_unsorted;
-
-    % Extract original parameters
-    mu0 = g.mu;                 % Kx3
-    Sigma0 = g.Sigma;           % 3x3xK
-    w0 = g.ComponentProportion; % 1xK
-    K0 = g.NumComponents;
-    if numel(w0) ~= K0
-      error('Unexpected ComponentProportion size at it=%d iK=%d.', it, iK);
-    end
-
-    M = numel(gs_unsorted);
-    muM = zeros(M,3);
-    SigmaM = zeros(3,3,M);
-    wM = zeros(1,M);
-
-    for m = 1:M
-      S = gs_unsorted{m};
-      S = unique(S(:))';
-      if any(S < 1) || any(S > K0)
-        error('Group index out of range at it=%d iK=%d.', it, iK);
-      end
-      wS = sum(w0(S));
-      if wS <= 0
-        % Degenerate: keep placeholder with tiny weight
-        wS = 0;
-        muS = [0 0 0];
-        SigS = eye(3);
-      else
-        % Weighted mean
-        muS = (w0(S) * mu0(S,:)) / wS; % 1x3
-        % Total covariance (within + between)
-        SigS = zeros(3,3);
-        for ii = 1:numel(S)
-          k = S(ii);
-          dmu = (mu0(k,:) - muS)';
-          SigS = SigS + w0(k) * (Sigma0(:,:,k) + (dmu*dmu')); % law of shared covariances
-        end
-        SigS = SigS / wS;
-      end
-
-      wM(m) = wS;
-      muM(m,:) = muS;
-      SigmaM(:,:,m) = SigS;
-    end
-
-    % Error if ComponentProportion == 0 so put it to a very small value
-    wM(wM==0) = 1e-12;
-
-    % Renormalize weights to sum to 1 for gmdistribution
-    if sum(wM) > 0
-      wMnorm = wM./sum(wM);
-    else
-      wMnorm = ones(1,M)./M;
-    end
     
-    mu_out{it,iK} = muM;
-    Sigma_out{it,iK} = SigmaM;
-    w_out{it,iK} = wMnorm;
-    groupWeights_out{it,iK} = wM;
-    gmMerged{it,iK} = gmdistribution(muM, SigmaM, wMnorm);
+    for iG = 1:nG
+      gs = groups_cell{it,iK}{iG};
+      if isempty(gs)
+        % default: no merging, keep as-is
+        gs = arrayfun(@(k) k, 1:g.NumComponents, 'UniformOutput', false);
+      end
+      if ~iscell(gs)
+        error('groups{%d,%d} must be a cell array of index vectors.', it, iK);
+      end
+  
+      isort = [];
+      if ~isempty(isort_cell)
+        isort = isort_cell{it,iK};
+      end
+      if ~isempty(isort)
+        % Map sorted indices -> original (unsorted) indices
+        gs_unsorted = cellfun(@(S) isort(S), gs, 'UniformOutput', false);
+      else
+        gs_unsorted = gs;
+      end
+      groups_unsorted_out{it,iK} = gs_unsorted;
+  
+      % Extract original parameters
+      mu0 = g.mu;                 % Kx3
+      Sigma0 = g.Sigma;           % 3x3xK
+      w0 = g.ComponentProportion; % 1xK
+      K0 = g.NumComponents;
+      if numel(w0) ~= K0
+        error('Unexpected ComponentProportion size at it=%d iK=%d.', it, iK);
+      end
+  
+      M = numel(gs_unsorted);
+      muM = zeros(M,3);
+      SigmaM = zeros(3,3,M);
+      wM = zeros(1,M);
+  
+      for m = 1:M
+        S = gs_unsorted{m};
+        S = unique(S(:))';
+        if any(S < 1) || any(S > K0)
+          error('Group index out of range at it=%d iK=%d.', it, iK);
+        end
+        wS = sum(w0(S));
+        if wS <= 0
+          % Degenerate: keep placeholder with tiny weight
+          wS = 0;
+          muS = [0 0 0];
+          SigS = eye(3);
+        else
+          % Weighted mean
+          muS = (w0(S) * mu0(S,:)) / wS; % 1x3
+          % Total covariance (within + between)
+          SigS = zeros(3,3);
+          for ii = 1:numel(S)
+            k = S(ii);
+            dmu = (mu0(k,:) - muS)';
+            SigS = SigS + w0(k) * (Sigma0(:,:,k) + (dmu*dmu')); % law of shared covariances
+          end
+          SigS = SigS / wS;
+        end
+  
+        wM(m) = wS;
+        muM(m,:) = muS;
+        SigmaM(:,:,m) = SigS;
+      end
+  
+      % Error if ComponentProportion == 0 so put it to a very small value
+      wM(wM==0) = 1e-12;
+  
+      % Renormalize weights to sum to 1 for gmdistribution
+      if sum(wM) > 0
+        wMnorm = wM./sum(wM);
+      else
+        wMnorm = ones(1,M)./M;
+      end
+      mu_out{it,iK,iG} = muM;
+      Sigma_out{it,iK,iG} = SigmaM;
+      w_out{it,iK,iG} = wMnorm;
+      groupWeights_out{it,iK,iG} = wM;
+      gmMerged{it,iK,iG} = gmdistribution(muM, SigmaM, wMnorm);
+    end
   end
 end
 

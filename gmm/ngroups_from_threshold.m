@@ -1,15 +1,15 @@
-function groups = ngroups_from_threshold(D,threshold_vec)
+function ngroups = ngroups_from_threshold(D,threshold_vec)
 
 if isnumeric(D)
-  groups = local_groups_one(D, threshold);
+  ngroups = local_groups_one(D, threshold_vec);
 elseif iscell(D)
-  groups = cell(size(D));
+  ngroups = cell(size(D));
   for it = 1:size(D,1)
     for iK = 1:size(D,2)
       if isempty(D{it,iK})
-        groups{it,iK} = {};
+        ngroups{it,iK} = {};
       else
-        groups{it,iK} = local_groups_one(D{it,iK}, threshold_vec);
+        ngroups{it,iK} = local_groups_one(D{it,iK}, threshold_vec);
       end
     end
   end

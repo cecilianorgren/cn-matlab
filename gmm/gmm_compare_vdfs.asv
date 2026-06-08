@@ -43,11 +43,11 @@ switch lower(method_points)
     xyz = [X(:) Y(:) Z(:)];
 end
 
-% Evaluate f1 at points
+% Evaluate f 
 [f1] = gmm_evaluate_f(g1,xyz,1); % evaluate f at xyz
 [f2] = gmm_evaluate_f(g2,xyz,1); % evaluate f at xyz
 
-% Compute comparison measure
+
 switch lower(method_comparison)
   case 'rms'
     d = sum(abs(f2-f1)./sum(abs(f1)))/1;

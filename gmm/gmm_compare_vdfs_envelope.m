@@ -1,4 +1,4 @@
-function out = gmm_compare_vdfs(g1,g2,varargin)
+function out = gmm_compare_vdfs_envelope(g1,g2,varargin)
 % Idea is to compare the overall end gaussianity, or difference between
 % original and merged gmm, to see how many groups are needed for a given
 % end threshold on maxwellianity.
@@ -34,29 +34,31 @@ while have_options
   if isempty(args), break, end
 end
 
-% Generate comparison points
-switch lower(method_points)
-  case 'montecarlo'
-    xyz =  gmm_monte_carlo_sampling(g1,N,1:g1.NumComponents);
-  case 'grid'
-    [X Y Z] = ndgrid(vvec,vvec,vvec);
-    xyz = [X(:) Y(:) Z(:)];
+% Check dimensionality
+if iscell(g1)
+  [nt, nK] = size(g1);
+elseif isa(g1,'gmdistribution')
+  nt = 1;
+  nK = 1;
+end
+if iscell(g2)
+  nG = size(g2,3);
+else
+  nG = 1;
 end
 
-% Evaluate f1 at points
-[f1] = gmm_evaluate_f(g1,xyz,1); % evaluate f at xyz
-[f2] = gmm_evaluate_f(g2,xyz,1); % evaluate f at xyz
-
-% Compute comparison measure
-switch lower(method_comparison)
-  case 'rms'
-    d = sum(abs(f2-f1)./sum(abs(f1)))/1;
-    %d = sum(sqrt((f2-f1).^2)./sqrt((f1).^2))/N;
-  case 'epsilon'
-    d = [];
+f_out = zeros(nt,nK,nG); % need to change this to cell
+for it = 1:nt % Loop over time
+  for iK = 1:nK
+    for iG = 1:nG
+      g1_tmp = g1{it,iK};
+      g2_tmp = g2{it,iK,iG};
+      f_tmp = gmm_compare_vdfs(g1_tmp,g2_tmp,varargin{:});
+      f_out(it,iK,iG) = f_tmp;
+    end
+  end
 end
-
-out = d;
+out = f_out;
 
 
 

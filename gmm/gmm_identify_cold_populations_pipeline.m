@@ -18,7 +18,23 @@ switch flag_distance
     t_mc = toc;
 end
 %%
-distanceThresh = 0.4;
+
+% ..) find how the maxwellianity changes with different levels of merging
+%     two ways to do this, iteratively, with iterative merging, or checking
+%     all piece-wise measures first, and then find merging points from
+%     that (from no merges to all merging)
+
+successive_groups = successive_groups_from_distance(sd.D);
+successive_merged = gmm_merge_components(gm, successive_groups); % merge by law of shared covariances etc...
+tic;
+successive_quality = gmm_compare_vdfs_envelope(gm,successive_merged.gmMerged,'method_points','grid');
+toc
+threshold_quality = 0.1;
+% find threshold for which the "quality" is below a given value
+
+
+
+distanceThresh = 0.2;
 % 2a) find the number of final goups based on threshold
 distanceThreshVec = 0:0.1:1;
 ngroups_vs_threshold = ngroups_from_threshold(sd.D,distanceThreshVec);
@@ -61,7 +77,7 @@ isCold = irf.ts_scalar(times,cellfun(@(x) double(~isempty(x)),cold.coldMerged_ke
 %  tsVcold{ik}.data(isNotCold,:)= NaN;
 %end
 
-%
+%%
 % Make a time loop to plot the results
 directory_ = strrep(printpath,'\','');
 
@@ -71,8 +87,10 @@ K = vecK(iK);
 ts_ngroups_vs_threshold = irf.ts_scalar(times,cat(1,ngroups_vs_threshold{:,iK}));
 ts_ngroups_vs_threshold.userData.specrec_f = distanceThreshVec;
 
+ts_grouping_quality = irf.ts_scalar(times,squeeze(successive_quality(:,iK,:)));
 
-[h1,h2] = initialize_combined_plot('topbottom',4,3,4,0.4,'horizontal');
+
+[h1,h2] = initialize_combined_plot('topbottom',5,3,4,0.5,'horizontal');
 fontsize = 10;
 
 if 1 % B
@@ -118,6 +136,22 @@ if 1 % n groups based on threshold
   hold(hca,'off')
   hca.YLabel.String = {'Distance','threshold',flag_distance,sprintf('K=%g',K)};
 end
+if 1 % n groups based on threshold
+  hca = irf_panel('quality based on n groups');
+  hca.ColorOrder = pic_colors('matlab');
+  %vdfx = PD.reduce('1D',[1 0 0]);
+  %vdfx = PD.reduce('1D',[1 0 0]);
+  % reduce just one before the loops
+  [hax,hcb] = irf_spectrogram(hca,ts_grouping_quality.specrec,'lin');
+  hca.YLim = [1 K];
+  hcb.Label.String = 'RMS diff';
+  %legs = "K=" + cellfun(@(x)x.NumComponents,gm(1,:));
+  %irf_legend(hca,legs,[0.98 0.98],'k')
+  %hold(hca,'on')
+  %irf_plot(hca,irf.ts_scalar(times,ones(times.length,1)*distanceThresh),'k')
+  %hold(hca,'off')
+  hca.YLabel.String = {'N_{groups}',sprintf('K=%g',K)}';
+end
 
 
 irf_zoom(h1,'x',tint)
@@ -125,8 +159,8 @@ irf_plot_axis_align(h1)
 h1(end).XTickLabelRotation = 0;
 
 % Plot distributions and GMM results
-
-for it = 81;%1:5:nt
+iG = 1;
+for it = 20;81;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -137,7 +171,7 @@ for it = 81;%1:5:nt
 
   dv = 50;
   vvec = -2500:50:2500;
-  [gmmFtot, gmmFcomp, gmmFgrouped] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it),'group',groups{it,iK});  
+  [gmmFtot, gmmFcomp, gmmFgrouped] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it),'group',groups{it,iK}{iG});  
   gmmFtot_x = squeeze(sum(gmmFtot,[2 3]))*(dv*dv*1e6)*1e-18;
   gmmFcomp_x = squeeze(sum(gmmFcomp,[2 3]))*(dv*dv*1e6)*1e-18;
   gmmFgrouped_x = squeeze(sum(gmmFgrouped,[2 3]))*dv*dv*1e6*1e-18;
@@ -210,7 +244,7 @@ for it = 81;%1:5:nt
     %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
     hca.XLabel.String = 'v (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
-    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
+    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK}{iG},'UniformOutput',false);
     irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
@@ -225,7 +259,7 @@ for it = 81;%1:5:nt
     hca.Title.String = {'Merged by law of shared \mu, \Sigma, w',sprintf('D_{Stein}<%g',distanceThresh)};
     hca.XLabel.String = 'v_x (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
-    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
+    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK}{iG},'UniformOutput',false);
     irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
   
@@ -284,7 +318,7 @@ for it = 81;%1:5:nt
     %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
     hca.XLabel.String = 'v_y (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
-    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
+    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK}{iG},'UniformOutput',false);
     irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
@@ -299,7 +333,7 @@ for it = 81;%1:5:nt
     hca.Title.String = {'Merged by law of shared \mu, \Sigma, w',sprintf('D_{Stein}<%g',distanceThresh)};
     hca.XLabel.String = 'v (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
-    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
+    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK}{iG},'UniformOutput',false);
     irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
   
@@ -358,7 +392,7 @@ for it = 81;%1:5:nt
     %hca.Title.String = {sprintf('Gaussian Mixture Model'),'summed components'};
     hca.XLabel.String = 'v (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
-    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
+    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK}{iG},'UniformOutput',false);
     irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
 
@@ -373,7 +407,7 @@ for it = 81;%1:5:nt
     hca.Title.String = {'Merged by law of shared \mu, \Sigma, w',sprintf('D_{Stein}<%g',distanceThresh)};
     hca.XLabel.String = 'v_z (km/s)';
     hca.YLabel.String = sprintf('f (%s)','...');
-    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK},'UniformOutput',false);
+    legs = cellfun(@(x) sprintf('%g',x),groups{it,iK}{iG},'UniformOutput',false);
     irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
     %irf_legend(hca,{'Merged by','law of','merged','covariances'}',[0.02 0.98],'color','k')
   
