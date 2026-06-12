@@ -74,6 +74,8 @@ end
 [nt, nK] = size(gm_cell);
 if iscell(groups_cell{1}{1})
   nG = numel(groups_cell{1});
+else
+  nG = 1;
 end
 
 gmMerged = cell(nt,nK,nG);
@@ -97,7 +99,7 @@ for it = 1:nt
     end
     
     for iG = 1:nG
-      gs = groups_cell{it,iK}{iG};
+      gs = groups_cell{it,iK}(iG);
       if isempty(gs)
         % default: no merging, keep as-is
         gs = arrayfun(@(k) k, 1:g.NumComponents, 'UniformOutput', false);
