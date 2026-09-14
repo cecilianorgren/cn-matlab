@@ -24,10 +24,10 @@ end
 %dvy = vy(2)-vy(1);
 %dvz = vz(2)-vz(1);
 
+numComp = gm.NumComponents;
 mu = gm.mu; % km/s
 Sigma = gm.Sigma; % (km/s)^2
 compProp = gm.ComponentProportion;
-numComp = gm.NumComponents;
 [np,ndim] = size(XYZ);
 Ftot = zeros([np 1]);
 Fcomp = zeros([np numComp]);

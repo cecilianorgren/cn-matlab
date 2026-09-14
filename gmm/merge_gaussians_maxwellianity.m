@@ -88,7 +88,7 @@ for it = 1:nt
         kvec = [ik1 ik2];
         switch method
           case 'montecarlo' % generate points randomnly from the distribution
-            g_merg = gmm_merge_components(g, {kvec});
+            g_merg = gmm_merge_components(g, {{kvec}});
             w_merg = sum(g.ComponentProportion(kvec));            
             xyz_p = gmm_monte_carlo_sampling(g,N,kvec); % generate points from the components specified in kvec
             %xyz_q = gmm_monte_carlo_sampling(g_merg.gmMerged,round(N*w_merg),1); % generate points from the components specified in kvec
@@ -99,7 +99,7 @@ for it = 1:nt
             gmmFsummed = p;
             Fdiff = p-q;
           case 'grid'  % generate points on a grid
-            g_merg = gmm_merge_components(g, {kvec});
+            g_merg = gmm_merge_components(g, {{kvec}});
             [g_Ftot, g_Fcomp, g_Fgrouped] = gmm_get_F(g,vvec,vvec,vvec,1,'group',{kvec}); 
             w = sum(g.ComponentProportion(kvec));
             [gmerg_Ftot, gmerg_Fcomp] = gmm_get_F(g_merg.gmMerged,vvec,vvec,vvec,w);

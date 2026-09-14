@@ -77,24 +77,24 @@ gseJxB = gseJcurl.cross(gseBav.resample(gseJcurl)); gseJxB.name = 'JxB'; gseJxB.
 gseJxBne_mVm = (gseJxB*1e-18)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_mVm.name = 'JxB/ne';
 %gseJxBne_mVm.data(abs(gseJxBne_mVm.data)>100) = NaN;
 
-%%
-c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJyBz? =    gseJ?.y*gseB?.z.resample(gseJ?); gseJyBz?.name = ''Jy*Bz''; gseJyBz?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJzBy? = -1*gseJ?.z*gseB?.y.resample(gseJ?); gseJzBy?.name = ''-Jz*By''; gseJzBy?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJzBx? =    gseJ?.z*gseB?.x.resample(gseJ?); gseJzBx?.name = ''Jz*Bx''; gseJxBy?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJxBz? = -1*gseJ?.x*gseB?.z.resample(gseJ?); gseJxBz?.name = ''-Jx*Bz''; gseJxBz?.units = ''nA/m^2 nT'';',ic)
 
-c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',ic)
+c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJyBz? =    gseJ?.y*gseB?.z.resample(gseJ?); gseJyBz?.name = ''Jy*Bz''; gseJyBz?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJzBy? = -1*gseJ?.z*gseB?.y.resample(gseJ?); gseJzBy?.name = ''-Jz*By''; gseJzBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJzBx? =    gseJ?.z*gseB?.x.resample(gseJ?); gseJzBx?.name = ''Jz*Bx''; gseJxBy?.units = ''nA/m^2 nT'';',1:4)
+c_eval('gseJxBz? = -1*gseJ?.x*gseB?.z.resample(gseJ?); gseJxBz?.name = ''-Jx*Bz''; gseJxBz?.units = ''nA/m^2 nT'';',1:4)
+
+c_eval('gseJxBne?_mVm = (gseJxB?*1e-18)/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBne?_mVm.name = ''JxB/ne'';',1:4)
 
 % FPI
-c_eval('gseJxBy?ne_mVm = gseJxBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBy?ne_mVm.units = ''mV/m'';',ic)
-c_eval('gseJyBx?ne_mVm = gseJyBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBx?ne_mVm.units = ''mV/m'';',ic)
-c_eval('gseJyBz?ne_mVm = gseJyBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBz?ne_mVm.units = ''mV/m'';',ic)
-c_eval('gseJzBy?ne_mVm = gseJzBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBy?ne_mVm.units = ''mV/m'';',ic)
-c_eval('gseJzBx?ne_mVm = gseJzBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBx?ne_mVm.units = ''mV/m'';',ic)
-c_eval('gseJxBz?ne_mVm = gseJxBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBz?ne_mVm.units = ''mV/m'';',ic)
+c_eval('gseJxBy?ne_mVm = gseJxBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBy?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJyBx?ne_mVm = gseJyBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBx?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJyBz?ne_mVm = gseJyBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJyBz?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJzBy?ne_mVm = gseJzBy?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBy?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJzBx?ne_mVm = gseJzBx?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJzBx?ne_mVm.units = ''mV/m'';',1:4)
+c_eval('gseJxBz?ne_mVm = gseJxBz?*1e-18/(ne?.resample(gseJxB?)*1e6)/units.e*1e3; gseJxBz?ne_mVm.units = ''mV/m'';',1:4)
 
 % Curl
 gseJxBy_ne_mVm_curl =    gseJcurl.x*gseB.y*1e-18/(neav.resample(gseJcurl)*1e6)/units.e*1e3; gseJxBy_ne_mVm_curl.units = 'mV/m';
@@ -191,7 +191,6 @@ irf_legend(h(7),{'Original - (Cleaned based on 3D/time and energy/time structure
 PD_orig = PD_orig_mask;
 PD_clean = PD_clean_mask;
 PD_clean_diff = PD_diff_mask;
-%PD_clean = PD_orig;
 
 %% Define times, etc... things that are common for the entire study
 tint_figure = irf.tint('2017-07-11T22:33:00.00Z/2017-07-11T22:35:00.00Z');
@@ -207,7 +206,6 @@ tint_figure_zoom_inner_idr = irf.tint('2017-07-11T22:33:50.00Z/2017-07-11T22:34:
 vL_xline = -170;
 
 %% Local coordinate system
-% Nakamura 2018 (rumi)
 L = [0.9482,-0.255,-0.1893];
 M = [0.1818,0.9245,-0.3350];
 N = [0.2604,0.2832,0.9230];
@@ -218,11 +216,10 @@ M_vi = [ 0.4539    0.8893   -0.0559];
 N_vi = -[-0.0294   -0.0477   -0.9984];
 lmn_vi = [L_vi; M_vi; N_vi];
 
- % Torbert 2018
 L_tor = [0.971, 0.216, -0.1069];
 M_tor = [-0.234, 0.948, -0.215]; 
 N_tor = [0.054, 0.233, 0.971];
-lmn_tor = [L_tor; M_tor; N_tor];
+lmn_tor = 
 
 L_gse = [1 0 0];
 M_gse = [0 1 0];
@@ -291,8 +288,6 @@ lmn = lmn_vi;
 lmn = lmn_gse;
 %lmn = lmn_edr;
 lmn = lmn_eig;
-lmn = lmn_tor; % for referee response
-lmn = lmn_edr; % for referee response, edr = nakamura
 lmn = lmn_eig2;
 L = lmn(1,:);
 M = lmn(2,:);
@@ -304,7 +299,7 @@ lmn = [L; M; N];
 %% Rotate into LMN
 c_eval('mvaVixB? = gseVixB?*lmn''; mvaVixB?.name = ''Vi x B LMN'';',ic)
 c_eval('mvaVexB? = gseVexB?*lmn''; mvaVexB?.name = ''Ve x B LMN'';',ic)
-c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
+%c_eval('mvaVExB? = gseVExB?*lmn''; mvaVExB?.name = ''E LMN'';',ic)
 c_eval('mvaE? = gseE?*lmn''; mvaE?.name = ''E LMN'';',ic)
 c_eval('mvaB? = gseB?*lmn''; mvaB?.name = ''B LMN'';',ic)
 c_eval('mvaVi? = gseVi?*lmn''; mvaVi?.name = ''Vi LMN'';',ic)
@@ -312,31 +307,9 @@ c_eval('mvaVe? = gseVe?*lmn''; mvaVe?.name = ''Ve LMN'';',ic)
 %c_eval('mvaPi? = lmn*gsePi?*lmn''; mvaPi?.units = gsePi?.units;',ic)
 %c_eval('mvaVe?perp = gseVe?perp*lmn''; mvaVe?perp.name = ''Ve perp LMN'';',ic)
 
-c_eval('mvaVeMBL? = -1*mvaVe?.y*1e3*mvaB?.x.resample(mvaVe?.time)*1e-9*1e3; mvaVeMBL?.name = ''-VeM x BL'';',ic) % mV/m
-c_eval('mvaVeLBM? = +1*mvaVe?.x*1e3*mvaB?.y.resample(mvaVe?.time)*1e-9*1e3; mvaVeLBM?.name = ''VeL x BM'';',ic) % mV/m
 
-c_eval('mvaEVexB? = mvaE?.resample(mvaVexB?) + mvaVexB?; mvaEVexB?.name = ''E + ve x B'';',ic) % mV/m
-
-c_eval('tsLgse? = irf.ts_vec_xyz(iPDist?.time,repmat(L,iPDist?.length,1));',ic)
-c_eval('tsMgse? = irf.ts_vec_xyz(iPDist?.time,repmat(M,iPDist?.length,1));',ic)
-c_eval('tsNgse? = irf.ts_vec_xyz(iPDist?.time,repmat(N,iPDist?.length,1));',ic)
-
-c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt?,-1);',ic)
-c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt?,-1);',ic)
-c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt?,-1);',ic)
-
-%c_eval('tsLdsl? = tsLgse?;',ic)
-%c_eval('tsMdsl? = tsMgse?;',ic)
-%c_eval('tsNdsl? = tsNgse?;',ic)
-
-
-c_eval('tsSCaxis?_dsl = irf.ts_vec_xyz(iPDist?.time,repmat([0 0 1],iPDist?.length,1));',ic)
-c_eval('tsSCaxis?_gse = mms_dsl2gse(tsSCaxis?_dsl,defatt?,1);',ic)
-c_eval('tsSCaxis?_lmn = tsSCaxis?_gse*lmn'';',ic)
-
-%%
-c_eval('mvaJ? = gseJ?*lmn'';',ic)
-c_eval('mvaJxBne?_mVm = gseJxBne?_mVm*lmn'';',ic)
+c_eval('mvaJ? = gseJ?*lmn'';',1:4)
+c_eval('mvaJxBne?_mVm = gseJxBne?_mVm*lmn'';',1:4)
 mvaJxBne_mVm = gseJxBne_mVm*lmn';
 mvaCurvB = gseCurvB*lmn';
 mvaJcurl = gseJcurl*lmn';
@@ -359,6 +332,27 @@ c_eval('mvaJNBL?ne_mVm = mvaJNBL?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3;
 c_eval('mvaJLBN?ne_mVm = mvaJLBN?*1e-18/(ne?.resample(mvaJxB?)*1e6)/units.e*1e3; mvaJLBN?ne_mVm.units = ''mV/m'';',ic)
 
 
+c_eval('mvaVeMBL? = -1*mvaVe?.y*1e3*mvaB?.x.resample(mvaVe?.time)*1e-9*1e3; mvaVeMBL?.name = ''-VeM x BL'';',ic) % mV/m
+c_eval('mvaVeLBM? = +1*mvaVe?.x*1e3*mvaB?.y.resample(mvaVe?.time)*1e-9*1e3; mvaVeLBM?.name = ''VeL x BM'';',ic) % mV/m
+
+c_eval('mvaEVexB? = mvaE?.resample(mvaVexB?) + mvaVexB?; mvaEVexB?.name = ''E + ve x B'';',ic) % mV/m
+
+c_eval('tsLgse? = irf.ts_vec_xyz(iPDist?.time,repmat(L,iPDist?.length,1));',ic)
+c_eval('tsMgse? = irf.ts_vec_xyz(iPDist?.time,repmat(M,iPDist?.length,1));',ic)
+c_eval('tsNgse? = irf.ts_vec_xyz(iPDist?.time,repmat(N,iPDist?.length,1));',ic)
+
+c_eval('tsLdsl? = mms_dsl2gse(tsLgse?,defatt?,-1);',ic)
+c_eval('tsMdsl? = mms_dsl2gse(tsMgse?,defatt?,-1);',ic)
+c_eval('tsNdsl? = mms_dsl2gse(tsNgse?,defatt?,-1);',ic)
+
+%c_eval('tsLdsl? = tsLgse?;',ic)
+%c_eval('tsMdsl? = tsMgse?;',ic)
+%c_eval('tsNdsl? = tsNgse?;',ic)
+
+
+c_eval('tsSCaxis?_dsl = irf.ts_vec_xyz(iPDist?.time,repmat([0 0 1],iPDist?.length,1));',ic)
+c_eval('tsSCaxis?_gse = mms_dsl2gse(tsSCaxis?_dsl,defatt?,1);',ic)
+c_eval('tsSCaxis?_lmn = tsSCaxis?_gse*lmn'';',ic)
 
 
 %% Reduce 1D distributions
@@ -637,9 +631,9 @@ c_eval('h(?).FontSize = 16;',1:numel(h))
 
 %% Figure: Overview
 
-h = irf_plot(9);
+h = irf_plot(8);
 c_eval('h(?).Position(2) = h(?).Position(2)-0.02;',1:numel(h))
-fontsize = 10;
+fontsize = 13;
 color_nan = [0.9 0.9 0.9]-0.1;
 color_nan = [0.9 0.9 0.9]+0.1;
 
@@ -665,26 +659,11 @@ if 1 % Vi
   hca = irf_panel('Vi LMN');
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('irf_plot(hca,{mvaVi?.x.tlim(tint),mvaVi?.y.tlim(tint),mvaVi?.z.tlim(tint)},''comp'');',ic)  
-  hold(hca,'on')
-  %c_eval('irf_plot(hca,{mvaVExB?.resample(mvaVi?).x.tlim(tint),mvaVExB?.resample(mvaVi?).y.tlim(tint),mvaVExB?.resample(mvaVi?).z.tlim(tint)},''comp'');',ic)  
-  hold(hca,'off')
+  
   hca.YLabel.String = {'v_i','(km/s)'};
   set(hca,'ColorOrder',mms_colors('xyza'))
   irf_legend(hca,{'L','M','N'},[0.98,0.98],'fontsize',fontsize);
 end
-if 1 % E lmn
-  hca = irf_panel('E LMN');
-  set(hca,'ColorOrder',mms_colors('xyza'))  
-  fhighE = 10;
-  c_eval('irf_plot(hca,{mvaE?.filt(0,fhighE,[],5).x,mvaE?.filt(0,fhighE,[],5).y,mvaE?.filt(0,fhighE,[],5).z,mvaVixB?.z},''comp'');',ic)
-  %hold(hca,'on')
-  %c_eval('irf_plot(hca,{mvaVixB?.z},''comp'');',ic)
-  %hold(hca,'off')
-  hca.YLabel.String = {'E','(mV/m)'};
-  set(hca,'ColorOrder',mms_colors('xyza'))
-  irf_legend(hca,{'L','M','N'},[0.98 0.98],'fontsize',fontsize);
-  irf_legend(hca,{sprintf('< %g Hz',fhighE)},[0.98 0.1],'fontsize',fontsize-2,'color','k');
-end 
 
 if 0 % dEFlux ion
   hca = irf_panel('ion dEF omni');
@@ -714,11 +693,9 @@ if 1 % dEFlux ion
   %c_eval('specrec = PD_clean_notmasked.deflux.omni.specrec;',ic)
   c_eval('specrec = PD_clean.deflux.omni.specrec;',ic)
   specrec.p(specrec.p==0) = NaN;  
-  [h_sp,hcb] = irf_spectrogram(hca,specrec,'donotfitcolorbarlabel');
+  irf_spectrogram(hca,specrec,'donotfitcolorbarlabel')
   hca.YScale = 'log'; 
-  hcb.YLabel.String = 'DEF keV/(cm^2 s sr keV)';
 
-  hca.YTick = 10.^(0:5);
   hold(hca,'on')
   %irf_plot(hca,tsElow,'color',[0 0 0],'linewidth',3)
   %irf_legend(hca,{'E_{low}'},[0.02 0.5],'color','k','fontweight','bold','fontsize',fontsize)
@@ -754,8 +731,8 @@ if 1 % fi red L
   c_eval('specrec = fi?_L.specrec;',ic)
   specrec.p(specrec.p==0) = NaN;  
   %specrec.f = specrec.f - v_xline;
-  c_eval('[~,hcb] = irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)   
-  delete(hcb)
+  c_eval('irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)  
+  
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
   
@@ -776,8 +753,8 @@ if 1 % fi red M
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('specrec = fi?_M.specrec; ',ic)
   specrec.p(specrec.p==0) = NaN;
-  c_eval('[~,hcb] = irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)   
-  hcb.YLabel.String = 'PSD s/m^4';
+  c_eval('irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)   
+  
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
   
@@ -794,9 +771,7 @@ if 1 % fi red N
   set(hca,'ColorOrder',mms_colors('xyza'))
   c_eval('specrec = fi?_N.specrec; ',ic)
   specrec.p(specrec.p==0) = NaN;
-  
-  c_eval('[~,hcb] = irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)   
-  delete(hcb)
+  c_eval('irf_spectrogram(hca,specrec,''donotfitcolorbarlabel'');',ic)  
   
   set(hca,'ColorOrder',mms_colors('xyza'))
   %irf_legend(hca,{'x','y','z'},[0.98,0.3],'fontsize',fontsize);
@@ -829,7 +804,7 @@ if 1 % fraction of ions
   colors = [mms_colors('24'); 0.3 0.3 0.3];  
   set(hca,'ColorOrder',colors)  
   %irf_legend(hca,{'moving tailward','moving Earthward','moving away from X line'}',[0.2 0.7])
-  irf_legend(hca,{'moving tailward','    moving Earthward','               moving away from X line'},[0.045 0.98],'fontsize',fontsize-3)
+  irf_legend(hca,{'moving tailward','    moving Earthward','           moving away from X line'},[0.045 0.98],'fontsize',fontsize-3)
   %hca.YTick = [0:0.25:1];
 end
 
@@ -838,7 +813,7 @@ irf_plot_axis_align
 %irf_zoom(h,'x',tint_figure_zoom)
 irf_zoom(h,'x',tint_figure_zoom_incl_sep)
 
-irf_zoom(h(1:4),'y')
+irf_zoom(h(1:3),'y')
 irf_pl_mark(h,time_xline+0,'black','linestyle','-.')
 %irf_pl_mark(h,time_xline_ion,'red','linestyle',':')
 %colormap(irf_colormap('thermal'))
@@ -854,14 +829,14 @@ c_eval('h(?).FontSize = fontsize;',1:numel(h))
 
 c_eval('h(?).XGrid = ''off''; h(?).YGrid = ''off'';',1:numel(h))
 
-hlinks = linkprop(h(1+[5 6 7]),{'CLim'});
-h(1+6).CLim = [-4   -1];
+hlinks = linkprop(h([5 6 7]),{'CLim'});
+h(6).CLim = [-4   -1];
 %colormap(irf_colormap('waterfall'))
 %colormap(pic_colors('candy_gray'))
 colormap(pic_colors('candy6'))
 colormap(irf_colormap('magma'))
 %hlinks = linkprop(h([4 5]),{'CLim'});
-h(1+4).CLim = [ 3   6.0];
+h(4).CLim = [ 3   6.0];
 %hb = findobj(gcf,'type','colorbar');
 %delete(hb(end))
 %hb(4).Position(4) = hb(4).Position(4)*2.1;
@@ -931,9 +906,9 @@ irf_legend(0,{sprintf('L=[%.2f,%.2f,%.2f], M = [%.2f,%.2f,%.2f], N = [%.2f,%.2f,
 %% Figure: Hall fields
 figure(102)
 ic = 3;
-h = irf_plot(5);
+h = irf_plot(4);
 
-fontsize = 13;
+fontsize = 14;
 fhighE = 10;
 
 if 1 % B lmn
@@ -980,34 +955,12 @@ if 0 % JxB
   set(hca,'ColorOrder',mms_colors('1234b'))
   irf_legend(hca,{'1','2','3','4','curl'},[0.98,0.98],'fontsize',fontsize);
 end
-if 1 % JxB/ne mV/m, N
+if 1 % JxB/ne mV/m
   hca = irf_panel('E Hall LMN');
   set(hca,'ColorOrder',mms_colors('1243b'))
-  %c_eval('irf_plot(hca,{mvaE?.z.filt(0,fhighE,[],5),mvaJxBne?_mVm.z,mvaJLBM?ne_mVm,mvaJMBL?ne_mVm},''comp'');',ic)
-  c_eval('irf_plot(hca,{mvaE?.z.filt(0,fhighE,[],5),mvaJxBne?_mVm.z.filt(0,fhighE,[],5),mvaJLBM?ne_mVm.filt(0,fhighE,[],5),mvaJMBL?ne_mVm.filt(0,fhighE,[],5)},''comp'');',ic)
+  c_eval('irf_plot(hca,{mvaE?.z.filt(0,fhighE,[],5),mvaJxBne?_mVm.z,mvaJLBM?ne_mVm,mvaJMBL?ne_mVm},''comp'');',ic)
   
   hca.YLabel.String = {'E_N (mV/m)'};
-  set(hca,'ColorOrder',mms_colors('1243b'))
-  irf_legend(hca,{,sprintf('E (< %g Hz)',fhighE),'JxB/ne','J_LB_M/ne','-J_MB_L/ne'},[0.98,0.98],'fontsize',fontsize);
-end
-if 1 % JxB/ne mV/m
-  hca = irf_panel('E Hall LMN L');h
-  set(hca,'ColorOrder',mms_colors('1243b'))
-  %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhighE,[],5),mvaJxBne?_mVm.x,mvaJNBM?ne_mVm,mvaJMBN?ne_mVm},''comp'');',ic)
-  c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhighE,[],5),mvaJxBne?_mVm.x.filt(0,fhighE,[],5),mvaJNBM?ne_mVm.filt(0,fhighE,[],5),mvaJMBN?ne_mVm.filt(0,fhighE,[],5)},''comp'');',ic)
-  
-  hca.YLabel.String = {'E_L (mV/m)'};
-  set(hca,'ColorOrder',mms_colors('1243b'))
-  irf_legend(hca,{,sprintf('E (< %g Hz)',fhighE),'JxB/ne','-J_NB_M/ne','J_MB_N/ne'},[0.98,0.98],'fontsize',fontsize);
-end
-
-if 0 % JxB/ne mV/m
-  hca = irf_panel('E Hall LMN M');
-  set(hca,'ColorOrder',mms_colors('1243b'))
-  %c_eval('irf_plot(hca,{mvaE?.x.filt(0,fhighE,[],5),mvaJxBne?_mVm.x,mvaJNBM?ne_mVm,mvaJMBN?ne_mVm},''comp'');',ic)
-  c_eval('irf_plot(hca,{mvaE?.y.filt(0,fhighE,[],5),mvaJxBne?_mVm.y,mvaJNBL?ne_mVm,mvaJLBN?ne_mVm},''comp'');',ic)
-  
-  hca.YLabel.String = {'E_L (mV/m)'};
   set(hca,'ColorOrder',mms_colors('1243b'))
   irf_legend(hca,{,sprintf('E (< %g Hz)',fhighE),'JxB/ne','J_LB_M/ne','-J_MB_L/ne'},[0.98,0.98],'fontsize',fontsize);
 end
@@ -1088,7 +1041,7 @@ irf_plot_axis_align
 h(end).XTickLabelRotation = 0;
 c_eval('h(?).YLabel.Interpreter = ''tex'';',1:numel(h))
 
-c_eval('h(?).FontSize = fontsize;',1:numel(h))
+c_eval('h(?).FontSize = 16;',1:numel(h))
 
 legends = {'a)','b)','c)','d)','e)','f)','g)','h)','i)','j)','k)','l)','m)'};
 nInd = 1;
@@ -1556,10 +1509,7 @@ isub = 1;
 irf_zoom(h1,'x',tint_figure_zoom_incl_sep+[+8 -8])
 irf_zoom(h1,'y')
 
-pdist_all = PD_orig_notmasked;
-pdist_all = iPDist3;
 pdist_all = PD_clean;
-%pdist_all = PD_orig;
 %pdist_all.data(:,:,:,[ ]) = 0;
 time = time_vdf;
 
@@ -1624,7 +1574,7 @@ for it = 1:times.length%(1)
     hca.YLabel.String = 'v_M (10^3 km/s)';
     vmin = sqrt(2*units.eV*min(elow)/units.mp)*1e-3;
     %irf_legend(hca,sprintf('v>%.0f km/s',vmin),[0.02 0.98],'color','k','fontsize',10)
-    if 0 % plot B direction
+    if 1 % plot B direction
       xlim = hca.XLim;
       ylim = hca.YLim;
       hold(hca,'on')
@@ -1711,7 +1661,7 @@ for it = 1:times.length%(1)
       hca.XLabel.String = 'v_L-v_{L}^{Xline} (10^3 km/s)';
     end
 
-    if 0 % plot B direction
+    if 1 % plot B direction
       xlim = hca.XLim;
       ylim = hca.YLim;
       hold(hca,'on')
@@ -1758,7 +1708,7 @@ for it = 1:times.length%(1)
     axis(hca,'square')
     hca.XLabel.String = 'v_M (10^3 km/s)';
     hca.YLabel.String = 'v_N (10^3 km/s)';
-    if 0 % plot B direction
+    if 1 % plot B direction
       xlim = hca.XLim;
       ylim = hca.YLim;
       hold(hca,'on')

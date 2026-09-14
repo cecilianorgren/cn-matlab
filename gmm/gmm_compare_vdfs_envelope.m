@@ -42,17 +42,28 @@ elseif isa(g1,'gmdistribution')
   nK = 1;
 end
 if iscell(g2)
-  nG = size(g2,3);
+  nGmax = size(g2,3);
 else
-  nG = 1;
+  nGmax = 1;
 end
 
-f_out = zeros(nt,nK,nG); % need to change this to cell
+f_out = nan(nt,nK,nGmax); % need to change this to cell
 for it = 1:nt % Loop over time
   for iK = 1:nK
+    if iscell(g1{it,iK})
+      nG = numel(g1{it,iK});
+    elseif isa(g1{it,iK},'gmdistribution')
+      nG = g1{it,iK}.NumComponents;
+    end
     for iG = 1:nG
-      g1_tmp = g1{it,iK};
+      if iscell(g1{it,iK})
+        g1_tmp = g1{it,iK}{iG};
+      else
+        g1_tmp = g1{it,iK};
+      end
       g2_tmp = g2{it,iK,iG};
+      if isempty(g1_tmp); disp(sprintf('it = %g, iK = %g, iG = %g: empty gm1',it,iK,iG)); continue; end
+      if isempty(g2_tmp); disp(sprintf('it = %g, iK = %g, iG = %g: empty gm2 (merged)',it,iK,iG)); continue; end
       f_tmp = gmm_compare_vdfs(g1_tmp,g2_tmp,varargin{:});
       f_out(it,iK,iG) = f_tmp;
     end

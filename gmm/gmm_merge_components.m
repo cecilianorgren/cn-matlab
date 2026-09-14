@@ -73,23 +73,24 @@ end
 
 [nt, nK] = size(gm_cell);
 if iscell(groups_cell{1}{1})
-  nG = numel(groups_cell{1});
+  nGmax = numel(groups_cell{end});
 else
-  nG = 1;
+  nGmax = 1;
 end
 
-gmMerged = cell(nt,nK,nG);
-mu_out = cell(nt,nK,nG);
-Sigma_out = cell(nt,nK,nG);
-w_out = cell(nt,nK,nG);
-groups_unsorted_out = cell(nt,nK,nG);
-groupWeights_out = cell(nt,nK,nG);
+gmMerged = cell(nt,nK,nGmax);
+mu_out = cell(nt,nK,nGmax);
+Sigma_out = cell(nt,nK,nGmax);
+w_out = cell(nt,nK,nGmax);
+groups_unsorted_out = cell(nt,nK,nGmax);
+groupWeights_out = cell(nt,nK,nGmax);
 
 for it = 1:nt
   if it == 97
     1;
   end  
   for iK = 1:nK
+    nG = numel(groups_cell{it,iK});
     g = gm_cell{it,iK};
     if isempty(g)
       continue
