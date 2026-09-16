@@ -19,7 +19,7 @@ for it = 1:nt
     tmp = find(quality(it,iK,:)<threshold,1,'last');
     if ~isempty(tmp)
       iG(it,iK) = tmp;
-      groups_selected(it,iK) = groups(it,iK);
+      groups_selected(it,iK) = {groups{it,iK}{tmp}};
       quality_selected(it,iK) = quality(it,iK,tmp);
     end
   end

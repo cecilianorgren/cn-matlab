@@ -78,15 +78,15 @@ else
   nGmax = 1;
 end
 
-gmMerged = cell(nt,nK,nGmax);
-mu_out = cell(nt,nK,nGmax);
-Sigma_out = cell(nt,nK,nGmax);
-w_out = cell(nt,nK,nGmax);
-groups_unsorted_out = cell(nt,nK,nGmax);
-groupWeights_out = cell(nt,nK,nGmax);
+gmMerged = cell(nt,nK);
+mu_out = cell(nt,nK);
+Sigma_out = cell(nt,nK);
+w_out = cell(nt,nK);
+groups_unsorted_out = cell(nt,nK);
+groupWeights_out = cell(nt,nK);
 
 for it = 1:nt
-  if it == 97
+  if it == 70%97
     1;
   end  
   for iK = 1:nK
@@ -99,8 +99,13 @@ for it = 1:nt
       error('gm{%d,%d} is not a gmdistribution.', it, iK);
     end
     
+    % Initialize matries for merged groups
+    mu_tmp = zeros(nG,3);
+    Sigma_tmp = zeros(3,3,nG);
+    w_tmp = zeros(1,nG);
+
     for iG = 1:nG
-      gs = groups_cell{it,iK}{iG};
+      gs = groups_cell{it,iK}(iG);
       if isempty(gs)
         % default: no merging, keep as-is
         gs = arrayfun(@(k) k, 1:g.NumComponents, 'UniformOutput', false);
@@ -174,12 +179,23 @@ for it = 1:nt
       else
         wMnorm = ones(1,M)./M;
       end
-      mu_out{it,iK,iG} = muM;
-      Sigma_out{it,iK,iG} = SigmaM;
-      w_out{it,iK,iG} = wMnorm;
-      groupWeights_out{it,iK,iG} = wM;
-      gmMerged{it,iK,iG} = gmdistribution(muM, SigmaM, wMnorm);
+      mu_tmp(iG,1:3) = muM;
+      Sigma_tmp(1:3,1:3,iG) = SigmaM;
+      w_tmp(iG) = wM;
+      groupWeights_tmp(iG) = wM;
+      %gmMerged{it,iK,iG} = gmdistribution(muM, SigmaM, wMnorm);
     end
+    if sum(w_tmp) > 0
+      wMnorm_tmp = w_tmp./sum(w_tmp);
+    else
+      wMnorm_tmp = ones(1,M)./M;
+    end
+
+    mu_out{it,iK} = mu_tmp;
+    Sigma_out{it,iK} = Sigma_tmp;
+    w_out{it,iK} = wMnorm_tmp;
+    groupWeights_out{it,iK} = groupWeights_tmp;
+    gmMerged{it,iK} = gmdistribution(mu_tmp, Sigma_tmp, w_tmp);
   end
 end
 
@@ -189,7 +205,7 @@ out.mu = mu_out;
 out.Sigma = Sigma_out;
 out.ComponentProportion = w_out;
 out.groups_unsorted = groups_unsorted_out;
-out.groupWeights = groupWeights_out;
+out.groupWeights = groupWeights_out; % same as w / ComponentProportion
 
 % Collapse convenience outputs for single gm input
 if isa(gm, 'gmdistribution')

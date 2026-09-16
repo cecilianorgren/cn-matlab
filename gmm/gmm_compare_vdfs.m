@@ -37,7 +37,7 @@ end
 % Generate comparison points
 switch lower(method_points)
   case 'montecarlo'
-    xyz =  gmm_monte_carlo_sampling(g1,N,1:g1.NumComponents);
+    xyz = gmm_monte_carlo_sampling(g1,N,1:g1.NumComponents);
   case 'grid'
     [X Y Z] = ndgrid(vvec,vvec,vvec);
     xyz = [X(:) Y(:) Z(:)];

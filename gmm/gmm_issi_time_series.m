@@ -64,8 +64,8 @@ end
 units = irf_units;
 ic = 1;
 
-mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
@@ -85,7 +85,7 @@ iDFs = 10;
 iDFs = 16;
 doPrint = 1;
 doPlot = 0;
-for iDF = 57;iDFs;%87%iDFs(1)
+for iDF = 69;iDFs;%87%iDFs(1)
   %try
   disp(iDF)
   % Define time
