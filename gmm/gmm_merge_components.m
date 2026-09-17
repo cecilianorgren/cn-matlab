@@ -90,7 +90,7 @@ for it = 1:nt
     1;
   end  
   for iK = 1:nK
-    nG = numel(groups_cell{it,iK});
+    nP = numel(groups_cell{it,iK}); % number of partitions
     g = gm_cell{it,iK};
     if isempty(g)
       continue
@@ -100,12 +100,15 @@ for it = 1:nt
     end
     
     % Initialize matries for merged groups
-    mu_tmp = zeros(nG,3);
-    Sigma_tmp = zeros(3,3,nG);
-    w_tmp = zeros(1,nG);
+    mu_tmp = zeros(nP,3);
+    Sigma_tmp = zeros(3,3,nP);
+    w_tmp = zeros(1,nP);
 
-    for iG = 1:nG
-      gs = groups_cell{it,iK}(iG);
+    % Loop through partitions, each partition has a collections of groups,
+    % e.g. [1,2], [3,4], [5], this example should be marged into a 
+    % 3-component GM
+    for iP = 1:nP
+      gs = groups_cell{it,iK}{iP};
       if isempty(gs)
         % default: no merging, keep as-is
         gs = arrayfun(@(k) k, 1:g.NumComponents, 'UniformOutput', false);
@@ -124,7 +127,7 @@ for it = 1:nt
       else
         gs_unsorted = gs;
       end
-      groups_unsorted_out{it,iK} = gs_unsorted;
+      groups_unsorted_out{it,iK}{iP} = gs_unsorted;
   
       % Extract original parameters
       mu0 = g.mu;                 % Kx3
@@ -135,14 +138,15 @@ for it = 1:nt
         error('Unexpected ComponentProportion size at it=%d iK=%d.', it, iK);
       end
   
-      M = numel(gs_unsorted);
+      M = numel(gs_unsorted); % number of groupings in partition
       muM = zeros(M,3);
       SigmaM = zeros(3,3,M);
       wM = zeros(1,M);
   
       for m = 1:M
         S = gs_unsorted{m};
-        S = unique(S(:))';
+        S = unique(S(:))'; % this stopped working for some reason...
+        %S = unique([S{:}]);
         if any(S < 1) || any(S > K0)
           error('Group index out of range at it=%d iK=%d.', it, iK);
         end
@@ -179,23 +183,26 @@ for it = 1:nt
       else
         wMnorm = ones(1,M)./M;
       end
-      mu_tmp(iG,1:3) = muM;
-      Sigma_tmp(1:3,1:3,iG) = SigmaM;
-      w_tmp(iG) = wM;
-      groupWeights_tmp(iG) = wM;
+      mu_tmp = muM;
+      Sigma_tmp = SigmaM;
+      w_tmp = wM;
+      groupWeights_tmp = wM;
       %gmMerged{it,iK,iG} = gmdistribution(muM, SigmaM, wMnorm);
-    end
-    if sum(w_tmp) > 0
-      wMnorm_tmp = w_tmp./sum(w_tmp);
-    else
-      wMnorm_tmp = ones(1,M)./M;
-    end
+      
+      if sum(w_tmp) > 0
+        wMnorm_tmp = w_tmp./sum(w_tmp);
+      else
+        wMnorm_tmp = ones(1,M)./M;
+      end
 
-    mu_out{it,iK} = mu_tmp;
-    Sigma_out{it,iK} = Sigma_tmp;
-    w_out{it,iK} = wMnorm_tmp;
-    groupWeights_out{it,iK} = groupWeights_tmp;
-    gmMerged{it,iK} = gmdistribution(mu_tmp, Sigma_tmp, w_tmp);
+      mu_out{it,iK}{iP} = mu_tmp;
+      Sigma_out{it,iK}{iP} = Sigma_tmp;
+      w_out{it,iK}{iP} = wMnorm_tmp;
+      groupWeights_out{it,iK}{iP} = groupWeights_tmp;
+      gmMerged{it,iK}{iP} = gmdistribution(mu_tmp, Sigma_tmp, w_tmp);
+    end
+    
+    
   end
 end
 

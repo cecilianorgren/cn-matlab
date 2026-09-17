@@ -19,11 +19,17 @@ switch flag_distance
 end
 %%
 
+% non-greedy grouping, check all possible partitions of populations into
+% groups
+
+[partitions,unique_constituents] = allPartitions(K);
+
 % ..) find how the maxwellianity changes with different levels of merging
 %     two ways to do this, iteratively, with iterative merging, or checking
 %     all piece-wise measures first, and then find merging points from
 %     that (from no merges to all merging)
 
+% greedy grouping?
 successive_groups = successive_groups_from_distance(sd.D);
 successive_merged = gmm_merge_components(gm, successive_groups); % merge by law of shared covariances etc...
 tic;

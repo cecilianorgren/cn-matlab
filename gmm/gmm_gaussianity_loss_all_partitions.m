@@ -1,0 +1,121 @@
+function varargout = gmm_gaussianity_loss_all_partitions(gm,varargin)
+
+isortOpt = [];
+if ~isempty(varargin)
+  for iarg = 1:2:numel(varargin)
+    switch lower(varargin{iarg})
+      case 'isort'
+        isortOpt = varargin{iarg+1};
+      otherwise
+        error('Unknown option: %s', varargin{iarg});
+    end
+  end
+end
+
+% Normalize inputs to cell arrays
+if isa(gm, 'gmdistribution')
+  gm_cell = {gm};
+  %groups_cell = {groups};
+  if isempty(isortOpt)
+    isort_cell = {[]};
+  else
+    isort_cell = {isortOpt};
+  end
+elseif iscell(gm)
+  gm_cell = gm;
+  %groups_cell = groups;
+  if isempty(isortOpt)
+    isort_cell = cell(size(gm_cell));
+  else
+    isort_cell = isortOpt;
+  end
+else
+  error('gm must be a gmdistribution or cell array.');
+end
+
+%if ~iscell(groups_cell)
+%  error('groups must be a cell array (or cell array of cell arrays).');
+%end
+
+[nt, nK] = size(gm_cell);
+
+% Get all partitions and unique groups
+
+for iK = 1:nK
+  K = gm_cell{1,iK}.NumComponents;
+  [partitions_,unique_groups_,map_part2group_] = allPartitions(K);
+  partitions{iK} = partitions_;
+  unique_groups{iK} = unique_groups_;
+  map_part2group{iK} = map_part2group_;
+end
+N_partitions = cellfun(@(x)numel(x),partitions);
+
+% set up grid
+v = -2500:50:2500;
+[X,Y,Z] = ndgrid(v,v,v);
+XYZ = [X(:), Y(:), Z(:)];
+
+D_rms = cell(nt,nK);
+partition_str = cell(nt,nK);
+for it = 1:nt
+  for iK = 1:nK
+    % Get current gmdistribution
+    gm = gm_cell{it,iK};
+    
+    % Evaluate F of original
+    f_orig = gmm_evaluate_f(gm,XYZ,1);
+
+    gm_group = cell(1,numel(unique_groups{iK}));
+    f_group = cell(1,numel(unique_groups{iK}));
+    % Evalaute merged gm and f of all unique groupings
+    for iG = 1:numel(unique_groups{iK})
+      group = unique_groups{iK}(iG);
+      %iG
+      gm_group_tmp = gmm_merge_components(gm,{group});
+      gm_group{iG} = gm_group_tmp.gmMerged{1};
+      componentProportion_all = gm.ComponentProportion;
+      componentProportion_group = sum(componentProportion_all(group{1}));
+      f_group{iG} = gmm_evaluate_f(gm_group{iG},XYZ,componentProportion_group);
+    end
+
+    % Evaluate total gaussianity of all possible grouping partitions, using
+    % the merged f 
+    D_rms_tmp = zeros(1,numel(partitions{iK}));
+    partition_str_tmp = strings(1,numel(partitions{iK}));
+    for iP = 1:numel(partitions{iK})
+      partition_tmp = partitions{iK}{iP}; % only mapping needed
+      map_tmp = map_part2group{iK}{iP};
+      f_sum = f_orig*0;
+      for iG = 1:numel(map_tmp)
+        indG = map_tmp(iG);
+        f_sum = f_sum + f_group{indG};
+      end
+      D_rms_tmp(iP) = sum(sqrt((f_sum-f_orig).^2))./sum(f_orig);
+
+      str_partition_arr = cellfun(@(x)join(string(x),""),partition_tmp,'UniformOutput',false);
+      str_partition_str = join(cellstr(str_partition_arr),',');
+      if 1
+        %%
+        plot(v,squeeze(sum(reshape(f_sum,[numel(v),numel(v),numel(v)]),[1 2])),...
+             v,squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[1 2])),...
+             v,squeeze(sum(reshape((f_sum-f_orig),[numel(v),numel(v),numel(v)]),[1 2])))
+        
+        
+        irf_legend(gca,str_partition_arr,[0.02 0.98])
+        irf_legend(gca,sprintf('Drms = %g',D_rms_tmp(iP)),[0.98 0.98])
+        1;
+        %pause()
+      end
+      partition_str_tmp(iP) = str_partition_str;
+    end
+    D_rms{it,iK} = D_rms_tmp;
+    partition_str{it,iK} = partition_str_tmp;
+
+    
+  end
+  
+  varargout{1} = D_rms;
+  varargout{2} = partitions;
+  varargout{3} = partition_str;
+end
+  

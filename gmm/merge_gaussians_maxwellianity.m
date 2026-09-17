@@ -99,7 +99,9 @@ for it = 1:nt
             gmmFsummed = p;
             Fdiff = p-q;
           case 'grid'  % generate points on a grid
-            g_merg = gmm_merge_components(g, {{kvec}});
+            g_merg = gmm_merge_components(g, {kvec});
+            % g_merg = gmm_merge_components(g, {{kvec}}); % this worked
+            % before but suddenly made an error
             [g_Ftot, g_Fcomp, g_Fgrouped] = gmm_get_F(g,vvec,vvec,vvec,1,'group',{kvec}); 
             w = sum(g.ComponentProportion(kvec));
             [gmerg_Ftot, gmerg_Fcomp] = gmm_get_F(g_merg.gmMerged,vvec,vvec,vvec,w);

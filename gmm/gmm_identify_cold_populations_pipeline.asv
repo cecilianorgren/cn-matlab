@@ -23,7 +23,7 @@ end
 %     two ways to do this, iteratively, with iterative merging, or checking
 %     all piece-wise measures first, and then find merging points from
 %     that (from no merges to all merging)
-
+%
 successive_groups = successive_groups_from_distance(sd.D);
 successive_merged = gmm_merge_components(gm, successive_groups); % merge by law of shared covariances etc...
 tic;
@@ -31,7 +31,7 @@ successive_quality = gmm_compare_vdfs_envelope(gm,successive_merged.gmMerged,'me
 toc
 
 %% find threshold for which the "quality" is below a given value
-threshold_quality = 0.4;
+threshold_quality = 0.35;
 successive_groups_limit = gmm_choose_grouping_from_threshold(successive_groups,successive_quality,threshold_quality);
 successive_merged_final = gmm_merge_components(gm, successive_groups_limit.groups);
 distanceThreshVec = 0:0.1:1;
@@ -39,7 +39,7 @@ ngroups_vs_threshold = ngroups_from_threshold(sd.D,distanceThreshVec);
 maxColdEV = 1000;
 minVabs = 200;
 minWeight = 0.01;
-minGapLog10 = 10^-0.5;
+minGapLog10 = log10(10^0.5);
 coldMerged = gmm_identify_cold_components(successive_merged_final.gmMerged, ...
   'method','knee','gapPick','last','minGapLog10',minGapLog10,'maxColdK',2,'minColdK',0, ...
   'minWeight',minWeight,'minVabs',minVabs,'maxcoldev',maxColdEV);
@@ -1008,7 +1008,7 @@ h1(end).XTickLabelRotation = 0;
 
 %% Plot distributions and GMM results
 %iG = 1;
-for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
+for it = 50;24:1:nt;3:5:nt;78;64;81;%1:5:nt
   if exist('hmark','var'); delete(hmark); end
   c_eval('hmark = irf_pl_mark(h1,times(it),[0.5 0.5 0.5]);',1:numel(h1))
 
@@ -1023,16 +1023,16 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
   
     dv = 50;
     vvec = -2500:50:2500;
-    [gmmFtot, gmmFcomp, gmmFgrouped] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it),'group',successive_groups{it,iK}{iG});  
+    [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it));  
     gmmFtot_x = squeeze(sum(gmmFtot,[2 3]))*(dv*dv*1e6)*1e-18;
     gmmFcomp_x = squeeze(sum(gmmFcomp,[2 3]))*(dv*dv*1e6)*1e-18;
-    gmmFgrouped_x = squeeze(sum(gmmFgrouped,[2 3]))*dv*dv*1e6*1e-18;
+    %gmmFgrouped_x = squeeze(sum(gmmFgrouped,[2 3]))*dv*dv*1e6*1e-18;
     gmmFtot_y = squeeze(sum(gmmFtot,[1 3]))*(dv*dv*1e6)*1e-18;
     gmmFcomp_y = squeeze(sum(gmmFcomp,[1 3]))*(dv*dv*1e6)*1e-18;
-    gmmFgrouped_y = squeeze(sum(gmmFgrouped,[1 3]))*dv*dv*1e6*1e-18;
+    %gmmFgrouped_y = squeeze(sum(gmmFgrouped,[1 3]))*dv*dv*1e6*1e-18;
     gmmFtot_z = squeeze(sum(gmmFtot,[1 2]))*(dv*dv*1e6)*1e-18;
     gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]))*(dv*dv*1e6)*1e-18;
-    gmmFgrouped_z = squeeze(sum(gmmFgrouped,[1 2]))*dv*dv*1e6*1e-18;
+    %gmmFgrouped_z = squeeze(sum(gmmFgrouped,[1 2]))*dv*dv*1e6*1e-18;
   
     [gmmFtot_merg, gmmFcomp_merg] = gmm_get_F(gm_merg_tmp,vvec,vvec,vvec,ntot(it));
     gmmFcomp_x_merg = squeeze(sum(gmmFcomp_merg,[2 3]))*(dv*dv*1e6)*1e-18;
@@ -1045,6 +1045,7 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
   
     dd = gmm_compare_vdfs(gm_orig_tmp,gm_merg_tmp);
   
+    clear legs_orig legs_merg
     for iG = 1:numel(gm_orig_tmp.ComponentProportion)
       legs_orig{iG} = iG + ": w=" + num2str(gm_orig_tmp.ComponentProportion(iG),'%4.2f');
     end
@@ -1054,11 +1055,11 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
     end
     if 1 % f(vx)
       % Original gmm
-      dv = 50;
-      vvec = -2500:50:2500;
-      [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-      gmmFtot_x = squeeze(sum(gmmFtot,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
-      gmmFcomp_x = squeeze(sum(gmmFcomp,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+      %dv = 50;
+      %vvec = -2500:50:2500;
+      %[gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
+      %gmmFtot_x = squeeze(sum(gmmFtot,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+      %gmmFcomp_x = squeeze(sum(gmmFcomp,[2 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
     
       hca = h2(isub); isub = isub + 1;
       hca.ColorOrder = mms_colors('1234');
@@ -1070,7 +1071,7 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
       irf_legend(hca,{'Obs.','GMM','GMM merged'}',[0.02 0.98],'fontsize',fontsize-1)
     
       hca = h2(isub); isub = isub + 1;  
-      plot(hca,vvec,gmmFgrouped_x,vvec,sum(gmmFgrouped_x,2),'k',vdf_fx.depend{1}(it,:),vdf_fx.data(it,:),'k--')
+      plot(hca,vvec,gmmFcomp_x,vvec,gmmFtot_x,'k',vdf_fx.depend{1}(it,:),vdf_fx.data(it,:),'k--')
       hca.XLabel.String = 'v_x (km/s)';
       hca.YLabel.String = sprintf('f (%s)','...');
       %legs = cellfun(@(x) sprintf('%g',x),successive_groups{it,iK}{iG},'UniformOutput',false);
@@ -1089,11 +1090,11 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
     end 
     if 1 % f(vy)
       % Original gmm
-      dv = 50;
-      vvec = -2500:50:2500;
-      [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-      gmmFtot_y = squeeze(sum(gmmFtot,[1 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
-      gmmFcomp_y = squeeze(sum(gmmFcomp,[1 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+      %dv = 50;
+      %vvec = -2500:50:2500;
+      %[gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
+      %gmmFtot_y = squeeze(sum(gmmFtot,[1 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+      %gmmFcomp_y = squeeze(sum(gmmFcomp,[1 3]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
     
       hca = h2(isub); isub = isub + 1;
       hca.ColorOrder = mms_colors('1234');
@@ -1105,11 +1106,12 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
       irf_legend(hca,{'Obs.','GMM','GMM merged'}',[0.02 0.98],'fontsize',fontsize-1)
     
       hca = h2(isub); isub = isub + 1;  
-      plot(hca,vvec,gmmFgrouped_y,vvec,sum(gmmFgrouped_y,2),'k',vdf_fy.depend{1}(it,:),vdf_fy.data(it,:),'k--')
+      %plot(hca,vvec,gmmFcomp_y,vvec,sum(gmmFtot_y,2),'k',vdf_fy.depend{1}(it,:),vdf_fy.data(it,:),'k--')
+      plot(hca,vvec,gmmFcomp_y,vvec,gmmFtot_y,'k',vdf_fy.depend{1}(it,:),vdf_fy.data(it,:),'k--')
       hca.XLabel.String = 'v_y (km/s)';
       hca.YLabel.String = sprintf('f (%s)','...');
       legs = cellfun(@(x) sprintf('%g',x),successive_groups{it,iK}{iG},'UniformOutput',false);
-      irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
+      irf_legend(hca,legs_orig',[0.98 0.98],'fontsize',fontsize-1)
       %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
   
       hca = h2(isub); isub = isub + 1;  
@@ -1119,16 +1121,16 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
       hca.XLabel.String = 'v_y (km/s)';
       hca.YLabel.String = sprintf('f (%s)','...');
       legs = cellfun(@(x) sprintf('%g',x),successive_groups_limit.groups{it,iK},'UniformOutput',false);
-      irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
+      irf_legend(hca,legs_merg',[0.98 0.98],'fontsize',fontsize-1)
       irf_legend(hca,{sprintf('Q^{thresh} = %.2f',threshold_quality),sprintf('Q = %g',successive_groups_limit.quality(it,iK))}',[0.02 0.98],'color',{'k','k'},'fontsize',fontsize-1)
     end
     if 1 % f(vz)
       % Original gmm
-      dv = 50;
-      vvec = -2500:50:2500;
-      [gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
-      gmmFtot_z = squeeze(sum(gmmFtot,[1 2]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
-      gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+      %dv = 50;
+      %vvec = -2500:50:2500;
+      %[gmmFtot, gmmFcomp] = gmm_get_F(gm_orig_tmp,vvec,vvec,vvec,ntot(it)); %[X,Y,Z] = ndgrid(Fobs.mid{:});
+      %gmmFtot_z = squeeze(sum(gmmFtot,[1 2]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
+      %gmmFcomp_z = squeeze(sum(gmmFcomp,[1 2]))*(dv*dv*1e6)*1e-18;%*(dv*dv*1e6)*1e-18;
     
       hca = h2(isub); isub = isub + 1;
       hca.ColorOrder = mms_colors('1234');
@@ -1140,11 +1142,11 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
       irf_legend(hca,{'Obs.','GMM','GMM merged'}',[0.02 0.98],'fontsize',fontsize-1)
     
       hca = h2(isub); isub = isub + 1;  
-      plot(hca,vvec,gmmFgrouped_z,vvec,sum(gmmFgrouped_z,2),'k',vdf_fz.depend{1}(it,:),vdf_fz.data(it,:),'k--')
+      plot(hca,vvec,gmmFcomp_z,vvec,gmmFtot_z,'k',vdf_fz.depend{1}(it,:),vdf_fz.data(it,:),'k--')
       hca.XLabel.String = 'v_z (km/s)';
       hca.YLabel.String = sprintf('f (%s)','...');
       legs = cellfun(@(x) sprintf('%g',x),successive_groups{it,iK}{iG},'UniformOutput',false);
-      irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
+      irf_legend(hca,legs_orig',[0.98 0.98],'fontsize',fontsize-1)
       %irf_legend(hca,{'Summed','components'}',[0.02 0.98],'color','k')
   
       hca = h2(isub); isub = isub + 1;  
@@ -1154,7 +1156,7 @@ for it = 63;24:1:nt;3:5:nt;78;64;81;%1:5:nt
       hca.XLabel.String = 'v_z (km/s)';
       hca.YLabel.String = sprintf('f (%s)','...');
       legs = cellfun(@(x) sprintf('%g',x),successive_groups_limit.groups{it,iK},'UniformOutput',false);
-      irf_legend(hca,legs',[0.98 0.98],'fontsize',fontsize-1)
+      irf_legend(hca,legs_merg',[0.98 0.98],'fontsize',fontsize-1)
       irf_legend(hca,{sprintf('Q^{thresh} = %.2f',threshold_quality),sprintf('Q = %g',successive_groups_limit.quality(it,iK))}',[0.02 0.98],'color',{'k','k'},'fontsize',fontsize-1)
     end
   end
