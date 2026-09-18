@@ -85,7 +85,7 @@ iDFs = 10;
 iDFs = 16;
 doPrint = 1;
 doPlot = 0;
-for iDF = 69;iDFs;%87%iDFs(1)
+for iDF = 57;69;iDFs;%87%iDFs(1)
   %try
   disp(iDF)
   % Define time
@@ -122,9 +122,9 @@ for iDF = 69;iDFs;%87%iDFs(1)
   %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   
   %% Reduce dist here, to only do it once for all the K
-  vdf_fx = PD.reduce('1D',[1 0 0]);
-  vdf_fy = PD.reduce('1D',[0 1 0]);
-  vdf_fz = PD.reduce('1D',[0 0 1]);
+  %vdf_fx = PD.reduce('1D',[1 0 0]);
+  %vdf_fy = PD.reduce('1D',[0 1 0]);
+  %vdf_fz = PD.reduce('1D',[0 0 1]);
 
 
   %% Do the Gaussian Mixture Model

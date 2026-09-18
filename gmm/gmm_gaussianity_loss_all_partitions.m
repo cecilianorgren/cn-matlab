@@ -51,7 +51,7 @@ end
 N_partitions = cellfun(@(x)numel(x),partitions);
 
 % set up grid
-v = -2500:50:2500;
+v = -2000:50:2000;
 [X,Y,Z] = ndgrid(v,v,v);
 XYZ = [X(:), Y(:), Z(:)];
 
@@ -90,21 +90,164 @@ for it = 1:nt
         indG = map_tmp(iG);
         f_sum = f_sum + f_group{indG};
       end
-      D_rms_tmp(iP) = sum(sqrt((f_sum-f_orig).^2))./sum(f_orig);
+      %D_rms_tmp(iP) = sum(sqrt((f_sum-f_orig).^2))./sum(f_orig);
+      f_diff = f_sum-f_orig;
+      D_rms_tmp(iP) = sqrt(sum((f_diff).^2)./sum(f_orig.^2));
+      if D_rms_tmp(iP)<0.3
+        1;
+      end
 
       str_partition_arr = cellfun(@(x)join(string(x),""),partition_tmp,'UniformOutput',false);
       str_partition_str = join(cellstr(str_partition_arr),',');
-      if 1
+      if 0%D_rms_tmp(iP)<0.4% if 0 % plot
         %%
-        plot(v,squeeze(sum(reshape(f_sum,[numel(v),numel(v),numel(v)]),[1 2])),...
-             v,squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[1 2])),...
-             v,squeeze(sum(reshape((f_sum-f_orig),[numel(v),numel(v),numel(v)]),[1 2])))
+        h = setup_subplots(3,5,'vertical');
+        isub = 1;
+
+        hca = h(isub); isub = isub + 1;
+        f_orig_red = squeeze(sum(reshape(f_sum.^1,[numel(v),numel(v),numel(v)]),[2 3]));
+        plot(hca,...
+             v,f_orig_red,...
+             v,squeeze(sum(reshape(f_orig.^1,[numel(v),numel(v),numel(v)]),[2 3])),...
+             v,squeeze(sum(reshape((f_sum-f_orig).^1,[numel(v),numel(v),numel(v)]),[2 3])))
+        hca.YLim = 1.2*max(f_orig_red)*[-.3 1];
+        irf_legend(hca,str_partition_arr,[0.02 0.98])
+        irf_legend(hca,sprintf('Drms = %g',D_rms_tmp(iP)),[0.98 0.98])
+        hca.XLabel.String = 'v_x';
+
+
+        hca = h(isub); isub = isub + 1;
+        f_orig_red = squeeze(sum(reshape(f_sum.^1,[numel(v),numel(v),numel(v)]),[1 3]));
+        plot(hca,...
+             v,f_orig_red,...
+             v,squeeze(sum(reshape(f_orig.^1,[numel(v),numel(v),numel(v)]),[1 3])),...
+             v,squeeze(sum(reshape((f_sum-f_orig).^1,[numel(v),numel(v),numel(v)]),[1 3])))
+        hca.YLim = 1.2*max(f_orig_red)*[-.3 1];        
+        irf_legend(hca,str_partition_arr,[0.02 0.98])
+        irf_legend(hca,sprintf('Drms = %g',D_rms_tmp(iP)),[0.98 0.98])
+        hca.XLabel.String = 'v_y';
+
+
+        hca = h(isub); isub = isub + 1;
+        f_orig_red = squeeze(sum(reshape(f_sum.^1,[numel(v),numel(v),numel(v)]),[1 2]));
+        plot(hca,...
+             v,f_orig_red,...
+             v,squeeze(sum(reshape(f_orig.^1,[numel(v),numel(v),numel(v)]),[1 2])),...
+             v,squeeze(sum(reshape((f_sum-f_orig).^1,[numel(v),numel(v),numel(v)]),[1 2])))
+        hca.YLim = 1.2*max(f_orig_red)*[-.3 1];        
+        irf_legend(hca,str_partition_arr,[0.02 0.98])
+        irf_legend(hca,sprintf('Drms = %g',D_rms_tmp(iP)),[0.98 0.98])
+        hca.XLabel.String = 'v_z';
+
+        % Original model
+        f_orig_2d = squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[3]));
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[3])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_x';
+        hca.YLabel.String = 'v_y';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+        hca.Title.String = 'Original';
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[2])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_x';
+        hca.YLabel.String = 'v_z';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[1])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_y';
+        hca.YLabel.String = 'v_z';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+
+        hlinks = linkprop(h(isub-[1 2 3]),{'CLim'});
+        hca.CLim = prctile(f_orig_2d(:),[98])*[0 1]*1.1;
+        c_eval('colormap(h(?),pic_colors(''thermal''))',isub-[1 2 3])
+
         
-        
-        irf_legend(gca,str_partition_arr,[0.02 0.98])
-        irf_legend(gca,sprintf('Drms = %g',D_rms_tmp(iP)),[0.98 0.98])
+
+        % Reduced model
+        %f_orig_2d = squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[3]));
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_sum,[numel(v),numel(v),numel(v)]),[3])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_x';
+        hca.YLabel.String = 'v_y';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+        hca.Title.String = 'Reduced';
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_sum,[numel(v),numel(v),numel(v)]),[2])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_x';
+        hca.YLabel.String = 'v_z';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_sum,[numel(v),numel(v),numel(v)]),[1])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_y';
+        hca.YLabel.String = 'v_z';
+        axis(hca,'square')
+        hcb = colorbar(hca);        
+
+        hlinks = linkprop(h(isub-[1 2 3 4 5 6]),{'CLim'});
+        hca.CLim = prctile(f_orig_2d(:),[98])*[0 1]*1.1;
+        c_eval('colormap(h(?),pic_colors(''thermal''))',isub-[1 2 3])
+
+
+        % Difference between original and reduced model
+        f_orig_2d = squeeze(sum(reshape(f_orig,[numel(v),numel(v),numel(v)]),[3]));
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_diff,[numel(v),numel(v),numel(v)]),[3])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_x';
+        hca.YLabel.String = 'v_y';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+        hca.Title.String = 'Difference';
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_diff,[numel(v),numel(v),numel(v)]),[2])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_x';
+        hca.YLabel.String = 'v_z';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+
+        hca = h(isub); isub = isub + 1;
+        pcolor(hca,v,v,squeeze(sum(reshape(f_diff,[numel(v),numel(v),numel(v)]),[1])))
+        shading(hca,'flat')
+        hca.XLabel.String = 'v_y';
+        hca.YLabel.String = 'v_z';
+        axis(hca,'square')
+        hcb = colorbar(hca);
+
+        hlinks = linkprop(h(isub-[1 2 3]),{'CLim'});
+        hca.CLim = prctile(f_orig_2d(:),[98])*[-1 1]*0.5;
+        c_eval('colormap(h(?),pic_colors(''blue_red''))',isub-[1 2 3])
+
+        hca = h(isub); isub = isub + 1;
+        histogram(hca,f_diff(:))
+        hca.XLim = prctile(f_orig(:),[98])*[-1 1]*0.2;
+
         1;
-        %pause()
+        if D_rms_tmp(iP)<0.3
+          %cn.print(sprintf('K=%g_DRMS=%7.5f',K,D_rms_tmp(iP)))
+          %pause(0.02)
+          1;
+        end
       end
       partition_str_tmp(iP) = str_partition_str;
     end
@@ -119,3 +262,4 @@ for it = 1:nt
   varargout{3} = partition_str;
 end
   
+%
