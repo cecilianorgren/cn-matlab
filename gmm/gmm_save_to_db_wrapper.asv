@@ -1,8 +1,9 @@
 file = strsplit(printpath,'/'); file = strrep([strjoin(file(1:5),filesep) filesep 'Research/GMM/GMM_BFFs/db_gmm.mat'],'''','"');
 
+% clear DB
 DB.metadata.reduction = [];
 DB.metadata.list_events = [];
-for K = 1:5
+for K = 1:10
   [partitions,unique_groups,map_part2group] = allPartitions(K);
   DB.metadata.reduction(K).numPopulations = K;
   for iGroup = 1:numel(unique_groups)
@@ -22,11 +23,64 @@ DB = load(file); DB = DB.DB;
 id_event = iDF;
 id_run = 'run_00'; 
 
-nMacroParticles = size(R,1);
-DB = gmm_save_to_db(DB, id_event, id_run, 'gmm',gm, nMacroParticles);
+nMacroParticles = cat(1,allMP(:).N);
+for iK = 1:size(gm,2)
+  id_run = sprintf('run_K=%02.0f',vecK(iK)); 
+  % Save metadata into a structure
+  event_metadata.time_start = PD(1).time;
+  event_metadata.time_stop = PD(PD.length).time;
+  event_metadata.nMacroParticles = nMacroParticles; % (nVDF x 1)
+  run_metadata = [];
+  
+  % Add run to database
+  DB = gmm_db_add_run(DB, gm(:,iK), event_metadata, run_metadata);
+  %DB = gmm_db_add_run(DB, id_event, id_run, 'gmm',gm, nMacroParticles);
+end
 
 
 save(file,'DB')
+
+%% Diagnostic figure
+h = irf_plot(3);
+id_event = 2;
+
+if 1 % B
+  hca = irf_panel('B');
+  irf_plot(hca,gseB)
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  hca.YLabel.String = 'B (nT)';
+end
+if 1 % dEFlux ion PD2
+  hca = irf_panel('ion dEF omni');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_spectrogram(hca,PD.deflux.omni.specrec,'donotfitcolorbarlabel');
+  hca.YScale = 'log'; 
+end
+if 1 % BIC(K)
+  hca = irf_panel('BIC');
+  specrec.p = cat(2,DB.events(id_event).runs(:).BIC);
+  specrec.f = cat(2,DB.events(id_event).runs(:).NumComponents);  
+  specrec.t = PD.time.epochUnix;
+  irf_spectrogram(hca,specrec,'lin')  
+  hca.YLabel.String = 'K';
+  hcb = colorbar(hca);
+  hcb.YLabel.String = 'BIC';
+end
+
+irf_plot_axis_align(h)
+irf_zoom(h,'x',PD.time([1 PD.length]))
+h(end).XTickLabelRotation = 0;
+%irf_timeaxis(h)
+
+%
+cmap = [flipdim(irf_colormap('Spectral'),1)]
+set(gca,'ColorOrder',)
+
+% How to uniquely identify events? 
+%   Start time and stop time in ttns? Based on first and last VDF?
+%   From there it can be connected to Louis's database.
+% 
+% Structure
 % DB
 % ├── metadata.reduction
 % │   └── K

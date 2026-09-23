@@ -79,7 +79,7 @@ gseJxBne_mVm = (gseJxB*1e-18)/(neav.resample(gseJxB)*1e6)/units.e*1e3; gseJxBne_
 
 %%
 c_eval('gseJxB? = gseJ?.cross(gseB?.resample(gseJ?)); gseJxB?.name = ''JxB''; gseJxB?.units = ''nA/m^2 nT'';',ic)
-c_eval('gseJxBy? =    gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',ic)
+c_eval('gseJxBy? =   ; gseJ?.x*gseB?.y.resample(gseJ?); gseJxBy?.name = ''Jx*By''; gseJxBy?.units = ''nA/m^2 nT'';',ic)
 c_eval('gseJyBx? = -1*gseJ?.y*gseB?.x.resample(gseJ?); gseJyBx?.name = ''-Jy*Bx''; gseJyBx?.units = ''nA/m^2 nT'';',ic)
 c_eval('gseJyBz? =    gseJ?.y*gseB?.z.resample(gseJ?); gseJyBz?.name = ''Jy*Bz''; gseJyBz?.units = ''nA/m^2 nT'';',ic)
 c_eval('gseJzBy? = -1*gseJ?.z*gseB?.y.resample(gseJ?); gseJzBy?.name = ''-Jz*By''; gseJzBy?.units = ''nA/m^2 nT'';',ic)
@@ -116,7 +116,7 @@ c_eval('kappai? = (curvBradius.resample(ri?)/ri?)^0.5;',ic)
 % kappa^2 = R_B/(sqrt(2E/m)/w_c) = R_B*w_c*sqrt(m/2E)= R_B*w_c*sqrt(m/2)/sqrt(E)
 % sqrt(E) = R_B*w_c*sqrt(m/2)/kappa^2
 %E_kappa=1 = (R_B*w_c*sqrt(m/2))^2 = R_B^2*w_c^2*m/2
-%E_kappa = (R_B*w_c*sqrt(m/2))^2 = R_B^2*w_c^2*m/2/kappa^4
+%E_kappa = (R_B*w_c*sqrt(m/2))^2/kappa^4 = R_B^2*w_c^2*m/2/kappa^4
 E_kappa1 = 1e6*curvBradius^2*wci3.resample(curvBradius)^2*units.mp/2/units.eV;
 
 

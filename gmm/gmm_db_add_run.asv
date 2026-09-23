@@ -1,5 +1,33 @@
-function db = gmm_save_to_db(db,id_event,desc_run,type,gmm,nMacroParticles)
+function db = gmm_db_add_run(db,gmm,metadata)
 
+% Event unique identifier: time in ns of first and last VDF
+t_start = metadata.time.ttns;
+t_stop = metadata.time.ttns;
+
+
+% Check if event already exists
+if isfield(db,'events')
+  if isfield(db.events,'time_start')
+    start_times = [db.events.time_start];
+    stop_times = [db.events.time_stop];
+    [isEvent,Locb] = ismember([t_start t_stop],[start_times stop_times],"rows");
+    if Lia % existing event
+      id_event = Locb;
+    else % new event
+      nEvents = numel(start_times);
+      id_event = nEvents + 1; % incremental id number
+    end
+  end
+end 
+
+% Check if run exists
+if ~Lia % new event
+  id_run = 1;
+else
+  if isfield(db.events(id_event),'runs') 
+    
+  end
+end
 
 %if ~isfield(db.events)
 %  db.events = [];
@@ -46,19 +74,30 @@ switch type
 
     nt = size(gmm,1);
     K = settings.NumComponents;
+
+    % Initialize matrices
     weight = zeros(nt,K);
     mu = zeros(nt,K,3);
     Sigma = zeros(nt,3,3,K);
+    BIC = zeros(nt,K);
+    AIC = zeros(nt,K);
+    NLL = zeros(nt,K);
+
     for it = 1:nt
       weight(it,:) = gmm{it}.ComponentProportion;
       mu(it,:,:) = gmm{it}.mu;
       Sigma(it,:,:,:) = gmm{it}.Sigma;
+      BIC(it,:) = gmm{it}.BIC;
+      AIC(it,:) = gmm{it}.AIC;
+      NLL(it,:) = gmm{it}.NegativeLogLikelihood;
     end
    
     db.events(id_event).runs(id_run).settings = settings;
     db.events(id_event).runs(id_run).weight = weight;
     db.events(id_event).runs(id_run).mu = mu;
     db.events(id_event).runs(id_run).Sigma = Sigma;
-    
-
+    db.events(id_event).runs(id_run).AIC = AIC;
+    db.events(id_event).runs(id_run).BIC = BIC;
+    db.events(id_event).runs(id_run).NegativeLogLikelihood = NLL;
+    db.events(id_event).runs(id_run).gmdistribution = gmm{it};
 end

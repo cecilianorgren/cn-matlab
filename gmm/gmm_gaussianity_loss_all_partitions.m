@@ -243,7 +243,7 @@ for it = 1:nt
         hca.XLim = prctile(f_orig(:),[98])*[-1 1]*0.2;
 
         1;
-        if D_rms_tmp(iP)<0.3
+        if 0%D_rms_tmp(iP)<0.3
           %cn.print(sprintf('K=%g_DRMS=%7.5f',K,D_rms_tmp(iP)))
           %pause(0.02)
           1;

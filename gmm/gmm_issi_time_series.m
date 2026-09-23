@@ -85,7 +85,7 @@ iDFs = 10;
 iDFs = 16;
 doPrint = 1;
 doPlot = 0;
-for iDF = 57;69;iDFs;%87%iDFs(1)
+for iDF = 16;69;iDFs;%87%iDFs(1)
   %try
   disp(iDF)
   % Define time
@@ -136,15 +136,16 @@ for iDF = 57;69;iDFs;%87%iDFs(1)
   %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
   allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD));
 
-  vecK = [5 6];
+  vecK = [1:10];
   nK = numel(vecK);  
   nt = times.length; 
-  clear gm rmsF rmsFnorm moms
+  clear gm rmsF rmsFnorm moms relL2error
   gm = cell(nt,nK);
   for iK = 1:nK
     %nGroupsMax = Ks;  % number of classes/groups for kmeans and gmm
     K = vecK(iK);          
     tic
+    disp(sprintf('K=%g',K))
     for it = 1:nt
       if mod(it,10)==0; disp([it+"/" + nt]); end
       time = times(it);
@@ -197,6 +198,7 @@ for iDF = 57;69;iDFs;%87%iDFs(1)
       Fdiff = Fobs.f-Fgmm;
       rmsF{it,iK} = sqrt(sum(Fdiff.^2,'all'));
       rmsFnorm{it,iK} = sqrt(sum(Fdiff.^2,'all'))/sum(Fobs.f,'all');
+      relL2error{it,iK} = sqrt(sum((Fdiff).^2)./sum(Fobs.f.^2));
       
       % This can be done afterwards, because R is the same for all K.
       %idx = gm{it,iK}.cluster(R);

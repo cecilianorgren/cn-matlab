@@ -1,4 +1,4 @@
-function db = gmm_save_to_db(db,id_event,desc_run,type,gmm,nMacroParticles)
+function db = gmm_db_add_run(db,id_event,desc_run,type,gmm,nMacroParticles)
 
 
 %if ~isfield(db.events)
@@ -40,22 +40,36 @@ switch type
     end
 
     % Save run metadata
-    metadata.nMacroParticles = nMacroParticles;
-    metadata.NumComponents = gmm{1}.NumComponents;
-    metadata.CovarianceType = gmm{1}.CovarianceType;
+    settings.nMacroParticles = nMacroParticles;
+    settings.NumComponents = gmm{1}.NumComponents;
+    settings.CovarianceType = gmm{1}.CovarianceType;
 
     nt = size(gmm,1);
-    K = metadata.NumComponents;
+    K = settings.NumComponents;
+
+    % Initialize matrices
     weight = zeros(nt,K);
     mu = zeros(nt,K,3);
     Sigma = zeros(nt,3,3,K);
+    BIC = zeros(nt,K);
+    AIC = zeros(nt,K);
+    NLL = zeros(nt,K);
+
     for it = 1:nt
       weight(it,:) = gmm{it}.ComponentProportion;
-      mu(it,:) = gmm{it}.ComponentProportion;
+      mu(it,:,:) = gmm{it}.mu;
+      Sigma(it,:,:,:) = gmm{it}.Sigma;
+      BIC(it,:) = gmm{it}.BIC;
+      AIC(it,:) = gmm{it}.AIC;
+      NLL(it,:) = gmm{it}.NegativeLogLikelihood;
     end
-    %db.events(id_event).runs(id_run);
-    % Check index of id_run
-    %existing_runs = db.event(id_event).runs.name;
-    %db.event(id_event).runs()
-
+   
+    db.events(id_event).runs(id_run).settings = settings;
+    db.events(id_event).runs(id_run).weight = weight;
+    db.events(id_event).runs(id_run).mu = mu;
+    db.events(id_event).runs(id_run).Sigma = Sigma;
+    db.events(id_event).runs(id_run).AIC = AIC;
+    db.events(id_event).runs(id_run).BIC = BIC;
+    db.events(id_event).runs(id_run).NegativeLogLikelihood = NLL;
+    db.events(id_event).runs(id_run).gmdistribution = gmm{it};
 end
