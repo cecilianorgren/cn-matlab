@@ -94,6 +94,7 @@ for it = 1:nt
   NLL(it,1) = gmm{it}.NegativeLogLikelihood;
 end
 
+db.events(id_event).runs(id_run).metadata = run_metadata;
 db.events(id_event).runs(id_run).NumComponents = K;
 db.events(id_event).runs(id_run).weight = weight;
 db.events(id_event).runs(id_run).mu = mu;

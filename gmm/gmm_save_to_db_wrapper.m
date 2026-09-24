@@ -24,13 +24,13 @@ id_event = iDF;
 id_run = 'run_00'; 
 
 nMacroParticles = cat(1,allMP(:).N);
-for iK = 3:5%:size(gm,2)
+for iK = 1:size(gm,2)
   id_run = sprintf('run_K=%02.0f',vecK(iK)); 
   % Save metadata into a structure
   event_metadata.time_start = PD(1).time;
   event_metadata.time_stop = PD(PD.length).time;
   event_metadata.nMacroParticles = nMacroParticles; % (nVDF x 1)
-  run_metadata = [];
+  %run_metadata = [];
   
   % Add run to database
   DB = gmm_db_add_run(DB, gm(:,iK), event_metadata, run_metadata);
@@ -43,7 +43,7 @@ save(file,'DB')
 %% Diagnostic figure
 figure(33)
 h = irf_plot(4);
-id_event = 6;
+id_event = 9;
 
 BIC = cat(2,DB.events(id_event).runs(:).BIC);
 Ks = cat(2,DB.events(id_event).runs(:).NumComponents);
@@ -174,6 +174,7 @@ end
 if 1 % BIC(K)
   hca = irf_panel('BIC');
   BIC = cat(2,DB.events(id_event).runs(:).BIC);
+  BIC = real(BIC);
   maxBIC = repmat(BIC(:,1),[1 size(BIC,2)]);
   specrec.p = BIC./maxBIC;
   specrec.f = cat(2,DB.events(id_event).runs(:).NumComponents);  

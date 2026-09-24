@@ -85,9 +85,9 @@ iDFs = 10;
 iDFs = 16;
 doPrint = 1;
 doPlot = 0;
-vecK = [1:5];
+vecK = 1:5;
 
-for iDF = 37;69;iDFs;%87%iDFs(1)
+for iDF = 4;69;iDFs;%87%iDFs(1)
   %try
   disp(iDF)
   % Define time
@@ -115,8 +115,14 @@ for iDF = 37;69;iDFs;%87%iDFs(1)
 
   nMovMean = 7; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 
-  mat = iPDist_counts.find_low_counts('counts',5,'nMovMean',[7 7],'output','mat');
-  ehigh = iPDist_counts.find_low_counts('counts',8,'nMovMean',[3 3],'output','energy');
+  mask_nMovMean = [7 7];
+  mask_Counts = 5;
+  run_metadata.PD.mask_nMovMean = mask_nMovMean;
+  run_metadata.PD.mask_nCounts = mask_Counts;
+  
+  mat = iPDist_counts.find_low_counts('counts',mask_Counts,'nMovMean',mask_nMovMean,'output','mat');
+  %mat = iPDist_counts.find_low_counts('counts',5,'nMovMean',[7 7],'output','mat');
+  %ehigh = iPDist_counts.find_low_counts('counts',8,'nMovMean',[3 3],'output','energy');
   PD = PD_use.mask('energy','mat',mat);  
   PD = PD.movmean(nMovMean);
   PD = PD(1:nMovMean:PD.length);
