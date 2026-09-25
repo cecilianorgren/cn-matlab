@@ -1,0 +1,133 @@
+pdist = PD(1:50);
+times = pdist.time;
+nt = times.length;
+n = irf.ts_scalar(times,ones(nt,1));
+vx = linspace(10,2000,nt)';
+v = irf.ts_vec_xyz(times,[vx*1.1 vx*0 vx*0.1]);
+t_in = 100; % eV
+t = irf.ts_tensor_xyz(times,permute(repmat(t_in*eye(3,3),[1 1 nt]),[3 1 2]));
+b = irf.ts_vec_xyz(times,rand(nt,3)+[vx*0+10 vx*0 vx*0]);
+scpot = irf.ts_scalar(times,0*ones(nt,1));
+
+Tfac = mms.rotate_tensor(t,'fac',b,'pp'); 
+
+pd_mod = mms.make_model_dist(pdist,b,scpot,n,v,t);
+
+if 0
+irf_plot({b,n,v,t,iPDist.deflux.omni.specrec,pd_mod.deflux.omni.specrec})
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+h(end).YScale = 'log';
+h(end-1).YScale = 'log';
+hlinks = linkprop(h(5:6),{'CLim'});
+colorbar
+irf_plot_axis_align
+end
+%%
+nMP = 10e5;
+allMP = pd_mod.macroparticles('ntot',nMP*10,'skipzero',1);
+
+vecK = 1;
+nK = numel(vecK);
+gm = cell(nt,nK);
+for iK = 1:nK
+  K = vecK(iK); 
+  for it = 1:nt
+    MP = allMP(it);
+    ntot(it) = sum(MP.df.*MP.dv);
+    options = statset('MaxIter',150,'TolFun',1e-5);
+        
+    R = [MP.vx, MP.vy, MP.vz];
+    %gm{it,nGroups} = fitgmdist(X,nGroups,'Start',S,'SharedCovariance',false,'Options',options);
+    gm{it,iK} = fitgmdist(R,K,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
+  end
+end
+
+%% Reconstructing PDist from gmm
+%moms_orig = pdist.moments;
+it = 1;
+iK = 1;
+n_kk = n.data*1e-3;
+w = cellfun(@(x)x.ComponentProportion,gm);
+mu = cellfun(@(x)x.mu,gm,'UniformOutput',false); mu = cat(1,mu{:});
+sigma = cellfun(@(x)x.Sigma,gm,'UniformOutput',false); sigma = cat(3,sigma{:});
+PD_gmm = pdist_generalized_maxwellian(pd_mod,w.*n_kk,mu,sigma);
+
+moms_mod = pd_mod.moments;
+moms_gmm = PD_gmm.moments;
+
+nref = ntot*1e-12; % cc
+
+%h = irf_plot(9);
+[h,h2] = initialize_combined_plot('leftright',9,3,1,0.6,'vertical');
+fontsize = 12;
+
+
+if 1 % dEFlux input
+  hca = irf_panel('omni deflux inp');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_spectrogram(hca,pd_mod.deflux.omni.specrec,'donotfitcolorbarlabel');
+  hca.YScale = 'log'; 
+irf_legend(hca,{'PDist from input (gen. from n, v, T)'}',[0.99 0.1],'fontsize',fontsize+2,'backgroundcolor','w');
+end
+if 1 % dEFlux model
+  hca = irf_panel('omni deflux mod');
+  set(hca,'ColorOrder',mms_colors('xyza'))
+  irf_spectrogram(hca,PD_gmm.deflux.omni.specrec,'donotfitcolorbarlabel');
+  hca.YScale = 'log'; 
+irf_legend(hca,{'PDist from GMM'}',[0.99 0.1],'fontsize',fontsize+2,'backgroundcolor','w');
+end
+
+hca = irf_panel('n');
+hca.ColorOrder = mms_colors('1234');
+irf_plot(hca,{n,moms_mod.n,moms_gmm.n},'comp')
+hca.YLabel.String = 'n';
+hca.ColorOrder = mms_colors('1234');
+irf_legend(hca,{'input TS','PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+
+for comp = ["x","y","z"]
+  hca = irf_panel(char(["v" + comp]));
+  hca.ColorOrder = mms_colors('1234');
+  irf_plot(hca,{v.(comp),moms_mod.V.(comp),moms_gmm.V.(comp)},'comp')
+  hca.YLabel.String = ['v_' + comp];
+  hca.ColorOrder = mms_colors('1234');
+irf_legend(hca,{'input TS','PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+
+end
+
+for comp = ["xx","yy","zz"]
+  hca = irf_panel(char(["T" + comp]));
+  hca.ColorOrder = mms_colors('1234');
+  irf_plot(hca,{t.(comp),moms_mod.T.(comp),moms_gmm.T.(comp)},'comp')
+  hca.YLabel.String = ['T_{' + comp + '}'];
+  hca.ColorOrder = mms_colors('1234');
+  irf_legend(hca,{'input TS','PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+
+end
+
+h(end).XTickLabelRotation = 0;
+hlinks = linkprop(h(1:2),{'CLim'});
+hlinks.Targets(1).CLim = [0 10];
+colormap([flipdim(irf_colormap('Spectral'),1)])
+irf_plot_axis_align
+h(1).Title.String = sprintf('N_{MP} = %g',nMP);
+
+% Other plots
+Ek_inp = units.mp*(v.abs2.data*1e6)/2/units.eV;
+ET_inp = t.trace/3;
+
+isub = 1;
+
+hca = h2(isub); isub = isub + 1;
+semilogx(hca,Ek_inp,moms_mod.n.data,Ek_inp,moms_gmm.n.data)
+hca.ColorOrder = mms_colors('234');
+hca.XLabel.String = '(m/2)v^2_{inp} (eV)';
+hca.YLabel.String = 'Density (cc)';
+irf_legend(hca,{'PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+
+
+hca = h2(isub); isub = isub + 1;
+semilogx(hca,Ek_inp,moms_mod.T.trace.data/3,Ek_inp,moms_gmm.T.trace.data/3)
+hca.ColorOrder = mms_colors('234');
+hca.XLabel.String = '(m/2)v^2_{inp} (eV)';
+hca.YLabel.String = 'trace(T)/3 (eV)';
+irf_legend(hca,{'PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);

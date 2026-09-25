@@ -1,0 +1,47 @@
+function PD = pdist_generalized_maxwellian(pd,w,mu,sigma)
+% pdist_generalized_maxwellian from weights, mu, and Sigma
+%   PD = pdist_generalized_maxwellian(pd,w,mu,sigma)
+%
+%     pd - PDist, is used for velocity grid and output format
+
+[vx,vy,vz] = pd.v;
+
+% Construct generalized Maxwellian
+f_all = zeros(size(vx));
+for ii = 1:length(pdist.time)
+  L = chol(sigma(:,:,ii), 'lower'); % One can go this way instead of taking the determinant of the covariance matrix
+  n = w(ii);
+
+  dvx = vx(ii,:,:,:)-mu(ii,1);
+  dvy = vy(ii,:,:,:)-mu(ii,2);
+  dvz = vz(ii,:,:,:)-mu(ii,3);
+
+  dV = [dvx(:), dvy(:), dvz(:)];
+  
+  y = dV / L;
+  q = sum(y.^2, 2); % L2 norm
+  
+  f = n / ((2*pi)^(3/2) * prod(diag(L))) .* exp(-0.5*q);
+  
+  f = reshape(f, size(dvx));
+
+  %detT = det(sigma(:,:,ii));
+
+  %coeff = w(ii)/(sqrt(pi^3)*sqrt(detT));
+  %vu_x = xp(ii,:,:,:).*rmat(ii,:,:,:)-mu(ii,1);
+  %vu_y = yp(ii,:,:,:).*rmat(ii,:,:,:)-mu(ii,2);
+  %vu_z = zp(ii,:,:,:).*rmat(ii,:,:,:)-mu(ii,3);
+  %exp_x = -0.5*vu_x'*inv(sigma(:,:,ii))*vu_x;
+
+  %bimaxtemp = exp(-(xp(ii,:,:,:).*rmat(ii,:,:,:)-Vpmag.data(ii)).^2./(vthpar.data(ii).^2).*Trat.data(ii));
+  %bimaxtemp = bimaxtemp.*exp(-(yp(ii,:,:,:).*rmat(ii,:,:,:)).^2./(vthpar.data(ii).^2).*Trat.data(ii));
+  %bimaxtemp = bimaxtemp.*exp(-(zp(ii,:,:,:).*rmat(ii,:,:,:)-Vpar.data(ii)).^2./(vthpar.data(ii).^2));
+  %bimaxdist(ii,:,:,:) = coeff*bimaxtemp;
+  f_all(ii,:,:,:) = f;
+end
+
+% Make modelPDist file for output
+modelPDist = pdist;
+modelPDist.data = f_all;
+modelPDist = modelPDist.convertto('s^3/km^6');
+PD = modelPDist;

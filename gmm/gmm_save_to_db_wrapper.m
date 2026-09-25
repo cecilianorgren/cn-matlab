@@ -1,4 +1,4 @@
-file = strsplit(printpath,'/'); file = strrep([strjoin(file(1:5),filesep) filesep 'Research/GMM/GMM_BFFs/db_gmm.mat'],'''','"');
+file_db = strsplit(printpath,'/'); file_db = strrep([strjoin(file_db(1:5),filesep) filesep 'Research/GMM/GMM_BFFs/db_gmm.mat'],'''','"');
 
 % clear DB
 DB.metadata.reduction = [];
@@ -17,9 +17,9 @@ for K = 1:10
   %DB.metadata_reduction(K).partitions = partitions;
   %DB.metadata_reduction(K).map_partitions_to_groups = map_part2group;
 end
-save(file,'DB')
+save(file_db,'DB')
 %%
-DB = load(file); DB = DB.DB;
+DB = load(file_db); DB = DB.DB;
 id_event = iDF;
 id_run = 'run_00'; 
 
@@ -38,7 +38,7 @@ for iK = 1:size(gm,2)
 end
 
 
-save(file,'DB')
+save(file_db,'DB')
 
 %% Diagnostic figure
 figure(33)

@@ -87,7 +87,7 @@ doPrint = 1;
 doPlot = 0;
 vecK = 1:5;
 
-for iDF = 4;69;iDFs;%87%iDFs(1)
+for iDF = 6;69;iDFs;%87%iDFs(1)
   %try
   disp(iDF)
   % Define time
