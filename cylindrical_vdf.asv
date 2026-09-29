@@ -1,0 +1,122 @@
+%% Load data
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
+%db_info = datastore('mms_db');
+
+units = irf_units;
+% Torbert event 
+ic = 3;
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z');
+%tint = irf.tint('2017-07-09T17:31:00.00Z/2017-07-09T17:33:00.00Z');
+
+% Load data
+%c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
+%c_eval('gseB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_gse_brst_l2'',tint);',1:4);
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+c_eval('iPDistErr? = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic) % missing some ancillary data
+c_eval('iPDist?_nobg = iPDist?; iPDist?_nobg.data(iPDist?_nobg.data < iPDistErr?.data*1.01) = 0;',ic)
+c_eval('iPDist?_counts = iPDist?; iPDist?_counts.data = (iPDist?.data./iPDistErr?.data).^2;',ic)
+c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+
+%% Just remove some noise
+c_eval('PD_counts = iPDist?_counts;',ic)
+c_eval('PD_orig = iPDist?;',ic)
+counts = 4;
+nMovMean = [7 7];
+matEmask = PD_counts.find_low_counts('counts',counts,'nMovMean',nMovMean,'output','mat');
+PD_mask = PD_orig.mask('energy','mat',matEmask);
+PD = PD_mask;
+
+%% Calculate cylindrical distribution (using macroparticles)
+units = irf_units;
+PD_use = PD_mask;
+%PD_use = iPDist3;
+PD = PD_use(1000);
+PD = pdist(1);
+
+nt = PD.length;
+Vsc = scPot3.resample(PD);
+nMP = 20000;
+MP = PD.macroparticles('ntot',nMP,'scpot',Vsc);
+v_shift = [000 0 -3000];
+
+% Set up cylindrical grid
+z_edges = (-5000:50:5000)*3;
+theta_edges = 0:11.25:180;
+r_edges = (0:50:2500)*3;
+z_centers = z_edges(2:end)-0-5*diff(z_edges);
+theta_centers = theta_edges(2:end)-0-5*diff(theta_edges);
+r_centers = r_edges(2:end)-0-5*diff(r_edges);
+
+nz = numel(z_edges)-1;
+nth = numel(theta_edges)-1;
+nr = numel(r_edges)-1;
+
+% Calculate volume of new velocity bins % NEED TO REDO FOR CYLINDRICAL
+E_edges = [PD.ancillary.energy(1,1) - PD.ancillary.delta_energy_minus(1,1), PD.ancillary.energy(1,:) + PD.ancillary.delta_energy_plus(1,:)];
+E_minus = E_edges(1:end-1);
+E_plus = E_edges(2:end);
+v_minus = sqrt(2*units.e*E_minus/units.mp); % m/s
+v_plus = sqrt(2*units.e*E_plus/units.mp); % m/s
+% Cylindrical volume element v*dv*dtheta
+% vol = (v2^2-v1^2)/2*Delta_theta
+d_vel = (v_plus.^2 - v_minus.^2)/2; % (m/s)^2
+
+d_vel = diff(r_edges.^2);
+
+nEnergy = numel(E_edges)-1;
+dazim = 10;
+azimuth_edges = -180:dazim:180;
+nAzimuth = numel(azimuth_edges)-1;
+
+% 2D volume, radial-azmiuthal bins
+d_vel_mat = repmat(d_vel,nt,nz,nth,1);
+d2v = d_vel_mat.*dazim*pi/180; % (m/s)^2
+
+% Initialize matrix
+vdf_dn = zeros(nt,nz,nth,nr);
+
+for it = 1:nt
+%  Ltmp = tsLdsl3(it);
+%  Mtmp = tsMdsl3(it);
+%  Ntmp = tsNdsl3(it);
+
+  dv = MP(it).dv; % same units as the original f (I think)
+  df = MP(it).df;
+  dn = df.*dv;
+  vx = MP(it).vx - v_shift(1);
+  vy = MP(it).vy - v_shift(2);
+  vz = MP(it).vz - v_shift(3);
+
+  % Cylindrical coordinates
+  z = vz;
+  r = sqrt(vx.^2 + vy.^2);  
+  theta = atan2d(vy,vx);
+  fun = @sum;
+  [dn_tot edges mid loc] = histcn([z, theta, r],z_edges,theta_edges,r_edges,'AccumData',dn,'Fun',fun);
+
+  vdf_dn(it,:,:,:) = dn_tot;
+end
+
+%f_tot = dn_tot_all./d2v; % [1/cm^3]/[m^2/s^2]
+
+% [dn_tot_all] = cm^-3
+% [d2v] = m^2/s^2
+% cm^-3/(cm^2/s^2) = s^2/cm^5, reduced along one dimension
+f_tot = vdf_dn;%*1e6./d2v; 
+
+iCyl = PDist(PD.time,f_tot,'cylindrical',z_centers,theta_centers,r_centers); % scaling factor applied above, units in s^2/cm^5
+%iAzim.ancillary.v_shift = vL_shift;
+to_SI = 1;%(1e2)^5; % s^2/cm^5 -> s^2/m^5
+%iCyl = iCyl*to_SI;
+iCyl.units = 's^3/m^6';
+
+hca = subplot(1,1,1);
+cdata = squeeze(mean(iCyl.data,3));
+cdata(cdata==0) = NaN;
+[ZZ,RR] = ndgrid(z_edges,r_edges);
+surf(hca,ZZ,RR,ZZ*0,cdata)
+shading(hca,'flat')
+view(hca,[0 0 1])

@@ -2,46 +2,71 @@ function PD = pdist_generalized_maxwellian(pd,w,mu,sigma)
 % pdist_generalized_maxwellian from weights, mu, and Sigma
 %   PD = pdist_generalized_maxwellian(pd,w,mu,sigma)
 %
-%     pd - PDist, is used for velocity grid and output format
+%     pd - PDist, used for velocity grid and output format
+%     w - [K,nt], weight or density
+%     mu - [K,3,nt], mean/velocity
+%     sigma - [3,3,K,nt], covariance matrix/v_th^2
 
+% Convert to SI units
+pd = pd.convertto('s^3/m^6');
 [vx,vy,vz] = pd.v;
+
+nt = length(pd.time);
+if isa(w,'TSeries')
+  nK = 1;
+end
+if isa(w,'TSeries')
+  w = w.data;
+  w = reshape(w,[nK,nt]);
+  w = w*1e-3;
+end
+if isa(mu,'TSeries')
+  mu = mu.data;
+  mu = reshape(mu,[nK,3,nt]);
+end
+if isa(sigma,'TSeries') % input is T
+  T = permute(sigma.data,[2 3 1 ]);
+  T = reshape(T,[size(T,[1 2]) 1 size(T,3)]);
+  units = irf_units;
+  sigma_m2s2 = T*units.eV/units.mp; % v^2/2 [(m/s)^2]
+  sigma_km2s2 = sigma_m2s2/1e6;
+  sigma = sigma_km2s2;
+end
+
+nK = size(w,1);
 
 % Construct generalized Maxwellian
 f_all = zeros(size(vx));
-for ii = 1:length(pdist.time)
-  L = chol(sigma(:,:,ii), 'lower'); % One can go this way instead of taking the determinant of the covariance matrix
-  n = w(ii);
-
-  dvx = vx(ii,:,:,:)-mu(ii,1);
-  dvy = vy(ii,:,:,:)-mu(ii,2);
-  dvz = vz(ii,:,:,:)-mu(ii,3);
-
-  dV = [dvx(:), dvy(:), dvz(:)];
+for it = 1:nt
+  for iK = 1:nK
+    n = w(iK,it); % weight/density
   
-  y = dV / L;
-  q = sum(y.^2, 2); % L2 norm
+    % One can go this way instead of taking the determinant of the covariance matrix
+    % Sigma = LL^T
+    % (v-mu)^T * Sigma^-1 * (v-mu) = ||(v-mu)*L^-T||^2
+    L = chol(sigma(:,:,iK,it), 'lower'); 
+    
+    % Velocity in rest frame
+    dvx = vx(it,:,:,:)-mu(iK,1,it);
+    dvy = vy(it,:,:,:)-mu(iK,2,it);
+    dvz = vz(it,:,:,:)-mu(iK,3,it);
   
-  f = n / ((2*pi)^(3/2) * prod(diag(L))) .* exp(-0.5*q);
+    dV = [dvx(:), dvy(:), dvz(:)];
+    
+    % Exponent
+    y = dV / L;
+    q = sum(y.^2, 2); % L2 norm
+    
+    % Maxwellian
+    f = n / ((2*pi)^(3/2) * prod(diag(L))) .* exp(-0.5*q); 
+    f = reshape(f, size(dvx));
   
-  f = reshape(f, size(dvx));
-
-  %detT = det(sigma(:,:,ii));
-
-  %coeff = w(ii)/(sqrt(pi^3)*sqrt(detT));
-  %vu_x = xp(ii,:,:,:).*rmat(ii,:,:,:)-mu(ii,1);
-  %vu_y = yp(ii,:,:,:).*rmat(ii,:,:,:)-mu(ii,2);
-  %vu_z = zp(ii,:,:,:).*rmat(ii,:,:,:)-mu(ii,3);
-  %exp_x = -0.5*vu_x'*inv(sigma(:,:,ii))*vu_x;
-
-  %bimaxtemp = exp(-(xp(ii,:,:,:).*rmat(ii,:,:,:)-Vpmag.data(ii)).^2./(vthpar.data(ii).^2).*Trat.data(ii));
-  %bimaxtemp = bimaxtemp.*exp(-(yp(ii,:,:,:).*rmat(ii,:,:,:)).^2./(vthpar.data(ii).^2).*Trat.data(ii));
-  %bimaxtemp = bimaxtemp.*exp(-(zp(ii,:,:,:).*rmat(ii,:,:,:)-Vpar.data(ii)).^2./(vthpar.data(ii).^2));
-  %bimaxdist(ii,:,:,:) = coeff*bimaxtemp;
-  f_all(ii,:,:,:) = f;
+    % Gather results
+    f_all(it,:,:,:) = f_all(it,:,:,:) + f;
+  end
 end
 
-% Make modelPDist file for output
-modelPDist = pdist;
-modelPDist.data = f_all;
-modelPDist = modelPDist.convertto('s^3/km^6');
-PD = modelPDist;
+% Make PDist file for output
+PD = pd;
+PD.data = f_all;
+PD = PD.convertto('s^3/km^6');

@@ -123,6 +123,7 @@ clabel(c,h)
 units = irf_units;
 dB = 0.1*1e-9; % T
 fce = 555; % Hz, from local data
+wce = fce/2/pi;
 re = 1.0877e+03; % m, from local data
 kre = (2*pi)/re; % from whamp, assuming k-normalization to be rho_e
 wk0 = 0.25*wce; % from whamp
@@ -351,7 +352,7 @@ for it = 1:times.length
   c_eval('b = dmpaB?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
   c_eval('scpot = scPot?.tlim(pdist.time + 0.5*0.03*[-1 1]);',ic)
   z = mean(b.norm.data,1);
-  x = cross(z,cross([1 0 0],x)); x = x/norm(x);
+  x = cross(z,cross([1 0 0],z)); x = x/norm(x);
   y = cross(z,x); y = y/norm(y);
   vg = -15000:500:15000;
   

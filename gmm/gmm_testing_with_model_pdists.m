@@ -1,4 +1,4 @@
-pdist = PD(1:50);
+pdist = PD_use(1:50);
 times = pdist.time;
 nt = times.length;
 n = irf.ts_scalar(times,ones(nt,1));
@@ -6,12 +6,14 @@ vx = linspace(10,2000,nt)';
 v = irf.ts_vec_xyz(times,[vx*1.1 vx*0 vx*0.1]);
 t_in = 100; % eV
 t = irf.ts_tensor_xyz(times,permute(repmat(t_in*eye(3,3),[1 1 nt]),[3 1 2]));
-b = irf.ts_vec_xyz(times,rand(nt,3)+[vx*0+10 vx*0 vx*0]);
+b = irf.ts_vec_xyz(times,rand(nt,3)+[vx*0+10 vx*0+2 vx*0]);
 scpot = irf.ts_scalar(times,0*ones(nt,1));
 
 Tfac = mms.rotate_tensor(t,'fac',b,'pp'); 
 
-pd_mod = mms.make_model_dist(pdist,b,scpot,n,v,t);
+pd_mod_bim = mms.make_model_dist(pdist,b,scpot,n,v,t);
+pd_mod_gen = pdist_generalized_maxwellian(pdist,n,v,t); 
+pd_mod = pd_mod_gen;
 
 if 0
 irf_plot({b,n,v,t,iPDist.deflux.omni.specrec,pd_mod.deflux.omni.specrec})
@@ -22,8 +24,8 @@ hlinks = linkprop(h(5:6),{'CLim'});
 colorbar
 irf_plot_axis_align
 end
-%%
-nMP = 10e5;
+%% GMM'ing
+nMP = 1e5;
 allMP = pd_mod.macroparticles('ntot',nMP*10,'skipzero',1);
 
 vecK = 1;
@@ -42,21 +44,30 @@ for iK = 1:nK
   end
 end
 
-%% Reconstructing PDist from gmm
+% Reconstructing PDist from gmm
 %moms_orig = pdist.moments;
 it = 1;
-iK = 1;
-n_kk = n.data*1e-3;
-w = cellfun(@(x)x.ComponentProportion,gm);
-mu = cellfun(@(x)x.mu,gm,'UniformOutput',false); mu = cat(1,mu{:});
-sigma = cellfun(@(x)x.Sigma,gm,'UniformOutput',false); sigma = cat(3,sigma{:});
-PD_gmm = pdist_generalized_maxwellian(pd_mod,w.*n_kk,mu,sigma);
+%iK = 1;
+n_kk = n.data*1e-3; % What are these units?
+w = cellfun(@(x)x.ComponentProportion',gm,'UniformOutput',false); w = cat(2,w{:});
+mu = cellfun(@(x)x.mu,gm,'UniformOutput',false); mu = cat(3,mu{:});
+sigma = cellfun(@(x)x.Sigma,gm,'UniformOutput',false); sigma = cat(4,sigma{:});
+PD_gmm = pdist_generalized_maxwellian(pd_mod,w.*repmat(n_kk',[gm{1}.NumComponents 1]),mu,sigma);
 
 moms_mod = pd_mod.moments;
-moms_gmm = PD_gmm.moments;
+moms_gmm_ = PD_gmm.moments;
+moms_gmm.n = PD_gmm.n; 
+moms_gmm.V = PD_gmm.vel; 
+moms_gmm.T = PD_gmm.T; 
+% First component
+moms_gm.n = irf.ts_scalar(pdist.time,n.data.*w(1,:));
+moms_gm.V = irf.ts_vec_xyz(pdist.time,permute(mu(1,:,:),[3 2 1]));
+v2_gm = permute(sigma(:,:,1,:),[4 1 2 3]);
+T_gm = v2_gm*1e6*units.mp/units.eV;
+moms_gm.T = irf.ts_tensor_xyz(pdist.time,T_gm);
 
 nref = ntot*1e-12; % cc
-
+%
 %h = irf_plot(9);
 [h,h2] = initialize_combined_plot('leftright',9,3,1,0.6,'vertical');
 fontsize = 12;
@@ -79,28 +90,27 @@ end
 
 hca = irf_panel('n');
 hca.ColorOrder = mms_colors('1234');
-irf_plot(hca,{n,moms_mod.n,moms_gmm.n},'comp')
+irf_plot(hca,{n,moms_mod.n,moms_gm.n,moms_gmm.n},'comp')
 hca.YLabel.String = 'n';
 hca.ColorOrder = mms_colors('1234');
-irf_legend(hca,{'input TS','PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+irf_legend(hca,{'input TS','PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
 
 for comp = ["x","y","z"]
   hca = irf_panel(char(["v" + comp]));
   hca.ColorOrder = mms_colors('1234');
-  irf_plot(hca,{v.(comp),moms_mod.V.(comp),moms_gmm.V.(comp)},'comp')
+  irf_plot(hca,{v.(comp),moms_mod.V.(comp),moms_gm.V.(comp),moms_gmm.V.(comp)},'comp')
   hca.YLabel.String = ['v_' + comp];
   hca.ColorOrder = mms_colors('1234');
-irf_legend(hca,{'input TS','PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
-
+  irf_legend(hca,{'input TS','PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
 end
 
 for comp = ["xx","yy","zz"]
   hca = irf_panel(char(["T" + comp]));
   hca.ColorOrder = mms_colors('1234');
-  irf_plot(hca,{t.(comp),moms_mod.T.(comp),moms_gmm.T.(comp)},'comp')
+  irf_plot(hca,{t.(comp),moms_mod.T.(comp),moms_gm.T.(comp),moms_gmm.T.(comp)},'comp')
   hca.YLabel.String = ['T_{' + comp + '}'];
   hca.ColorOrder = mms_colors('1234');
-  irf_legend(hca,{'input TS','PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+  irf_legend(hca,{'input TS','PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
 
 end
 
@@ -109,7 +119,7 @@ hlinks = linkprop(h(1:2),{'CLim'});
 hlinks.Targets(1).CLim = [0 10];
 colormap([flipdim(irf_colormap('Spectral'),1)])
 irf_plot_axis_align
-h(1).Title.String = sprintf('N_{MP} = %g',nMP);
+h(1).Title.String = sprintf('N_{MP} = %g, nK = %g',nMP,numel(vecK));
 
 % Other plots
 Ek_inp = units.mp*(v.abs2.data*1e6)/2/units.eV;
@@ -118,16 +128,248 @@ ET_inp = t.trace/3;
 isub = 1;
 
 hca = h2(isub); isub = isub + 1;
-semilogx(hca,Ek_inp,moms_mod.n.data,Ek_inp,moms_gmm.n.data)
+semilogx(hca,Ek_inp,moms_mod.n.data,Ek_inp,moms_gm.n.data,Ek_inp,moms_gmm.n.data)
 hca.ColorOrder = mms_colors('234');
 hca.XLabel.String = '(m/2)v^2_{inp} (eV)';
 hca.YLabel.String = 'Density (cc)';
-irf_legend(hca,{'PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+irf_legend(hca,{'PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+hca.YLim = [0.5 1.5];
 
 
 hca = h2(isub); isub = isub + 1;
-semilogx(hca,Ek_inp,moms_mod.T.trace.data/3,Ek_inp,moms_gmm.T.trace.data/3)
+ebinwidth = Ek_inp*0.15;
+semilogx(hca,Ek_inp,moms_mod.T.trace.data/3,Ek_inp,moms_gm.T.trace.data/3,Ek_inp,moms_gmm.T.trace.data/3,...
+  Ek_inp,ebinwidth)
 hca.ColorOrder = mms_colors('234');
 hca.XLabel.String = '(m/2)v^2_{inp} (eV)';
 hca.YLabel.String = 'trace(T)/3 (eV)';
-irf_legend(hca,{'PDist from input','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+irf_legend(hca,{'PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+hca.YLim = [0 2]*t_in;
+
+%% Check different T
+
+pdist = PD_use(1:100);
+times = pdist.time;
+nt = times.length;
+n = irf.ts_scalar(times,ones(nt,1));
+vabs = linspace(10,2000,nt)';
+vdir = [0.1 0 1.1]; vdir = vdir/norm(vdir);
+v = irf.ts_vec_xyz(times,vabs*vdir);
+
+ts_eye = irf.ts_tensor_xyz(times,permute(repmat(eye(3,3),[1 1 nt]),[3 1 2]));
+b = irf.ts_vec_xyz(times,rand(nt,3)+[vabs*0+10 vabs*0 vabs*0]);
+scpot = irf.ts_scalar(times,0*ones(nt,1));
+
+
+t_in = logspace(1,3.5,12);
+%t_in = 100; % eV
+
+nT = numel(t_in);
+pd_mod = cell(1,nT);
+for iT = 1:nT
+  t = ts_eye*t_in(iT);
+  pd_mod{iT} = pdist_generalized_maxwellian(pdist,n,v,t); 
+end
+
+%
+n_all_ts = cellfun(@(x){x.n},pd_mod);
+v_all_ts = cellfun(@(x){x.vel},pd_mod);
+T_all_ts = cellfun(@(x){x.T},pd_mod);
+specrec_all_ts = cellfun(@(x){x.deflux.omni.specrec},pd_mod);
+
+n_all_mat = cellfun(@(x)x.data ,n_all_ts ,'UniformOutput' ,false);
+
+vx_all_mat = cellfun(@(x)x.x.data ,v_all_ts ,'UniformOutput' ,false);
+vy_all_mat = cellfun(@(x)x.y.data ,v_all_ts ,'UniformOutput' ,false);
+vz_all_mat = cellfun(@(x)x.z.data ,v_all_ts ,'UniformOutput' ,false);
+
+txx_all_mat = cellfun(@(x)x.xx.data ,T_all_ts ,'UniformOutput' ,false);
+tyy_all_mat = cellfun(@(x)x.yy.data ,T_all_ts ,'UniformOutput' ,false);
+tzz_all_mat = cellfun(@(x)x.zz.data ,T_all_ts ,'UniformOutput' ,false);
+
+  
+legs = arrayfun(@(x)sprintf('%.0f eV',x),t_in,'UniformOutput',false);
+cmap = irf_colormap('gem','interp',nT);
+%cmap = irf_colormap('Blues');
+
+%irf_plot(specrec_all_ts)
+%h = findobj(gcf,'type','axes'); h = h(end:-1:1); c_eval('h(?).YScale = ''log'';',1:numel(h))
+% Plot moments as colormap
+fontsize = 14;
+
+h = setup_subplots(2,2,'vertical'); isub = 1;
+
+vabs = v.abs.data;
+
+Ek_inp = units.mp*(v.abs2.data*1e6)/2/units.eV;
+Ebinwidth = Ek_inp*0.15;
+plotx = Ek_inp;
+ploty = t_in;
+[PX,PY] = ndgrid(plotx,ploty);
+n0 = repmat(n.data,[1,nT]);
+vx0 = repmat(v.x.data,[1,nT]);
+vy0 = repmat(v.y.data,[1,nT]);
+vz0 = repmat(v.z.data,[1,nT]);
+T0 = repmat(t_in,[nt,1]);
+
+x_label = 'mv_{beam}^2/2 (eV)';
+y_label = 'T_{beam} (eV)';
+
+
+hca = h(isub); isub = isub + 1;
+plotc = cat(2,n_all_mat{:})./n0;
+pcolor(hca,PX,PY,plotc)
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = 'n/n_0';
+hca.CLim = [0 2];
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
+
+hca = h(isub); isub = isub + 1;
+plotc = cat(2,txx_all_mat{:})./T0;
+pcolor(hca,PX,PY,plotc)
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = 'T_{xx}/T_0';
+hca.CLim = [0 2];
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
+
+hca = h(isub); isub = isub + 1;
+plotc = cat(2,tyy_all_mat{:})./T0;
+pcolor(hca,PX,PY,plotc)
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = 'T_{yy}/T_0';
+hca.CLim = [0 2];
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
+
+hca = h(isub); isub = isub + 1;
+plotc = cat(2,tzz_all_mat{:})./T0;
+pcolor(hca,PX,PY,plotc)
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = 'T_{zz}/T_0';
+hca.CLim = [0 2];
+hca.XLabel.String = x_label;
+hca.YLabel.String = y_label;
+
+for ip = 1:4
+  hca = h(ip);
+  hold(hca,'on')
+  plot(hca,plotx,plotx*0.15,'k--')
+  hold(hca,'on')
+end
+
+hlinks = linkprop(h,{'XLim','YLim','CLim'});
+colormap([flipdim(irf_colormap('Spectral'),1)])
+c_eval('h(?).XScale = ''log'';',1:numel(h))
+c_eval('h(?).YScale = ''log'';',1:numel(h))
+c_eval('h(?).Layer = ''top'';',1:numel(h))
+c_eval('h(?).FontSize = fontsize;',1:numel(h))
+
+h(1).Title.String = sprintf('v_{dir} = [%.2f, %.2f, %.2f]',vdir(1),vdir(2),vdir(3));
+
+%% Plot moments as lines
+
+fontsize = 14;
+
+h = setup_subplots(3,3,'vertical'); isub = 1;
+
+vabs = v.abs.data;
+
+Ek_inp = units.mp*(v.abs2.data*1e6)/2/units.eV;
+Ebinwidth = Ek_inp*0.15;
+plotx = Ek_inp;
+% ploty = t_in;
+% [PX,PY] = ndgrid(plotx,ploty);
+% x_label = 'mv_{drift}^2/2 (eV)';
+% y_label = 'T_{in} (eV)';
+% n0 = repmat(n.data,[1 nT]);
+% vx0 = repmat(v.x.data,[1 nT]);
+% vy0 = repmat(v.y.data,[1 nT]);
+% vz0 = repmat(v.z.data,[1 nT]);
+% T0 = repmat(t_in,[nt 1]);
+
+
+hca = h(isub); isub = isub + 1;
+%plotc = cat(2,vx_all_mat{:});
+%plotc = plotc./vx0;
+%pcolor(hca,PX,PY,plotc)
+ploty = cat(2,vx_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'v_x (cc)';
+%irf_legend(hca,legs',[1.02 0.1])
+
+hca = h(isub); isub = isub + 1;
+ploty = cat(2,vy_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'v_y (cc)';
+irf_legend(hca,legs',[1.02 0.1])
+
+hca = h(isub); isub = isub + 1;
+ploty = cat(2,vz_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'v_z (cc)';
+irf_legend(hca,legs',[1.02 0.1])
+
+hca = h(isub); isub = isub + 1;
+ploty = cat(2,txx_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hold(hca,'on')
+plot(hca,plotx,Ebinwidth,'k--')
+irf_legend(hca,['- - 0.15*' x_label],[0.02 0.1],'color','k','fontsize',fontsize)
+hold(hca,'off')
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'T_{xx} (cc)';
+irf_legend(hca,legs',[1.02 0.1])
+hca.YScale = 'log';
+
+hca = h(isub); isub = isub + 1;
+ploty = cat(2,tyy_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hold(hca,'on')
+plot(hca,plotx,Ebinwidth,'k--')
+irf_legend(hca,['- - 0.15*' x_label],[0.02 0.1],'color','k','fontsize',fontsize)
+hold(hca,'off')
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'T_{yy} (cc)';
+irf_legend(hca,legs',[1.02 0.1])
+hca.YScale = 'log';
+
+hca = h(isub); isub = isub + 1;
+ploty = cat(2,tzz_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hold(hca,'on')
+plot(hca,plotx,Ebinwidth,'k--')
+irf_legend(hca,['- - 0.15*' x_label],[0.02 0.1],'color','k','fontsize',fontsize)
+hold(hca,'off')
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'T_{zz} (cc)';
+irf_legend(hca,legs',[1.02 0.1])
+hca.YScale = 'log';
+
+
+hca = h(isub); isub = isub + 1;
+ploty = cat(2,n_all_mat{:});
+plot(hca,plotx,ploty)
+hca.ColorOrder = cmap;
+hca.XLabel.String = x_label;
+hca.YLabel.String = 'density (cc)';
+irf_legend(hca,legs',[1.02 0.1])
+
+c_eval('h(?).XScale = ''log'';',1:numel(h))
+c_eval('h(?).FontSize = fontsize;',1:numel(h))
+
+
