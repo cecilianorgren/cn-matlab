@@ -1,5 +1,5 @@
 %rng(1)
-N = 1e4;
+N = 1e3;
 tmp_r = rand(N,1);
 
 vmin = 0; vmax = 1;

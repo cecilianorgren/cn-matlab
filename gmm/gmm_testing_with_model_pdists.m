@@ -4,29 +4,47 @@ nt = times.length;
 n = irf.ts_scalar(times,ones(nt,1));
 vx = linspace(10,2000,nt)';
 v = irf.ts_vec_xyz(times,[vx*1.1 vx*0 vx*0.1]);
-t_in = 100; % eV
+t_in = 200; % eV
 t = irf.ts_tensor_xyz(times,permute(repmat(t_in*eye(3,3),[1 1 nt]),[3 1 2]));
+t_diag = irf.ts_vec_xyz(times,ones(nt,3)*t_in);
 b = irf.ts_vec_xyz(times,rand(nt,3)+[vx*0+10 vx*0+2 vx*0]);
 scpot = irf.ts_scalar(times,0*ones(nt,1));
 
 Tfac = mms.rotate_tensor(t,'fac',b,'pp'); 
 
+
 pd_mod_bim = mms.make_model_dist(pdist,b,scpot,n,v,t);
 pd_mod_gen = pdist_generalized_maxwellian(pdist,n,v,t); 
-pd_mod = pd_mod_gen;
+pd_mod_pdi = pdist.generate_dist(n,t,v,'max','species','ions'); 
+pd_mod_gen_ups = pd_mod_gen.interpn(0+[62 62 32]);
 
+pd_mod = pd_mod_gen_ups;
+pd_mod = pd_mod_gen;
+it = 2; 
+semilogy(pd_mod_gen.depend{1}(it,:),pd_mod_gen.data(it,:,1,1),'*', ...
+     pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.data(it,:,1,1),'*')
+
+%loglog(pd_mod_gen.depend{1}(it,:),pd_mod_gen.omni.data(it,:),'*', ...
+%     pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.omni.data(it,:),'*')
 if 0
-irf_plot({b,n,v,t,iPDist.deflux.omni.specrec,pd_mod.deflux.omni.specrec})
+  %%
+irf_plot({b,n,v,t, ...
+  pd_mod_bim.deflux.omni.specrec, ...
+  pd_mod_gen.deflux.omni.specrec, ...
+  pd_mod_pdi.deflux.omni.specrec, ...
+  pd_mod_ups_gen.deflux.omni.specrec})
 h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+
+%h(end-1).YScale = 'log';
+hlinks = linkprop(h(5:end),{'CLim','YScale'});
 h(end).YScale = 'log';
-h(end-1).YScale = 'log';
-hlinks = linkprop(h(5:6),{'CLim'});
 colorbar
 irf_plot_axis_align
 end
 %% GMM'ing
-nMP = 1e5;
-allMP = pd_mod.macroparticles('ntot',nMP*10,'skipzero',1);
+nMP = 1e6;
+allMP = pd_mod.macroparticles('ntot',nMP,'skipzero',1);
+%allMP = pd_mod.macroparticles('ntot',nMP*10,'skipzero',1);
 
 vecK = 1;
 nK = numel(vecK);
@@ -128,27 +146,34 @@ ET_inp = t.trace/3;
 isub = 1;
 
 hca = h2(isub); isub = isub + 1;
-semilogx(hca,Ek_inp,moms_mod.n.data,Ek_inp,moms_gm.n.data,Ek_inp,moms_gmm.n.data)
-hca.ColorOrder = mms_colors('234');
+semilogx(hca,Ek_inp,n.data, ...
+             Ek_inp,moms_mod.n.data, ...
+             Ek_inp,moms_gm.n.data, ...
+             Ek_inp,moms_gmm.n.data)
+hca.ColorOrder = mms_colors('1234b');
 hca.XLabel.String = '(m/2)v^2_{inp} (eV)';
 hca.YLabel.String = 'Density (cc)';
-irf_legend(hca,{'PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
+irf_legend(hca,{'Input','PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
 hca.YLim = [0.5 1.5];
 
 
 hca = h2(isub); isub = isub + 1;
 ebinwidth = Ek_inp*0.15;
-semilogx(hca,Ek_inp,moms_mod.T.trace.data/3,Ek_inp,moms_gm.T.trace.data/3,Ek_inp,moms_gmm.T.trace.data/3,...
-  Ek_inp,ebinwidth)
-hca.ColorOrder = mms_colors('234');
+semilogx(hca,Ek_inp,t.trace.data/3, ...
+             Ek_inp,moms_mod.T.trace.data/3, ...
+             Ek_inp,moms_gm.T.trace.data/3, ...
+             Ek_inp,moms_gmm.T.trace.data/3,...
+             Ek_inp,ebinwidth)
+hca.ColorOrder = mms_colors('1234b');
 hca.XLabel.String = '(m/2)v^2_{inp} (eV)';
 hca.YLabel.String = 'trace(T)/3 (eV)';
-irf_legend(hca,{'PDist from input','from GMM output','PDist from GMM from input'}',[0.02 0.98],'fontsize',fontsize+2);
-hca.YLim = [0 2]*t_in;
+irf_legend(hca,{'Input','PDist from input','from GMM output','PDist from GMM from input','0.15*(m/2)v_{inp}^2'}',[0.02 0.98],'fontsize',fontsize+2);
+hca.YLim = [0 5]*t_in;
 
 %% Check different T
 
 pdist = PD_use(1:100);
+pdist = pdist.interpn([62 62 32]);
 times = pdist.time;
 nt = times.length;
 n = irf.ts_scalar(times,ones(nt,1));
