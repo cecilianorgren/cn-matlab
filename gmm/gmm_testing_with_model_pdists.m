@@ -16,16 +16,20 @@ Tfac = mms.rotate_tensor(t,'fac',b,'pp');
 pd_mod_bim = mms.make_model_dist(pdist,b,scpot,n,v,t);
 pd_mod_gen = pdist_generalized_maxwellian(pdist,n,v,t); 
 pd_mod_pdi = pdist.generate_dist(n,t,v,'max','species','ions'); 
-pd_mod_gen_ups = pd_mod_gen.interpn(0+[62 62 32]);
+pd_mod_gen_ups = pd_mod_gen.interpn(5+[96 62 32]);
+
+pd_mod = pd_mod_gen;
+
+pd_mod_noups = pd_mod_gen;
 
 pd_mod = pd_mod_gen_ups;
-pd_mod = pd_mod_gen;
-it = 2; 
-semilogy(pd_mod_gen.depend{1}(it,:),pd_mod_gen.data(it,:,1,1),'*', ...
-     pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.data(it,:,1,1),'*')
+pd_mod.data(isnan(pd_mod.data)) = 0;
+it = 40; 
+%loglog(pd_mod_gen.depend{1}(it,:),pd_mod_gen.data(it,:,2,2),'*', ...
+%     pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.data(it,:,2,2),'o')
 
-%loglog(pd_mod_gen.depend{1}(it,:),pd_mod_gen.omni.data(it,:),'*', ...
-%     pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.omni.data(it,:),'*')
+loglog(pd_mod_noups.depend{1}(it,:),pd_mod_noups.omni.data(it,:),'*', ...
+       pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.omni.data(it,:),'o')
 if 0
   %%
 irf_plot({b,n,v,t, ...
@@ -85,7 +89,7 @@ T_gm = v2_gm*1e6*units.mp/units.eV;
 moms_gm.T = irf.ts_tensor_xyz(pdist.time,T_gm);
 
 nref = ntot*1e-12; % cc
-%
+%%
 %h = irf_plot(9);
 [h,h2] = initialize_combined_plot('leftright',9,3,1,0.6,'vertical');
 fontsize = 12;
