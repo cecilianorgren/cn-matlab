@@ -1,4 +1,4 @@
-function moms = macroparticle_moments(MP,time)
+function moms = macroparticle_moments(MP, mass, time)
 % MACROPARTICLE_MOMENTS Density, bulk velocity, and temperature from macroparticles.
 %
 %   moms = macroparticle_moments(MP)
@@ -21,11 +21,12 @@ function moms = macroparticle_moments(MP,time)
 % Notes
 %   Corrects the built-in MP.mom fields, which store flux (n*V) as "vx"
 %   and pressure-like quantities as "Txx" (not divided by n).
+
 units = irf_units;
-%if nargin < 2 || isempty(mass)
-  mass = MP(1).mass;
-%end
-if nargin < 2
+if nargin < 2 || isempty(mass)
+  mass = units.mp;
+end
+if nargin < 3
   time = [];
 end
 
@@ -33,21 +34,27 @@ nT = numel(MP);
 n_out = zeros(nT,1);
 V_out = zeros(nT,3);
 T_out = zeros(nT,3,3);
+
 for it = 1:nT
   m = MP(it);
   w = m.df(:) .* m.dv(:);   % phase-space weight per macroparticle
-  n_raw = sum(w); % m^-3
+  n_raw = sum(w);
+
   if n_raw == 0 || isempty(w)
     continue
   end
-  vx = m.vx(:); % km/s
+
+  vx = m.vx(:);
   vy = m.vy(:);
   vz = m.vz(:);
-  n_out(it) = n_raw * 1e-6; % s^3/k^6 * (k/s)^3 -> cm^-3
-  V_out(it,:) = [sum(w.*vx), sum(w.*vy), sum(w.*vz)] / n_raw; % w and n_raw are the same units
-  dvx = vx - V_out(it,1); % km/s
+
+  n_out(it) = n_raw * 1e-15; % s^3/km^6 * (km/s)^3 -> cm^-3
+  V_out(it,:) = [sum(w.*vx), sum(w.*vy), sum(w.*vz)] / n_raw;
+
+  dvx = vx - V_out(it,1);
   dvy = vy - V_out(it,2);
   dvz = vz - V_out(it,3);
+
   % <w dv_i dv_j> / n_raw * (m/e) with v in km/s -> eV
   fac = (mass/units.eV) * 1e6 / n_raw;
   T_out(it,1,1) = sum(w.*dvx.*dvx) * fac;
@@ -60,6 +67,7 @@ for it = 1:nT
   T_out(it,3,1) = T_out(it,1,3);
   T_out(it,3,2) = T_out(it,2,3);
 end
+
 if ~isempty(time)
   moms.n = irf.ts_scalar(time, n_out);
   moms.V = irf.ts_vec_xyz(time, V_out);
@@ -70,33 +78,3 @@ else
   moms.T = T_out;
 end
 end
-
-
-% function moms = macroparticle_moments(allMP)
-%   units = irf_units;
-%   nt = size(allMP,1);
-% 
-%   for it = 1:nt
-%     MP = allMP(it);
-%   w = MP.df .* MP.dv;                 % phase-space weight
-%   n_raw = sum(w);
-%   n = n_raw * 1e-15;                    % cm^-3 for s^3/km^6
-% 
-%   V = [sum(w.*MP.vx), sum(w.*MP.vy), sum(w.*MP.vz)] / n_raw;
-% 
-%   dvx = MP.vx - V(1);
-%   dvy = MP.vy - V(2);
-%   dvz = MP.vz - V(3);
-% 
-%   Pxx = sum(w .* dvx.^2);
-%   Pyy = sum(w .* dvy.^2);
-%   Pzz = sum(w .* dvz.^2);
-%   Pxy = sum(w .* dvx .* dvy);
-%   Pxz = sum(w .* dvx .* dvz);
-%   Pyz = sum(w .* dvy .* dvz);
-% 
-%   moms.n(it,1) = n;
-%   moms.V(it,1:3) = V;
-%   moms.T(it,1:3,1:3) = [Pxx Pxy Pxz; Pxy Pyy Pyz; Pxz Pyz Pzz] ...
-%            * mass/units.eV * 1e6 / n_raw;   % eV
-% end
