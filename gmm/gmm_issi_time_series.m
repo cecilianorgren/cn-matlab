@@ -41,24 +41,24 @@ time_df_ttns = double(t0_df.ttns + int64(db_table_ff.t_df));
 time_df_ttns(~db_table_ff.is_df) = NaN;
 db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 
-%% Prepare table
-if 0
-  %%
-clear table_ci
-gm_before = {};
-gm_after = {};
-T_scalar_before = {};
-T_scalar_after = {};
-T_before = {};
-T_after = {};
-T_min_before = {};
-T_min_after = {};
-id_df = [];
-t_ff_start = string([]);
-t_ff_stop = string([]);
-t_df = string([]);
-table_ci = table(id_df,t_ff_start,t_ff_stop,t_df,gm_before,gm_after,T_before,T_after,T_scalar_before,T_scalar_after,T_min_before,T_min_after);
-end
+% Prepare table
+% if 0
+%   %%
+% clear table_ci
+% gm_before = {};
+% gm_after = {};
+% T_scalar_before = {};
+% T_scalar_after = {};
+% T_before = {};
+% T_after = {};
+% T_min_before = {};
+% T_min_after = {};
+% id_df = [];
+% t_ff_start = string([]);
+% t_ff_stop = string([]);
+% t_df = string([]);
+% table_ci = table(id_df,t_ff_start,t_ff_stop,t_df,gm_before,gm_after,T_before,T_after,T_scalar_before,T_scalar_after,T_min_before,T_min_after);
+% end
 
 %% Loop events and plot brief overview
 units = irf_units;
@@ -87,7 +87,7 @@ doPrint = 1;
 doPlot = 0;
 vecK = 1:5;
 
-for iDF = 6;69;iDFs;%87%iDFs(1)
+for iDF = 57;6;69;iDFs;%87%iDFs(1)
   %try
   disp(iDF)
   % Define time
@@ -142,7 +142,7 @@ for iDF = 6;69;iDFs;%87%iDFs(1)
   times = PD.tlim(tint_df).time;
   nMP = 100000; % Number of macroparticles  
   %MP = pdist.macroparticles('ntot',nMP,'skipzero',1,'scpot',scpot);      
-  allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD));
+  allMP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_init','v2');
 
   nK = numel(vecK);  
   nt = times.length; 

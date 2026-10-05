@@ -4,11 +4,13 @@ nt = times.length;
 n = irf.ts_scalar(times,ones(nt,1));
 vx = linspace(10,2000,nt)';
 v = irf.ts_vec_xyz(times,[vx*1.1 vx*0 vx*0.1]);
-t_in = 1000; % eV
+t_in = 100; % eV
 t = irf.ts_tensor_xyz(times,permute(repmat(t_in*eye(3,3),[1 1 nt]),[3 1 2]));
 t_diag = irf.ts_vec_xyz(times,ones(nt,3)*t_in);
 b = irf.ts_vec_xyz(times,rand(nt,3)+[vx*0+10 vx*0+2 vx*0]);
 scpot = irf.ts_scalar(times,0*ones(nt,1));
+
+Ek_inp = units.mp*(v.abs2*1e6)/2/units.eV;
 
 Tfac = mms.rotate_tensor(t,'fac',b,'pp'); 
 
@@ -32,6 +34,50 @@ it = 40;
 %       pd_mod_gen_ups.depend{1}(it,:),pd_mod_gen_ups.omni.data(it,:),'o')
 if 0
   %%
+  nMP = 1e5;
+  %allMP = pd_mod.macroparticles('ntot',nMP,'skipzero',1,'v_init','E');
+  %nMP = 1e5;
+  %MP1 = pd_mod.macroparticles('nbin',1,'skipzero',1,'v_init','E','positioning','center');
+  mmp1 = macroparticle_moments(MP1,times);
+
+  pd_mod = pd_mod_gen;
+  v_mod = pd_mod.vel;
+  T_mod = pd_mod.T;
+
+  legs = {'Orig','PDist.n',sprintf('N_{tot}^{MP}=1e6',nMP),sprintf('N_{bin}^{MP}=%g',1)};
+  h = irf_plot(7);
+
+  hca = irf_panel('n');
+  irf_plot(hca,{n,pd_mod.n,mmp.n,mmp1.n},'comp')
+  hca.YLabel.String = 'n (cc)';
+  irf_legend(hca,legs,[0.02, 0.98])
+  
+  hca = irf_panel('vx');
+  irf_plot(hca,{v.x,v_mod.x,mmp.V.x,mmp1.V.x},'comp')
+  hca.YLabel.String = 'v_x (km/s)';
+
+  hca = irf_panel('vy');
+  irf_plot(hca,{v.y,v_mod.y,mmp.V.y,mmp1.V.y},'comp')
+  hca.YLabel.String = 'v_y (km/s)';
+
+  hca = irf_panel('vz');
+  irf_plot(hca,{v.z,v_mod.z,mmp.V.z,mmp1.V.z},'comp')
+  hca.YLabel.String = 'v_z (km/s)';
+
+  hca = irf_panel('txx');
+  irf_plot(hca,{t.xx,T_mod.xx,mmp.T.xx,mmp1.T.xx},'comp')
+  hca.YLabel.String = 'T_{xx} (eV)';
+
+  hca = irf_panel('tyy');
+  irf_plot(hca,{t.yy,T_mod.yy,mmp.T.yy,mmp1.T.yy},'comp')
+  hca.YLabel.String = 'T_{yy} (eV)';
+f
+  hca = irf_panel('tzz');
+  irf_plot(hca,{t.zz,T_mod.zz,mmp.T.zz,mmp1.T.zz},'comp')
+  hca.YLabel.String = 'T_{zz} (eV)';
+end
+if 0
+  %%
 irf_plot({b,n,v,t, ...
   pd_mod_bim.deflux.omni.specrec, ...
   pd_mod_gen.deflux.omni.specrec, ...
@@ -49,8 +95,8 @@ end
 nMP = 1e5;
 allMP = pd_mod.macroparticles('ntot',nMP,'skipzero',1,'v_init','v3');
 %allMP = pd_mod.macroparticles('ntot',nMP*10,'skipzero',1);
-mmp.n = irf.ts_scalar(times,arrayfun(@(x)x.mom.n,allMP));
-mmp.v = irf.ts_vec_xyz(times,[arrayfun(@(x)x.mom.vx,allMP)',arrayfun(@(x)x.mom.vy,allMP)',arrayfun(@(x)x.mom.vz,allMP)']);
+%mmp.n = irf.ts_scalar(times,arrayfun(@(x)x.mom.n,allMP));
+%mmp.v = irf.ts_vec_xyz(times,[arrayfun(@(x)x.mom.vx,allMP)',arrayfun(@(x)x.mom.vy,allMP)',arrayfun(@(x)x.mom.vz,allMP)']);
 % T_tens = zeros(times.length,3,3);
 % T_tens(:,1,1) = arrayfun(@(x)x.mom.Txx,allMP)';
 % T_tens(:,2,2) = arrayfun(@(x)x.mom.Tyy,allMP)';
@@ -59,7 +105,7 @@ mmp.v = irf.ts_vec_xyz(times,[arrayfun(@(x)x.mom.vx,allMP)',arrayfun(@(x)x.mom.v
 % T_tens(:,1,3) = arrayfun(@(x)x.mom.Txz,allMP)';
 % T_tens(:,2,3) = arrayfun(@(x)x.mom.Tyz,allMP)';
 % mmp.T = irf.ts_tensor_xyz(times,T_tens);
-%%
+
 mmp = macroparticle_moments(allMP,times);
 h = irf_plot({t.diag,mmp.T.diag},'comp');
 c_eval('h(?).YLim = [0 t_in]*4;',1:numel(h))
