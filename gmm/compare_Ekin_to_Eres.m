@@ -18,8 +18,8 @@ h(1).YScale = 'log';
 
 %%
 h = irf_plot(3);
-Eres = 0.15;
-Eratio = 1/24;
+Eres = 0.24;
+Eratio = 1/48;
 
 hca = irf_panel('omni');
 irf_spectrogram(hca,PD.omni.deflux.specrec)
@@ -55,7 +55,7 @@ irf_zoom(h,'y')
 h(end).XTickLabelRotation = 0;
 
 %%
-eE = logspace(1,log10(32e3),2);
+eE = logspace(1,log10(32e3),33);
 %eE = PD.depend{1}(1,:)
 E1 = eE(1:end-1);
 E2 = eE(2:end);
@@ -75,8 +75,8 @@ dVcV = dV./cV;
 plot(dVcV./dEcE)
 
 %%
-E0 = 1000;
-Eres = 0.14;
+E0 = 400;
+Eres = 0.24;
 dE = E0*Eres;
 E1 = E0-0.5*dE;
 E2 = E0+0.5*dE;
@@ -86,6 +86,7 @@ v1 = sqrt(E1*2);
 v2 = sqrt(E2*2);
 dv = v2-v1;
 vres = dv/v0;
+
 
 %v0 = 7;
 %vres = 0.07;
@@ -101,6 +102,10 @@ vmean = mean(v);
 %varv/dv % the variance/v0^2 is the same for all v0^2
 % T ~ 0.5*vvar ((v-vmean)^2/2)
 0.5*vvar/dE
+
+g = fitgmdist(v,1);
+g.Sigma;
+g.Sigma/2/dE
 
 histogram(v,linspace(v1,v2,10))
 %%

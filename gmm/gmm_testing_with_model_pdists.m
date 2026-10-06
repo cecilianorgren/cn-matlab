@@ -17,6 +17,7 @@ Tfac = mms.rotate_tensor(t,'fac',b,'pp');
 
 pd_mod_bim = mms.make_model_dist(pdist,b,scpot,n,v,t);
 pd_mod_gen = pdist_generalized_maxwellian(pdist,n,v,t); 
+pd_mod_mp = generalized_maxwellian_macroparticle(pdist,n,v,t,1e6); 
 pd_mod_pdi = pdist.generate_dist(n,t,v,'max','species','ions'); 
 pd_mod_gen_ups = pd_mod_gen.interpn(5+[96 62 32]);
 
@@ -35,7 +36,7 @@ it = 40;
 if 0
   %%
   nMP = 1e5;
-  %allMP = pd_mod.macroparticles('ntot',nMP,'skipzero',1,'v_init','E');
+  allMP = pd_mod.macroparticles('ntot',nMP,'skipzero',1,'v_init','E');
   %nMP = 1e5;
   %MP1 = pd_mod.macroparticles('nbin',1,'skipzero',1,'v_init','E','positioning','center');
   mmp1 = macroparticle_moments(MP1,times);
@@ -71,7 +72,7 @@ if 0
   hca = irf_panel('tyy');
   irf_plot(hca,{t.yy,T_mod.yy,mmp.T.yy,mmp1.T.yy},'comp')
   hca.YLabel.String = 'T_{yy} (eV)';
-f
+
   hca = irf_panel('tzz');
   irf_plot(hca,{t.zz,T_mod.zz,mmp.T.zz,mmp1.T.zz},'comp')
   hca.YLabel.String = 'T_{zz} (eV)';
