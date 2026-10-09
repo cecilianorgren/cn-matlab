@@ -19,7 +19,8 @@ pd_mod_bim = mms.make_model_dist(pdist,b,scpot,n,v,t);
 pd_mod_gen = pdist_generalized_maxwellian(pdist,n,v,t); 
 pd_mod_mp = generalized_maxwellian_macroparticle(pdist,n,v,t,1e6); 
 pd_mod_pdi = pdist.generate_dist(n,t,v,'max','species','ions'); 
-pd_mod_gen_ups = pd_mod_gen.interpn(5+[96 62 32]);
+pd_mod_gen_ups = pd_mod_gen.interpn([64 64 32],'linear');
+pd_mod_gen_ups_cub = pd_mod_gen.interpn([64 64 32],'cubic');
 
 pd_mod = pd_mod_gen;
 

@@ -1,25 +1,370 @@
-classdef MParts < TSeries
+classdef MParts %< TSeries
 
+  properties (Access=protected)
+    coordinateSystem_ = '';
+    data_
+    t_ % GenericTimeArray
+    fullDim_
+    tensorOrder_ = 0;
+    tensorBasis_ = '';
+  end
+  properties (Dependent = true)
+    data
+    time
+    coordinateSystem
+  end
   properties    
     % data is f or could also be dn = f.*dv;
     depend % {vx vy vz}    
-    dv
-    iDepParent % indices to what energy/azim/polar bin etc the particle was generated from    
+    dV
+    parent % indices to what energy/azim/polar bin etc the particle was generated from    
     v_init
     type % f or dn for now
     species
     mass
+    units
+  end
+  properties (SetAccess = protected)
+    representation
   end
 
   methods
-    function obj = MParts(v,varargin)
+    function obj = MParts(time,data,units,type,varargin)            
+      % MPARTS Class representing macroparticles generated from particle
+      %   distribution functions.
+      %
+      %   The object stores particle weights, velocity-space coordinates,
+      %   differential velocity-space volumes, and associated metadata such
+      %   as species, mass, units, and parent-bin indices.
+      %
+      %   Supported distribution type:
+      %    '3D-cart'  Cartesian velocity coordinates vx, vy, and vz.
+      %
+      %   The data property contains particle distribution values or weights,
+      %   while depend stores the corresponding velocity coordinates.
+      %
+      %   See also PDIST, PDIST.MACROPARTICLES
 
+      if nargin<2, error('2 inputs required.'), end
+      
+      obj.t_ = time;
+      obj.data_ = reshape(data,[obj.length,1]); 
+      obj.type = type;
+      obj.units = units;
+
+      args = varargin;
+%      if isa(args{1},'char'); obj.type_ = args{1}; args(1) = [];
+%      else, error('3rd input must specify distribution type.')
+%      end
+
+      % collect required data, depend
+      switch obj.type
+        case {'3D-cart'} % 
+          obj.depend{1} = reshape(args{1},[obj.length,1]); args(1) = []; obj.representation{1} = {'vx'};
+          obj.depend{2} = reshape(args{1},[obj.length,1]); args(1) = []; obj.representation{2} = {'vy'};
+          obj.depend{3} = reshape(args{1},[obj.length,1]); args(1) = []; obj.representation{3} = {'vz'};
+      end
+
+      % collect additional data
+      while ~isempty(args)
+        x = args{1}; args(1) = [];
+        switch lower(x)
+          case {'dv'}
+            obj.dV = reshape(args{1},[obj.length,1]); args(1) = [];
+          case {'species'}
+            obj.species = args{1}; args(1) = [];
+          case {'mass'}
+            obj.mass = args{1}; args(1) = [];
+          case {'units'}
+            obj.units = args{1}; args(1) = [];
+          case {'idepparent'}
+            obj.parent.iDep = cellfun(@(x)reshape(x,[obj.length,1]),args{1},'UniformOutput',false); 
+            args(1) = [];
+          case {'v_init'}
+            obj.v_init = args{1}; args(1) = [];
+        end
+      end
     end
-    function N = N(obj) % number of macroparticles, could be scalar array or time series (default)
+
+    function [varargout] = subsref(obj,idx)
+      %SUBSREF handle indexing
+      switch idx(1).type
+        % Use the built-in subsref for dot notation
+        case '.'
+          [varargout{1:nargout}] = builtin('subsref',obj,idx);
+        case '()'
+          tmpEpoch = builtin('subsref',obj.time,idx(1));
+          obj.t_ = tmpEpoch;
+          idxTmp = repmat({':'}, ndims(obj.data), 1);
+          idxTmp(1) = idx(1).subs;
+          obj.data_ = obj.data_(idxTmp{:});
+          if numel(idx) > 1
+            obj = builtin('subsref',obj,idx(2:end));
+          end
+          [varargout{1:nargout}] = obj;
+        case '{}'
+          error('irf:TSeries:subsref',...
+            'Not a supported subscripted reference')
+      end
+    end
+
+    function value = get.coordinateSystem(obj)
+      value = obj.coordinateSystem_;
+    end
+    function value = get.data(obj)
+      value = obj.data_;
+    end
+    function value = get.time(obj)
+      value = obj.t_;
+    end
     
+    function l = length(obj)
+      % LENGTH - number of data points in time series
+      %
+      % LENGTH(TS) - number of data points in TS
+      if isempty(obj.t_), l = 0;
+      else, l = obj.t_.length();
+      end
+    end
+
+    function N = N(obj) % number of macroparticles, could be scalar array or time series (default)
+      N = reshape(cellfun(@(x)numel(x),obj.data),size(obj.data));
+    end
+    function varargout = moments(obj)
+      u = irf_units;
+
+      mass = obj.mass;
+      if isempty(mass) 
+        mass = u.mp;
+        warning('Empty mass, using proton mass.')
+      end
+
+      time = obj.time;
+
+      nT = obj.length;
+      n_out = zeros(nT,1);
+      V_out = zeros(nT,3);
+      T_out = zeros(nT,3,3);
+      
+      for it = 1:nT
+        %m = MP(it);
+        f = obj.data{it};
+        dV = obj.dV{it};
+        w = f.*dV;   % phase-space weight per macroparticle
+        n_raw = sum(w); % m^-3
+        if n_raw == 0 || isempty(w)
+          continue
+        end
+        vx = obj.vx{it}; % km/s
+        vy = obj.vy{it};
+        vz = obj.vz{it};
+        n_out(it) = n_raw * 1e-6; % s^3/k^6 * (k/s)^3 -> cm^-3
+        V_out(it,:) = [sum(w.*vx), sum(w.*vy), sum(w.*vz)] / n_raw; % w and n_raw are the same units
+        dvx = vx - V_out(it,1); % km/s
+        dvy = vy - V_out(it,2);
+        dvz = vz - V_out(it,3);
+        % <w dv_i dv_j> / n_raw * (m/e) with v in km/s -> eV
+        fac = (mass/u.eV) * 1e6 / n_raw;
+        T_out(it,1,1) = sum(w.*dvx.*dvx) * fac;
+        T_out(it,2,2) = sum(w.*dvy.*dvy) * fac;
+        T_out(it,3,3) = sum(w.*dvz.*dvz) * fac;
+        T_out(it,1,2) = sum(w.*dvx.*dvy) * fac;
+        T_out(it,1,3) = sum(w.*dvx.*dvz) * fac;
+        T_out(it,2,3) = sum(w.*dvy.*dvz) * fac;
+        T_out(it,2,1) = T_out(it,1,2);
+        T_out(it,3,1) = T_out(it,1,3);
+        T_out(it,3,2) = T_out(it,2,3);
+      end
+
+      if nargout == 3
+        varargout{1} = irf.ts_scalar(time, n_out);
+        varargout{2} = irf.ts_vec_xyz(time, V_out);
+        varargout{3} = irf.ts_tensor_xyz(time, T_out);
+      elseif nargout == 1        
+        moms.n = irf.ts_scalar(time, n_out);
+        moms.V = irf.ts_vec_xyz(time, V_out);
+        moms.T = irf.ts_tensor_xyz(time, T_out);
+        varargout{1} = moms;
+      end
+    end
+    function varargout = n(obj)
+      u = irf_units;
+
+      mass = obj.mass;
+      if isempty(mass) 
+        mass = u.mp;
+        warning('Empty mass, using proton mass.')
+      end
+
+      time = obj.time;
+
+      nT = obj.length;
+      n_out = zeros(nT,1);
+
+      for it = 1:nT
+        %m = MP(it);
+        f = obj.data{it};
+        dV = obj.dV{it};
+        w = f.*dV;   % phase-space weight per macroparticle
+        n_raw = sum(w); % m^-3
+        if n_raw == 0 || isempty(w)
+          continue
+        end
+        vx = obj.vx{it}; % km/s
+        vy = obj.vy{it};
+        vz = obj.vz{it};
+        n_out(it) = n_raw * 1e-6; % s^3/k^6 * (k/s)^3 -> cm^-3        
+      end
+
+      varargout{1} = irf.ts_scalar(time, n_out);
+    end
+    function varargout = v(obj)
+      u = irf_units;
+
+      mass = obj.mass;
+      if isempty(mass) 
+        mass = u.mp;
+        warning('Empty mass, using proton mass.')
+      end
+
+      time = obj.time;
+
+      nT = obj.length;
+      n_out = zeros(nT,1);
+      V_out = zeros(nT,3);
+
+      for it = 1:nT
+        %m = MP(it);
+        f = obj.data{it};
+        dV = obj.dV{it};
+        w = f.*dV;   % phase-space weight per macroparticle
+        n_raw = sum(w); % m^-3
+        if n_raw == 0 || isempty(w)
+          continue
+        end
+        vx = obj.vx{it}; % km/s
+        vy = obj.vy{it};
+        vz = obj.vz{it};
+        n_out(it) = n_raw * 1e-6; % s^3/k^6 * (k/s)^3 -> cm^-3
+        V_out(it,:) = [sum(w.*vx), sum(w.*vy), sum(w.*vz)] / n_raw; % w and n_raw are the same units
+      end
+
+      varargout{1} = irf.ts_vec_xyz(time, V_out);       
+    end
+    function varargout = T(obj)
+      u = irf_units;
+
+      mass = obj.mass;
+      if isempty(mass) 
+        mass = u.mp;
+        warning('Empty mass, using proton mass.')
+      end
+
+      time = obj.time;
+
+      nT = obj.length;
+      n_out = zeros(nT,1);
+      V_out = zeros(nT,3);
+      T_out = zeros(nT,3,3);
+
+      for it = 1:nT
+        %m = MP(it);
+        f = obj.data{it};
+        dV = obj.dV{it};
+        w = f.*dV;   % phase-space weight per macroparticle
+        n_raw = sum(w); % m^-3
+        if n_raw == 0 || isempty(w)
+          continue
+        end
+        vx = obj.vx{it}; % km/s
+        vy = obj.vy{it};
+        vz = obj.vz{it};
+        n_out(it) = n_raw * 1e-6; % s^3/k^6 * (k/s)^3 -> cm^-3
+        V_out(it,:) = [sum(w.*vx), sum(w.*vy), sum(w.*vz)] / n_raw; % w and n_raw are the same units
+        dvx = vx - V_out(it,1); % km/s
+        dvy = vy - V_out(it,2);
+        dvz = vz - V_out(it,3);
+        % <w dv_i dv_j> / n_raw * (m/e) with v in km/s -> eV
+        fac = (mass/u.eV) * 1e6 / n_raw;
+        T_out(it,1,1) = sum(w.*dvx.*dvx) * fac;
+        T_out(it,2,2) = sum(w.*dvy.*dvy) * fac;
+        T_out(it,3,3) = sum(w.*dvz.*dvz) * fac;
+        T_out(it,1,2) = sum(w.*dvx.*dvy) * fac;
+        T_out(it,1,3) = sum(w.*dvx.*dvz) * fac;
+        T_out(it,2,3) = sum(w.*dvy.*dvz) * fac;
+        T_out(it,2,1) = T_out(it,1,2);
+        T_out(it,3,1) = T_out(it,1,3);
+        T_out(it,3,2) = T_out(it,2,3);
+      end
+
+      varargout{1} = irf.ts_tensor_xyz(time, T_out);      
+    end
+
+    function out = gmm(obj,K,varargin)
+
+      start = 'randSampl';
+
+      if isempty(K)
+        warning('Empty K, setting K = 1.')   
+        K = 1;
+      end
+
+      args = varargin;
+      while ~isempty(args)
+        x = args{1}; args(1) = [];
+        switch lower(x)
+          case {'start'}
+            start = args{2}; args(1:2) = [];            
+        end
+      end
+
+      nT = obj.length;
+      nK = numel(K);
+      gmm = cell(nT,nK);
+
+      for it = 1:nT
+        for iK = 1:nK
+          samples = [obj.vx{it}(:), obj.vy{it}(:), obj.vz{it}(:)];
+          for ik = 1:nK
+            S = gmm_initial_guess(start,gmm(:,iK));
+            gmm{it,ik} = fitgmdist(samples,K(ik),'Start',S,varargin{:});
+          end
+        end
+      end
+      
+      out = gmm;
+      % Helper functions
+      function out = gmm_initial_guess(method,varargin)
+        switch method
+          case 'randSampl'
+            out = 'randSample';
+          case 'previous'
+            gm = varargin{1};
+            lastNonEmpty = find(cellfun(@(x)isempty(x),gm),1,'first');    
+            if lastNonEmpty == 1
+              S = 'randSample';
+            else
+              gm = gm{lastNonEmpty-1};
+              isort = gmm_sort(gm);
+              out.mu = gm.mu(isort,:);
+              out.Sigma = gm.Sigma(:,:,isort);
+              out.ComponentProportion = gm.ComponentProportion(isort);        
+              if any(out.ComponentProportion==0); S = 'randSample'; end
+            end
+        end
+      end
+    end
+    function out = vx(obj)
+      out = obj.depend{1};
+    end
+    function out = vy(obj)
+      out = obj.depend{2};
+    end
+    function out = vz(obj)
+      out = obj.depend{3};
     end
     function MP = dn(obj)
-      switch type
+      switch units
         case 'dn'
           MP = obj;
         case 'f'
@@ -28,9 +373,6 @@ classdef MParts < TSeries
           MP.type = 'dn';
           MP.units = ''; % 
       end
-
-    end
-    function TS = n(obj)
 
     end
     function TS = j(obj)
@@ -46,5 +388,7 @@ classdef MParts < TSeries
 
     function MP = coordtrans(obj,varargin)
 
+
     end
   end
+end

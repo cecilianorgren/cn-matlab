@@ -39,3 +39,15 @@ mmpN_p2_MC = macroparticle_moments(MPN_p2_MC,times);
 
 %%
 irf_plot({mmp.T.trace/3-mmpN_p2.T.trace/3,mmpN_p2.T.trace/mmp.T.trace})
+
+%% Same, but with macroparticle class instead
+
+varstrs = {'pd_mod_gen','pd_mod_gen_ups','pd_mod_gen_ups_cub','pd_mod_pdi'};
+for iVar = 1:numel(varstrs)
+  pd = eval(varstrs{iVar});
+  MP = pd.macroparticles('ntot',1e5,'skipzero',0,'v_init','E','mparts');
+  moments.(varstrs{iVar}) = MP.moments;
+end
+%pd = pd_mod_gen;
+%MP = pd.macroparticles('ntot',1e5,'skipzero',0,'v_init','E','mparts');
+
