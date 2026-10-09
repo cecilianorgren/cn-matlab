@@ -36,9 +36,11 @@ for iFile = 1:nFiles
 
   groups = data.answers.Properties.VariableNames;
   groups = groups(2:end);
+  
 
   answers = data.answers;
   nGroups = size(data.answers,2)-1;
+  groupN = data.answers;
   
   if istable(answers)
       options = string(answers{:,1});
@@ -79,17 +81,19 @@ for iFile = 1:nFiles
   xlabel(hca, 'Count');
   legend(hca,{groups{:},'Overall'},'location','eastoutside','box','off')
 
-  % Leave some room to the right for the labels 
-  xmax = max(values(:)); 
-  hca.XLim = [0 xmax * 1.12]; % Add values at the end of each bar 
-  for j = 1:numel(b) 
-    x = b(j).XEndPoints; 
-    y = b(j).YEndPoints; 
-    labels = compose('  %.1f%%', values_norm(:,j)); 
-    text(hca, y, x, labels, ...
-      'HorizontalAlignment', 'left', ... 
-      'VerticalAlignment', 'middle', ... 
-      'FontSize', 9); 
+  if 0
+    % Leave some room to the right for the labels 
+    xmax = max(values(:)); 
+    hca.XLim = [0 xmax * 1.12]; % Add values at the end of each bar 
+    for j = 1:numel(b) 
+      x = b(j).XEndPoints; 
+      y = b(j).YEndPoints; 
+      labels = compose('  %.1f%%', values_norm(:,j)); 
+      text(hca, y, x, labels, ...
+        'HorizontalAlignment', 'left', ... 
+        'VerticalAlignment', 'middle', ... 
+        'FontSize', 9); 
+    end
   end
 
   hca = subplot(2,1,2); % normalized
@@ -101,6 +105,7 @@ for iFile = 1:nFiles
   xlabel(hca, 'Percentage');
   legend(hca,{groups{:},'Overall'},'location','eastoutside','box','off')
  
+  if 0
   % Leave some room to the right for the labels 
   hca.XLim = [0 max(values_norm(:)) * 1.12]; % Add percentages at the end of each bar 
   for j = 1:numel(b) 
@@ -111,6 +116,7 @@ for iFile = 1:nFiles
       'HorizontalAlignment', 'left', ... 
       'VerticalAlignment', 'middle', ... 
       'FontSize', 10); 
+  end
   end
   %pause
 

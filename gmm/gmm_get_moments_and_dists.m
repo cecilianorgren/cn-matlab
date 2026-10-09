@@ -77,7 +77,7 @@ for ii = 1:nt
     % Density
     n(ii,iComp) = compProp(iComp)*ntot(ii);
     % Temperature tensor
-    T_tens(ii,:,:,iComp) = Sigma(:,:,iComp)*1e6*units.mp/2/units.eV;
+    T_tens(ii,:,:,iComp) = Sigma(:,:,iComp)*1e6*units.mp/units.eV; % /2 - should not be a factor half here, it only comes into the definition of thermal speed. sigma^2 is simply kB*T/m
   end
 end
 
