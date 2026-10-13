@@ -126,6 +126,8 @@ for iDF = 57;6;69;iDFs;%87%iDFs(1)
   PD = PD_use.mask('energy','mat',mat);  
   PD = PD.movmean(nMovMean);
   PD = PD(1:nMovMean:PD.length);
+  PDc = iPDist_counts.movmean(nMovMean);
+  PDc = PDc(1:nMovMean:iPDist_counts.length);
 %  delete(hca)
   %irf_plot(PD.omni.deflux.specrec); hca = gca; hca.YScale = 'log';
   

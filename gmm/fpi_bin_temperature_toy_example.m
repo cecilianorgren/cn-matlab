@@ -90,5 +90,5 @@ hca.Children = circshift(hca.Children,-1);
 
 legend(hca,'-vt < v - vmean < vt','Box function samples', 'Equal-variance Gaussian', 'Equal-variance Gaussian samples','location','northoutside')
 %hca.Title.String = "E_0 = " + E0 + "eV, dE = " + dE + ", dE/E0 = " + Eres + ", k_BT = mv^2/" + Tfactor;
-hca.Title.String = "E_0 = " + E0 + ", dE = " + dE + ", dE/E0 = " + Eres + ", T = v^2/" + Tfactor;
+hca.Title.String = "E_0 = " + E0 + ", dE = " + dE + ", dE/E0 = " + Eres + ", T = v_t^2/" + Tfactor;
 hold(hca,'off')
