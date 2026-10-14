@@ -280,48 +280,16 @@ classdef MParts
       out = irf.ts_tensor_xyz(obj.time,Tt);
     end
 
-    function out = gmm(obj,K,varargin)
-      % GMM Fit Gaussian mixture models to the macroparticle velocities.
-      %
-      %   out = MP.gmm(K,[options])
-      %
-      %   K is a vector of component numbers; out is {nT x numel(K)} of
-      %   gmdistribution objects.
-      %
-      %   Options:
-      %     'start'  'randSample' (default) or 'previous', which starts each
-      %              fit from the fit of the previous time step (same K).
-      %   All other options are passed on to FITGMDIST.
-      %
-      %   Note: the fit is unweighted, so it treats all macroparticles as
-      %   equally important.
+    function X = samples(obj,it)
+      % SAMPLES Velocities [vx vy vz] of the macroparticles at time index it, [N x 3] (km/s).
+      X = [obj.depend{1}{it}(:), obj.depend{2}{it}(:), obj.depend{3}{it}(:)];
+    end
 
-      if isempty(K)
-        warning('MParts:gmm','Empty K, setting K = 1.')
-        K = 1;
-      end
-
-      p = inputParser;
-      p.KeepUnmatched = true;
-      addParameter(p,'start','randSample');
-      parse(p,varargin{:});
-      start = validatestring(p.Results.start,{'randSample','previous'});
-      fitArgs = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
-      fitArgs = fitArgs(:)';
-
-      nT = obj.length;
-      nK = numel(K);
-      out = cell(nT,nK);
-
-      for iK = 1:nK
-        for it = 1:nT
-          samples = [obj.depend{1}{it}(:), obj.depend{2}{it}(:), obj.depend{3}{it}(:)];
-          S = 'randSample';
-          if strcmp(start,'previous') && it > 1 && ~isempty(out{it-1,iK})
-            S = MParts.gmmStartFrom_(out{it-1,iK});
-          end
-          out{it,iK} = fitgmdist(samples,K(iK),'Start',S,fitArgs{:});
-        end
+    function w = weights(obj,it)
+      % WEIGHTS Weight per macroparticle at time index it, [N x 1].
+      %   [] if there are no weights (all particles equally weighted).
+      if obj.hasWeights_(), w = obj.weights_(it);
+      else, w = [];
       end
     end
 
@@ -439,15 +407,6 @@ classdef MParts
         case 'f',  u = {'s^3/m^6','s^3m^-6','s3/m6'};
         case 'dV', u = {'m^3/s^3','m^3s^-3','m3/s3'};
         otherwise, u = {};
-      end
-    end
-
-    function S = gmmStartFrom_(gm)
-      % Starting struct for FITGMDIST from an earlier fit.
-      if any(gm.ComponentProportion == 0)
-        S = 'randSample';
-      else
-        S = struct('mu',gm.mu,'Sigma',gm.Sigma,'ComponentProportion',gm.ComponentProportion);
       end
     end
   end

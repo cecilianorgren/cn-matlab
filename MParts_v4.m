@@ -26,6 +26,12 @@ classdef MParts
   %     3. none: all particles are weighted equally. V and T are then the
   %        sample mean and covariance, and n is NaN (not defined).
   %
+  %   Units: the density assumes SI weights. moments() and n() warn if
+  %   the units of the weights used are empty, and error if they are not
+  %   the expected ones (dn: m^-3, or f: s^3/m^6 together with dV: m^3/s^3).
+  %   V and T do not depend on the weight units. Velocities are assumed
+  %   to be in km/s (not tracked).
+  %
   %   Generation information is grouped in obj.generation:
   %     generation.parent.iDep  parent-bin indices, {iDep1, iDep2, ...}
   %     generation.sampling       how particles were initialized in the FPI
@@ -41,13 +47,13 @@ classdef MParts
   end
 
   properties (Access = protected)
-    coordinateSystem_ = '';
+    %coordinateSystem_ = '';
     t_ % GenericTimeArray
   end
 
   properties (Dependent = true)
     time
-    coordinateSystem
+    %coordinateSystem
   end
 
   properties
@@ -123,8 +129,8 @@ classdef MParts
               e = value;
               e.data = reshape(e.data,[nT,1]);
             else
-              %e = struct('data',reshape(value,[nT,1]));
-              e.data = reshape(value,[nT,1]);
+              e = struct('data',{reshape(value,[nT,1])});
+              %e.data = reshape(value,[nT,1]);
             end
             obj.attr.(MParts.permittedAttributes_{k}) = e; % validated in set.attr
         end
@@ -206,7 +212,7 @@ classdef MParts
       obj.attr = val;
     end
 
-    function value = get.coordinateSystem(obj), value = obj.coordinateSystem_; end
+    %function value = get.coordinateSystem(obj), value = obj.coordinateSystem_; end
     function value = get.time(obj), value = obj.t_; end
 
     function l = length(obj)
@@ -235,6 +241,7 @@ classdef MParts
       %   [n,V,T] = MP.moments;
       %
       %   Without weights (see class help) n is NaN.
+      obj.checkWeightUnits_();
       [n,V,T] = obj.computeMoments_();
       time = obj.time;
       switch nargout
@@ -257,6 +264,7 @@ classdef MParts
       if ~obj.hasWeights_()
         error('MParts:noWeights','Density needs dn, or f and dV.')
       end
+      obj.checkWeightUnits_();
       out = irf.ts_scalar(obj.time,obj.computeMoments_());
     end
 
@@ -336,6 +344,26 @@ classdef MParts
       end
     end
 
+    function checkWeightUnits_(obj)
+      % Check the units of the attributes used as weights (only the
+      % density depends on them). Empty units -> warning, unexpected
+      % units -> error.
+      if ~obj.hasWeights_(), return, end
+      a = obj.attr;
+      if isfield(a,'dn'), names = {'dn'}; else, names = {'f','dV'}; end
+      for ii = 1:numel(names)
+        nm = names{ii};
+        expected = MParts.expectedUnits_(nm);
+        u = strrep(strrep(a.(nm).units,' ',''),'*','');
+        if isempty(u)
+          warning('MParts:units','attr.%s.units is empty; assuming %s.',nm,expected{1})
+        elseif ~ismember(u,expected)
+          error('MParts:units','attr.%s.units = ''%s'', but the density calculation assumes %s.', ...
+            nm,a.(nm).units,strjoin(expected,' or '))
+        end
+      end
+    end
+
     function tf = hasWeights_(obj)
       a = obj.attr;
       tf = isfield(a,'dn') || (isfield(a,'f') && isfield(a,'dV'));
@@ -399,6 +427,18 @@ classdef MParts
         case 'dV', d = 'differential velocity-space volume';
         case 'dc', d = 'counts per macroparticle';
         otherwise, d = '';
+      end
+    end
+
+    function u = expectedUnits_(name)
+      % Accepted unit strings (spaces and '*' removed) for the weights the
+      % density calculation assumes: dn in m^-3, or f in s^3/m^6 times dV
+      % in m^3/s^3. Extend the lists to accept other spellings.
+      switch name
+        case 'dn', u = {'m^-3','1/m^3','m-3'};
+        case 'f',  u = {'s^3/m^6','s^3m^-6','s3/m6'};
+        case 'dV', u = {'m^3/s^3','m^3s^-3','m3/s3'};
+        otherwise, u = {};
       end
     end
 

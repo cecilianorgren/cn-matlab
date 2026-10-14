@@ -34,7 +34,6 @@ function [P, uniqueGroups, iG_in_P] = allPartitions(N)
     end
 end
 
-
 function P = recursivePartitions(N)
 
     if N == 1
