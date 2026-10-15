@@ -13,7 +13,8 @@ classdef GMDist
   %     gd = GMDist.fit(mp,K,'start','previous')  % run the fits
   %
   %   Works from gmmCell alone: BIC (if the fits carry it), kneeK,
-  %   sortBy, populations (proportion, V, T), cold, marginal, plotBIC,
+  %   sortBy, merge, total_covariance, l2err, populations (proportion, V,
+  %   T), cold, marginal, plotBIC,
   %   plotComponents, plotSlice (GMM part), and the time-series outputs
   %   tsProp, tsN, tsV, tsT, tsBIC, tsReduced, tsSkymap and plotReduced (these need
   %   time as a GenericTimeArray).
@@ -115,10 +116,51 @@ classdef GMDist
       obj.bic = B;
     end
 
-    function gm = merge(obj,groups)
+    function out = merge(obj,K,groups)
+      % MERGE Merge components of the K-component fits into fewer components.
+      %
+      %   gd2 = gd.merge(K,groups)
+      %
+      %   groups is a partition of 1:K as a cell, e.g. {[1 2],3}. Each group
+      %   is replaced by one Gaussian with the group's total weight, mean and
+      %   covariance (law of total covariance, see total_covariance), in the
+      %   order of groups. The result is a GMDist with one column of
+      %   numel(groups) components. With companion data its BIC is recomputed
+      %   from the particles; otherwise it is NaN. NumIterations etc. are lost.
+      iK = find(obj.K == K,1);
+      if isempty(iK)
+        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      end
+      if ~iscell(groups), error('GMDist:merge','groups must be a cell, e.g. {[1 2],3}.'), end
+      allc = cell2mat(cellfun(@(x) x(:).',groups(:).','UniformOutput',false));
+      if ~isequal(sort(allc),1:K)
+        error('GMDist:merge','groups must be a partition of 1:%d (each component once).',K)
+      end
 
+      nT = size(obj.gmm,1);
+      nG = numel(groups);
+      tc = cell(nT,nG);
+      for ig = 1:nG
+        p = obj.totalCovariance(groups{ig});
+        tc(:,ig) = p(:,iK);
+      end
 
+      merged = cell(nT,1);
+      for it = 1:nT
+        if isempty(tc{it,1}), continue, end   % no fit at this time
+        w = zeros(1,nG); mu = zeros(nG,3); S = zeros(3,3,nG);
+        for ig = 1:nG
+          w(ig) = tc{it,ig}.w;
+          mu(ig,:) = tc{it,ig}.mu;
+          S(:,:,ig) = tc{it,ig}.Sigma;
+        end
+        merged{it} = gmdistribution(mu,S,w);
+      end
+      args = {'time',obj.time,'mass',obj.mass,'data',obj.data,'options',obj.options};
+      if isempty(obj.data), args = [args {'bic',nan(nT,1)}]; end
+      out = GMDist(merged,args{:});
     end
+
     function kBest = kneeK(obj,varargin)
       % KNEEK Number of components at the knee of BIC vs K, per time.
       %
@@ -356,8 +398,42 @@ classdef GMDist
           B = (B-lo)./max(max(B,[],2,'omitnan')-lo,eps);
       end
       ts = irf.ts_scalar(obj.tsTime_(),B);
+      ts.name = 'BIC';
+      ts.userData.specrec.f = Ks;
+      ts.userData.specrec.f_label = 'K';
+      ts.userData.specrec.p_label = 'BIC';
     end
 
+    function [tsL2err, tsL2NGroups] = tsL2errPartitions(obj,K,varargin)
+      % L2ERRPartitions TSeries of L2 distance between the K-component fits and their merged versions.
+      %   
+      %   [tsL2err, tsL2NGroups] = tsL2errPartitions(obj,K);
+
+      nT = obj.tsTime_.length;
+      [err,P,nComp] = l2errPartitions(obj,K,varargin{:});
+      nGroups = numel(P);
+      %nInPartition = cellfun(@(x)numel(x),P);
+      %nInPartitionMat = repmat(nInPartition,[nT,1]);
+
+      tsL2err = irf.ts_scalar(obj.tsTime_(),err);
+      tsL2err.name = 'L2Err';
+      tsL2err.userData.specrec.f = 1:nGroups;
+      tsL2err.userData.specrec.f_label = 'Partition index';
+      tsL2err.userData.specrec.p_label = 'L2err';
+      tsL2err.userData.listPartitions = P;
+
+      tsL2NGroups = irf.ts_scalar(obj.tsTime_(),nComp);
+      tsL2NGroups.name = 'N_{comp}';
+      tsL2NGroups.userData.specrec.f = 1:nGroups;
+      tsL2NGroups.userData.specrec.f_label = 'Partition index';
+      tsL2NGroups.userData.specrec.p_label = 'N_{comp}';
+      tsL2NGroups.userData.listPartitions = P;
+  
+    end
+    
+    function bestErr = l2errBest(obj,K,varargin)
+      nT = obj.tsTime_.length;
+    end
     function PD = tsReduced(obj,K,dim,varargin)
       % TSREDUCED Reduced (1D marginal) distribution along vx, vy or vz as PDist.
       %
@@ -587,6 +663,145 @@ classdef GMDist
       title(ax,sprintf('time index %d, K = %d',it,K))
       hold(ax,'off')
     end
+    
+    function p = totalCovariance(obj,ksub)
+      % TOTAL_COVARIANCE Total weight, mean and covariance of components ksub.
+      %
+      %   p = gd.total_covariance([ksub])
+      %
+      %   p is a cell {nT x nK} like gd.gmm. Each element is a struct with
+      %     w      total proportion of the components ksub
+      %     mu     [1 x 3] mean of their sum
+      %     Sigma  [3 x 3] covariance of their sum (within + between)
+      %   i.e. the single Gaussian with the same weight, mean and covariance
+      %   as those components together (law of total covariance).
+      %   ksub defaults to all components. An element is [] where there is no
+      %   fit, or where ksub does not fit the number of components K.
+      if nargin < 2, ksub = []; end
+      p = cell(size(obj.gmm));
+      for i = 1:numel(obj.gmm)
+        g = obj.gmm{i};
+        if isempty(g), continue, end
+        k = ksub;
+        if isempty(k), k = 1:g.NumComponents; end
+        if any(k < 1) || any(k > g.NumComponents) || numel(unique(k)) ~= numel(k)
+          continue
+        end
+        p{i} = GMDist.totalCovariance_(g.ComponentProportion,g.mu,GMDist.fullSigma_(g),k);
+      end
+    end
+
+    function [err,P,nComp] = l2errPartitions(obj,K,varargin)
+      % L2ERRPARTITIONS L2 distance between the K-component fits and their merged versions.
+      %
+      %   [err,P] = gd.l2err_partitions(K[,'normalized',tf])
+      %
+      %   For every partition P{p} of the components 1:K (see allPartitions) the
+      %   groups are merged as in merge, and the L2 distance to the original
+      %   mixture is computed in closed form (no grid):
+      %     int N(x;m1,S1) N(x;m2,S2) dx = N(m1-m2; 0, S1+S2).
+      %   err is [nT x nP]. 'normalized' (default true): sqrt(int (f-g)^2 / int f^2),
+      %   dimensionless; false: sqrt(int (f-g)^2) in (km/s)^-3.
+      %   The number of partitions grows quickly (Bell number); K <= 8.
+      p = inputParser;
+      addParameter(p,'normalized',true);
+      addParameter(p,'sort','');
+      parse(p,varargin{:});
+      iK = find(obj.K == K,1);
+      if isempty(iK)
+        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      end
+      if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
+
+      [P,uG,iG] = GMDist.allPartitions(K);
+      nGroupsInPartition = cellfun(@(x) numel(x), P);
+      nG = numel(uG);
+      nT = size(obj.gmm,1);
+      err = nan(nT,numel(P));
+      nComp = nan(nT,numel(P));
+      for it = 1:nT
+        g = obj.gmm{it,iK};
+        if isempty(g), continue, end
+        w = g.ComponentProportion(:).';
+        mu = g.mu;
+        S = GMDist.fullSigma_(g);
+
+        % One Gaussian per possible group of components
+        wG = zeros(1,nG); muG = zeros(nG,3); SG = zeros(3,3,nG);
+        for ig = 1:nG
+          [wG(ig),muG(ig,:),SG(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,uG{ig});
+        end
+
+        % Inner products: original with itself, with each group, groups with each other
+        ff = GMDist.mixInner_(w,mu,S,w,mu,S);
+        c = zeros(1,nG);
+        M = zeros(nG,nG);
+        for a = 1:nG
+          c(a) = GMDist.mixInner_(w,mu,S,wG(a),muG(a,:),SG(:,:,a));
+          for b = a:nG
+            M(a,b) = GMDist.mixInner_(wG(a),muG(a,:),SG(:,:,a),wG(b),muG(b,:),SG(:,:,b));
+            M(b,a) = M(a,b);
+          end
+        end
+
+        % ||f-g||^2 = <f,f> - 2<f,g> + <g,g>, for each partition
+        for ip = 1:numel(P)
+          idx = iG{ip};
+          d2 = ff - 2*sum(c(idx)) + sum(sum(M(idx,idx)));
+          err(it,ip) = sqrt(max(d2,0));
+        end
+        
+        nComp(it,:) = nGroupsInPartition;
+
+        if p.Results.normalized, err(it,:) = err(it,:)/sqrt(ff); end 
+        if ~isempty(p.Results.sort)
+          [errSort,iSort] = sort(err(it,:),p.Results.sort);
+          nComp(it,:) = nComp(it,iSort);
+          err(it,:) = err(it,iSort);
+        end
+      end
+    end
+    
+    function bestErr = l2errBest(obj,K,varargin)
+      % L2ERRBest Minimum L2 distance for each final number of K after merging.
+      %
+      %   [err,P] = gd.l2errBest(K)
+      %
+
+      %   For every partition P{p} of the components 1:K (see allPartitions) the
+      %   groups are merged as in merge, and the L2 distance to the original
+      %   mixture is computed in closed form (no grid):
+      %     int N(x;m1,S1) N(x;m2,S2) dx = N(m1-m2; 0, S1+S2).
+      %   err is [nT x nP]. 'normalized' (default true): sqrt(int (f-g)^2 / int f^2),
+      %   dimensionless; false: sqrt(int (f-g)^2) in (km/s)^-3.
+      %   The number of partitions grows quickly (Bell number); K <= 8.
+      p = inputParser;
+      addParameter(p,'normalized',true);
+      %addParameter(p,'sort','');
+      parse(p,varargin{:});
+
+      nT = obj.time.length;
+      iK = find(obj.K == K,1);
+      if isempty(iK)
+        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      end
+      if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
+
+
+      [err,P,nComp] = obj.l2errPartitions(K,varargin{:});
+%      nGroupsInPartition = cellfun(@(x) numel(x), P);
+      %nG = numel(uG);
+      %nT = size(obj.gmm,1);
+      bestErr = nan(nT,K);
+      %nComp = nan(nT,numel(P));
+      for it = 1:nT
+        for nCompTmp = 1:K
+          iNComp = find(nComp(it,:)==nCompTmp);
+          bestErr(it,nCompTmp) = min(err(it,iNComp));
+        end
+      end
+    end
+  
   end
 
   methods (Static)
@@ -693,46 +908,44 @@ classdef GMDist
         iG_in_P{p} = groupIndices;
       end
     end
-    
-    function p = total_covariance(obj,ksub,varargin)     
-      % Computes the total covariance
-      nT = obj.length;
-      K = obj.K;
-      
 
-      % Total weight
-      wS = sum(w0(ksub));
+    function varargout = totalCovariance_(w0,mu0,Sigma0,ksub)
+      % TOTALCOVARIANCE_ Weight, mean and covariance of the sum of components ksub.
+      %
+      %   [w,mu,Sigma] = GMDist.totalCovariance_(w0,mu0,Sigma0[,ksub])
+      %   s = GMDist.totalCovariance_(...)     struct with fields w, mu, Sigma
+      %
+      %   w0 [1 x K] (or [K x 1]), mu0 [K x 3], Sigma0 [3 x 3 x K] (full
+      %   covariances). ksub: components to include, default all.
+      w0 = w0(:).';
+      if nargin < 4 || isempty(ksub), ksub = 1:numel(w0); end
 
-      % Normalized weight
-      wSnorm = w0(ksub)/wS;
+      wk = w0(ksub);
+      wS = sum(wk);                          % total weight
+      muS = (wk*mu0(ksub,:))/wS;             % weighted mean, [1 x 3]
 
-      % Normalized mean
-      muS = (w0(ksub) * mu0(ksub,:)) / wS; % 1x3
-
-      % Total covariance (within + between)
-      SigS = zeros(3,3); % Initialize covariance matrix
-
-      for ii = 1:K % sum over components
+      % Total covariance = within + between
+      d = size(mu0,2);
+      SigS = zeros(d,d);
+      for ii = 1:numel(ksub)
         k = ksub(ii);
-        dmu = (mu0(k,:) - muS)';
-        SigS = SigS + w0(k) * (Sigma0(:,:,k) + (dmu*dmu')); % law of shared covariances
+        dmu = (mu0(k,:)-muS).';
+        SigS = SigS + w0(k)*(Sigma0(:,:,k) + dmu*dmu.');
       end
-      SigS = SigS / wS;
+      SigS = SigS/wS;
 
-      if nargout == 1
+      if nargout <= 1
         out.w = wS;
         out.mu = muS;
         out.Sigma = SigS;
         varargout{1} = out;
-      elseif nargout == 3
+      else
         varargout{1} = wS;
         varargout{2} = muS;
         varargout{3} = SigS;
       end
-
-
-
     end
+
   end
 
   methods (Access = private)
@@ -860,6 +1073,19 @@ classdef GMDist
       PD = pdist_generalized_maxwellian(pd,w(c,:),mu(c,:,:),sigma(:,:,c,:));
     end
 
+    function v = mixInner_(w1,mu1,S1,w2,mu2,S2)
+      % Integral of the product of two Gaussian mixtures (closed form).
+      % w [1 x n], mu [n x d], S [d x d x n].
+      v = 0;
+      for i = 1:numel(w1)
+        for j = 1:numel(w2)
+          dm = (mu1(i,:)-mu2(j,:)).';
+          C = S1(:,:,i) + S2(:,:,j);
+          v = v + w1(i)*w2(j)*exp(-0.5*(dm.'*(C\dm)))/sqrt((2*pi)^numel(dm)*det(C));
+        end
+      end
+    end
+
     function f = marg1D_(g,dim,vg,comps)
       % 1D marginal of selected components (weighted by proportion) on vg.
       S = GMDist.fullSigma_(g);
@@ -962,46 +1188,5 @@ classdef GMDist
       end
     end
     
-    function varargout = total_covariance_(w0,mu0,Sigma0,ksub,varargin)     
-
-      % Sub components to include
-      if not(exist('kvec','var'))
-        ksub = 1:numel(w0); % if not give, merge all
-      end
-
-      % Number of components
-      K = numel(ksub); 
-
-      % Total weight
-      wS = sum(w0(ksub));
-
-      % Normalized weight
-      wSnorm = w0(ksub)/wS;
-
-      % Normalized mean
-      muS = (w0(ksub) * mu0(ksub,:)) / wS; % 1x3
-
-      % Total covariance (within + between)
-      SigS = zeros(3,3); % Initialize covariance matrix
-
-      for ii = 1:K % sum over components
-        k = ksub(ii);
-        dmu = (mu0(k,:) - muS)';
-        SigS = SigS + w0(k) * (Sigma0(:,:,k) + (dmu*dmu')); % law of shared covariances
-      end
-      SigS = SigS / wS;
-
-      if nargout == 1
-        out.w = wS;
-        out.mu = muS;
-        out.Sigma = SigS;
-        varargout{1} = out;
-      elseif nargout == 3
-        varargout{1} = wS;
-        varargout{2} = muS;
-        varargout{3} = SigS;
-      end
-
-    end
   end
 end

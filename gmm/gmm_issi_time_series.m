@@ -64,8 +64,8 @@ db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 units = irf_units;
 ic = 1;
 
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
 
 db_table_df = db_table_ff(db_table_ff.is_df==1,:);
 nDF = numel(db_table_df.time);
