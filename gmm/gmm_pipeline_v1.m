@@ -18,7 +18,7 @@ run_metadata.PD.mask_nCounts = mask_Counts;
 mat = iPDist_counts.find_low_counts('counts',mask_Counts,'nMovMean',mask_nMovMean,'output','mat');
 PD = PD_use.mask('energy','mat',mat);  
 PD = PD.movmean(nMovMean);
-PD = PD(1:nMovMean:PD.length);
+PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computations for now, need to check it it is needded for noise
 PDc = iPDist_counts.movmean(nMovMean);
 PDc = PDc(1:nMovMean:iPDist_counts.length);
 
@@ -38,26 +38,29 @@ GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',fal
 %% Diagnostics, L2 error
 K = 4;
 [tsL2errPartitions, tsL2NGroups] = GM.tsL2errPartitions(K,'sort','descend'); 
-tsL2errBest = GM.tsL2errBest(K);
-
+tsL2errBest = GM.tsL2errBest(K,'metric','l1');
+%%
 it = 40; % Example merge
-M = 2; % plot maximum number of
+M = 3; % plot maximum number of
 bestPInM = tsL2errBest.userData.listPartitions{it,M};
 %exGMall = GM.merge(K,{1:K});
 exGMall = GM;
+%bestPInM = {[1 3],[2 4]};
 exGMmerg = GM.merge(K,bestPInM);
 
-fall = exGMall.tsReduced(K,3); fall = fall(it);
+dim = 2;
+fall = exGMall.tsReduced(K,dim); fall = fall(it);
 for iK = 1:K
-  fcomp{iK} = exGMall.tsReduced(K,3,'component',iK); fcomp{iK} = fcomp{iK}(it);
+  fcomp{iK} = exGMall.tsReduced(K,dim,'component',iK); 
+  fcomp{iK} = fcomp{iK}(it);
 end
-fmerg = exGMmerg.tsReduced(M,3); fmerg = fmerg(it);
+fmerg = exGMmerg.tsReduced(M,dim); fmerg = fmerg(it);
 
 
 
 %tsL2errPartitions.data(tsL2NGroups.data~=3) = NaN;
 h = irf_plot(4);
-[h,h2] = initialize_combined_plot('leftright',4,1,1,0.5,'vertical');
+[h,h2] = initialize_combined_plot('leftright',4,1,1,0.6,'vertical');
 
 hca = irf_panel('omni deflux');
 irf_spectrogram(hca,PD.omni.deflux.specrec,'log')
@@ -95,6 +98,49 @@ strAll = strrep(num2str(1:K),' ','');
 strMerg = strrep(strjoin(cellfun(@(x) num2str(x),bestPInM,'UniformOutput',false),', '),' ','');
 irf_legend(hca,{strAll,strMerg,strComp{:}}',[0.98 0.98])
 irf_legend(hca,{sprintf('L2err*(M=%g) = %g',M,tsL2errBest.data(it,M))}',[0.02 0.98])
+axis(hca,'square')
 
 
+%%
+K = 4;
+g = GM.gmm{it,iK};
+w = g.ComponentProportion;
+mu = g.mu;
+Sigma = g.Sigma;
 
+labels = [1 2 1 2];
+labels = [1 2 2 2];
+e = l2err_partition(w, mu, Sigma, labels);
+
+vg = -2500:50:2500;
+dim = 3;
+%ftot_ = GMDist.marg1D_(g,dim,vg,1:4);
+
+%%
+
+vg = -800:10:800;
+
+[l2err,allP] = GM.l2errPartitions(K);
+
+P = {[1 3],[2 4]};
+
+iP = 7;
+disp('--------')
+disp(l2err(it,iP))
+Ptmp = allP{it,iP};
+%iP = l2err(it,7);
+
+%P = {[1], [2 3 4]};
+GMm = GM.merge(K,Ptmp);
+
+g1 = GM.gmm{it,iK};
+g2 = GMm.gmm{it,1};
+F1 = gmm_get_F(g1,vg,vg,vg,1);
+F2 = gmm_get_F(g2,vg,vg,vg,1);
+
+pow = 1;
+dim = 3;
+plot(vg,squeeze(sum(F1.^pow,setdiff(1:3,dim))),vg,squeeze(sum(F2.^pow,setdiff(1:3,dim))))
+
+disp((sum((F1(:)-F2(:)).^2)).^(1/2)/(sum(F2(:).^2)).^(1/2))
+disp(sum(abs(F1(:)-F2(:)))/(sum(F2(:))))

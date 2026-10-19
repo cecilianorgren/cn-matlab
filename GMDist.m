@@ -116,6 +116,12 @@ classdef GMDist
       obj.bic = B;
     end
 
+    function DB = addToDatabase(obj,db,varargin)
+      p = inputParser;
+      addParameter(p,'entry','add');
+      parse(p,varargin{:});
+
+    end
     function out = merge(obj,K,groups)
       % MERGE Merge components of the K-component fits into fewer components.
       %
@@ -411,15 +417,16 @@ classdef GMDist
 
       nT = obj.tsTime_.length;
       [err,P,nComp] = l2errPartitions(obj,K,varargin{:});
-      nPartitions = numel(P);
+      nPartitions = size(P,2);
       %nInPartition = cellfun(@(x)numel(x),P);
       %nInPartitionMat = repmat(nInPartition,[nT,1]);
 
       tsL2err = irf.ts_scalar(obj.tsTime_(),err);
-      tsL2err.name = 'L2Err';
+      label = GMDist.metricLabel_(GMDist.metricFromArgs_(varargin));
+      tsL2err.name = label;
       tsL2err.userData.specrec.f = 1:nPartitions;
       tsL2err.userData.specrec.f_label = '1:N_P';
-      tsL2err.userData.specrec.p_label = 'L2err';
+      tsL2err.userData.specrec.p_label = label;
       tsL2err.userData.listPartitions = P;
 
       tsL2NGroups = irf.ts_scalar(obj.tsTime_(),nComp);
@@ -444,9 +451,15 @@ classdef GMDist
       %   err is [nT x nP]. 'normalized' (default true): sqrt(int (f-g)^2 / int f^2),
       %   dimensionless; false: sqrt(int (f-g)^2) in (km/s)^-3.
       %   The number of partitions grows quickly (Bell number); K <= 8.
+
       p = inputParser;
+      % Add defaults
       addParameter(p,'normalized',true);
       %addParameter(p,'sort','');
+      addParameter(p,'metric','l2');
+      addParameter(p,'nSamples',20000);
+      addParameter(p,'seed',1);
+      % Collect input
       parse(p,varargin{:});
 
       nT = obj.time.length;
@@ -456,13 +469,14 @@ classdef GMDist
       end
       if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
 
-      [bestL2,bestP] = obj.l2errBest(K);    
+      [bestL2,bestP] = obj.l2errBest(K,varargin{:});    
   
       TS = irf.ts_scalar(obj.tsTime_(),bestL2);
-      TS.name = 'L2 err';
+      label = GMDist.metricLabel_(GMDist.metricFromArgs_(varargin));
+      TS.name = label;
       TS.userData.specrec.f = 1:K;
       TS.userData.specrec.f_label = 'M = N_{inP}';
-      TS.userData.specrec.p_label = 'min(L2 err)';
+      TS.userData.specrec.p_label = ['min(' label ')'];
       TS.userData.listPartitions = bestP;
     end  
 
@@ -723,10 +737,23 @@ classdef GMDist
       end
     end
 
-    function [err,P,nComp] = l2errPartitions(obj,K,varargin)
+    function [err,Psorted,nComp] = l2errPartitions(obj,K,varargin)
       % L2ERRPARTITIONS L2 distance between the K-component fits and their merged versions.
       %
-      %   [err,P] = gd.l2err_partitions(K[,'normalized',tf])
+      %   [err,P,nComp] = gd.l2errPartitions(K[,'metric',m][,'normalized',tf][,'sort',dir])
+      %
+      %   'metric' sets the distance between the original mixture f and the
+      %   merged mixture g:
+      %     'l2'  (default) sqrt(int (f-g)^2), closed form (below). Dominated
+      %           by the dense, cold cores.
+      %     'l1'  total variation, 1/2 int |f-g|, in [0,1]; Monte Carlo.
+      %     'kl'  KL(f||g) in nats per particle, the quantity EM maximizes
+      %           (log-likelihood loss); Monte Carlo.
+      %   'l1' and 'kl' use 'nSamples' samples (default 20000), the same for
+      %   all partitions at a time, and the random seed 'seed' (default 1; the
+      %   global random state is restored afterwards). 'normalized' applies to
+      %   'l2' only. Cost grows with the number of partitions, so use fewer
+      %   samples for K > 6.
       %
       %   For every partition P{p} of the components 1:K (see allPartitions) the
       %   groups are merged as in merge, and the L2 distance to the original
@@ -738,7 +765,12 @@ classdef GMDist
       p = inputParser;
       addParameter(p,'normalized',true);
       addParameter(p,'sort','');
+      addParameter(p,'metric','l2');
+      addParameter(p,'nSamples',20000);
+      addParameter(p,'seed',1);
       parse(p,varargin{:});
+      metric = validatestring(p.Results.metric,{'l2','l1','kl'});
+      if ~strcmp(metric,'l2'), s0 = rng; restoreRng = onCleanup(@() rng(s0)); end
       iK = find(obj.K == K,1);
       if isempty(iK)
         error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
@@ -751,6 +783,11 @@ classdef GMDist
       nT = size(obj.gmm,1);
       err = nan(nT,numel(P));
       nComp = nan(nT,numel(P));
+
+      %if ~isempty(p.Results.sort) % need to rearrange P accordingly
+      Psorted = cell(nT,numel(P));
+      %end
+  
       for it = 1:nT
         g = obj.gmm{it,iK};
         if isempty(g), continue, end
@@ -760,36 +797,46 @@ classdef GMDist
 
         % One Gaussian per possible group of components
         wG = zeros(1,nG); muG = zeros(nG,3); SG = zeros(3,3,nG);
-        for ig = 1:nG
+        for ig = 1:nG % Loop over unique groups and merge
           [wG(ig),muG(ig,:),SG(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,uG{ig});
         end
+if it == 40;
+1;
+end
+        switch metric
+          case 'l2'
+            % Inner products: original with itself, with each group, groups with each other
+            ff = GMDist.mixInner_(w,mu,S,w,mu,S); % original with itself
+            c = zeros(1,nG);
+            M = zeros(nG,nG);
+            for a = 1:nG
+              c(a) = GMDist.mixInner_(w,mu,S,wG(a),muG(a,:),SG(:,:,a)); % original with each group
+              for b = a:nG
+                M(a,b) = GMDist.mixInner_(wG(a),muG(a,:),SG(:,:,a),wG(b),muG(b,:),SG(:,:,b)); % each group with each group
+                M(b,a) = M(a,b);
+              end
+            end
 
-        % Inner products: original with itself, with each group, groups with each other
-        ff = GMDist.mixInner_(w,mu,S,w,mu,S);
-        c = zeros(1,nG);
-        M = zeros(nG,nG);
-        for a = 1:nG
-          c(a) = GMDist.mixInner_(w,mu,S,wG(a),muG(a,:),SG(:,:,a));
-          for b = a:nG
-            M(a,b) = GMDist.mixInner_(wG(a),muG(a,:),SG(:,:,a),wG(b),muG(b,:),SG(:,:,b));
-            M(b,a) = M(a,b);
-          end
+            % ||f-g||^2 = <f,f> - 2<f,g> + <g,g>, for each partition
+            for ip = 1:numel(P)
+              idx = iG{ip};
+              d2 = ff - 2*sum(c(idx)) + sum(sum(M(idx,idx)));
+              err(it,ip) = sqrt(max(d2,0));
+            end
+            if p.Results.normalized, err(it,:) = err(it,:)/sqrt(ff); end
+          otherwise
+            % 'l1' (total variation) and 'kl': Monte Carlo, samples shared by all partitions
+            err(it,:) = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,p.Results.nSamples,p.Results.seed+it);
         end
 
-        % ||f-g||^2 = <f,f> - 2<f,g> + <g,g>, for each partition
-        for ip = 1:numel(P)
-          idx = iG{ip};
-          d2 = ff - 2*sum(c(idx)) + sum(sum(M(idx,idx)));
-          err(it,ip) = sqrt(max(d2,0));
-        end
-        
         nComp(it,:) = nGroupsInPartition;
 
-        if p.Results.normalized, err(it,:) = err(it,:)/sqrt(ff); end 
+        Psorted(it,:) = P;
         if ~isempty(p.Results.sort)
           [errSort,iSort] = sort(err(it,:),p.Results.sort);
           nComp(it,:) = nComp(it,iSort);
           err(it,:) = err(it,iSort);
+          Psorted(it,:) = Psorted(it,iSort);
         end
       end
     end
@@ -810,6 +857,9 @@ classdef GMDist
       p = inputParser;
       addParameter(p,'normalized',true);
       %addParameter(p,'sort','');
+      addParameter(p,'metric','l2');
+      addParameter(p,'nSamples',20000);
+      addParameter(p,'seed',1);
       parse(p,varargin{:});
 
       nT = obj.time.length;
@@ -820,7 +870,8 @@ classdef GMDist
       if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
 
 
-      [err,P,nComp] = obj.l2errPartitions(K,varargin{:});
+      [err,P,nComp] = obj.l2errPartitions(K,'normalized',p.Results.normalized, ...
+        'metric',p.Results.metric,'nSamples',p.Results.nSamples,'seed',p.Results.seed);
 %      nGroupsInPartition = cellfun(@(x) numel(x), P);
       %nG = numel(uG);
       %nT = size(obj.gmm,1);
@@ -832,7 +883,7 @@ classdef GMDist
           iNComp = find(nComp(it,:)==nCompTmp);
           [~,iBest] = min(err(it,iNComp));
           bestErr(it,nCompTmp) = err(it,iNComp(iBest));
-          bestP{it,nCompTmp} = P{iNComp(iBest)};
+          bestP{it,nCompTmp} = P{it,iNComp(iBest)};
         end
       end
     end
@@ -862,9 +913,11 @@ classdef GMDist
       end
       p = inputParser;
       p.KeepUnmatched = true;
+      % Add defaults
       addParameter(p,'start','randSample');
-      addParameter(p,'time',[]);
+      addParameter(p,'time',[]); 
       addParameter(p,'mass',[]);
+      % Parse input
       parse(p,varargin{:});
       start = validatestring(p.Results.start,{'randSample','previous'});
       fitArgs = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
@@ -886,6 +939,7 @@ classdef GMDist
       nK = numel(K);
       out = cell(nT,nK);
       for iK = 1:nK
+        fprint('\nK = %g, (K=[%s]) \n',K(iK),K)
         for it = 1:nT
           X = GMDist.getSamples_(data,it);
           S = 'randSample';
@@ -903,6 +957,13 @@ classdef GMDist
         'options',struct('start',start,'fitgmdist',{fitArgs}));
     end
     
+    function  GM = parent_param(obj)
+      % Passes parent parameters like counts (and associated error, 
+      % perhaps), and depends indices. Depende indices will give an
+      % indication of from how many bins the particles of a given GMM comes
+      % from. For example, does cold populations only come from one enerrgy
+      % bin?
+    end
     function [P, uniqueGroups, iG_in_P, iG_in_P_mat] = allPartitions(K)
       % Generate all nonempty unique groups
       uniqueGroups = cell(2^K - 1, 1);
@@ -1106,6 +1167,87 @@ classdef GMDist
         error('GMDist:component','''component'' must be 0 or distinct numbers in 1:%d (K = %d).',K,K)
       end
       PD = pdist_generalized_maxwellian(pd,w(c,:),mu(c,:,:),sigma(:,:,c,:));
+    end
+
+    function m = metricFromArgs_(args)
+      % The 'metric' value in a name-value list (default 'l2').
+      m = 'l2';
+      for i = 1:2:numel(args)-1
+        if ischar(args{i}) && strcmpi(args{i},'metric')
+          m = validatestring(args{i+1},{'l2','l1','kl'});
+        end
+      end
+    end
+
+    function lbl = metricLabel_(m)
+      switch m
+        case 'l2', lbl = 'L2 err';
+        case 'l1', lbl = 'L1 err (TV)';
+        case 'kl', lbl = 'KL(f||g) [nats]';
+      end
+    end
+
+    function err = sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,N,seed)
+      % Total variation (1/2 int |f-g|) or KL(f||g) between the original
+      % mixture f and the merged mixture g of every partition, by Monte Carlo.
+      % The same N samples are used for all partitions (common random numbers).
+      %   w [1 x K], mu [K x 3], S [3 x 3 x K]   original mixture f
+      %   wG [1 x nG], muG [nG x 3], SG [3 x 3 x nG]   one Gaussian per possible group
+      %   iG{ip}  indices of the groups making up partition ip
+      K = numel(w); nG = numel(wG);
+      rng(seed);
+      means = [mu; muG];
+      covs = cat(3,S,SG);
+      switch metric
+        case 'kl'   % samples from f
+          pis = [w(:).', zeros(1,nG)];
+        case 'l1'   % samples from f and from every group Gaussian, so g is covered too
+          pis = [0.5*w(:).', 0.5*ones(1,nG)/nG];
+      end
+      X = GMDist.drawMixture_(pis,means,covs,N);
+      Pd = zeros(N,K+nG);
+      for c = 1:K+nG
+        Pd(:,c) = GMDist.gaussPdf_(X,means(c,:),covs(:,:,c));
+      end
+      f = Pd(:,1:K)*w(:);               % original mixture at the samples
+      G = Pd(:,K+1:end).*wG;            % weighted group Gaussians, N x nG
+      err = zeros(1,numel(iG));
+      switch metric
+        case 'kl'
+          for ip = 1:numel(iG)
+            g = sum(G(:,iG{ip}),2);
+            err(ip) = mean(log(f) - log(g));
+          end
+        case 'l1'
+          q = Pd*(pis(:)/sum(pis));     % sampling density
+          for ip = 1:numel(iG)
+            g = sum(G(:,iG{ip}),2);
+            err(ip) = 0.5*mean(abs(f-g)./q); % the factor 0.5 makes so that it normalizes to 1
+          end
+      end
+      err = max(err,0);
+    end
+
+    function X = drawMixture_(pis,means,covs,N)
+      % N samples from a Gaussian mixture with weights pis, means [C x d], covs [d x d x C].
+      pis = pis(:).'/sum(pis);
+      cs = cumsum(pis);
+      idx = 1 + sum(rand(N,1) >= cs(1:end-1),2);
+      d = size(means,2);                % number of dimensions
+      X = zeros(N,d);
+      for c = 1:numel(pis)
+        ii = find(idx == c);
+        if isempty(ii), continue, end
+        R = chol(covs(:,:,c));                       % covs = R'R
+        X(ii,:) = means(c,:) + randn(numel(ii),d)*R;
+      end
+    end
+
+    function v = gaussPdf_(X,mu,S)
+      % Gaussian pdf at the rows of X.
+      R = chol(S);                                   % S = R'R
+      y = (X - mu)/R;                                % (x-mu)' S^-1 (x-mu) = ||y||^2
+      v = exp(-0.5*sum(y.^2,2))/((2*pi)^(size(X,2)/2)*prod(diag(R)));
     end
 
     function v = mixInner_(w1,mu1,S1,w2,mu2,S2)
