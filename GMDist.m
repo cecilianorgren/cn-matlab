@@ -134,25 +134,31 @@ classdef GMDist
       %   numel(groups) components. With companion data its BIC is recomputed
       %   from the particles; otherwise it is NaN. NumIterations etc. are lost.
       iK = find(obj.K == K,1);
-      if isempty(iK)
-        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
-      end
-      if ~iscell(groups), error('GMDist:merge','groups must be a cell, e.g. {[1 2],3}.'), end
-      allc = cell2mat(cellfun(@(x) x(:).',groups(:).','UniformOutput',false));
-      if ~isequal(sort(allc),1:K)
-        error('GMDist:merge','groups must be a partition of 1:%d (each component once).',K)
-      end
+      %if isempty(iK)
+      %  error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      %end
+      %if ~iscell(groups), error('GMDist:merge','groups must be a cell, e.g. {[1 2],3}.'), end
+%      allc = cell2mat(cellfun(@(x) x(:).',groups(1,:).','UniformOutput',false));
+ %     if ~isequal(sort(allc),1:K)
+  %      error('GMDist:merge','groups must be a partition of 1:%d (each component once).',K)
+   %   end
 
       nT = size(obj.gmm,1);
-      nG = numel(groups);
-      tc = cell(nT,nG);
-      for ig = 1:nG
-        p = obj.totalCovariance(groups{ig});
-        tc(:,ig) = p(:,iK);
-      end
+      nGall = cellfun(@(x)numel(x),groups);
+      nGmax = max(nGall);
 
-      merged = cell(nT,1);
-      for it = 1:nT
+      merged = cell(nT,nGmax);
+      tc = cell(nT,nGmax);
+      for it = 1:nT        
+        GM = obj.slice(it,K);
+        nG = nGall(it);
+        for ig = 1:nG
+          p = GM.totalCovariance(groups{it}{ig});
+          tc(it,ig) = p(:,1);
+        end
+
+ 
+        
         if isempty(tc{it,1}), continue, end   % no fit at this time
         w = zeros(1,nG); mu = zeros(nG,3); S = zeros(3,3,nG);
         for ig = 1:nG
@@ -160,11 +166,66 @@ classdef GMDist
           mu(ig,:) = tc{it,ig}.mu;
           S(:,:,ig) = tc{it,ig}.Sigma;
         end
-        merged{it} = gmdistribution(mu,S,w);
+        merged{it,nG} = gmdistribution(mu,S,w);
       end
       args = {'time',obj.time,'mass',obj.mass,'data',obj.data,'options',obj.options};
       if isempty(obj.data), args = [args {'bic',nan(nT,1)}]; end
       out = GMDist(merged,args{:});
+    end
+
+    function [M,P,err] = bestPartition(obj,thr,varargin)
+      % MINK Fewest components, per time, that keep the merge error below a threshold.
+      %
+      %   [M,P,err] = gd.minK(K,thr[,option,value,...])
+      %
+      %   For the fits with K components, M(it) is the smallest number of
+      %   groups for which the best partition of the components has a merge
+      %   error (see mergeErrBest) of at most thr at time it.
+      %     M    [nT x 1]  number of groups (NaN if there is no such partition
+      %                    or no fit)
+      %     P    {nT x 1}  that best partition, as a cell of groups to use with
+      %                    merge ([] where M is NaN), e.g. with one time:
+      %                      gd.slice(it,K).merge(K,P{it})
+      %     err  [nT x 1]  its error
+      %   Options:
+      %     'minGroups'  smallest M to consider (default 1)
+      %     'maxGroups'  largest M to consider (default K; K means no merging)
+      %   'metric', 'normalized', 'nSamples' and 'seed' go to mergeErrBest.
+      %   For 'l1' thr is the fraction of the distribution that may be
+      %   misplaced, for 'kl' nats per particle.
+      p = inputParser;
+      p.KeepUnmatched = true;
+      addParameter(p,'minGroups',1);
+      addParameter(p,'maxGroups',obj.K);
+      parse(p,varargin{:});
+      mMin = p.Results.minGroups; mMax = p.Results.maxGroups;
+%      if ~isscalar(thr) || ~isnumeric(thr)
+%        error('GMDist:minK','thr must be a number.')
+%      end
+%      if mMin < 1 || mMax > K || mMin > mMax
+%        error('GMDist:minK','Need 1 <= minGroups <= maxGroups <= K (= %d).',K)
+%      end
+      rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+      rest = rest(:)';
+
+      nT = obj.nT;
+      nK = obj.nK;
+      M = nan(nT,nK); err = nan(nT,nK); P = cell(nT,nK);
+
+      for iK = 1:nK
+        K = obj.K(iK);
+        [bestErr,bestP] = obj.mergeErrBest(K,rest{:});
+        for it = 1:nT
+          for m = mMin:mMax(iK)
+            if bestErr(it,m) <= thr          % false for NaN (no fit)
+              M(it,iK) = m;
+              err(it,iK) = bestErr(it,m);
+              P{it,iK} = bestP{it,m};
+              break
+            end
+          end
+        end
+      end
     end
 
     function kBest = kneeK(obj,varargin)
@@ -274,6 +335,103 @@ classdef GMDist
       if isempty(g), error('GMDist:fit','No fit at time index %d.',it), end
       S = GMDist.fullSigma_(g);
       gm = gmdistribution(g.mu(:,dims),S(dims,dims,:),g.ComponentProportion);
+    end
+
+    function out = slice(obj,it,K)
+      % SLICE A GMDist restricted to some times and/or some numbers of components.
+      %
+      %   gd1 = gd.slice(it,K)    time indices it and component numbers K
+      %   gd1 = gd.slice(it)      all K
+      %   gd1 = gd.slice([],K)    all times
+      %
+      %   it: indices or logical mask over time. K: numbers of components, as
+      %   in gd.K. The result is a GMDist, so all methods work on it. Time,
+      %   BIC and the companion data are sliced too (the data is dropped with a
+      %   warning if it cannot be indexed in time).
+      nT = size(obj.gmm,1);
+      if nargin < 2 || isempty(it), it = 1:nT; end
+      if islogical(it), it = find(it); end
+      if any(it < 1) || any(it > nT) || any(it ~= round(it))
+        error('GMDist:slice','Time indices must be integers in 1:%d.',nT)
+      end
+      if nargin < 3 || isempty(K)
+        iK = 1:numel(obj.K);
+      else
+        [tf,iK] = ismember(K,obj.K);
+        if ~all(tf)
+          error('GMDist:K','No fits with K = %s. Available: %s.',mat2str(K(~tf)),mat2str(obj.K))
+        end
+      end
+
+      t = obj.time;
+      if ~isempty(t), t = t(it); end
+      d = obj.data;
+      if ~isempty(d)
+        try
+          d = d(it);
+        catch
+          warning('GMDist:slice','Could not slice the companion data in time; dropping it.')
+          d = [];
+        end
+      end
+      out = GMDist(obj.gmm(it,iK),'time',t,'mass',obj.mass,'data',d, ...
+        'bic',obj.bic(it,iK),'options',obj.options);
+    end
+
+    function out = sliceTime(obj,it)
+      % SLICETIME Same as slice(it): all K, selected times.
+      out = obj.slice(it,[]);
+    end
+
+    function out = sliceK(obj,K)
+      % SLICEK Same as slice([],K): all times, selected numbers of components.
+      out = obj.slice([],K);
+    end
+
+    function r = reducedVDFs(obj,it,K,dim,varargin)
+      % REDUCEDVDFS Reduced VDFs at one time: total, each component and a merged mixture.
+      %
+      %   r = gd.reducedVDFs(it,K,dim[,'groups',partition][,option,value,...])
+      %
+      %   it: one time index. K: one number of components. dim: 1, 2 or 3.
+      %   partition: a partition of 1:K as in merge, e.g. {[1 3],[2 4]}.
+      %   Options 'vg', 'nv' and 'n' are those of tsReduced; one velocity grid
+      %   is used for everything, so the curves share the same axis.
+      %   Output fields:
+      %     r.it, r.K, r.dim, r.vg
+      %     r.all      PDist, the whole mixture
+      %     r.comp     {1 x K} PDist, one per component (not renormalized, they
+      %                add up to r.all)
+      %     r.groups   the partition given (only with 'groups')
+      %     r.merged   PDist, the merged mixture (only with 'groups')
+      %     r.merged_comp  {1 x numel(groups)} PDist, one per merged component
+      %                (the single Gaussian of each group; only with 'groups')
+      %   Each PDist has one time; use .depend{1} and .data.
+      p = inputParser;
+      addParameter(p,'groups',[]);
+      addParameter(p,'vg',[]);
+      addParameter(p,'nv',200);
+      addParameter(p,'n',[]);
+      parse(p,varargin{:});
+      if ~isscalar(it) || ~isscalar(K)
+        error('GMDist:reducedVDFs','it and K must be scalars; use slice for several.')
+      end
+      one = obj.slice(it,K);
+
+      vg = p.Results.vg;
+      if isempty(vg), vg = one.defaultGrid_(1,dim,p.Results.nv); end
+      args = {'vg',vg,'n',p.Results.n};
+
+      r.it = it; r.K = K; r.dim = dim; r.vg = vg(:).';
+      r.all = one.tsReduced(K,dim,args{:});
+      r.comp = one.tsReduced(K,dim,args{:},'component',num2cell(1:K));
+      if ~isempty(p.Results.groups)
+        groups = p.Results.groups;
+        merged = one.merge(K,groups);
+        r.groups = groups;
+        r.merged = merged.tsReduced(numel(groups),dim,args{:});
+        r.merged_comp = merged.tsReduced(numel(groups),dim,args{:},'component',num2cell(1:numel(groups)));
+      end
     end
 
     function obj = sortBy(obj,quantity,varargin)
@@ -410,13 +568,13 @@ classdef GMDist
       ts.userData.specrec.p_label = 'BIC';
     end
 
-    function [tsL2err, tsL2NGroups] = tsL2errPartitions(obj,K,varargin)
-      % L2ERRPartitions TSeries of L2 distance between the K-component fits and their merged versions.
-      %   
-      %   [tsL2err, tsL2NGroups] = tsL2errPartitions(obj,K);
+    function [tsL2err, tsL2NGroups] = tsMergeErrPartitions(obj,K,varargin)
+      % tsMergeErrPartitions TSeries of L2 distance between the K-component fits and their merged versions.
+      %  
+      %   [tsL2err, tsL2NGroups] = tsMergeErrPartitions(obj,K);
 
       nT = obj.tsTime_.length;
-      [err,P,nComp] = l2errPartitions(obj,K,varargin{:});
+      [err,P,nComp] = mergeErrPartitions(obj,K,varargin{:});
       nPartitions = size(P,2);
       %nInPartition = cellfun(@(x)numel(x),P);
       %nInPartitionMat = repmat(nInPartition,[nT,1]);
@@ -438,10 +596,10 @@ classdef GMDist
   
     end
     
-    function TS = tsL2errBest(obj,K,varargin)
-      % TSL2ERRBest Minimum L2 distance for each final number of K after merging.
+    function TS = tsMergeErrBest(obj,K,varargin)
+      % tsMergeErrBest Minimum L2 distance for each final number of K after merging.
       %
-      %   tsL2errBest = gd.tsl2errBest(K);
+      %   tsMergeErrBest = gd.tsMergeErrBest(K);
       %
 
       %   For every partition P{p} of the components 1:K (see allPartitions) the
@@ -469,7 +627,7 @@ classdef GMDist
       end
       if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
 
-      [bestL2,bestP] = obj.l2errBest(K,varargin{:});    
+      [bestL2,bestP] = obj.mergeErrBest(K,varargin{:});    
   
       TS = irf.ts_scalar(obj.tsTime_(),bestL2);
       label = GMDist.metricLabel_(GMDist.metricFromArgs_(varargin));
@@ -737,10 +895,10 @@ classdef GMDist
       end
     end
 
-    function [err,Psorted,nComp] = l2errPartitions(obj,K,varargin)
-      % L2ERRPARTITIONS L2 distance between the K-component fits and their merged versions.
+    function [err,Psorted,nComp] = mergeErrPartitions(obj,K,varargin)
+      % mergeErrPartitions L2 distance between the K-component fits and their merged versions.
       %
-      %   [err,P,nComp] = gd.l2errPartitions(K[,'metric',m][,'normalized',tf][,'sort',dir])
+      %   [err,P,nComp] = gd.mergeErrPartitions(K[,'metric',m][,'normalized',tf][,'sort',dir])
       %
       %   'metric' sets the distance between the original mixture f and the
       %   merged mixture g:
@@ -841,10 +999,10 @@ end
       end
     end
     
-    function [bestErr,bestP] = l2errBest(obj,K,varargin)
+    function [bestErr,bestP] = mergeErrBest(obj,K,varargin)
       % L2ERRBest Minimum L2 distance for each final number of K after merging.
       %
-      %   [err,P] = gd.l2errBest(K)
+      %   [err,P] = gd.mergeErrBest(K)
       %
 
       %   For every partition P{p} of the components 1:K (see allPartitions) the
@@ -870,7 +1028,7 @@ end
       if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
 
 
-      [err,P,nComp] = obj.l2errPartitions(K,'normalized',p.Results.normalized, ...
+      [err,P,nComp] = obj.mergeErrPartitions(K,'normalized',p.Results.normalized, ...
         'metric',p.Results.metric,'nSamples',p.Results.nSamples,'seed',p.Results.seed);
 %      nGroupsInPartition = cellfun(@(x) numel(x), P);
       %nG = numel(uG);
@@ -887,7 +1045,12 @@ end
         end
       end
     end
-  
+    function N = nT(obj)
+      N = size(obj.gmm,1);
+    end
+    function N = nK(obj)
+      N = size(obj.gmm,2);
+    end
   end
 
   methods (Static)
@@ -939,7 +1102,8 @@ end
       nK = numel(K);
       out = cell(nT,nK);
       for iK = 1:nK
-        fprint('\nK = %g, (K=[%s]) \n',K(iK),K)
+        ttic = tic;
+        fprintf('K = %g (K=[%s]), ',K(iK),num2str(K))
         for it = 1:nT
           X = GMDist.getSamples_(data,it);
           S = 'randSample';
@@ -952,6 +1116,7 @@ end
             warning('GMDist:fit','Fit failed at time index %d, K = %d: %s',it,K(iK),ME.message)
           end
         end
+        fprintf('time elapsed is %g seconds.\n',toc(ttic))
       end
       obj = GMDist(out,'data',data,'time',t,'mass',m, ...
         'options',struct('start',start,'fitgmdist',{fitArgs}));
