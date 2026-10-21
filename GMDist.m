@@ -72,20 +72,7 @@ classdef GMDist
         error('GMDist:input','data must have %d time steps.',nT)
       end
 
-      % Number of components of each column
-      K = nan(1,nK);
-      for iK = 1:nK
-        ks = cellfun(@GMDist.numComp_,gmmCell(:,iK));
-        ks = unique(ks(~isnan(ks)));
-        if numel(ks) > 1
-          error('GMDist:input','Column %d mixes different numbers of components.',iK)
-        elseif ~isempty(ks)
-          K(iK) = ks;
-        end
-      end
-
       obj.gmm = gmmCell;
-      %obj.K = K;
       obj.time = t;
       obj.mass = p.Results.mass;
       obj.data = data;
@@ -132,55 +119,73 @@ classdef GMDist
       nComp = obj.nComp; % keep this for now for forward compatibility, to be removed eventually
     end
 
-    function out = merge(obj,groups)
-      % MERGE Merge components of the K-component fits into fewer components.
+    function out = merge(obj,groups,varargin)
+      % MERGE Merge the components of each fit according to a partition.
       %
-      %   gd2 = gd.merge(K,groups)
+      %   gd2 = gd.merge(P[,'bic',tf])
+      %   gd2 = gd.merge(partition)
       %
-      %   groups is a partition of 1:K as a cell, e.g. {[1 2],3}. Each group
-      %   is replaced by one Gaussian with the group's total weight, mean and
-      %   covariance (law of total covariance, see total_covariance), in the
-      %   order of groups. The result is a GMDist with one column of
-      %   numel(groups) components. With companion data its BIC is recomputed
-      %   from the particles; otherwise it is NaN. NumIterations etc. are lost.
-%      iK = find(obj.K == K,1);
-      %if isempty(iK)
-      %  error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
-      %end
-      %if ~iscell(groups), error('GMDist:merge','groups must be a cell, e.g. {[1 2],3}.'), end
-%      allc = cell2mat(cellfun(@(x) x(:).',groups(1,:).','UniformOutput',false));
- %     if ~isequal(sort(allc),1:K)
-  %      error('GMDist:merge','groups must be a partition of 1:%d (each component once).',K)
-   %   end
+      %   P is a cell {nT x nC} like gd.gmm, for example the P from
+      %   bestPartition. P{i} is a partition of the components 1:K of the fit
+      %   gd.gmm{i}, a cell of groups such as {[1 2],3}. Each group is
+      %   replaced by one Gaussian with the group's total weight, mean and
+      %   covariance (law of total covariance, see totalCovariance), in the
+      %   order of the groups. Where P{i} is [] (or there is no fit) the entry
+      %   of gd2 is empty.
+      %
+      %   A single partition (a cell of numeric groups, e.g. {[1 3],[2 4]}) is
+      %   applied to all fits with that number of components K, and the rest
+      %   are left empty.
+      %
+      %   The result has the same shape as gd.gmm, and the number of
+      %   components may differ between entries (see gd2.nComp). Time, mass,
+      %   data and options are kept. NumIterations etc. are lost.
+      %   BIC: with companion data it is recomputed from the particles, which
+      %   can be slow for many particles; 'bic',false skips that (NaN).
+      p = inputParser;
+      addParameter(p,'bic',true);
+      parse(p,varargin{:});
 
-      %nT = size(obj.gmm,1);
-      nGall = cellfun(@(x)numel(x),groups);
-      nGmax = max(nGall);
-
-      merged = cell(size(obj.gmm));
-      tc = cell(size(obj.gmm));
-      for igmm = 1:numel(obj.gmm)
-        [i1,i2] = ind2sub(size(obj.gmm),igmm)
-        GM = obj.slice(i1,i2);
-        nG = nGall(igmm);
-        for ig = 1:nG
-          p = GM.totalCovariance(groups{i1}{i2});
-          tc(igmm) = p(:,1);
-        end
-
- 
-        
-        if isempty(tc{igmm}), continue, end   % no fit at this time
-        w = zeros(1,nG); mu = zeros(nG,3); S = zeros(3,3,nG);
-        for ig = 1:nG
-          w(ig) = tc{it,ig}.w;
-          mu(ig,:) = tc{it,ig}.mu;
-          S(:,:,ig) = tc{it,ig}.Sigma;
-        end
-        merged{it,nG} = gmdistribution(mu,S,w);
+      % A single partition: use it for all fits with that K
+      if iscell(groups) && ~isempty(groups) && all(cellfun(@(x) isnumeric(x) && ~isempty(x),groups(:)))
+        K = numel(cell2mat(cellfun(@(x) x(:).',groups(:).','UniformOutput',false)));
+        single = groups;
+        groups = cell(size(obj.gmm));
+        groups(obj.nComp == K) = {single};
       end
+      if ~iscell(groups) || ~isequal(size(groups),size(obj.gmm))
+        error('GMDist:merge','Partitions must be a cell of the same size as gmm ([%s]), or a single partition.', ...
+          num2str(size(obj.gmm)))
+      end
+
+      nComp = obj.nComp;
+      merged = cell(size(obj.gmm));
+      for igmm = 1:numel(obj.gmm)
+        g = obj.gmm{igmm};
+        Pi = groups{igmm};
+        if isempty(g) || isempty(Pi), continue, end
+        K = nComp(igmm);
+        if ~iscell(Pi), error('GMDist:merge','Entry %d: the partition must be a cell, e.g. {[1 2],3}.',igmm), end
+        allc = cell2mat(cellfun(@(x) x(:).',Pi(:).','UniformOutput',false));
+        if ~isequal(sort(allc),1:K)
+          error('GMDist:merge','Entry %d: groups must be a partition of 1:%d (each component once).',igmm,K)
+        end
+
+        w = g.ComponentProportion;
+        mu = g.mu;
+        S = GMDist.fullSigma_(g);
+        nG = numel(Pi);
+        wM = zeros(1,nG); muM = zeros(nG,3); SM = zeros(3,3,nG);
+        for ig = 1:nG
+          [wM(ig),muM(ig,:),SM(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,Pi{ig});
+        end
+        merged{igmm} = gmdistribution(muM,SM,wM);
+      end
+
       args = {'time',obj.time,'mass',obj.mass,'data',obj.data,'options',obj.options};
-      if isempty(obj.data), args = [args {'bic',nan(nT,1)}]; end
+      if isempty(obj.data) || ~p.Results.bic
+        args = [args {'bic',nan(size(merged))}];
+      end
       out = GMDist(merged,args{:});
     end
 
@@ -430,7 +435,7 @@ classdef GMDist
       r.comp = one.tsReduced(K,dim,args{:},'component',num2cell(1:K));
       if ~isempty(p.Results.groups)
         groups = p.Results.groups;
-        merged = one.merge(K,groups);
+        merged = one.merge(groups);
         r.groups = groups;
         r.merged = merged.tsReduced(numel(groups),dim,args{:});
         r.merged_comp = merged.tsReduced(numel(groups),dim,args{:},'component',num2cell(1:numel(groups)));

@@ -32,7 +32,7 @@ MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_ini
 
 
 %%
-K = 1:2;
+K = 4;
 options = statset('MaxIter',150,'TolFun',1e-5);
 GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
       
