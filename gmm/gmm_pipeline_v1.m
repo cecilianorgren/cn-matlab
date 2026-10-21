@@ -2,6 +2,7 @@
 mms.db_init('local_file_db','/Volumes/mms');
 
 tint = irf.tint('2017-07-09T17:31:58.047139000Z/2017-07-09T17:34:23.048132000Z');
+tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
 ic = 1;
 
 c_eval('scPot = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
@@ -31,13 +32,15 @@ MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_ini
 
 
 %%
-K = 3:4;
+K = 1:2;
 options = statset('MaxIter',150,'TolFun',1e-5);
 GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
       
 %GM.bic
 %gm{it,iK} = fitgmdist(R,K,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
 
+%%
+[bestErr,bestP] = GM.mergeErrBest;
 %%
 threshold = 0.2;
 [bestM, bestP, bestErr] = GM.bestPartition(threshold,'metric','l1');

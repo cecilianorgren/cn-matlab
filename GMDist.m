@@ -34,7 +34,7 @@ classdef GMDist
 
   properties (SetAccess = protected)
     gmm     % {nT x nK} gmdistribution ([] where a fit failed)
-    K       % [1 x nK] number of components of each column
+    %K       % [1 x nK] number of components of each column
     bic     % [nT x nK]
     time    % GenericTimeArray or numeric [nT x 1], [] if unknown
     mass    % particle mass [kg], [] if unknown
@@ -85,7 +85,7 @@ classdef GMDist
       end
 
       obj.gmm = gmmCell;
-      obj.K = K;
+      %obj.K = K;
       obj.time = t;
       obj.mass = p.Results.mass;
       obj.data = data;
@@ -122,6 +122,16 @@ classdef GMDist
       parse(p,varargin{:});
 
     end
+    
+    function nComp = nComp(obj)
+      ne = ~cellfun(@isempty,obj.gmm);  % not empty gmm cells
+      nComp = nan(size(obj.gmm));       % initialize empty cell
+      nComp(ne) = cellfun(@(g) g.NumComponents,obj.gmm(ne));   % [nT x nC]
+    end
+    function nComp = K(obj)
+      nComp = obj.nComp; % keep this for now for forward compatibility, to be removed eventually
+    end
+
     function out = merge(obj,K,groups)
       % MERGE Merge components of the K-component fits into fewer components.
       %
@@ -895,7 +905,7 @@ classdef GMDist
       end
     end
 
-    function [err,Psorted,nComp] = mergeErrPartitions(obj,K,varargin)
+    function [err,Psorted,nComp] = mergeErrPartitions(obj,varargin)
       % mergeErrPartitions L2 distance between the K-component fits and their merged versions.
       %
       %   [err,P,nComp] = gd.mergeErrPartitions(K[,'metric',m][,'normalized',tf][,'sort',dir])
@@ -929,25 +939,45 @@ classdef GMDist
       parse(p,varargin{:});
       metric = validatestring(p.Results.metric,{'l2','l1','kl'});
       if ~strcmp(metric,'l2'), s0 = rng; restoreRng = onCleanup(@() rng(s0)); end
-      iK = find(obj.K == K,1);
-      if isempty(iK)
-        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
-      end
-      if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
+%      iK = find(obj.K == K,1);
+      %if isempty(iK)
+      %  error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      %end
+      %if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
 
-      [P,uG,iG] = GMDist.allPartitions(K);
-      nGroupsInPartition = cellfun(@(x) numel(x), P);
-      nG = numel(uG);
-      nT = size(obj.gmm,1);
-      err = nan(nT,numel(P));
-      nComp = nan(nT,numel(P));
+
+      nComp = obj.nComp;
+      %nCompMax = max(nComp(:));
+      %nCompMaxPartitions = min([nCompMax 8]);
+
+
+      % TODO
+      %[P,uG,iG] = GMDist.allPartitions(unique(nComp(:)));
+      AP = GMDist.allPartitionsK(unique(nComp(:))); % All partitions
+      KinP = cellfun(@(x)x.K,AP);
 
       %if ~isempty(p.Results.sort) % need to rearrange P accordingly
-      Psorted = cell(nT,numel(P));
+%      Psorted = cell(nT,numel(P));
       %end
-  
-      for it = 1:nT
-        g = obj.gmm{it,iK};
+      Psorted = cell(size(obj.gmm));
+      err = cell(size(obj.gmm));
+      nComp = cell(size(obj.gmm));
+
+      % Change this loop to just loop over all gmm
+      nGMM = numel(obj.gmm);
+      for igmm = 1:nGMM
+        g = obj.gmm{igmm};
+        K = g.NumComponents;
+        P = AP{KinP==K};
+        uG = P.groups;
+        iG = P.iG;
+        %nGroupsInPartition = cellfun(@(x) numel(x), P.P);
+        nGroupsInPartition = P.nGroups;
+
+        nG = numel(uG);
+        %nT = size(obj.gmm,1);
+
+
         if isempty(g), continue, end
         w = g.ComponentProportion(:).';
         mu = g.mu;
@@ -958,9 +988,9 @@ classdef GMDist
         for ig = 1:nG % Loop over unique groups and merge
           [wG(ig),muG(ig,:),SG(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,uG{ig});
         end
-if it == 40;
-1;
-end
+%if it == 40;
+%1;
+%end
         switch metric
           case 'l2'
             % Inner products: original with itself, with each group, groups with each other
@@ -979,28 +1009,28 @@ end
             for ip = 1:numel(P)
               idx = iG{ip};
               d2 = ff - 2*sum(c(idx)) + sum(sum(M(idx,idx)));
-              err(it,ip) = sqrt(max(d2,0));
+              err{igmm} = sqrt(max(d2,0));
             end
-            if p.Results.normalized, err(it,:) = err(it,:)/sqrt(ff); end
+            if p.Results.normalized, err{igmm} = err{igmm}/sqrt(ff); end
           otherwise
             % 'l1' (total variation) and 'kl': Monte Carlo, samples shared by all partitions
-            err(it,:) = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,p.Results.nSamples,p.Results.seed+it);
+            err{igmm} = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,p.Results.nSamples,p.Results.seed+it);
         end
 
-        nComp(it,:) = nGroupsInPartition;
+        nComp{igmm} = nGroupsInPartition;
 
-        Psorted(it,:) = P;
+        Psorted{igmm} = P;
         if ~isempty(p.Results.sort)
           [errSort,iSort] = sort(err(it,:),p.Results.sort);
-          nComp(it,:) = nComp(it,iSort);
-          err(it,:) = err(it,iSort);
-          Psorted(it,:) = Psorted(it,iSort);
+          nComp(igmm) = nComp(it,iSort);
+          err(igmm) = err(it,iSort);
+          Psorted(igmm) = Psorted(it,iSort);
         end
       end
     end
     
     function [bestErr,bestP] = mergeErrBest(obj,K,varargin)
-      % L2ERRBest Minimum L2 distance for each final number of K after merging.
+      % MERGEERRBest Minimum metric distance for each final number of K after merging.
       %
       %   [err,P] = gd.mergeErrBest(K)
       %
@@ -1021,27 +1051,33 @@ end
       parse(p,varargin{:});
 
       nT = obj.time.length;
-      iK = find(obj.K == K,1);
-      if isempty(iK)
-        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
-      end
-      if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
+      %iK = find(obj.K == K,1);
+      %if isempty(iK)
+      %  error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      %end
 
+      % TODO RE-ADD this gate check later in some way, inside
+      % mergeErrPartitions probably
+      %if K > 8, error('GMDist:l2err','K = %d gives too many partitions (max 8).',K), end
 
-      [err,P,nComp] = obj.mergeErrPartitions(K,'normalized',p.Results.normalized, ...
+      nComp = obj.nComp;
+      nCompMax = max(nComp(:));
+      nCompMaxPartitions = min([nCompMax 8]);
+
+      [err,P,nComp] = obj.mergeErrPartitions('normalized',p.Results.normalized, ...
         'metric',p.Results.metric,'nSamples',p.Results.nSamples,'seed',p.Results.seed);
 %      nGroupsInPartition = cellfun(@(x) numel(x), P);
       %nG = numel(uG);
       %nT = size(obj.gmm,1);
-      bestErr = nan(nT,K);
+      bestErr = cell(size(obj.gmm));
       %nComp = nan(nT,numel(P));
-      bestP = cell(nT,K);
-      for it = 1:nT
+      bestP = cell(size(obj.gmm));
+      for igmm = 1:numel(obj.gmm) % LAST THING I STARTED CHANGING
         for nCompTmp = 1:K
           iNComp = find(nComp(it,:)==nCompTmp);
           [~,iBest] = min(err(it,iNComp));
-          bestErr(it,nCompTmp) = err(it,iNComp(iBest));
-          bestP{it,nCompTmp} = P{it,iNComp(iBest)};
+          bestErr(igmm) = err(it,iNComp(iBest));
+          bestP{igmm} = P{it,iNComp(iBest)};
         end
       end
     end
@@ -1129,6 +1165,16 @@ end
       % from. For example, does cold populations only come from one enerrgy
       % bin?
     end
+    function AP = allPartitionsK(Ks)
+      % ALLPARTITIONSK Partitions for several numbers of components; AP{K} for each K in Ks.
+      Ks = unique(Ks(~isnan(Ks)));
+      AP = cell(1,numel(Ks));
+      for iK = 1:numel(Ks)
+        [P,uG,iG] = GMDist.allPartitions(Ks(iK));
+        AP{iK} = struct('K',Ks(iK),'P',{P},'groups',{uG},'iG',{iG},'nGroups',cellfun(@numel,P));
+      end
+    end
+
     function [P, uniqueGroups, iG_in_P, iG_in_P_mat] = allPartitions(K)
       % Generate all nonempty unique groups
       uniqueGroups = cell(2^K - 1, 1);
