@@ -44,8 +44,10 @@ GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',fal
 %%
 threshold = 0.2;
 [bestM, bestP, bestErr] = GM.bestPartition(threshold,'metric','l1');
-K = 4;
-mGM = GM.merge(K,bestP(:,find(GM.K==K)));
+%K = 4;
+%mGM = GM.merge(K,bestP(:,find(GM.K==K)));
+
+mGM = GM.merge(bestP);
 M = bestM(find(GM.K==K));
 
 %% Diagnostics, L2 error
