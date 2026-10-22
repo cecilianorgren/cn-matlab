@@ -37,9 +37,14 @@ classdef GMDist
     %K       % [1 x nK] number of components of each column
     bic     % [nT x nK]
     time    % GenericTimeArray or numeric [nT x 1], [] if unknown
-    mass    % particle mass [kg], [] if unknown
+    %mass    % particle mass [kg], [] if unknown
     data    % companion data, [] if none
     options % options used by GMDist.fit
+    misc
+  end
+
+  properties (Access = protected)
+    mass_
   end
 
   methods
@@ -74,7 +79,7 @@ classdef GMDist
 
       obj.gmm = gmmCell;
       obj.time = t;
-      obj.mass = p.Results.mass;
+      obj.mass_ = p.Results.mass;
       obj.data = data;
       obj.options = p.Results.options;
 
@@ -110,11 +115,17 @@ classdef GMDist
 
     end
     
+    function nComp = tsNComp(obj)
+      nComp = obj.nComp;
+      nComp = irf.ts_scalar(obj.time,nComp);
+    end
+
     function nComp = nComp(obj)
       ne = ~cellfun(@isempty,obj.gmm);  % not empty gmm cells
       nComp = nan(size(obj.gmm));       % initialize empty cell
       nComp(ne) = cellfun(@(g) g.NumComponents,obj.gmm(ne));   % [nT x nC]
     end
+    
     function nComp = K(obj)
       nComp = obj.nComp; % keep this for now for forward compatibility, to be removed eventually
     end
@@ -124,6 +135,7 @@ classdef GMDist
       %
       %   gd2 = gd.merge(P[,'bic',tf])
       %   gd2 = gd.merge(partition)
+      %   gd2 = gd.merge('nGroups',M[,'metric',m,...])
       %
       %   P is a cell {nT x nC} like gd.gmm, for example the P from
       %   bestPartition. P{i} is a partition of the components 1:K of the fit
@@ -142,9 +154,29 @@ classdef GMDist
       %   data and options are kept. NumIterations etc. are lost.
       %   BIC: with companion data it is recomputed from the particles, which
       %   can be slow for many particles; 'bic',false skips that (NaN).
+      %
+      %   'nGroups',M uses the best partition into exactly M groups for every
+      %   fit (see bestPartition), instead of P. The other options
+      %   ('metric', 'normalized', 'nSamples', 'seed', 'K', 'maxK') go to
+      %   bestPartition. Fits with fewer than M components are left empty.
+      if ischar(groups) || isstring(groups)
+        varargin = [{groups} varargin];
+        groups = [];
+      end
       p = inputParser;
+      p.KeepUnmatched = true;
       addParameter(p,'bic',true);
+      addParameter(p,'nGroups',[]);
       parse(p,varargin{:});
+      if ~isempty(p.Results.nGroups)
+        rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+        [~,groups] = obj.bestPartition([],'nGroups',p.Results.nGroups,rest{:});
+      elseif ~isempty(fieldnames(p.Unmatched))
+        fn = fieldnames(p.Unmatched);
+        error('GMDist:merge','Unknown option ''%s''.',fn{1})
+      elseif isempty(groups)
+        error('GMDist:merge','Give partitions P, a single partition, or ''nGroups''.')
+      end
 
       % A single partition: use it for all fits with that K
       if iscell(groups) && ~isempty(groups) && all(cellfun(@(x) isnumeric(x) && ~isempty(x),groups(:)))
@@ -182,7 +214,7 @@ classdef GMDist
         merged{igmm} = gmdistribution(muM,SM,wM);
       end
 
-      args = {'time',obj.time,'mass',obj.mass,'data',obj.data,'options',obj.options};
+      args = {'time',obj.time,'mass',obj.mass_,'data',obj.data,'options',obj.options};
       if isempty(obj.data) || ~p.Results.bic
         args = [args {'bic',nan(size(merged))}];
       end
@@ -203,6 +235,9 @@ classdef GMDist
       %   Options:
       %     'minGroups'  smallest M to consider (default 1)
       %     'maxGroups'  largest M to consider (default K, no merging)
+      %     'nGroups'    exactly this many groups (same as minGroups = maxGroups);
+      %                  thr may then be [] (no threshold). Fits with fewer
+      %                  components than this get no partition.
       %   The other options ('metric', 'normalized', 'nSamples', 'seed', 'K',
       %   'maxK') go to mergeErrBest. For 'l1' thr is the fraction of the
       %   distribution that may be misplaced, for 'kl' nats per particle.
@@ -210,7 +245,13 @@ classdef GMDist
       p.KeepUnmatched = true;
       addParameter(p,'minGroups',1);
       addParameter(p,'maxGroups',Inf);
+      addParameter(p,'nGroups',[]);
       parse(p,varargin{:});
+      mMin = p.Results.minGroups; mMax = p.Results.maxGroups;
+      if ~isempty(p.Results.nGroups)
+        mMin = p.Results.nGroups; mMax = mMin;
+        if isempty(thr), thr = Inf; end
+      end
       if ~isscalar(thr) || ~isnumeric(thr)
         error('GMDist:bestPartition','thr must be a number.')
       end
@@ -225,7 +266,7 @@ classdef GMDist
       for igmm = 1:numel(obj.gmm)
         if isempty(bestErr{igmm}), continue, end
         K = nComp(igmm);
-        for m = p.Results.minGroups:min(p.Results.maxGroups,K)
+        for m = mMin:min(mMax,K)
           if bestErr{igmm}(m) <= thr
             M(igmm) = m;
             err(igmm) = bestErr{igmm}(m);
@@ -248,8 +289,7 @@ classdef GMDist
       parse(p,varargin{:});
       method = validatestring(p.Results.method,{'chord','min'});
 
-      [Ks,iSort] = sort(obj.K);
-      B = obj.bic(:,iSort);
+      [B,Ks] = obj.bicByK_();
       nT = size(B,1);
       kBest = nan(nT,1);
       for it = 1:nT
@@ -269,11 +309,15 @@ classdef GMDist
     end
 
     function pop = populations(obj,K,varargin)
-      % POPULATIONS Per-component properties for fits with K components.
+      % POPULATIONS Per-component properties of the fits with K components.
       %
       %   pop = gd.populations(K[,'n',nTot])
+      %   pop = gd.populations([])      the first non-empty fit at each time,
+      %                                 whatever its number of components
       %
-      %   Components are in the stored order (see sortBy). Fields:
+      %   Components are in the stored order (see sortBy). With K = [] the
+      %   arrays are padded with NaN up to the largest number of components
+      %   (pop.K). Fields:
       %     prop  [nT x K]         proportion
       %     n     [nT x K]         density [cm^-3] (NaN without total density)
       %     V     [nT x K x 3]     mean velocity [km/s]
@@ -285,90 +329,236 @@ classdef GMDist
       addParameter(p,'n',[]);
       parse(p,varargin{:});
 
-      iK = find(obj.K == K,1);
-      if isempty(iK)
-        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
+      nC = obj.nComp;
+      idx = obj.entryIndex_(K);
+      if all(isnan(idx))
+        error('GMDist:K','No fits with K = %s. Available: %s.',mat2str(K),mat2str(unique(nC(~isnan(nC))).'))
       end
+      Kmax = max(nC(idx(~isnan(idx))));
       fac = obj.massFactor_();
       nT = size(obj.gmm,1);
       nTot = obj.totalDensity_(p.Results.n);
 
-      prop = nan(nT,K); n = nan(nT,K); Tiso = nan(nT,K);
-      V = nan(nT,K,3); T = nan(nT,K,3,3);
+      prop = nan(nT,Kmax); n = nan(nT,Kmax); Tiso = nan(nT,Kmax);
+      V = nan(nT,Kmax,3); T = nan(nT,Kmax,3,3);
       for it = 1:nT
-        g = obj.gmm{it,iK};
-        if isempty(g), continue, end
+        if isnan(idx(it)), continue, end
+        g = obj.gmm{idx(it)};
+        Kg = g.NumComponents;
         S = GMDist.fullSigma_(g);
         pr = g.ComponentProportion(:);
-        Tc = fac*S;                                    % 3 x 3 x K
-        prop(it,:) = pr.';
-        Tiso(it,:) = reshape(Tc(1,1,:)+Tc(2,2,:)+Tc(3,3,:),[1,K])/3;
-        n(it,:) = nTot(it)*pr.';
-        V(it,:,:) = reshape(g.mu,[1 K 3]);
-        for k = 1:K
+        Tc = fac*S;                                    % 3 x 3 x Kg
+        prop(it,1:Kg) = pr.';
+        Tiso(it,1:Kg) = reshape(Tc(1,1,:)+Tc(2,2,:)+Tc(3,3,:),[1,Kg])/3;
+        n(it,1:Kg) = nTot(it)*pr.';
+        V(it,1:Kg,:) = reshape(g.mu,[1 Kg 3]);
+        for k = 1:Kg
           T(it,k,:,:) = reshape(Tc(:,:,k),[1 1 3 3]);
         end
       end
-      pop = struct('K',K,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso);
+      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso);
     end
 
-    function [isCold,pop] = cold(obj,K,varargin)
+    function [isCold,pop] = cold(obj,varargin)
       % COLD Flag cold components (same layout as pop.Tiso).
       %
       %   isCold = gd.cold(K,'Tmax',Tm)     Tiso below Tm [eV]
       %   isCold = gd.cold(K,'ratio',r)     Tiso below r*max(Tiso) at that time
       %   Both given: both must hold.
+
+      % Parse name-value arguments
       p = inputParser;
-      addParameter(p,'Tmax',[]);
-      addParameter(p,'ratio',[]);
-      parse(p,varargin{:});
-      if isempty(p.Results.Tmax) && isempty(p.Results.ratio)
-        error('GMDist:cold','Give ''Tmax'' and/or ''ratio''.')
-      end
-      pop = obj.populations(K);
-      isCold = true(size(pop.Tiso));
-      if ~isempty(p.Results.Tmax)
-        isCold = isCold & pop.Tiso < p.Results.Tmax;
-      end
-      if ~isempty(p.Results.ratio)
-        isCold = isCold & pop.Tiso < p.Results.ratio*max(pop.Tiso,[],2);
+      p.FunctionName = mfilename;
+
+      % Validators
+      isTextScalar = @(x) ischar(x) || (isstring(x) && isscalar(x));
+      isNonnegativeScalar = @(x) isnumeric(x) && isscalar(x) && ...
+        isreal(x) && isfinite(x) && x >= 0;
+      isPositiveInteger = @(x) isnumeric(x) && isscalar(x) && ...
+        isreal(x) && isfinite(x) && x >= 1 && fix(x) == x;
+      isEmptyOrPositiveInteger = @(x) isempty(x) || isPositiveInteger(x);
+
+      % Options and defaults
+      addParameter(p, 'method',       'knee', isTextScalar);
+      addParameter(p, 'minGapLog10',  0.35,   isNonnegativeScalar);
+      addParameter(p, 'gapPick',      'last', isTextScalar);
+      addParameter(p, 'minWeight',    0,      isNonnegativeScalar);
+      addParameter(p, 'minVabs',      0,      isNonnegativeScalar);
+      addParameter(p, 'maxColdEV',    [],     isNonnegativeScalar);
+      addParameter(p, 'minColdK',     1,      isPositiveInteger);
+      addParameter(p, 'maxColdK',     [],     isEmptyOrPositiveInteger);
+
+      % Parse inputs
+      parse(p, varargin{:});
+
+      % Extract values
+      method      = lower(char(p.Results.method));
+      minGapLog10 = p.Results.minGapLog10;
+      gapPick     = lower(char(p.Results.gapPick));
+      minWeight   = p.Results.minWeight;
+      minVabs     = p.Results.minVabs;
+      maxColdEV   = p.Results.maxColdEV;
+      minColdK    = p.Results.minColdK;
+      maxColdK    = p.Results.maxColdK;
+
+
+
+      units = irf_units;
+  
+      out = struct();
+      out.method = method;
+      out.cold_sorted = cell(size((obj.gmm)));
+      out.cold_unsorted = cell(size((obj.gmm)));
+      out.isort = cell(size((obj.gmm)));
+      out.T_scalar_eV = cell(size((obj.gmm)));
+      out.gaps_log10 = cell(size((obj.gmm)));
+      out.isCold_mat_sorted = cell(size((obj.gmm)));
+      out.isCold_mat_unsorted = cell(size((obj.gmm)));
+      %out.isCold_mat_sorted = false(nt,K);
+      %out.isCold_mat_unsorted = false(nt,K);
+      out.vabs_kms_sorted = cell(size((obj.gmm)));
+      
+      for igmm = 1:numel(obj.gmm)
+        [i1,i2] = ind2sub(size(obj.gmm),igmm);
+        GM = GM.slice(i1,i2);
+        GM = GM.sortby('T'); % misc data not sliced, implement
+        gm = GM.gmm{1};
+        K = GM.nComp;
+        
+        isCold_mat_sorted = false(1,K);
+        isCold_mat_unsorted = false(1,K);
+    % TODO: continue here to adapt
+        isort = GM.misc.sort;
+        out.isort{it,iK} = isort;
+      
+        Sigma_sorted = gm{it,iK}.Sigma(:,:,isort); % 3x3xK
+        mu_sorted = gm{it,iK}.mu(isort,:); % Kx3
+        w_sorted = gm{it,iK}.ComponentProportion(isort); % 1xK
+      
+        vabs_sorted = sqrt(sum(mu_sorted.^2,2)); % km/s
+        out.vabs_kms_sorted{it,iK} = vabs_sorted;
+      
+        % Convert covariance to scalar temperature proxy in eV
+        % T_tens = Sigma*1e6*mp/2/eV; then scalar as trace/3
+        T_scalar = zeros(K,1);
+        for iComp = 1:K
+          T_tens = Sigma_sorted(:,:,iComp)*1e6*units.mp/2/units.eV;
+          T_scalar(iComp) = trace(T_tens)/3;
+        end
+        out.T_scalar_eV{it} = T_scalar;
+      
+        % Eligible components (by weight, and optional absolute ceiling)
+        % Note: selection of cold components is based on temperature only.
+        % minWeight/minVabs/maxColdEV are applied as a post-filter (discard) to the
+        % selected set, without promoting other components to replace discarded ones.
+        eligible = (w_sorted(:) >= minWeight);
+        eligible = eligible & (vabs_sorted(:) >= minVabs);
+        if ~isempty(maxColdEV)
+          eligible = eligible & (T_scalar(:) <= maxColdEV);
+        end
+      
+        cold_sorted = 1; % fallback
+        switch method
+          case 'knee'
+            % Use a log10(T) gap that exceeds the threshold to separate cold vs hot.
+            logT = log10(max(T_scalar, realmin));
+            gaps = diff(logT);
+            out.gaps_log10{it,iK} = gaps(:);
+      
+            if K == 1
+              cold_sorted = 1;
+            else
+              iGaps = find(gaps >= minGapLog10);
+              if ~isempty(iGaps)
+                switch gapPick
+                  case 'first'
+                    iGap = iGaps(1);
+                  case 'last'
+                    iGap = iGaps(end);
+                  case 'largest'
+                    [~,iRel] = max(gaps(iGaps));
+                    iGap = iGaps(iRel);
+                  otherwise
+                    error('Unknown gapPick: %s', gapPick);
+                end
+                cold_sorted = 1:iGap;
+              else
+                cold_sorted = 1:minColdK;
+              end
+            end
+      
+            % Enforce max count (temperature-based), then discard ineligible
+            if ~isempty(maxColdK) && numel(cold_sorted) > maxColdK
+              cold_sorted = cold_sorted(1:maxColdK);
+            end
+            cold_sorted = cold_sorted(eligible(cold_sorted));
+      
+          case 'threshold'
+            if isempty(maxColdEV)
+              error('method=threshold requires ''maxColdEV''.');
+            end
+            cold_sorted = find(eligible);
+            if ~isempty(maxColdK) && numel(cold_sorted) > maxColdK
+              cold_sorted = cold_sorted(1:maxColdK);
+            end
+      
+          otherwise
+            error('Unknown method: %s', method);
+        end
+      
+        isCold_mat_sorted(cold_sorted) = true;
+        isCold_mat_unsorted(isort(cold_sorted(:))) = true;
+    
+        out.cold_sorted{it,iK} = cold_sorted(:)';
+        out.cold_unsorted{it,iK} = isort(cold_sorted(:))';
+        out.isCold_mat_sorted{it, iK} = isCold_mat_sorted;
+        out.isCold_mat_unsorted{it, iK} = isCold_mat_unsorted;
+        %out.isCold_mat_sorted(it, cold_sorted) = true;
+        %out.isCold_mat_unsorted(it, isort(cold_sorted(:))) = true;
       end
     end
+    % 
+    %   pop = obj.populations(K);
+    %   isCold = true(size(pop.Tiso));
+    %   if ~isempty(p.Results.Tmax)
+    %     isCold = isCold & pop.Tiso < p.Results.Tmax;
+    %   end
+    %   if ~isempty(p.Results.ratio)
+    %     isCold = isCold & pop.Tiso < p.Results.ratio*max(pop.Tiso,[],2);
+    %   end
+    % end
 
     function gm = marginal(obj,it,K,dims)
-      % MARGINAL Marginal mixture over velocity dimensions dims (subset of 1:3).
-      iK = find(obj.K == K,1);
-      if isempty(iK), error('GMDist:K','No fits with K = %d.',K), end
-      g = obj.gmm{it,iK};
-      if isempty(g), error('GMDist:fit','No fit at time index %d.',it), end
+      % MARGINAL Marginal mixture over velocity dimensions dims (subset of 1:3),
+      % for the fit with K components at time index it (K = []: the first non-empty fit).
+      ie = obj.entryAt_(it,K);
+      if isnan(ie), error('GMDist:fit','No fit at time index %d for the requested K.',it), end
+      g = obj.gmm{ie};
       S = GMDist.fullSigma_(g);
       gm = gmdistribution(g.mu(:,dims),S(dims,dims,:),g.ComponentProportion);
     end
 
-    function out = slice(obj,it,K)
-      % SLICE A GMDist restricted to some times and/or some numbers of components.
+    function out = slice(obj,it,ic)
+      % SLICE A GMDist restricted to some rows (times) and columns of gmm.
       %
-      %   gd1 = gd.slice(it,K)    time indices it and component numbers K
-      %   gd1 = gd.slice(it)      all K
-      %   gd1 = gd.slice([],K)    all times
+      %   gd1 = gd.slice(it,ic)    like A(it,ic)
+      %   gd1 = gd.slice(it)       all columns
+      %   gd1 = gd.slice([],ic)    all times
       %
-      %   it: indices or logical mask over time. K: numbers of components, as
-      %   in gd.K. The result is a GMDist, so all methods work on it. Time,
-      %   BIC and the companion data are sliced too (the data is dropped with a
-      %   warning if it cannot be indexed in time).
-      nT = size(obj.gmm,1);
-      if nargin < 2 || isempty(it), it = 1:nT; end
+      %   it, ic: indices, logical masks, [] or ':' (all). The result is a
+      %   GMDist, so all methods work on it. Time, BIC and the companion data
+      %   are sliced too (the data is dropped with a warning if it cannot be
+      %   indexed in time). To select by number of components, see sliceK.
+      nT = size(obj.gmm,1); nC = size(obj.gmm,2);
+      if nargin < 2 || isempty(it) || (ischar(it) && strcmp(it,':')), it = 1:nT; end
+      if nargin < 3 || isempty(ic) || (ischar(ic) && strcmp(ic,':')), ic = 1:nC; end
       if islogical(it), it = find(it); end
+      if islogical(ic), ic = find(ic); end
       if any(it < 1) || any(it > nT) || any(it ~= round(it))
         error('GMDist:slice','Time indices must be integers in 1:%d.',nT)
       end
-      if nargin < 3 || isempty(K)
-        iK = 1:numel(obj.K);
-      else
-        [tf,iK] = ismember(K,obj.K);
-        if ~all(tf)
-          error('GMDist:K','No fits with K = %s. Available: %s.',mat2str(K(~tf)),mat2str(obj.K))
-        end
+      if any(ic < 1) || any(ic > nC) || any(ic ~= round(ic))
+        error('GMDist:slice','Column indices must be integers in 1:%d.',nC)
       end
 
       t = obj.time;
@@ -382,18 +572,29 @@ classdef GMDist
           d = [];
         end
       end
-      out = GMDist(obj.gmm(it,iK),'time',t,'mass',obj.mass,'data',d, ...
-        'bic',obj.bic(it,iK),'options',obj.options);
+      out = GMDist(obj.gmm(it,ic),'time',t,'mass',obj.mass_,'data',d, ...
+        'bic',obj.bic(it,ic),'options',obj.options);
     end
 
     function out = sliceTime(obj,it)
-      % SLICETIME Same as slice(it): all K, selected times.
+      % SLICETIME Same as slice(it): all columns, selected times.
       out = obj.slice(it,[]);
     end
 
     function out = sliceK(obj,K)
-      % SLICEK Same as slice([],K): all times, selected numbers of components.
-      out = obj.slice([],K);
+      % SLICEK One column per requested K, holding the fits with that number
+      % of components (empty where there is none). Time and data are kept.
+      nT = size(obj.gmm,1);
+      gmmK = cell(nT,numel(K));
+      B = nan(nT,numel(K));
+      for j = 1:numel(K)
+        idx = obj.entryIndex_(K(j));
+        ok = ~isnan(idx);
+        gmmK(ok,j) = obj.gmm(idx(ok));
+        B(ok,j) = obj.bic(idx(ok));
+      end
+      out = GMDist(gmmK,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
+        'bic',B,'options',obj.options);
     end
 
     function r = reducedVDFs(obj,it,K,dim,varargin)
@@ -401,10 +602,11 @@ classdef GMDist
       %
       %   r = gd.reducedVDFs(it,K,dim[,'groups',partition][,option,value,...])
       %
-      %   it: one time index. K: one number of components. dim: 1, 2 or 3.
-      %   partition: a partition of 1:K as in merge, e.g. {[1 3],[2 4]}.
-      %   Options 'vg', 'nv' and 'n' are those of tsReduced; one velocity grid
-      %   is used for everything, so the curves share the same axis.
+      %   it: one time index. K: the number of components of the fit to use,
+      %   or [] for the first non-empty fit at that time (e.g. after merge).
+      %   dim: 1, 2 or 3. partition: a partition of 1:K as in merge, e.g.
+      %   {[1 3],[2 4]}. Options 'vg', 'nv' and 'n' are those of tsReduced; one
+      %   velocity grid is used for everything, so the curves share an axis.
       %   Output fields:
       %     r.it, r.K, r.dim, r.vg
       %     r.all      PDist, the whole mixture
@@ -421,13 +623,17 @@ classdef GMDist
       addParameter(p,'nv',200);
       addParameter(p,'n',[]);
       parse(p,varargin{:});
-      if ~isscalar(it) || ~isscalar(K)
-        error('GMDist:reducedVDFs','it and K must be scalars; use slice for several.')
+      if ~isscalar(it) || ~(isempty(K) || isscalar(K))
+        error('GMDist:reducedVDFs','it and K must be scalars (K may be []); use slice for several.')
       end
-      one = obj.slice(it,K);
+      ie = obj.entryAt_(it,K);
+      if isnan(ie), error('GMDist:K','No fit at time index %d for the requested K.',it), end
+      [~,j] = ind2sub(size(obj.gmm),ie);
+      one = obj.slice(it,j);
+      K = one.nComp;
 
       vg = p.Results.vg;
-      if isempty(vg), vg = one.defaultGrid_(1,dim,p.Results.nv); end
+      if isempty(vg), vg = one.defaultGrid_(one.entryIndex_(K),dim,p.Results.nv); end
       args = {'vg',vg,'n',p.Results.n};
 
       r.it = it; r.K = K; r.dim = dim; r.vg = vg(:).';
@@ -460,6 +666,7 @@ classdef GMDist
       dirn = validatestring(p.Results.direction,{'ascend','descend'});
 
       out = obj.gmm;
+      order = cell(size(obj.gmm));
       for i = 1:numel(out)
         g = out{i};
         if isempty(g), continue, end
@@ -473,15 +680,19 @@ classdef GMDist
             key = sqrt(sum(g.mu.^2,2));
         end
         [~,o] = sort(key,dirn);
-        out{i} = gmdistribution(g.mu(o,:),S(:,:,o),g.ComponentProportion(o));
+        order{i} = o(:)';        
+        w = max(g.ComponentProportion(o),eps);
+        out{i} = gmdistribution(g.mu(o,:),S(:,:,o),w);
       end
-      obj = GMDist(out,'time',obj.time,'mass',obj.mass,'data',obj.data, ...
+      obj = GMDist(out,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
         'bic',obj.bic,'options',obj.options);
+      obj.misc.sort = order;
     end
 
     function ts = tsProp(obj,K)
       % TSPROP Proportion of each component: cell {1 x K} of scalar TSeries.
       pop = obj.populations(K);
+      K = pop.K;
       t = obj.tsTime_();
       nT = size(pop.prop,1);
       ts = cell(1,K);
@@ -494,6 +705,7 @@ classdef GMDist
       % TSN Density [cm^-3] of each component: cell {1 x K} of scalar TSeries.
       %   Needs a total density: companion data with an n method, or 'n'.
       pop = obj.populations(K,varargin{:});
+      K = pop.K;
       if all(isnan(pop.n(:)))
         error('GMDist:n','No total density available; give ''n'' or use tsProp.')
       end
@@ -508,6 +720,7 @@ classdef GMDist
     function ts = tsV(obj,K)
       % TSV Mean velocity [km/s] of each component: cell {1 x K} of vector TSeries.
       pop = obj.populations(K);
+      K = pop.K;
       t = obj.tsTime_();
       nT = size(pop.V,1);
       ts = cell(1,K);
@@ -527,6 +740,7 @@ classdef GMDist
       parse(p,varargin{:});
       type = validatestring(p.Results.type,{'iso','diag','tensor'});
       pop = obj.populations(K);
+      K = pop.K;
       t = obj.tsTime_();
       nT = size(pop.T,1);
       ts = cell(1,K);
@@ -558,8 +772,7 @@ classdef GMDist
       addParameter(p,'normalization','none');
       parse(p,varargin{:});
       nrm = validatestring(p.Results.normalization,{'none','min','max','range'});
-      [Ks,iS] = sort(obj.K);
-      B = obj.bic(:,iS);
+      [B,Ks] = obj.bicByK_();
       switch nrm
         case 'min'
           B = B - min(B,[],2,'omitnan');
@@ -648,6 +861,8 @@ classdef GMDist
       %   PD = gd.tsReduced(K,dim[,option,value,...])
       %
       %   K scalar: one PDist. K vector: cell {1 x numel(K)}, one per K.
+      %   K = []: the first non-empty fit at each time, whatever its number of
+      %   components (e.g. after merge).
       %   dim: 1 (vx), 2 (vy) or 3 (vz). 2D reductions are not done yet.
       %   Options:
       %     'component'  0 (default): the total mixture.
@@ -661,7 +876,7 @@ classdef GMDist
       %     'n'          total density [cm^-3], [nT x 1]; default from the
       %                  companion data. Without it the pdf is normalized to 1.
       %   Units: cm^-3 (km/s)^-1, or (km/s)^-1 if normalized.
-      if ~isscalar(K)
+      if ~isempty(K) && ~isscalar(K)
         PD = cell(1,numel(K));
         for i = 1:numel(K), PD{i} = obj.tsReduced(K(i),dim,varargin{:}); end
         return
@@ -672,10 +887,10 @@ classdef GMDist
       if iscell(comp)
         PD = cell(size(comp));
         for i = 1:numel(comp)
-          PD{i} = obj.reducedPD_(t,o,dim,comp{i},K);
+          PD{i} = obj.reducedPD_(t,o,dim,comp{i});
         end
       else
-        PD = obj.reducedPD_(t,o,dim,comp,K);
+        PD = obj.reducedPD_(t,o,dim,comp);
       end
     end
 
@@ -688,14 +903,15 @@ classdef GMDist
       %   the same times as the fits; it provides the grid. The output is in
       %   the template's grid, units s^3/km^6 (as that function returns).
       %   Needs a total density (companion n method, or 'n').
+      %   K = []: the first non-empty fit at each time, whatever its number of
+      %   components. K vector: cell {1 x numel(K)}, one per K.
       %   Options:
       %     'template'   PDist providing the grid (required)
       %     'component'  as in tsReduced: 0 (default, whole mixture), a vector
       %                  of component numbers (their sum, one PDist), or a cell
       %                  such as {[1 2],3} (cell of PDist).
       %     'n'          total density [cm^-3], [nT x 1]
-      %   K vector: cell {1 x numel(K)}, one per K.
-      %   Times where a fit is missing contribute zero.
+      %   Times where there is no fit contribute zero.
       p = inputParser;
       addParameter(p,'template',[]);
       addParameter(p,'component',0);
@@ -705,45 +921,44 @@ classdef GMDist
       if isempty(pd)
         error('GMDist:template','tsSkymap needs ''template'', a PDist providing the grid.')
       end
-      if ~isscalar(K)
+      if ~isempty(K) && ~isscalar(K)
         PD = cell(1,numel(K));
         for i = 1:numel(K), PD{i} = obj.tsSkymap(K(i),varargin{:}); end
         return
       end
-      iK = find(obj.K == K,1);
-      if isempty(iK)
-        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
-      end
+      idx = obj.entryIndex_(K);
+      if all(isnan(idx)), error('GMDist:K','No fits for the requested K.'), end
       nT = size(obj.gmm,1);
       if length(pd.time) ~= nT
         error('GMDist:template','The template has %d times but the fits have %d.',length(pd.time),nT)
       end
 
       pop = obj.populations(K,'n',p.Results.n);
+      Kmax = pop.K;
       if all(isnan(pop.n(:)))
         error('GMDist:n','No total density available; give ''n''.')
       end
-      % Arrays in the gmdistribution layout used by pdist_generalized_maxwellian
+      % Arrays in the gmdistribution layout used by pdist_generalized_maxwellian;
+      % missing components and times get zero weight
       w = 1e-3*pop.n.';                 % [K,nT]; same cm^-3 scaling that the function applies to TSeries input
+      w(isnan(w)) = 0;
       mu = permute(pop.V,[2 3 1]);      % [K,3,nT], km/s
-      sigma = repmat(eye(3),[1 1 K nT]);% [3,3,K,nT], (km/s)^2
+      mu(isnan(mu)) = 0;
+      sigma = repmat(eye(3),[1 1 Kmax nT]);   % [3,3,K,nT], (km/s)^2
       for it = 1:nT
-        g = obj.gmm{it,iK};
-        if isempty(g)
-          w(:,it) = 0; mu(:,:,it) = 0;  % missing fit: contributes nothing
-        else
-          sigma(:,:,:,it) = GMDist.fullSigma_(g);
-        end
+        if isnan(idx(it)), continue, end
+        g = obj.gmm{idx(it)};
+        sigma(:,:,1:g.NumComponents,it) = GMDist.fullSigma_(g);
       end
 
       comp = p.Results.component;
       if iscell(comp)
         PD = cell(size(comp));
         for i = 1:numel(comp)
-          PD{i} = GMDist.skymapPD_(pd,w,mu,sigma,comp{i},K);
+          PD{i} = GMDist.skymapPD_(pd,w,mu,sigma,comp{i},Kmax);
         end
       else
-        PD = GMDist.skymapPD_(pd,w,mu,sigma,comp,K);
+        PD = GMDist.skymapPD_(pd,w,mu,sigma,comp,Kmax);
       end
     end
 
@@ -752,36 +967,38 @@ classdef GMDist
       %
       %   PD = gd.plotReduced(K,dim[,option,value,...])
       %
-      %   One spectrogram (irf_spectrogram) per K in a column of panels.
-      %   PD is a PDist for scalar K and a cell {1 x numel(K)} otherwise.
-      %   Options are those of tsReduced ('component' is ignored here).
+      %   One spectrogram (irf_spectrogram) per K in a column of panels; K = []
+      %   plots the first non-empty fit at each time. PD is a PDist for one
+      %   panel and a cell {1 x numel(K)} otherwise. Options are those of
+      %   tsReduced ('component' is ignored here).
       t = obj.tsTime_();
-      PD = cell(1,numel(K));
-      tiledlayout(numel(K),1);
-      for i = 1:numel(K)
-        o = obj.reducedOpts_(K(i),dim,varargin);
-        D = obj.reducedData_(o.iK,dim,o.vg,1:K(i),o.scale);
+      if isempty(K), Kc = {[]}; else, Kc = num2cell(K); end
+      PD = cell(1,numel(Kc));
+      tiledlayout(numel(Kc),1);
+      for i = 1:numel(Kc)
+        o = obj.reducedOpts_(Kc{i},dim,varargin);
+        D = obj.reducedData_(o.idx,dim,o.vg,0,o.scale);
         ax = nexttile;
-        if o.normalized, pl = 'pdf [(km/s)^{-1}]'; else, pl = 'cm^{-3} (km/s)^{-1}'; end
+        if o.normalized, pl = 'pdf [(km/s)^{-1}]'; else, pl = 's/m^4'; end 
         axn = 'xyz';
         spec = struct('t',t.epochUnix,'f',o.vg,'p',{{D}}, ...
           'f_label',{{sprintf('v_%s [km/s]',axn(dim))}},'p_label',{{pl}});
         irf_spectrogram(ax,spec);
-        title(ax,sprintf('K = %d',K(i)));
+        if isempty(Kc{i}), ttl = 'selected fits'; else, ttl = sprintf('K = %d',Kc{i}); end
+        title(ax,ttl);
         try
           PD{i} = GMDist.makePDist_(t,D,o.vg);
         catch ME
           warning('GMDist:pdist','Could not build PDist: %s',ME.message)
         end
       end
-      if isscalar(K), PD = PD{1}; end
+      if isscalar(Kc), PD = PD{1}; end
     end
 
     function h = plotBIC(obj,ax)
       % PLOTBIC BIC - min(BIC) over time and K, with the knee overlaid.
       if nargin < 2, ax = gca; end
-      [Ks,iS] = sort(obj.K);
-      B = obj.bic(:,iS);
+      [B,Ks] = obj.bicByK_();
       B = B - min(B,[],2,'omitnan');
       [x,isDate] = obj.xTime_();
       h = imagesc(ax,x,Ks,B.');
@@ -794,6 +1011,7 @@ classdef GMDist
       % PLOTCOMPONENTS Proportion (or density), speed and temperature of
       % the components over time. Extra arguments go to populations.
       pop = obj.populations(K,varargin{:});
+      K = pop.K;
       [x,isDate] = obj.xTime_();
       tiledlayout(3,1);
       ax(1) = nexttile;
@@ -827,6 +1045,7 @@ classdef GMDist
       if numel(dims) > 2, error('GMDist:dims','dims must have 1 or 2 elements.'), end
 
       gm = obj.marginal(it,K,dims);
+      K = gm.NumComponents;
       S = GMDist.fullSigma_(gm);
       hasData = ~isempty(obj.data);
       if hasData
@@ -884,7 +1103,7 @@ classdef GMDist
       %   i.e. the single Gaussian with the same weight, mean and covariance
       %   as those components together (law of total covariance).
       %   ksub defaults to all components. An element is [] where there is no
-      %   fit, or where ksub does not fit the number of components K.
+      %   fit, or where ksub does not fit the number of components K.‚„
       if nargin < 2, ksub = []; end
       p = cell(size(obj.gmm));
       for i = 1:numel(obj.gmm)
@@ -996,6 +1215,9 @@ classdef GMDist
             if p.Results.normalized, errv = errv/sqrt(ff); end
           otherwise
             % 'l1' (total variation) and 'kl': Monte Carlo, samples shared by all partitions
+            if igmm == 13;
+1;
+            end
             errv = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,p.Results.nSamples,p.Results.seed+igmm);
         end
 
@@ -1044,8 +1266,13 @@ classdef GMDist
     function N = nT(obj)
       N = size(obj.gmm,1);
     end
+    
     function N = nK(obj)
       N = size(obj.gmm,2);
+    end
+    
+    function m = mass(obj)
+      m = obj.mass_;
     end
   end
 
@@ -1199,7 +1426,10 @@ classdef GMDist
         dmu = (mu0(k,:)-muS).';
         SigS = SigS + w0(k)*(Sigma0(:,:,k) + dmu*dmu.');
       end
-      SigS = SigS/wS;
+      SigS = SigS/wS; % This returns NaN is weight if group is zero.
+      
+      if any(isnan(SigS)); SigS = eye(3,3)*eps; end
+      if any(isnan(muS));  muS = [0 0 0]; end
 
       if nargout <= 1
         out.w = wS;
@@ -1212,6 +1442,7 @@ classdef GMDist
         varargout{3} = SigS;
       end
     end
+    
 
   end
 
@@ -1234,12 +1465,12 @@ classdef GMDist
       if ~isscalar(dim) || ~ismember(dim,1:3)
         error('GMDist:dims','Only 1D reductions (dim = 1, 2 or 3) are supported for now.')
       end
-      o.iK = find(obj.K == K,1);
-      if isempty(o.iK)
-        error('GMDist:K','No fits with K = %d. Available: %s.',K,mat2str(obj.K))
-      end
+      o.idx = obj.entryIndex_(K);          % entry of gmm to use at each time
+      if all(isnan(o.idx)), error('GMDist:K','No fits for the requested K.'), end
+      nC = obj.nComp;
+      o.K = max(nC(o.idx(~isnan(o.idx))));
       vg = p.Results.vg;
-      if isempty(vg), vg = obj.defaultGrid_(o.iK,dim,p.Results.nv); end
+      if isempty(vg), vg = obj.defaultGrid_(o.idx,dim,p.Results.nv); end
       o.vg = vg(:).';
       nTot = obj.totalDensity_(p.Results.n);
       o.normalized = all(isnan(nTot));
@@ -1248,12 +1479,12 @@ classdef GMDist
       o.component = p.Results.component;
     end
 
-    function vg = defaultGrid_(obj,iK,dim,nv)
+    function vg = defaultGrid_(obj,idx,dim,nv)
       % Velocity grid spanning all fitted means +- 4 sd along dim.
       lo = inf; hi = -inf;
-      for it = 1:size(obj.gmm,1)
-        g = obj.gmm{it,iK};
-        if isempty(g), continue, end
+      for it = 1:numel(idx)
+        if isnan(idx(it)), continue, end
+        g = obj.gmm{idx(it)};
         S = GMDist.fullSigma_(g);
         m = g.mu(:,dim);
         sd = sqrt(reshape(S(dim,dim,:),[],1));
@@ -1264,42 +1495,67 @@ classdef GMDist
       vg = linspace(lo,hi,nv);
     end
 
-    function PD = reducedPD_(obj,t,o,dim,c,K)
-      % One PDist from the sum of the components c (0 = all) of the K-fits.
-      if isequal(c,0), c = 1:K; end
-      if ~isnumeric(c) || isempty(c) || ~all(ismember(c,1:K)) || numel(unique(c)) ~= numel(c)
-        error('GMDist:component','''component'' must be 0 or distinct numbers in 1:%d (K = %d).',K,K)
+    function PD = reducedPD_(obj,t,o,dim,c)
+      % One PDist from the sum of the components c (0 = all).
+      if ~isequal(c,0) && (~isnumeric(c) || isempty(c) || ~all(ismember(c,1:o.K)) || numel(unique(c)) ~= numel(c))
+        error('GMDist:component','''component'' must be 0 or distinct numbers in 1:%d.',o.K)
       end
-      D = obj.reducedData_(o.iK,dim,o.vg,c,o.scale);
+      D = obj.reducedData_(o.idx,dim,o.vg,c,o.scale);
       PD = GMDist.makePDist_(t,D,o.vg);
     end
 
-    function D = reducedData_(obj,iK,dim,vg,comps,scale)
-      % [nT x nv] reduced distribution of the selected components.
-      nT = size(obj.gmm,1);
+    function D = reducedData_(obj,idx,dim,vg,comps,scale)
+      % [nT x nv] reduced distribution of the selected components (0 = all);
+      % components a fit does not have are left out.
+      nT = numel(idx);
       D = nan(nT,numel(vg));
+      SI_conversion = 1e6*1e-3; % 1e6 for cm^-3 -> m^-3; 1e-3 for 1/km -> 1/m
       for it = 1:nT
-        g = obj.gmm{it,iK};
-        if isempty(g), continue, end
-        D(it,:) = scale(it)*GMDist.marg1D_(g,dim,vg,comps);
+        if isnan(idx(it)), continue, end
+        g = obj.gmm{idx(it)};
+        c = comps;
+        if isequal(c,0), c = 1:g.NumComponents; end
+        c = c(c <= g.NumComponents);
+        if isempty(c), continue, end
+        D(it,:) = scale(it)*GMDist.marg1D_(g,dim,vg,c)*SI_conversion;
       end
     end
 
     function idx = entryIndex_(obj,K)
-      % Linear index into gmm of the first entry with K components at each
-      % time, NaN where there is none.
+      % Linear index into gmm of the entry with K components at each time
+      % (K = []: the first non-empty entry), NaN where there is none.
       nC = obj.nComp;
       idx = nan(size(nC,1),1);
       for it = 1:size(nC,1)
-        j = find(nC(it,:) == K,1);
+        j = GMDist.entryCol_(nC(it,:),K);
         if ~isempty(j), idx(it) = sub2ind(size(nC),it,j); end
+      end
+    end
+
+    function ie = entryAt_(obj,it,K)
+      % Same as entryIndex_ for the single time index it (NaN if none).
+      row = cellfun(@GMDist.numComp_,obj.gmm(it,:));
+      j = GMDist.entryCol_(row,K);
+      ie = NaN;
+      if ~isempty(j), ie = sub2ind(size(obj.gmm),it,j); end
+    end
+
+    function [B,Ks] = bicByK_(obj)
+      % BIC arranged by number of components: B [nT x numel(Ks)], Ks ascending.
+      nC = obj.nComp;
+      Ks = unique(nC(~isnan(nC))).';
+      B = nan(size(nC,1),numel(Ks));
+      for j = 1:numel(Ks)
+        idx = obj.entryIndex_(Ks(j));
+        ok = ~isnan(idx);
+        B(ok,j) = obj.bic(idx(ok));
       end
     end
 
     function fac = massFactor_(obj)
       % (km/s)^2 -> eV for the particle mass
       u = irf_units;
-      m = obj.mass;
+      m = obj.mass_;
       if isempty(m)
         m = u.mp;
         warning('GMDist:mass','Empty mass, using proton mass.')
@@ -1349,6 +1605,11 @@ classdef GMDist
         error('GMDist:component','''component'' must be 0 or distinct numbers in 1:%d (K = %d).',K,K)
       end
       PD = pdist_generalized_maxwellian(pd,w(c,:),mu(c,:,:),sigma(:,:,c,:));
+    end
+
+    function j = entryCol_(row,K)
+      % Column of the first entry in row with K components (K = []: the first non-empty).
+      if isempty(K), j = find(~isnan(row),1); else, j = find(row == K,1); end
     end
 
     function m = metricFromArgs_(args)
@@ -1451,7 +1712,10 @@ classdef GMDist
       f = zeros(1,numel(vg));
       for k = comps(:).'
         s2 = S(dim,dim,k);
-        f = f + g.ComponentProportion(k)*exp(-0.5*(vg(:).'-g.mu(k,dim)).^2/s2)/sqrt(2*pi*s2);
+        % Standard output units of 1D reduced dists are s/m^4, here
+        % sqrt(s2) is in km, th density scaling outside is in cm^-3,
+        % correct for this outside
+        f = f + g.ComponentProportion(k)*exp(-0.5*(vg(:).'-g.mu(k,dim)).^2/s2)/sqrt(2*pi*s2); % 
       end
     end
 
