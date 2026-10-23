@@ -1,4 +1,10 @@
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
+
 tint = irf.tint('2017-07-09T17:31:58.047139000Z/2017-07-09T17:34:23.048132000Z');
+tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
+%tint = irf.tint('2017-07-22T02:32:50.047139000Z/2017-07-22T02:33:30.048132000Z');
+%ic = 4;
 
 c_eval('scPot = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
@@ -8,7 +14,7 @@ iPDist_counts = iPDist; iPDist_counts.data = (iPDist.data./iPDistErr.data).^2;
 %% Prep data
 PD_use = iPDist; % iPDist
 
-nMovMean = 7; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
+nMovMean = 5; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 
 mask_nMovMean = [7 7];
 mask_Counts = 5;
@@ -25,63 +31,167 @@ PDc = PDc(1:nMovMean:iPDist_counts.length);
 nMP = 100000; % Number of macroparticles  
 MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_init','v2','MParts');
 
+fz = PD.reduce('1D',[0 0 1]);
 
+%irf_plot({PD.omni.deflux.specrec})
 %%
-K = 1:4;
+K = 3:6;
 options = statset('MaxIter',150,'TolFun',1e-5);
 GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
       
 %GM.bic
 %gm{it,iK} = fitgmdist(R,K,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
-      
+
+%%
+[bestErr,bestP] = GM.mergeErrBest;
+%%
+threshold = 0.3;
+[bestM, bestP, bestErr] = GM.bestPartition(threshold,'metric','l1');
+%K = 4;
+%mGM = GM.merge(K,bestP(:,find(GM.K==K)));
+
+mGM_03 = GM.merge(bestP);
+%M = bestM(find(GM.K==K));
+
+%% Plot results
+h = irf_plot(7);
+K = 4;
+
+
+hca = irf_panel('omni fpi');
+irf_spectrogram(hca,PD.deflux.omni.specrec)
+
+
+hca = irf_panel('fz fpi');
+irf_spectrogram(hca,fz.specrec)
+
+hca = irf_panel('total mixture');
+%irf_spectrogram(hca,GM.slice(':',K).tsReduced([],3).specrec,'log')
+irf_spectrogram(hca,GM.tsReduced(K,3).specrec,'log')
+
+hca = irf_panel('reduced mixture thr1');
+irf_spectrogram(hca,mGM_01.slice(':',K).tsReduced([],3).specrec,'log')
+
+hca = irf_panel('reduced mixture thr2');
+irf_spectrogram(hca,mGM_02.slice(':',K).tsReduced([],3).specrec,'log')
+
+hca = irf_panel('reduced mixture thr3');
+irf_spectrogram(hca,mGM_03.slice(':',K).tsReduced([],3).specrec,'log')
+
+%hca = irf_panel('reduced mixture');
+%irf_spectrogram(hca,mGM.slice(':',K).tsReduced([],3).specrec,'log')
+
+hca = irf_panel('nComp reduced mixture');
+irf_plot(hca,{mGM_01.slice(':',K).tsNComp,mGM_02.slice(':',K).tsNComp,mGM_03.slice(':',K).tsNComp},'comp')
+
+hlinks = linkprop(h(2:6),{'CLim','YLim'});
+
+irf_plot_axis_align
+irf_zoom('x',PD.time)
 
 %% Diagnostics, L2 error
 K = 4;
-[tsL2errPartitions, tsL2NGroups] = GM.tsL2errPartitions(K,'sort','descend'); 
-tsL2errBest = GM.tsL2errBest(K,'metric','l1');
+[tsMergePartitions_L2, tsL2NGroups] = GM.tsMergeErrPartitions(K,'sort','descend','metric','L2'); 
+[tsMergePartitions_L1, tsL2NGroups] = GM.tsMergeErrPartitions(K,'sort','descend','metric','L1'); 
+[tsMergePartitions_KL, tsL2NGroups] = GM.tsMergeErrPartitions(K,'sort','descend','metric','KL'); 
+tsMergeErrBest_L2 = GM.tsMergeErrBest(K,'metric','l2');
+tsMergeErrBest_L1 = GM.tsMergeErrBest(K,'metric','l1');
+tsMergeErrBest_KL = GM.tsMergeErrBest(K,'metric','kl');
 %%
-it = 40; % Example merge
-M = 3; % plot maximum number of
-bestPInM = tsL2errBest.userData.listPartitions{it,M};
-%exGMall = GM.merge(K,{1:K});
-exGMall = GM;
-%bestPInM = {[1 3],[2 4]};
-exGMmerg = GM.merge(K,bestPInM);
+it = 60; % Example merge
+M = 2; % number of merged groups
+bestPInM_L2 = tsMergeErrBest_L2.userData.listPartitions{it,M};
+bestPInM_L1 = tsMergeErrBest_L1.userData.listPartitions{it,M};
+bestPInM_KL = tsMergeErrBest_KL.userData.listPartitions{it,M};
 
-dim = 2;
-fall = exGMall.tsReduced(K,dim); fall = fall(it);
-for iK = 1:K
-  fcomp{iK} = exGMall.tsReduced(K,dim,'component',iK); 
-  fcomp{iK} = fcomp{iK}(it);
-end
-fmerg = exGMmerg.tsReduced(M,dim); fmerg = fmerg(it);
+r_L2 = GM.reducedVDFs(it,K,dim,'groups',{bestPInM_L2});
+r_L1 = GM.reducedVDFs(it,K,dim,'groups',{bestPInM_L1});
+r_KL = GM.reducedVDFs(it,K,dim,'groups',{bestPInM_KL});
 
+% %exGMall = GM.merge(K,{1:K});
+% exGMall = GM;
+% %bestPInM = {[1 3],[2 4]};
+% exGMmerg = GM.merge(K,bestPInM);
+% 
+% dim = 2;
+% fall = exGMall.tsReduced(K,dim); fall = fall(it);
+% for iK = 1:K
+%   fcomp{iK} = exGMall.tsReduced(K,dim,'component',iK); 
+%   fcomp{iK} = fcomp{iK}(it);
+% end
+% fmerg = exGMmerg.tsReduced(M,dim); fmerg = fmerg(it);
+% 
 
 
 %tsL2errPartitions.data(tsL2NGroups.data~=3) = NaN;
-h = irf_plot(4);
-[h,h2] = initialize_combined_plot('leftright',4,1,1,0.6,'vertical');
+%h = irf_plot(4);
+[h,h2] = initialize_combined_plot('leftright',8,3,2,0.6,'horizontal');
 
 hca = irf_panel('omni deflux');
 irf_spectrogram(hca,PD.omni.deflux.specrec,'log')
 
-hca = irf_panel('L2err for all P');
-irf_spectrogram(hca,tsL2errPartitions.specrec,'lin')
 
 hca = irf_panel('N groups in P');
 irf_spectrogram(hca,tsL2NGroups.specrec,'lin')
 
-hca = irf_panel('Best err for nP = 1:K');
-irf_spectrogram(hca,tsL2errBest.specrec,'lin')
+hca = irf_panel('L2err for all P');
+irf_spectrogram(hca,tsMergePartitions_L2.specrec,'lin')
 
-hca = irf_panel('all L2err');
- 
+hca = irf_panel('L1err for all P');
+irf_spectrogram(hca,tsMergePartitions_L1.specrec,'lin')
+
+hca = irf_panel('KLerr for all P');
+irf_spectrogram(hca,tsMergePartitions_KL.specrec,'lin')
+
+% best
+hca = irf_panel('best L2err');
+irf_spectrogram(hca,tsMergeErrBest_L2.specrec,'lin')
+
+hca = irf_panel('best L1err');
+irf_spectrogram(hca,tsMergeErrBest_L1.specrec,'lin')
+
+hca = irf_panel('best KLerr');
+irf_spectrogram(hca,tsMergeErrBest_KL.specrec,'lin')
+
+
+%hca = irf_panel('all L2err');
+colormap([flipdim(irf_colormap('Spectral'),1)])
 c_eval('h(?).LineWidth = 1;',1:numel(h))
 
 hmark = irf_pl_mark(h,tsL2errBest.time(it),'r');
-
+irf_timeaxis(h)
+h(end).XTickLabelRotation = 0;
+%
 isub = 1;
-hca = h2(isub); isub = isub + 1;
+for metric = {'L1','L2','KL'}
+  r = eval(['r_' metric{:}]);
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,r.vg,r.all.data,'linewidth',2)
+  hold(hca,'on')
+  for iK = 1:K, plot(hca,r.comp{iK}.depend{1},r.comp{iK}.data,'--'), end
+  hold(hca,'off')
+  hca.ColorOrder = [0 0 0; mms_colors('matlab')];
+
+
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,r.vg,r.all.data,r.vg,r.merged.data,'linewidth',2)
+  hold(hca,'on')
+  for iK = 1:M, plot(hca,r.merged_comp{iK}.depend{1},r.merged_comp{iK}.data,'--'), end
+  hold(hca,'off')
+  hca.ColorOrder = [0 0 0; 0.7 0.7 0.7; mms_colors('matlab')];
+  irf_legend(hca,sprintf('%s',metric{:}),[0.02 0.10],'color','k')
+
+  
+
+  strMerg = strrep(strjoin(cellfun(@(x) num2str(x),eval(['bestPInM_' metric{:}]),'UniformOutput',false),', '),' ','');
+  strComp = strsplit(strMerg,',');
+  irf_legend(hca,{strAll,strMerg,strComp{:}}',[0.98 0.10])
+  bestErr = eval(['tsMergeErrBest_' metric{:} '.data(it,M)']);
+  irf_legend(hca,{sprintf('%serr*(M=%g) = %g',metric{:},M,bestErr)}',[0.02 0.98])
+
+end
+hlinks = linkprop(h2,{'XLim','YLim'});
+%%
 %hca.ColorOrder = [0 0 0; 0.3 0.3 0.3; mms_colors('matlab')];
 plot(hca,fall.depend{1},fall.data,fmerg.depend{1},fmerg.data)
 hold(hca,'on')
