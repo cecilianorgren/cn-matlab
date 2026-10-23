@@ -359,174 +359,136 @@ classdef GMDist
       pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso);
     end
 
-    function [isCold,pop] = cold(obj,varargin)
-      % COLD Flag cold components (same layout as pop.Tiso).
+    function [isCold,info] = cold(obj,varargin)
+      % COLD Flag the cold components of every fit.
       %
-      %   isCold = gd.cold(K,'Tmax',Tm)     Tiso below Tm [eV]
-      %   isCold = gd.cold(K,'ratio',r)     Tiso below r*max(Tiso) at that time
-      %   Both given: both must hold.
-
-      % Parse name-value arguments
+      %   [isCold,info] = gd.cold([option,value,...])
+      %
+      %   isCold is a cell {nT x nC} like gd.gmm; isCold{i} is a logical
+      %   [1 x K] saying which of the K components of the fit gd.gmm{i} are
+      %   cold, in the stored component order (so call it before or after
+      %   sortBy as needed). [] where there is no fit.
+      %
+      %   The components that carry weight are ranked by temperature, T =
+      %   trace(T)/3 [eV] as in populations (components with weight 0, or
+      %   below 'minWeight', never count as cold and are left out of the
+      %   ranking, so that a collapsed component does not become the coldest).
+      %   Methods ('method'):
+      %     'knee' (default)  cold = the components below a gap in log10(T)
+      %                       of at least 'minGapLog10' between neighbours in
+      %                       the ranking. If there are several such gaps,
+      %                       'gapPick' chooses 'first', 'last' (default) or
+      %                       'largest'. With no such gap, the 'minColdK'
+      %                       coldest components are cold.
+      %     'threshold'       cold = components with T <= 'maxColdEV'
+      %   Options:
+      %     'minGapLog10'  0.35   gap in log10(T) for the knee (factor 2.2)
+      %     'gapPick'      'last'
+      %     'minWeight'    0      components lighter than this are never cold
+      %     'minVabs'      0      post-filter: |mean velocity| [km/s] at least this
+      %     'maxColdEV'    []     post-filter ('knee') or the criterion ('threshold') [eV]
+      %     'minColdK'     1      number of cold components if there is no gap
+      %     'maxColdK'     []     at most this many cold components (the coldest)
+      %   The post-filters discard components from the selected set without
+      %   promoting others to replace them.
+      %
+      %   info (cells {nT x nC}, like gd.gmm, plus method):
+      %     info.T_eV        [1 x K]  temperature of each component, stored order
+      %     info.vabs_kms    [1 x K]  |mean velocity|, stored order
+      %     info.isort       indices of the components with weight, coldest first
+      %     info.gaps_log10  gaps in log10(T) between neighbours of the ranking
+      %     info.cold        indices of the cold components, stored order
       p = inputParser;
-      p.FunctionName = mfilename;
-
-      % Validators
+      p.FunctionName = 'GMDist.cold';
       isTextScalar = @(x) ischar(x) || (isstring(x) && isscalar(x));
       isNonnegativeScalar = @(x) isnumeric(x) && isscalar(x) && ...
         isreal(x) && isfinite(x) && x >= 0;
       isPositiveInteger = @(x) isnumeric(x) && isscalar(x) && ...
         isreal(x) && isfinite(x) && x >= 1 && fix(x) == x;
       isEmptyOrPositiveInteger = @(x) isempty(x) || isPositiveInteger(x);
-
-      % Options and defaults
-      addParameter(p, 'method',       'knee', isTextScalar);
-      addParameter(p, 'minGapLog10',  0.35,   isNonnegativeScalar);
-      addParameter(p, 'gapPick',      'last', isTextScalar);
-      addParameter(p, 'minWeight',    0,      isNonnegativeScalar);
-      addParameter(p, 'minVabs',      0,      isNonnegativeScalar);
-      addParameter(p, 'maxColdEV',    [],     isNonnegativeScalar);
-      addParameter(p, 'minColdK',     1,      isPositiveInteger);
-      addParameter(p, 'maxColdK',     [],     isEmptyOrPositiveInteger);
-
-      % Parse inputs
-      parse(p, varargin{:});
-
-      % Extract values
-      method      = lower(char(p.Results.method));
+      isEmptyOrNonnegativeScalar = @(x) isempty(x) || isNonnegativeScalar(x);
+      addParameter(p,'method',      'knee', isTextScalar);
+      addParameter(p,'minGapLog10', 0.35,   isNonnegativeScalar);
+      addParameter(p,'gapPick',     'last', isTextScalar);
+      addParameter(p,'minWeight',   0,      isNonnegativeScalar);
+      addParameter(p,'minVabs',     0,      isNonnegativeScalar);
+      addParameter(p,'maxColdEV',   [],     isEmptyOrNonnegativeScalar);
+      addParameter(p,'minColdK',    1,      isPositiveInteger);
+      addParameter(p,'maxColdK',    [],     isEmptyOrPositiveInteger);
+      parse(p,varargin{:});
+      method = validatestring(char(p.Results.method),{'knee','threshold'});
+      gapPick = validatestring(char(p.Results.gapPick),{'first','last','largest'});
       minGapLog10 = p.Results.minGapLog10;
-      gapPick     = lower(char(p.Results.gapPick));
-      minWeight   = p.Results.minWeight;
-      minVabs     = p.Results.minVabs;
-      maxColdEV   = p.Results.maxColdEV;
-      minColdK    = p.Results.minColdK;
-      maxColdK    = p.Results.maxColdK;
+      minWeight = p.Results.minWeight;
+      minVabs = p.Results.minVabs;
+      maxColdEV = p.Results.maxColdEV;
+      minColdK = p.Results.minColdK;
+      maxColdK = p.Results.maxColdK;
+      if strcmp(method,'threshold') && isempty(maxColdEV)
+        error('GMDist:cold','Method ''threshold'' requires ''maxColdEV''.')
+      end
 
+      fac = obj.massFactor_();               % (km/s)^2 -> eV, as in populations
+      isCold = cell(size(obj.gmm));
+      info.method = method;
+      info.T_eV = cell(size(obj.gmm));
+      info.vabs_kms = cell(size(obj.gmm));
+      info.isort = cell(size(obj.gmm));
+      info.gaps_log10 = cell(size(obj.gmm));
+      info.cold = cell(size(obj.gmm));
 
-
-      units = irf_units;
-  
-      out = struct();
-      out.method = method;
-      out.cold_sorted = cell(size((obj.gmm)));
-      out.cold_unsorted = cell(size((obj.gmm)));
-      out.isort = cell(size((obj.gmm)));
-      out.T_scalar_eV = cell(size((obj.gmm)));
-      out.gaps_log10 = cell(size((obj.gmm)));
-      out.isCold_mat_sorted = cell(size((obj.gmm)));
-      out.isCold_mat_unsorted = cell(size((obj.gmm)));
-      %out.isCold_mat_sorted = false(nt,K);
-      %out.isCold_mat_unsorted = false(nt,K);
-      out.vabs_kms_sorted = cell(size((obj.gmm)));
-      
       for igmm = 1:numel(obj.gmm)
-        [i1,i2] = ind2sub(size(obj.gmm),igmm);
-        GM = GM.slice(i1,i2);
-        GM = GM.sortby('T'); % misc data not sliced, implement
-        gm = GM.gmm{1};
-        K = GM.nComp;
-        
-        isCold_mat_sorted = false(1,K);
-        isCold_mat_unsorted = false(1,K);
-    % TODO: continue here to adapt
-        isort = GM.misc.sort;
-        out.isort{it,iK} = isort;
-      
-        Sigma_sorted = gm{it,iK}.Sigma(:,:,isort); % 3x3xK
-        mu_sorted = gm{it,iK}.mu(isort,:); % Kx3
-        w_sorted = gm{it,iK}.ComponentProportion(isort); % 1xK
-      
-        vabs_sorted = sqrt(sum(mu_sorted.^2,2)); % km/s
-        out.vabs_kms_sorted{it,iK} = vabs_sorted;
-      
-        % Convert covariance to scalar temperature proxy in eV
-        % T_tens = Sigma*1e6*mp/2/eV; then scalar as trace/3
-        T_scalar = zeros(K,1);
-        for iComp = 1:K
-          T_tens = Sigma_sorted(:,:,iComp)*1e6*units.mp/2/units.eV;
-          T_scalar(iComp) = trace(T_tens)/3;
-        end
-        out.T_scalar_eV{it} = T_scalar;
-      
-        % Eligible components (by weight, and optional absolute ceiling)
-        % Note: selection of cold components is based on temperature only.
-        % minWeight/minVabs/maxColdEV are applied as a post-filter (discard) to the
-        % selected set, without promoting other components to replace discarded ones.
-        eligible = (w_sorted(:) >= minWeight);
-        eligible = eligible & (vabs_sorted(:) >= minVabs);
-        if ~isempty(maxColdEV)
-          eligible = eligible & (T_scalar(:) <= maxColdEV);
-        end
-      
-        cold_sorted = 1; % fallback
-        switch method
-          case 'knee'
-            % Use a log10(T) gap that exceeds the threshold to separate cold vs hot.
-            logT = log10(max(T_scalar, realmin));
-            gaps = diff(logT);
-            out.gaps_log10{it,iK} = gaps(:);
-      
-            if K == 1
-              cold_sorted = 1;
-            else
+        g = obj.gmm{igmm};
+        if isempty(g), continue, end
+        K = g.NumComponents;
+        S = GMDist.fullSigma_(g);
+        w = g.ComponentProportion(:).';
+        T = zeros(1,K);
+        for k = 1:K, T(k) = fac*trace(S(:,:,k))/3; end
+        vabs = sqrt(sum(g.mu.^2,2)).';
+        info.T_eV{igmm} = T;
+        info.vabs_kms{igmm} = vabs;
+
+        % Rank the components that carry weight by temperature, coldest first
+        active = find(w > 0 & w >= minWeight);
+        [~,o] = sort(T(active),'ascend');
+        iord = active(o);
+        info.isort{igmm} = iord;
+        nA = numel(iord);
+
+        flag = false(1,K);
+        if nA > 0
+          eligible = vabs(iord) >= minVabs;
+          if ~isempty(maxColdEV), eligible = eligible & T(iord) <= maxColdEV; end
+          switch method
+            case 'knee'
+              gaps = diff(log10(max(T(iord),realmin)));
+              info.gaps_log10{igmm} = gaps;
               iGaps = find(gaps >= minGapLog10);
-              if ~isempty(iGaps)
+              if nA == 1
+                cs = 1;
+              elseif ~isempty(iGaps)
                 switch gapPick
-                  case 'first'
-                    iGap = iGaps(1);
-                  case 'last'
-                    iGap = iGaps(end);
-                  case 'largest'
-                    [~,iRel] = max(gaps(iGaps));
-                    iGap = iGaps(iRel);
-                  otherwise
-                    error('Unknown gapPick: %s', gapPick);
+                  case 'first',   iGap = iGaps(1);
+                  case 'last',    iGap = iGaps(end);
+                  case 'largest', [~,iRel] = max(gaps(iGaps)); iGap = iGaps(iRel);
                 end
-                cold_sorted = 1:iGap;
+                cs = 1:iGap;
               else
-                cold_sorted = 1:minColdK;
+                cs = 1:min(minColdK,nA);
               end
-            end
-      
-            % Enforce max count (temperature-based), then discard ineligible
-            if ~isempty(maxColdK) && numel(cold_sorted) > maxColdK
-              cold_sorted = cold_sorted(1:maxColdK);
-            end
-            cold_sorted = cold_sorted(eligible(cold_sorted));
-      
-          case 'threshold'
-            if isempty(maxColdEV)
-              error('method=threshold requires ''maxColdEV''.');
-            end
-            cold_sorted = find(eligible);
-            if ~isempty(maxColdK) && numel(cold_sorted) > maxColdK
-              cold_sorted = cold_sorted(1:maxColdK);
-            end
-      
-          otherwise
-            error('Unknown method: %s', method);
+              if ~isempty(maxColdK) && numel(cs) > maxColdK, cs = cs(1:maxColdK); end
+              cs = cs(eligible(cs));
+            case 'threshold'
+              cs = find(eligible);
+              if ~isempty(maxColdK) && numel(cs) > maxColdK, cs = cs(1:maxColdK); end
+          end
+          flag(iord(cs)) = true;
         end
-      
-        isCold_mat_sorted(cold_sorted) = true;
-        isCold_mat_unsorted(isort(cold_sorted(:))) = true;
-    
-        out.cold_sorted{it,iK} = cold_sorted(:)';
-        out.cold_unsorted{it,iK} = isort(cold_sorted(:))';
-        out.isCold_mat_sorted{it, iK} = isCold_mat_sorted;
-        out.isCold_mat_unsorted{it, iK} = isCold_mat_unsorted;
-        %out.isCold_mat_sorted(it, cold_sorted) = true;
-        %out.isCold_mat_unsorted(it, isort(cold_sorted(:))) = true;
+        isCold{igmm} = flag;
+        info.cold{igmm} = find(flag);
       end
     end
-    % 
-    %   pop = obj.populations(K);
-    %   isCold = true(size(pop.Tiso));
-    %   if ~isempty(p.Results.Tmax)
-    %     isCold = isCold & pop.Tiso < p.Results.Tmax;
-    %   end
-    %   if ~isempty(p.Results.ratio)
-    %     isCold = isCold & pop.Tiso < p.Results.ratio*max(pop.Tiso,[],2);
-    %   end
-    % end
 
     function gm = marginal(obj,it,K,dims)
       % MARGINAL Marginal mixture over velocity dimensions dims (subset of 1:3),
@@ -1428,7 +1390,7 @@ classdef GMDist
       end
       SigS = SigS/wS; % This returns NaN is weight if group is zero.
       
-      if any(isnan(SigS)); SigS = eye(3,3)*eps; end
+      if any(isnan(SigS(:))); SigS = eye(3,3)*eps; end
       if any(isnan(muS));  muS = [0 0 0]; end
 
       if nargout <= 1
