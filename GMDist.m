@@ -490,6 +490,56 @@ classdef GMDist
       end
     end
 
+    function [out,frac] = subMixture(obj,sel,varargin)
+      % SUBMIXTURE The selected components of every fit, as a GMDist.
+      %
+      %   [sub,frac] = gd.subMixture(sel[,'complement',tf])
+      %
+      %   sel: a cell {nT x nC} like gd.gmm, each element a logical [1 x K] or
+      %   a vector of component indices in the stored order (for example
+      %   isCold from cold); or one logical/index vector used for all fits
+      %   (indices above K are ignored). 'complement',true keeps the other
+      %   components instead (e.g. the hot part: gd.subMixture(isCold,'complement',true)).
+      %
+      %   Each fit keeps its selected components, renormalized to sum to 1, so
+      %   sub is a proper mixture and all methods work on it. frac [nT x nC] is
+      %   the share of the original weight that the selection carried, to
+      %   recover densities: the density of the part is n_total.*frac. Entries
+      %   with no selected weight are empty (frac NaN).
+      %
+      %   The companion data and BIC are not kept (the sub-mixture is not a fit
+      %   of the data), so tsN and populations give no density unless you pass
+      %   'n', e.g. sub.tsN([],'n',ntot.*frac(:,1)). tsReduced then
+      %   normalizes the pdf to 1 unless 'n' is given.
+      p = inputParser;
+      addParameter(p,'complement',false);
+      parse(p,varargin{:});
+
+      if ~iscell(sel), sel = repmat({sel},size(obj.gmm)); end
+      if ~isequal(size(sel),size(obj.gmm))
+        error('GMDist:subMixture','sel must be a cell of the same size as gmm ([%s]), or one vector.',num2str(size(obj.gmm)))
+      end
+      sub = cell(size(obj.gmm));
+      frac = nan(size(obj.gmm));
+      for i = 1:numel(obj.gmm)
+        g = obj.gmm{i};
+        if isempty(g), continue, end
+        K = g.NumComponents;
+        si = sel{i};
+        if islogical(si), si = find(si); end
+        si = unique(si(si >= 1 & si <= K));
+        if p.Results.complement, si = setdiff(1:K,si); end
+        if isempty(si), continue, end
+        w = g.ComponentProportion(si);
+        ws = sum(w);
+        if ~(ws > 0), continue, end          % nothing with weight is selected
+        S = GMDist.fullSigma_(g);
+        sub{i} = gmdistribution(g.mu(si,:),S(:,:,si),w/ws);
+        frac(i) = ws;
+      end
+      out = GMDist(sub,'time',obj.time,'mass',obj.mass_,'bic',nan(size(sub)),'options',obj.options);
+    end
+
     function gm = marginal(obj,it,K,dims)
       % MARGINAL Marginal mixture over velocity dimensions dims (subset of 1:3),
       % for the fit with K components at time index it (K = []: the first non-empty fit).
@@ -1390,7 +1440,7 @@ classdef GMDist
       end
       SigS = SigS/wS; % This returns NaN is weight if group is zero.
       
-      if any(isnan(SigS(:))); SigS = eye(3,3)*eps; end
+      if any(isnan(SigS)); SigS = eye(3,3)*eps; end
       if any(isnan(muS));  muS = [0 0 0]; end
 
       if nargout <= 1

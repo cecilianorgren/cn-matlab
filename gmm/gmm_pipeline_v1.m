@@ -1,10 +1,10 @@
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
 
 tint = irf.tint('2017-07-09T17:31:58.047139000Z/2017-07-09T17:34:23.048132000Z');
-tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
+%tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
 %tint = irf.tint('2017-07-22T02:32:50.047139000Z/2017-07-22T02:33:30.048132000Z');
-%ic = 4;
+ic = 1;
 
 c_eval('scPot = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
@@ -28,7 +28,7 @@ PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computatio
 PDc = iPDist_counts.movmean(nMovMean);
 PDc = PDc(1:nMovMean:iPDist_counts.length);
 
-nMP = 100000; % Number of macroparticles  
+nMP = 10000; % Number of macroparticles  
 MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_init','v2','MParts');
 
 fz = PD.reduce('1D',[0 0 1]);
