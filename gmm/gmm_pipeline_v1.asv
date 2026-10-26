@@ -1,10 +1,10 @@
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
 
 tint = irf.tint('2017-07-09T17:31:58.047139000Z/2017-07-09T17:34:23.048132000Z');
-tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
+%tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
 %tint = irf.tint('2017-07-22T02:32:50.047139000Z/2017-07-22T02:33:30.048132000Z');
-%ic = 4;
+ic = 1;
 
 c_eval('scPot = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
 c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
@@ -16,8 +16,8 @@ PD_use = iPDist; % iPDist
 
 nMovMean = 5; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 
-mask_nMovMean = [7 7];
-mask_Counts = 5;
+mask_nMovMean = [5 5]; mask_Counts = 4;
+%mask_nMovMean = [7 7]; mask_Counts = 5;
 run_metadata.PD.mask_nMovMean = mask_nMovMean;
 run_metadata.PD.mask_nCounts = mask_Counts;
 
@@ -28,12 +28,15 @@ PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computatio
 PDc = iPDist_counts.movmean(nMovMean);
 PDc = PDc(1:nMovMean:iPDist_counts.length);
 
-nMP = 100000; % Number of macroparticles  
+nMP = 10000; % Number of macroparticles  
 MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_init','v2','MParts');
 
-irf_plot({PD.omni.deflux.specrec})
+fz = PD.reduce('1D',[0 0 1]);
+%irf_spectrogram(PD.omni.deflux.specrec)
+
+%irf_plot({PD.omni.deflux.specrec})
 %%
-K = 3:6;
+K = 2:6;
 options = statset('MaxIter',150,'TolFun',1e-5);
 GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
       
@@ -43,30 +46,188 @@ GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',fal
 %%
 [bestErr,bestP] = GM.mergeErrBest;
 %%
-threshold = 0.2;
-[bestM, bestP, bestErr] = GM.bestPartition(threshold,'metric','l1');
 %K = 4;
 %mGM = GM.merge(K,bestP(:,find(GM.K==K)));
+%%
+nCompPreMerge = GM.nComp;
+nCompMax = max(nCompPreMerge(:));
+nCompMin = min(nCompPreMerge(:));
+threshold = 0.3;
+[bestM, bestP, bestErr] = GM.bestPartition(threshold,'metric','l1');
+mGM = GM.merge(bestP,'threshold',threshold);
+%mGM = GM.merge(bestP);
+%M = bestM(find(GM.K==K));
 
-mGM = GM.merge(bestP);
-M = bestM(find(GM.K==K));
+mGMc = mGM.subMixture(mGM.cold);
+mGMh = mGM.subMixture(mGM.cold,'complement',true);
+
+%% Plot results, scatter plots of T and dT, for various M
+K = 5;
+GM_ = mGM.slice(':',K).sortBy('T');
+aM = GM_.nComp;
+uM = unique(aM);
+nM = numel(uM);
+cT = cellfun(@(x)squeeze((x.Sigma(1,1,:)+x.Sigma(2,2,:)+x.Sigma(3,3,:)))/3*units.mp*1e6/units.eV,GM_.gmm,'UniformOutput',false);
+
+allT = cell([1,nM]);
+for iM = 1:nM
+  M = uM(iM);
+  idxM = bestM(:,K) == M;
+  %tmpT = GM.sortBy('Tiso').T('type','iso'); % get T_iso = [nT x nM]
+  T_ = cT(idxM);
+  dT = cellfun(@(x)diff(x),T_,'UniformOutput',false); %
+
+  allT{iM}.M = M;
+  allT{iM}.T = T_;
+  allT{iM}.dT = dT;
+end
+
+% plot some stuff
+
+% Temperature
+edgesT = linspace(1,5,20);
+centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
+normHist = 'pdf';
+cN = cellfun(@(x)histcounts(log10([x.T{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
+mN = cat(1,cN{:});
+
+% delta temperature
+edgesT = linspace(1,5,20);
+centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
+normHist = 'pdf';
+cNdT = cellfun(@(x)histcounts(log10([x.dT{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
+mNdT = cat(1,cNdT{:});
+
+nrows = 2; ncols = 1; isub = 1;
+
+% T
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+bar(hca,centerT,mN,1)
+legend(hca,"M = " + uM,'Title',"Err < %.")
+hca.XLabel.String = 'log_{10} T (eV)';
+hca.XTick = -1:6;
+hca.XTickLabel = "10^" + hca.XTick;
+hca.YLabel.String = normHist;
+
+% dT
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+bar(hca,centerT,mNdT,1)
+hleg = legend(hca,"M = " + uM);
+hca.XLabel.String = 'log_{10} dT (eV)';
+hca.XTick = -1:6;
+hca.XTickLabel = "10^" + hca.XTick;
+hca.YLabel.String = normHist;
+
+%% Plot results
+h = irf_plot(9);
+%K = 4;
+
+hca = irf_panel('omni fpi');
+irf_spectrogram(hca,PD.deflux.omni.specrec)
+
+hca = irf_panel('nComp before merge');
+[~,hcb] = irf_spectrogram(hca,GM.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'nComp';'pre-merge'},'p_label',{'nComp';'pre-merge'}),'lin');
+hcb.YTick = 0:nCompMax;
+hca.CLim = [0 nCompMax];
+
+hca = irf_panel('nComp after merge');
+[~,hcb] = irf_spectrogram(hca,mGM.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'nComp';'pre-merge'},'p_label',{'nComp';'post-merge';sprintf('thr = %.2f',mGM.misc.threshold)}),'lin');
+hcb.YTick = 0:nCompMax;
+hca.CLim = [0 nCompMax];
+
+hca = irf_panel('fz fpi');
+irf_spectrogram(hca,fz.specrec)
+
+
+for iCol = 1:size(mGM.gmm,2)
+  hca = irf_panel(['merged mixture ', num2str(iCol)]);  
+  specrec = mGMh.slice(':',iCol).tsReduced([],3).specrec;
+  specrec.p_label = {'PSD (s/m^4)';'nComp';sprintf('pre-mer. = %.0f',nCompPreMerge(1,iCol))};
+  irf_spectrogram(hca,specrec,'log')
+end
+
+hlinks = linkprop(h(4 + [0 1:size(mGM.gmm,2)]),{'CLim','YLim'});
+
+colormap([flipdim(irf_colormap('Spectral'),1)])
+c_eval('h(?).Layer = ''top'';',1:numel(h))
+irf_plot_axis_align
+irf_zoom('x',PD.time)
+
+%% Plot results
+h = irf_plot(9);
+%K = 4;
+
+hca = irf_panel('omni fpi');
+irf_spectrogram(hca,PD.deflux.omni.specrec)
+
+hca = irf_panel('nComp before merge');
+[~,hcb] = irf_spectrogram(hca,GM.tsNComp.specrec('f_label',{'nComp';'pre-merge'},'p_label',{'nComp';'pre-merge'}),'lin');
+hcb.YTick = 0:nCompMax;
+hca.CLim = [0 nCompMax];
+
+hca = irf_panel('nComp after merge');
+[~,hcb] = irf_spectrogram(hca,mGM.tsNComp.specrec('f_label',{'nComp';'pre-merge'},'p_label',{'nComp';'post-merge';sprintf('thr = %.2f',mGM.misc.threshold)}),'lin');
+hcb.YTick = 0:nCompMax;
+hca.CLim = [0 nCompMax];
+
+hca = irf_panel('fz fpi');
+irf_spectrogram(hca,fz.specrec)
+
+
+for iCol = 1:size(mGM.gmm,2)
+  hca = irf_panel(['merged mixture ', num2str(iCol)]);  
+  specrec = mGMc.slice(':',iCol).tsReduced([],3).specrec;
+  specrec.p_label = {'PSD (s/m^4)';'nComp';sprintf('pre-mer. = %.0f',nCompPreMerge(1,iCol))};
+  irf_spectrogram(hca,specrec,'log')
+end
+
+hlinks = linkprop(h(4 + [0 1:size(mGM.gmm,2)]),{'CLim','YLim'});
+
+colormap([flipdim(irf_colormap('Spectral'),1)])
+c_eval('h(?).Layer = ''top'';',1:numel(h))
+irf_plot_axis_align
+irf_zoom('x',PD.time)
+
+%%
+hca = irf_panel('total mixture');
+%irf_spectrogram(hca,GM.slice(':',K).tsReduced([],3).specrec,'log')
+irf_spectrogram(hca,GM.tsReduced(K,3).specrec,'log')
 
 %% Plot results
 h = irf_plot(7);
 K = 4;
 
 
-hca = irf_panel('omni');
+hca = irf_panel('omni fpi');
 irf_spectrogram(hca,PD.deflux.omni.specrec)
 
-hca = irf_panel('total mixture');
-irf_spectrogram(hca,GM.slice(':',K).tsReduced)
 
-hca = irf_panel('reduced mixture');
-irf_spectrogram(hca,mGM.slice(':',K).tsReduced)
+hca = irf_panel('fz fpi');
+irf_spectrogram(hca,fz.specrec)
+
+hca = irf_panel('total mixture');
+%irf_spectrogram(hca,GM.slice(':',K).tsReduced([],3).specrec,'log')
+irf_spectrogram(hca,GM.tsReduced(K,3).specrec,'log')
+
+hca = irf_panel('reduced mixture thr1');
+irf_spectrogram(hca,mGM_01.slice(':',K).tsReduced([],3).specrec,'log')
+
+hca = irf_panel('reduced mixture thr2');
+irf_spectrogram(hca,mGM_02.slice(':',K).tsReduced([],3).specrec,'log')
+
+hca = irf_panel('reduced mixture thr3');
+irf_spectrogram(hca,mGM_03.slice(':',K).tsReduced([],3).specrec,'log')
+
+%hca = irf_panel('reduced mixture');
+%irf_spectrogram(hca,mGM.slice(':',K).tsReduced([],3).specrec,'log')
 
 hca = irf_panel('nComp reduced mixture');
-irf_plot(hca,mGM)
+irf_plot(hca,{mGM_01.slice(':',K).tsNComp,mGM_02.slice(':',K).tsNComp,mGM_03.slice(':',K).tsNComp},'comp')
+
+hlinks = linkprop(h(2:6),{'CLim','YLim'});
+
+irf_plot_axis_align
+irf_zoom('x',PD.time)
 
 %% Diagnostics, L2 error
 K = 4;

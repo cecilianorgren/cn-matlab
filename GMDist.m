@@ -36,6 +36,7 @@ classdef GMDist
     gmm     % {nT x nK} gmdistribution ([] where a fit failed)
     %K       % [1 x nK] number of components of each column
     bic     % [nT x nK]
+    frac    % [nT x nK] share of the total density carried by each fit (1 for a fit; < 1 for a sub-mixture)
     time    % GenericTimeArray or numeric [nT x 1], [] if unknown
     %mass    % particle mass [kg], [] if unknown
     data    % companion data, [] if none
@@ -58,6 +59,7 @@ classdef GMDist
       addParameter(p,'data',[]);
       addParameter(p,'bic',[]);
       addParameter(p,'options',struct());
+      addParameter(p,'frac',[]);
       parse(p,varargin{:});
 
       [nT,nK] = size(gmmCell);
@@ -82,6 +84,12 @@ classdef GMDist
       obj.mass_ = p.Results.mass;
       obj.data = data;
       obj.options = p.Results.options;
+      F = p.Results.frac;
+      if isempty(F), F = ones(nT,nK); end
+      if ~isequal(size(F),[nT,nK])
+        error('GMDist:input','frac must be [%d x %d].',nT,nK)
+      end
+      obj.frac = F;
 
       % BIC: given, else from the fits, else recomputed from the data
       B = p.Results.bic;
@@ -118,6 +126,8 @@ classdef GMDist
     function nComp = tsNComp(obj)
       nComp = obj.nComp;
       nComp = irf.ts_scalar(obj.time,nComp);
+      nComp.userData.specrec.f_label = 'nComp';
+      nComp.userData.specrec.p_label = 'nComp';
     end
 
     function nComp = nComp(obj)
@@ -167,6 +177,7 @@ classdef GMDist
       p.KeepUnmatched = true;
       addParameter(p,'bic',true);
       addParameter(p,'nGroups',[]);
+      addParameter(p,'threshold',[]);
       parse(p,varargin{:});
       if ~isempty(p.Results.nGroups)
         rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
@@ -214,11 +225,12 @@ classdef GMDist
         merged{igmm} = gmdistribution(muM,SM,wM);
       end
 
-      args = {'time',obj.time,'mass',obj.mass_,'data',obj.data,'options',obj.options};
+      args = {'time',obj.time,'mass',obj.mass_,'data',obj.data,'frac',obj.frac,'options',obj.options};
       if isempty(obj.data) || ~p.Results.bic
         args = [args {'bic',nan(size(merged))}];
       end
       out = GMDist(merged,args{:});
+      out.misc.threshold = p.Results.threshold;
     end
 
     function [M,P,err] = bestPartition(obj,thr,varargin)
@@ -350,7 +362,7 @@ classdef GMDist
         Tc = fac*S;                                    % 3 x 3 x Kg
         prop(it,1:Kg) = pr.';
         Tiso(it,1:Kg) = reshape(Tc(1,1,:)+Tc(2,2,:)+Tc(3,3,:),[1,Kg])/3;
-        n(it,1:Kg) = nTot(it)*pr.';
+        n(it,1:Kg) = nTot(it)*obj.frac(idx(it))*pr.';
         V(it,1:Kg,:) = reshape(g.mu,[1 Kg 3]);
         for k = 1:Kg
           T(it,k,:,:) = reshape(Tc(:,:,k),[1 1 3 3]);
@@ -507,10 +519,12 @@ classdef GMDist
       %   recover densities: the density of the part is n_total.*frac. Entries
       %   with no selected weight are empty (frac NaN).
       %
-      %   The companion data and BIC are not kept (the sub-mixture is not a fit
-      %   of the data), so tsN and populations give no density unless you pass
-      %   'n', e.g. sub.tsN([],'n',ntot.*frac(:,1)). tsReduced then
-      %   normalizes the pdf to 1 unless 'n' is given.
+      %   The share is also stored in sub.frac (multiplied with any earlier
+      %   frac), and the density methods (populations, tsN, tsReduced,
+      %   tsSkymap, ...) use it, so a sub-mixture has the density it carries:
+      %   n_total(t) * frac * proportion. Without a total density the reduced
+      %   pdfs are normalized to 1 times frac. The companion data is kept (for
+      %   the total density); the BIC is NaN, since a sub-mixture is not a fit.
       p = inputParser;
       addParameter(p,'complement',false);
       parse(p,varargin{:});
@@ -534,10 +548,11 @@ classdef GMDist
         ws = sum(w);
         if ~(ws > 0), continue, end          % nothing with weight is selected
         S = GMDist.fullSigma_(g);
-        sub{i} = gmdistribution(g.mu(si,:),S(:,:,si),w/ws);
+        sub{i} = gmdistribution(g.mu(si,:),S(:,:,si),w/ws);   % gmdistribution normalizes to 1
         frac(i) = ws;
       end
-      out = GMDist(sub,'time',obj.time,'mass',obj.mass_,'bic',nan(size(sub)),'options',obj.options);
+      out = GMDist(sub,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
+        'bic',nan(size(sub)),'frac',obj.frac.*frac,'options',obj.options);
     end
 
     function gm = marginal(obj,it,K,dims)
@@ -585,7 +600,7 @@ classdef GMDist
         end
       end
       out = GMDist(obj.gmm(it,ic),'time',t,'mass',obj.mass_,'data',d, ...
-        'bic',obj.bic(it,ic),'options',obj.options);
+        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'options',obj.options);
     end
 
     function out = sliceTime(obj,it)
@@ -599,14 +614,16 @@ classdef GMDist
       nT = size(obj.gmm,1);
       gmmK = cell(nT,numel(K));
       B = nan(nT,numel(K));
+      F = ones(nT,numel(K));
       for j = 1:numel(K)
         idx = obj.entryIndex_(K(j));
         ok = ~isnan(idx);
         gmmK(ok,j) = obj.gmm(idx(ok));
         B(ok,j) = obj.bic(idx(ok));
+        F(ok,j) = obj.frac(idx(ok));
       end
       out = GMDist(gmmK,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
-        'bic',B,'options',obj.options);
+        'bic',B,'frac',F,'options',obj.options);
     end
 
     function r = reducedVDFs(obj,it,K,dim,varargin)
@@ -697,7 +714,7 @@ classdef GMDist
         out{i} = gmdistribution(g.mu(o,:),S(:,:,o),w);
       end
       obj = GMDist(out,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
-        'bic',obj.bic,'options',obj.options);
+        'bic',obj.bic,'frac',obj.frac,'options',obj.options);
       obj.misc.sort = order;
     end
 
@@ -725,7 +742,7 @@ classdef GMDist
       nT = size(pop.n,1);
       ts = cell(1,K);
       for k = 1:K
-        ts{k} = irf.ts_scalar(t,reshape(pop.n(:,k),[nT 1]));
+        ts{k} = irf.ts_scalar(t,reshape(pop.n(:,k),[nT 1]));        
       end      
     end
 
@@ -838,7 +855,7 @@ classdef GMDist
       tsL2NGroups.userData.listPartitions = PL;
     end
 
-    function TS = tsMergeErrBest(obj,K,varargin)
+    function TS = tsMergeErrBest(obj,varargin)
       % TSMERGEERRBEST TSeries [nT x K] of the best merge distance for each number of groups M.
       %
       %   TS = gd.tsMergeErrBest(K[,option,value,...])
@@ -848,10 +865,10 @@ classdef GMDist
       %   Options are those of mergeErrPartitions.
       t = obj.tsTime_();
       nT = obj.nT;
-      idx = obj.entryIndex_(K);
-      if all(isnan(idx)), error('GMDist:K','No fits with K = %d.',K), end
-      [bestErr,bestP] = obj.mergeErrBest('K',K,varargin{:});
-      B = nan(nT,K); PL = cell(nT,K);
+      %idx = obj.entryIndex_(K);
+      %if all(isnan(idx)), error('GMDist:K','No fits with K = %d.',K), end
+      [bestErr,bestP] = obj.mergeErrBest(varargin{:});
+      B = nan(size(obj.gmm)); PL = cell(size(obj.gmm));
       for it = 1:nT
         if isnan(idx(it)), continue, end
         B(it,:) = bestErr{idx(it)};
@@ -1487,7 +1504,7 @@ classdef GMDist
       nTot = obj.totalDensity_(p.Results.n);
       o.normalized = all(isnan(nTot));
       if o.normalized, nTot = ones(size(nTot)); end
-      o.scale = nTot;
+      o.scale = nTot.*obj.fracAt_(o.idx);     % a sub-mixture carries only its share
       o.component = p.Results.component;
     end
 
@@ -1531,6 +1548,14 @@ classdef GMDist
         if isempty(c), continue, end
         D(it,:) = scale(it)*GMDist.marg1D_(g,dim,vg,c)*SI_conversion;
       end
+    end
+
+    function f = fracAt_(obj,idx)
+      % Share of the total density carried by the entry idx(it) (linear index
+      % into gmm) at each time; 1 where there is no entry.
+      f = ones(numel(idx),1);
+      ok = ~isnan(idx);
+      f(ok) = obj.frac(idx(ok));
     end
 
     function idx = entryIndex_(obj,K)
