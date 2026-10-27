@@ -2,7 +2,7 @@ mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 
 tint = irf.tint('2017-07-09T17:31:58.047139000Z/2017-07-09T17:34:23.048132000Z');
-%tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
+tint = irf.tint('2017-07-06T13:54:20.047139000Z/2017-07-06T13:55:40.048132000Z');
 %tint = irf.tint('2017-07-22T02:32:50.047139000Z/2017-07-22T02:33:30.048132000Z');
 ic = 1;
 
@@ -36,7 +36,7 @@ fz = PD.reduce('1D',[0 0 1]);
 
 %irf_plot({PD.omni.deflux.specrec})
 %%
-K = 2:6;
+K = 1:6;
 options = statset('MaxIter',150,'TolFun',1e-5);
 GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
       
@@ -44,7 +44,7 @@ GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',fal
 %gm{it,iK} = fitgmdist(R,K,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
 
 %%
-[bestErr,bestP] = GM.mergeErrBest;
+%[bestErr,bestP] = GM.mergeErrBest;
 %%
 %K = 4;
 %mGM = GM.merge(K,bestP(:,find(GM.K==K)));
@@ -68,6 +68,7 @@ aM = GM_.nComp;
 uM = unique(aM);
 nM = numel(uM);
 cT = cellfun(@(x)squeeze((x.Sigma(1,1,:)+x.Sigma(2,2,:)+x.Sigma(3,3,:)))/3*units.mp*1e6/units.eV,GM_.gmm,'UniformOutput',false);
+cn = cellfun(@(x)x.ComponentProportion,GM_.gmm,'UniformOutput',false);
 
 allT = cell([1,nM]);
 for iM = 1:nM
@@ -77,7 +78,10 @@ for iM = 1:nM
   T_ = cT(idxM);
   dT = cellfun(@(x)diff(x),T_,'UniformOutput',false); %
 
+  n_ = cn(idxM);
+
   allT{iM}.M = M;
+  allT{iM}.n = n_;
   allT{iM}.T = T_;
   allT{iM}.dT = dT;
 end
@@ -88,8 +92,10 @@ end
 edgesT = linspace(1,5,20);
 centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
 normHist = 'pdf';
-cN = cellfun(@(x)histcounts(log10([x.T{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
-mN = cat(1,cN{:});
+cNT = cellfun(@(x)histcounts(log10([x.T{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
+mNT = cat(1,cNT{:});
+
+arrT = cellfun(@(x)[x.T{:}]',allT,'UniformOutput',false);
 
 % delta temperature
 edgesT = linspace(1,5,20);
@@ -98,11 +104,11 @@ normHist = 'pdf';
 cNdT = cellfun(@(x)histcounts(log10([x.dT{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
 mNdT = cat(1,cNdT{:});
 
-nrows = 2; ncols = 1; isub = 1;
+nrows = 2; ncols = 2; isub = 1;
 
 % T
 hca = subplot(nrows,ncols,isub); isub = isub + 1;
-bar(hca,centerT,mN,1)
+bar(hca,centerT,mNT,1)
 legend(hca,"M = " + uM)
 irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
 hca.XLabel.String = 'log_{10} T (eV)';
@@ -119,6 +125,69 @@ hca.XLabel.String = 'log_{10} dT (eV)';
 hca.XTick = -1:6;
 hca.XTickLabel = "10^" + hca.XTick;
 hca.YLabel.String = normHist;
+
+% T, warmest vs the rest
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+legs = string();
+plot(hca,[1 50000],'k--')
+for iM = 2:uM(end)
+  plotx = arrT{iM}(:,end);
+  ploty = arrT{iM}(:,1:end-1);
+  plot(hca,plotx,ploty,'*','Tag',"M=" + uM(iM))
+  if iM == 2; hca.NextPlot = "add"; end
+  if uM(iM) > 1
+    xx = 1:(uM(iM)-1);
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM) + ": m=" + uM(iM) + " -> m=" + xx;
+  else
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM);
+  end
+end
+legs = legs(2:end);
+xlim = hca.XLim;
+ylim = hca.YLim;
+plot(hca,[50 50000],10.^(-2:0)'*[50 50000],'k--')
+hca.NextPlot = "replaceall";
+hca.XLim = xlim;
+hxa.YLim = ylim;
+legend(hca,legs,'location','eastoutside','box','on')
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'largest T (eV)';
+hca.YLabel.String = 'other T (eV)';
+hca.XScale = 'log';
+hca.YScale = 'log';
+
+% density, warmest vs the rest
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+legs = string();
+plot(hca,[1 50000],'k--')
+for iM = 2:uM(end)
+  plotx = arrT{iM}(:,end);
+  ploty = arrT{iM}(:,1:end-1);
+  plot(hca,plotx,ploty,'*','Tag',"M=" + uM(iM))
+  if iM == 2; hca.NextPlot = "add"; end
+  if uM(iM) > 1
+    xx = 1:(uM(iM)-1);
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM) + ": m=" + uM(iM) + " -> m=" + xx;
+  else
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM);
+  end
+end
+legs = legs(2:end);
+xlim = hca.XLim;
+ylim = hca.YLim;
+plot(hca,[50 50000],10.^(-2:0)'*[50 50000],'k--')
+hca.NextPlot = "replaceall";
+hca.XLim = xlim;
+hxa.YLim = ylim;
+legend(hca,legs,'location','eastoutside','box','on')
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'largest T (eV)';
+hca.YLabel.String = 'other T (eV)';
+hca.XScale = 'log';
+hca.YScale = 'log';
+
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+c_eval('h(?).FontSize = 12;',1:numel(h))
 
 %% Plot results
 h = irf_plot(9);

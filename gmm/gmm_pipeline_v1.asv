@@ -88,8 +88,10 @@ end
 edgesT = linspace(1,5,20);
 centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
 normHist = 'pdf';
-cN = cellfun(@(x)histcounts(log10([x.T{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
-mN = cat(1,cN{:});
+cNT = cellfun(@(x)histcounts(log10([x.T{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
+mNT = cat(1,cNT{:});
+
+arrT = cellfun(@(x)[x.T{:}]',allT,'UniformOutput',false);
 
 % delta temperature
 edgesT = linspace(1,5,20);
@@ -98,12 +100,13 @@ normHist = 'pdf';
 cNdT = cellfun(@(x)histcounts(log10([x.dT{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
 mNdT = cat(1,cNdT{:});
 
-nrows = 2; ncols = 1; isub = 1;
+nrows = 3; ncols = 1; isub = 1;
 
 % T
 hca = subplot(nrows,ncols,isub); isub = isub + 1;
-bar(hca,centerT,mN,1)
-legend(hca,"M = " + uM,'Title',"Err < %.")
+bar(hca,centerT,mNT,1)
+legend(hca,"M = " + uM)
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
 hca.XLabel.String = 'log_{10} T (eV)';
 hca.XTick = -1:6;
 hca.XTickLabel = "10^" + hca.XTick;
@@ -113,10 +116,46 @@ hca.YLabel.String = normHist;
 hca = subplot(nrows,ncols,isub); isub = isub + 1;
 bar(hca,centerT,mNdT,1)
 hleg = legend(hca,"M = " + uM);
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
 hca.XLabel.String = 'log_{10} dT (eV)';
 hca.XTick = -1:6;
 hca.XTickLabel = "10^" + hca.XTick;
 hca.YLabel.String = normHist;
+
+% T, warmest vs the rest
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+legs = string();
+plot(hca,[1 50000],'k--')
+for iM = 2:uM(end)
+  plotx = arrT{iM}(:,end);
+  ploty = arrT{iM}(:,1:end-1);
+  plot(hca,plotx,ploty,'*','Tag',"M=" + uM(iM))
+  if iM == 2; hca.NextPlot = "add"; end
+  if uM(iM) > 1
+    xx = 1:(uM(iM)-1);
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM) + ": m=" +  + "-> m=" + xx;
+  else
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM);
+  end
+end
+legs = legs(2:end);
+xlim = hca.XLim;
+ylim = hca.YLim;
+plot(hca,[50 50000],10.^(-2:0)'*[50 50000],'k--')
+hca.NextPlot = "replaceall";
+hca.XLim = xlim;
+hxa.YLim = ylim;
+legend(hca,legs,'location','eastoutside','box','on')
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'largest T (eV)';
+hca.YLabel.String = 'other T (eV)';
+hca.XScale = 'log';
+hca.YScale = 'log';
+%hca.XTick = -1:6;
+%hca.XTickLabel = "10^" + hca.XTick;
+
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+c_eval('h(?).FontSize = 12;',1:numel(h))
 
 %% Plot results
 h = irf_plot(9);
