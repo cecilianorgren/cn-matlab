@@ -43,23 +43,258 @@ GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',fal
 %GM.bic
 %gm{it,iK} = fitgmdist(R,K,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);
 
-%%
+%
 %[bestErr,bestP] = GM.mergeErrBest;
-%%
+%
 %K = 4;
 %mGM = GM.merge(K,bestP(:,find(GM.K==K)));
 %%
 nCompPreMerge = GM.nComp;
 nCompMax = max(nCompPreMerge(:));
 nCompMin = min(nCompPreMerge(:));
-threshold = 0.3;
-[bestM, bestP, bestErr] = GM.bestPartition(threshold,'metric','l1');
-mGM = GM.merge(bestP,'threshold',threshold);
-%mGM = GM.merge(bestP);
-%M = bestM(find(GM.K==K));
+threshold = [0.1 0.2 0.3 0.4 0.5];
+mGM = cell(1,numel(threshold));
+tic
+for ithr = 1:numel(threshold)
+  % Ideally one should have the option to combine these two, and bestM, 
+  % bestP, bestErr would be saved in the object.
+  [bestM, bestP, bestErr] = GM.bestPartition(threshold(ithr),'metric','l1');
+  % Here, threshold is only to pass the info of the parameter, not elegant 
+  % and unstable because one could pass the wrong value
+  mGM{ithr} = GM.merge(bestP,'threshold',threshold(ithr)); 
+  %mGM = GM.merge(bestP);
+  %M = bestM(find(GM.K==K));  
+end
+toc
 
-mGMc = mGM.subMixture(mGM.cold);
-mGMh = mGM.subMixture(mGM.cold,'complement',true);
+%mGMc = mGM.subMixture(mGM.cold);
+%mGMh = mGM.subMixture(mGM.cold,'complement',true);
+
+%% Plot results, merging, how M depends on errL1 threshold
+h = irf_plot(2+numel(mGM));
+%K = 4;
+
+hca = irf_panel('omni fpi');
+irf_spectrogram(hca,PD.deflux.omni.specrec)
+
+hca = irf_panel('nComp before merge');
+[~,hcb] = irf_spectrogram(hca,GM.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'nComp';'pre-merge'},'p_label',{'nComp';'pre-merge'}),'lin');
+hcb.YTick = 0:nCompMax;
+hca.CLim = [0 nCompMax];
+
+for ii = 1:numel(mGM)
+  G = mGM{ii};
+  hca = irf_panel(sprintf('nComp after merge ithr=%.2f',threshold(ii)));
+  specrec = G.tsNComp.specrec( ...
+  'f',nCompMin:nCompMax, ...
+  'f_label',{'nComp';'pre-merge'}, ...
+  'p_label',{'nComp';'post-merge';sprintf('thr = %.2f',G.misc.threshold)});
+  [~,hcb] = irf_spectrogram(hca,specrec,'lin');
+  hcb.YTick = 0:nCompMax;
+  hca.CLim = [0 nCompMax];
+end
+
+
+colormap([flipdim(irf_colormap('Spectral'),1)])
+c_eval('h(?).Layer = ''top'';',1:numel(h))
+irf_plot_axis_align
+irf_zoom('x',PD.time)
+irf_timeaxis(h)
+
+%%
+hca = irf_panel('fz fpi');
+irf_spectrogram(hca,fz.specrec)
+
+
+for iCol = 1:size(mGM.gmm,2)
+  hca = irf_panel(['merged mixture ', num2str(iCol)]);  
+  specrec = mGMc.slice(':',iCol).tsReduced(3).specrec;
+  specrec.p_label = {'PSD (s/m^4)';'nComp';sprintf('pre-mer. = %.0f',nCompPreMerge(1,iCol))};
+  irf_spectrogram(hca,specrec,'log')
+end
+
+%hlinks = linkprop(h(4 + [0 1:size(mGM.gmm,2)]),{'CLim','YLim'});
+hlinks = linkprop(h(4:end),{'CLim','YLim'});
+
+colormap([flipdim(irf_colormap('Spectral'),1)])
+c_eval('h(?).Layer = ''top'';',1:numel(h))
+irf_plot_axis_align
+irf_zoom('x',PD.time)
+
+
+
+%% Plot results, scatter plots using keepNComp / byNcomp
+K = 6;
+GM_ = mGM.slice(':',K);
+aM = GM_.nComp;
+uM = unique(aM);
+nM = numel(uM);
+%cT = cellfun(@(x)squeeze((x.Sigma(1,1,:)+x.Sigma(2,2,:)+x.Sigma(3,3,:)))/3*units.mp*1e6/units.eV,GM_.gmm,'UniformOutput',false);
+%cn = cellfun(@(x)x.ComponentProportion,GM_.gmm,'UniformOutput',false);
+
+
+%params = mGM.slice(':',K).byNComp();
+%params = mGM.sortBy('n').slice(':',K).byNComp();
+sortBy = 'T';
+params = mGM.sortBy(sortBy).slice(':',K).byNComp();
+ 
+
+h = setup_subplots(2,2); isub = 1;
+
+hca = h(isub); isub = isub + 1;
+M = 2;
+scatter(hca,params(M).n,params(M).T)
+hca.XLabel.String = 'n (cc)';
+hca.YLabel.String = 'T (eV)';
+hca.Title.String = "M=" + M;
+hca.Title.String = "M=" + M + ", sortBy=" + sortBy;
+
+hca = h(isub); isub = isub + 1;
+M = 2;
+scatter(hca,params(M).n(:,end),params(M).n(:,1:end-1))
+hca.XLabel.String = 'n_{last} (cc)';
+hca.YLabel.String = 'n_{before} (cc)';
+hca.Title.String = "M=" + M;
+hca.Title.String = "M=" + M + ", sortBy=" + sortBy;
+
+
+hca = h(isub); isub = isub + 1;
+M = 2;
+scatter(hca,params(M).T(:,end),params(M).T(:,1:end-1))
+hca.XLabel.String = 'T_{last} (eV)';
+hca.YLabel.String = 'T_{before} (eV)';
+%addBackground(hca,@(x,y)x./y,[1 2 5 10 20 50 100 200 500 1000])
+addBackground(hca,@(x,y)x./y,[1 10 100],'ShowText',1)
+hca.XScale = 'log';
+hca.YScale = 'log';
+hca.Title.String = "M=" + M + ", sortBy=" + sortBy;
+
+c_eval('h(?).Box = ''on'';',1:numel(h))
+c_eval('h(?).ColorOrder = mms_colors(''matlab'');',1:numel(h))
+
+hca = h(isub); isub = isub + 1;
+M = 2;
+edgesT = linspace(1,5,15);
+centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
+normHist = 'pdf';
+fun = @(x)histcounts(log10(x)',edgesT,'normalization',normHist);
+pdf = rowfun(fun,table(params(M).T')); pdf = pdf.Var1;
+for irow = 1:size(pdf,1)
+  hcbar = bar(hca,centerT,pdf(irow,:),1,'facealpha',0.5);
+  if irow == 1; hold(hca,'on'), end
+end  
+hold(hca,'off')
+hca.ColorOrder = mms_colors('matlab');
+hca.XLabel.String = 'log_{10} T (eV)';
+hca.XTick = -1:6;
+hca.XTickLabel = "10^" + hca.XTick;
+hca.YLabel.String = normHist;
+hca.Title.String = "M=" + M + ", sortBy=" + sortBy;
+
+%%
+% plot some stuff
+
+% Temperature
+edgesT = linspace(1,5,20);
+centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
+normHist = 'pdf';
+cNT = cellfun(@(x)histcounts(log10([x.T{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
+mNT = cat(1,cNT{:});
+
+arrT = cellfun(@(x)[x.T{:}]',allT,'UniformOutput',false);
+
+% delta temperature
+edgesT = linspace(1,5,20);
+centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
+normHist = 'pdf';
+cNdT = cellfun(@(x)histcounts(log10([x.dT{:}]),edgesT,'normalization',normHist),allT,'UniformOutput',false);
+mNdT = cat(1,cNdT{:});
+
+nrows = 2; ncols = 2; isub = 1;
+
+% T
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+bar(hca,centerT,mNT,1)
+legend(hca,"M = " + uM)
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'log_{10} T (eV)';
+hca.XTick = -1:6;
+hca.XTickLabel = "10^" + hca.XTick;
+hca.YLabel.String = normHist;
+
+% dT
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+bar(hca,centerT,mNdT,1)
+hleg = legend(hca,"M = " + uM);
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'log_{10} dT (eV)';
+hca.XTick = -1:6;
+hca.XTickLabel = "10^" + hca.XTick;
+hca.YLabel.String = normHist;
+
+% T, warmest vs the rest
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+legs = string();
+plot(hca,[1 50000],'k--')
+for iM = 2:uM(end)
+  plotx = arrT{iM}(:,end);
+  ploty = arrT{iM}(:,1:end-1);
+  plot(hca,plotx,ploty,'*','Tag',"M=" + uM(iM))
+  if iM == 2; hca.NextPlot = "add"; end
+  if uM(iM) > 1
+    xx = 1:(uM(iM)-1);
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM) + ": m=" + uM(iM) + " -> m=" + xx;
+  else
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM);
+  end
+end
+legs = legs(2:end);
+xlim = hca.XLim;
+ylim = hca.YLim;
+plot(hca,[50 50000],10.^(-2:0)'*[50 50000],'k--')
+hca.NextPlot = "replaceall";
+hca.XLim = xlim;
+hxa.YLim = ylim;
+legend(hca,legs,'location','eastoutside','box','on')
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'largest T (eV)';
+hca.YLabel.String = 'other T (eV)';
+hca.XScale = 'log';
+hca.YScale = 'log';
+
+% density, warmest vs the rest
+hca = subplot(nrows,ncols,isub); isub = isub + 1;
+legs = string();
+plot(hca,[1 50000],'k--')
+for iM = 2:uM(end)
+  plotx = arrT{iM}(:,end);
+  ploty = arrT{iM}(:,1:end-1);
+  plot(hca,plotx,ploty,'*','Tag',"M=" + uM(iM))
+  if iM == 2; hca.NextPlot = "add"; end
+  if uM(iM) > 1
+    xx = 1:(uM(iM)-1);
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM) + ": m=" + uM(iM) + " -> m=" + xx;
+  else
+    legs(end+[1:uM(iM)-1]) = "M=" + uM(iM);
+  end
+end
+legs = legs(2:end);
+xlim = hca.XLim;
+ylim = hca.YLim;
+plot(hca,[50 50000],10.^(-2:0)'*[50 50000],'k--')
+hca.NextPlot = "replaceall";
+hca.XLim = xlim;
+hxa.YLim = ylim;
+legend(hca,legs,'location','eastoutside','box','on')
+irf_legend(hca,sprintf('Err < %.2f',mGM.misc.threshold),[0.02 0.98],'color','k')
+hca.XLabel.String = 'largest T (eV)';
+hca.YLabel.String = 'other T (eV)';
+hca.XScale = 'log';
+hca.YScale = 'log';
+
+h = findobj(gcf,'type','axes'); h = h(end:-1:1);
+c_eval('h(?).FontSize = 12;',1:numel(h))
+
 
 %% Plot results, scatter plots of T and dT, for various M
 K = 5;
@@ -189,7 +424,7 @@ hca.YScale = 'log';
 h = findobj(gcf,'type','axes'); h = h(end:-1:1);
 c_eval('h(?).FontSize = 12;',1:numel(h))
 
-%% Plot results
+%% Plot results, merging
 h = irf_plot(9);
 %K = 4;
 
@@ -212,12 +447,13 @@ irf_spectrogram(hca,fz.specrec)
 
 for iCol = 1:size(mGM.gmm,2)
   hca = irf_panel(['merged mixture ', num2str(iCol)]);  
-  specrec = mGMh.slice(':',iCol).tsReduced([],3).specrec;
+  specrec = mGMc.slice(':',iCol).tsReduced(3).specrec;
   specrec.p_label = {'PSD (s/m^4)';'nComp';sprintf('pre-mer. = %.0f',nCompPreMerge(1,iCol))};
   irf_spectrogram(hca,specrec,'log')
 end
 
-hlinks = linkprop(h(4 + [0 1:size(mGM.gmm,2)]),{'CLim','YLim'});
+%hlinks = linkprop(h(4 + [0 1:size(mGM.gmm,2)]),{'CLim','YLim'});
+hlinks = linkprop(h(4:end),{'CLim','YLim'});
 
 colormap([flipdim(irf_colormap('Spectral'),1)])
 c_eval('h(?).Layer = ''top'';',1:numel(h))

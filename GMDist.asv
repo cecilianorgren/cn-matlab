@@ -231,6 +231,7 @@ classdef GMDist
       end
       out = GMDist(merged,args{:});
       out.misc.threshold = p.Results.threshold;
+      out.misc.nCompOrig = obj.nCompOrig_();     % number of components before the merge
     end
 
     function [M,P,err] = bestPartition(obj,thr,varargin)
@@ -339,20 +340,16 @@ classdef GMDist
       %   the companion data, if it has one that works (e.g. MParts with weights).
       if size(obj.gmm,2) > 1               % one struct per column of gmm
         for ic = 1:size(obj.gmm,2)
-          pop{ic} = obj.slice(':',ic).populations(varargin{:});
+          pop(ic) = obj.slice(':',ic).populations(varargin{:});
         end
         return
       end
-      % From here, only single column GM's pas
       K = [];                              % the entry of the (single) column at each time
       p = inputParser;
       addParameter(p,'n',[]);
       parse(p,varargin{:});
 
-      % Separate by components
       nC = obj.nComp;
-      uK = unique(nC);
-
       idx = obj.entryIndex_(K);
       if all(isnan(idx)) && ~isempty(K)
         error('GMDist:K','No fits with K = %s. Available: %s.',mat2str(K),mat2str(unique(nC(~isnan(nC))).'))
@@ -564,6 +561,7 @@ classdef GMDist
       end
       out = GMDist(sub,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
         'bic',nan(size(sub)),'frac',obj.frac.*frac,'options',obj.options);
+      if isfield(obj.misc,'nCompOrig'), out.misc.nCompOrig = obj.misc.nCompOrig; end
     end
 
     function s = byNComp(obj,varargin)
@@ -571,13 +569,16 @@ classdef GMDist
       %
       %   s = gd.byNComp([option,value,...])
       %
-      %   One element of the struct array s for each number of components M
-      %   that occurs (ascending). The entries of gd.gmm with that M are
-      %   collected, whatever their column, with the components of each fit
-      %   sorted by temperature, coldest first. Fields:
+      %   One result per column of gd.gmm: a struct array for one column, a cell
+      %   {1 x nC} of struct arrays for several. A struct array has one element
+      %   for each number of components M that occurs in that column
+      %   (ascending), collecting the fits with that M, with the components of
+      %   each fit sorted by temperature, coldest first. Fields:
       %     M       number of components
       %     entry   linear indices into gd.gmm of these fits [n x 1]
       %     it, ic  their row (time index) and column in gd.gmm [n x 1]
+      %     Korig   number of components of these fits before merge [n x 1]
+      %             (from gd.misc.nCompOrig; equal to M if the object was not merged)
       %     time    their times (like gd.time(it)), [] if gd has no time
       %     T       [n x M]      temperature trace(T)/3 [eV], sorted ascending
       %     dT      [n x (M-1)]  T(:,2:end) - T(:,1:end-1)
@@ -588,26 +589,42 @@ classdef GMDist
       %     n       [n x M]      density [cm^-3] = total density * frac * proportion
       %                          (NaN without a total density)
       %   Options:
-      %     'col'        only these columns of gmm (default all), e.g. 6
+      %     'col'        only these columns of gmm (default all). One column: a
+      %                  struct array; several: a cell, one struct array each
+      %     'pool'       true: put the fits of all the columns in 'col' into one
+      %                  struct array. This mixes fits from different columns
+      %                  (and original K), and the same time can occur once per
+      %                  column: use ic and Korig to separate them (default false)
       %     'minWeight'  components lighter than this get T = NaN (sorted last;
       %                  default 0: only a NaN-free ranking)
       %     'n'          total density [cm^-3], [nT x 1]; default from the
       %                  companion data, as in populations
       p = inputParser;
       addParameter(p,'col',[]);
+      addParameter(p,'pool',false);
       addParameter(p,'minWeight',0);
       addParameter(p,'n',[]);
       parse(p,varargin{:});
       col = p.Results.col;
       if isempty(col), col = 1:size(obj.gmm,2); end
+
+      if numel(col) > 1 && ~p.Results.pool
+        s = cell(1,numel(col));
+        for j = 1:numel(col)
+          s{j} = obj.byNComp('col',col(j),'minWeight',p.Results.minWeight,'n',p.Results.n);
+        end
+        return
+      end
+
       nC = obj.nComp;
+      KO = obj.nCompOrig_();
       fac = obj.massFactor_();
       nTot = obj.totalDensity_(p.Results.n);
       t = obj.time;
 
       Ms = unique(nC(:,col));
       Ms = Ms(~isnan(Ms)).';
-      s = struct('M',{},'entry',{},'it',{},'ic',{},'time',{},'T',{},'dT',{},'dlogT',{},'w',{},'V',{},'vabs',{},'n',{});
+      s = struct('M',{},'entry',{},'it',{},'ic',{},'Korig',{},'time',{},'T',{},'dT',{},'dlogT',{},'w',{},'V',{},'vabs',{},'n',{});
       for m = Ms
         [it,jc] = find(nC(:,col) == m);
         [it,o] = sort(it);                    % by time
@@ -630,6 +647,7 @@ classdef GMDist
         e.M = m;
         e.entry = sub2ind(size(obj.gmm),it,ic);
         e.it = it; e.ic = ic;
+        e.Korig = KO(e.entry);
         if isempty(t), e.time = []; else, e.time = t(it); end
         e.T = T;
         e.dT = diff(T,1,2);
@@ -669,7 +687,7 @@ classdef GMDist
       %   it, ic: indices, logical masks, [] or ':' (all). The result is a
       %   GMDist, so all methods work on it. Time, BIC and the companion data
       %   are sliced too (the data is dropped with a warning if it cannot be
-      %   indexed in time). To select by number of components, see sliceK.
+      %   indexed in time). To select by number of components, see keepNComp.
       nT = size(obj.gmm,1); nC = size(obj.gmm,2);
       if nargin < 2 || isempty(it) || (ischar(it) && strcmp(it,':')), it = 1:nT; end
       if nargin < 3 || isempty(ic) || (ischar(ic) && strcmp(ic,':')), ic = 1:nC; end
@@ -695,6 +713,9 @@ classdef GMDist
       end
       out = GMDist(obj.gmm(it,ic),'time',t,'mass',obj.mass_,'data',d, ...
         'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'options',obj.options);
+      if isfield(obj.misc,'nCompOrig') && isequal(size(obj.misc.nCompOrig),size(obj.gmm))
+        out.misc.nCompOrig = obj.misc.nCompOrig(it,ic);
+      end
     end
 
     function out = sliceTime(obj,it)
@@ -702,22 +723,29 @@ classdef GMDist
       out = obj.slice(it,[]);
     end
 
-    function out = sliceK(obj,K)
-      % SLICEK One column per requested K, holding the fits with that number
-      % of components (empty where there is none). Time and data are kept.
-      nT = size(obj.gmm,1);
-      gmmK = cell(nT,numel(K));
-      B = nan(nT,numel(K));
-      F = ones(nT,numel(K));
-      for j = 1:numel(K)
-        idx = obj.entryIndex_(K(j));
-        ok = ~isnan(idx);
-        gmmK(ok,j) = obj.gmm(idx(ok));
-        B(ok,j) = obj.bic(idx(ok));
-        F(ok,j) = obj.frac(idx(ok));
-      end
-      out = GMDist(gmmK,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
+    function out = keepNComp(obj,M,varargin)
+      % KEEPNCOMP Keep only the fits with M components; the others become empty.
+      %
+      %   gd1 = gd.keepNComp(M[,'invert',tf])
+      %
+      %   M: one or more numbers of components. The layout (times and columns)
+      %   is unchanged, so rows and columns still mean what they did; masked
+      %   entries are [] like a missing fit, with BIC and frac NaN, and the
+      %   methods that work per column then give NaN there. 'invert',true
+      %   masks the fits with M components instead and keeps the rest.
+      %   For example, all the data with three components: gd.keepNComp(3).
+      p = inputParser;
+      addParameter(p,'invert',false);
+      parse(p,varargin{:});
+      nC = obj.nComp;
+      keep = ismember(nC,M);
+      if p.Results.invert, keep = ~keep & ~isnan(nC); end
+      g = obj.gmm; g(~keep) = {[]};
+      B = obj.bic; B(~keep) = NaN;
+      F = obj.frac; F(~keep) = NaN;
+      out = GMDist(g,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
         'bic',B,'frac',F,'options',obj.options);
+      out.misc = obj.misc;
     end
 
     function r = reducedVDFs(obj,it,dim,varargin)
@@ -812,8 +840,10 @@ classdef GMDist
         w = max(g.ComponentProportion(o),eps);
         out{i} = gmdistribution(g.mu(o,:),S(:,:,o),w);
       end
+      m0 = obj.misc;
       obj = GMDist(out,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
         'bic',obj.bic,'frac',obj.frac,'options',obj.options);
+      obj.misc = m0;
       obj.misc.sort = order;
     end
 
@@ -921,25 +951,40 @@ classdef GMDist
       ts.userData.specrec.p_label = 'BIC';
     end
 
-    function [tsL2err, tsL2NGroups] = tsMergeErrPartitions(obj,K,varargin)
-      % TSMERGEERRPARTITIONS TSeries of the merge distance for all partitions of the K-component fits.
+    function [tsL2err, tsL2NGroups] = tsMergeErrPartitions(obj,varargin)
+      % TSMERGEERRPARTITIONS TSeries of the merge distance for all partitions of each fit.
       %
-      %   [tsErr, tsNGroups] = gd.tsMergeErrPartitions(K[,option,value,...])
+      %   [tsErr, tsNGroups] = gd.tsMergeErrPartitions([option,value,...])
       %
-      %   Uses the entries of gd.gmm with K components (NaN at other times).
-      %   Options are those of mergeErrPartitions.
+      %   One result per column of gd.gmm: a TSeries for one column, a cell
+      %   {1 x nC} for several (select columns with slice). For a column, the
+      %   entry at each time is used:
+      %     tsErr      [nT x nP]  distance of each partition of its components
+      %     tsNGroups  [nT x nP]  number of groups in each partition
+      %   If the number of components varies over time, nP is the largest and
+      %   the rest is NaN. tsErr.userData.listPartitions{it,ip} is the partition.
+      %   Options are those of mergeErrPartitions ('metric', 'normalized',
+      %   'nSamples', 'seed', 'sort', 'maxK').
+      if size(obj.gmm,2) > 1
+        nC = size(obj.gmm,2);
+        tsL2err = cell(1,nC); tsL2NGroups = cell(1,nC);
+        for ic = 1:nC
+          [tsL2err{ic},tsL2NGroups{ic}] = obj.slice(':',ic).tsMergeErrPartitions(varargin{:});
+        end
+        return
+      end
       t = obj.tsTime_();
       nT = obj.nT;
-      idx = obj.entryIndex_(K);
-      if all(isnan(idx)), error('GMDist:K','No fits with K = %d.',K), end
-      [err,P,nGroups] = obj.mergeErrPartitions('K',K,varargin{:});
-      nPartitions = numel(err{idx(find(~isnan(idx),1))});
+      [err,P,nGroups] = obj.mergeErrPartitions(varargin{:});    % {nT x 1}
+      nPartitions = max([0; cellfun(@numel,err(:))]);
+      if nPartitions == 0, error('GMDist:fit','No fits.'), end
       E = nan(nT,nPartitions); N = nan(nT,nPartitions); PL = cell(nT,nPartitions);
       for it = 1:nT
-        if isnan(idx(it)), continue, end
-        E(it,:) = err{idx(it)};
-        N(it,:) = nGroups{idx(it)};
-        PL(it,:) = P{idx(it)};
+        if isempty(err{it}), continue, end
+        n = numel(err{it});
+        E(it,1:n) = err{it};
+        N(it,1:n) = nGroups{it};
+        PL(it,1:n) = P{it};
       end
 
       label = GMDist.metricLabel_(GMDist.metricFromArgs_(varargin));
@@ -959,29 +1004,37 @@ classdef GMDist
     end
 
     function TS = tsMergeErrBest(obj,varargin)
-      % TSMERGEERRBEST TSeries [nT x K] of the best merge distance for each number of groups M.
+      % TSMERGEERRBEST TSeries of the best merge distance for each number of groups M.
       %
-      %   TS = gd.tsMergeErrBest(K[,option,value,...])
+      %   TS = gd.tsMergeErrBest([option,value,...])
       %
-      %   Uses the entries of gd.gmm with K components (NaN at other times).
-      %   TS.userData.listPartitions{it,M} is the best partition into M groups.
-      %   Options are those of mergeErrPartitions.
+      %   One result per column of gd.gmm: a TSeries for one column, a cell
+      %   {1 x nC} for several (select columns with slice). For a column, the
+      %   entry at each time is used. TS is [nT x Mmax], TS(it,M) the distance
+      %   of the best partition into M groups (NaN-padded if the number of
+      %   components varies over time). TS.userData.listPartitions{it,M} is that
+      %   partition. Options are those of mergeErrPartitions.
+      if size(obj.gmm,2) > 1
+        TS = obj.perColumn_(@(g) g.tsMergeErrBest(varargin{:}));
+        return
+      end
       t = obj.tsTime_();
       nT = obj.nT;
-      %idx = obj.entryIndex_(K);
-      %if all(isnan(idx)), error('GMDist:K','No fits with K = %d.',K), end
-      [bestErr,bestP] = obj.mergeErrBest(varargin{:});
-      B = nan(size(obj.gmm)); PL = cell(size(obj.gmm));
+      [bestErr,bestP] = obj.mergeErrBest(varargin{:});         % {nT x 1}
+      Mmax = max([0; cellfun(@numel,bestErr(:))]);
+      if Mmax == 0, error('GMDist:fit','No fits.'), end
+      B = nan(nT,Mmax); PL = cell(nT,Mmax);
       for it = 1:nT
-        if isnan(idx(it)), continue, end
-        B(it,:) = bestErr{idx(it)};
-        PL(it,:) = bestP{idx(it)};
+        if isempty(bestErr{it}), continue, end
+        n = numel(bestErr{it});
+        B(it,1:n) = bestErr{it};
+        PL(it,1:n) = bestP{it};
       end
 
       label = GMDist.metricLabel_(GMDist.metricFromArgs_(varargin));
       TS = irf.ts_scalar(t,B);
       TS.name = label;
-      TS.userData.specrec.f = 1:K;
+      TS.userData.specrec.f = 1:Mmax;
       TS.userData.specrec.f_label = 'M = N_{inP}';
       TS.userData.specrec.p_label = ['min(' label ')'];
       TS.userData.listPartitions = PL;
@@ -993,7 +1046,7 @@ classdef GMDist
       %   PD = gd.tsReduced(dim[,option,value,...])
       %
       %   One PDist per column of gd.gmm: a PDist for one column, a cell {1 x nC}
-      %   for several (select columns with slice or sliceK). Within a column the
+      %   for several (select columns with slice). Within a column the
       %   entry at each time is used, whatever its number of components.
       %   dim: 1 (vx), 2 (vy) or 3 (vz). 2D reductions are not done yet.
       %   Options:
@@ -1676,7 +1729,9 @@ classdef GMDist
       idx = nan(size(nC,1),1);
       for it = 1:size(nC,1)
         j = GMDist.entryCol_(nC(it,:),K);
-        if ~isempty(j), idx(it) = sub2ind(size(nC),it,j); end
+        if ~isempty(j), 
+          idx(it) = sub2ind(size(nC),it,j); 
+        end
       end
     end
 
@@ -1707,6 +1762,16 @@ classdef GMDist
       if nC == 1, out = fcn(obj); return, end
       out = cell(1,nC);
       for ic = 1:nC, out{ic} = fcn(obj.slice(':',ic)); end
+    end
+
+    function k = nCompOrig_(obj)
+      % Number of components of each entry before any merge (misc.nCompOrig),
+      % or the present number if the object was not merged.
+      if isfield(obj.misc,'nCompOrig') && isequal(size(obj.misc.nCompOrig),size(obj.gmm))
+        k = obj.misc.nCompOrig;
+      else
+        k = obj.nComp;
+      end
     end
 
     function fac = massFactor_(obj)
