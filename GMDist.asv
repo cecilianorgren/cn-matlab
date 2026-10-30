@@ -126,6 +126,7 @@ classdef GMDist
     function nComp = tsNComp(obj)
       nComp = obj.nComp;
       nComp = irf.ts_scalar(obj.time,nComp);
+      nComp.name = 'nComp';
       nComp.userData.specrec.f_label = 'nComp';
       nComp.userData.specrec.p_label = 'nComp';
     end
@@ -165,10 +166,15 @@ classdef GMDist
       %   BIC: with companion data it is recomputed from the particles, which
       %   can be slow for many particles; 'bic',false skips that (NaN).
       %
-      %   'nGroups',M uses the best partition into exactly M groups for every
-      %   fit (see bestPartition), instead of P. The other options
-      %   ('metric', 'normalized', 'nSamples', 'seed', 'K', 'maxK') go to
-      %   bestPartition. Fits with fewer than M components are left empty.
+      %   Instead of P you can give what selects it (see bestPartition):
+      %     'nGroups',M       the best partition into exactly M groups
+      %     'threshold',thr   the fewest groups whose best partition has an error
+      %                       of at most thr
+      %   The other options ('metric', 'normalized', 'nSamples', 'seed', 'K',
+      %   'maxK') go to bestPartition, which uses the results stored by
+      %   cacheMergeErr if they match (a sweep over thr is then fast). Fits
+      %   with fewer than M components are left empty. With P and 'threshold'
+      %   given, the threshold is only recorded in the result's misc.
       if ischar(groups) || isstring(groups)
         varargin = [{groups} varargin];
         groups = [];
@@ -179,9 +185,14 @@ classdef GMDist
       addParameter(p,'nGroups',[]);
       addParameter(p,'threshold',[]);
       parse(p,varargin{:});
+      rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+      metricUsed = '';
       if ~isempty(p.Results.nGroups)
-        rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+        metricUsed = GMDist.keyFromArgs_(rest);
         [~,groups] = obj.bestPartition([],'nGroups',p.Results.nGroups,rest{:});
+      elseif isempty(groups) && ~isempty(p.Results.threshold)
+        metricUsed = GMDist.keyFromArgs_(rest);
+        [~,groups] = obj.bestPartition(p.Results.threshold,rest{:});
       elseif ~isempty(fieldnames(p.Unmatched))
         fn = fieldnames(p.Unmatched);
         error('GMDist:merge','Unknown option ''%s''.',fn{1})
@@ -203,6 +214,8 @@ classdef GMDist
 
       nComp = obj.nComp;
       merged = cell(size(obj.gmm));
+      selected.P = cell(size(obj.gmm));
+      selected.err = cell(size(obj.gmm));
       for igmm = 1:numel(obj.gmm)
         g = obj.gmm{igmm};
         Pi = groups{igmm};
@@ -223,6 +236,8 @@ classdef GMDist
           [wM(ig),muM(ig,:),SM(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,Pi{ig});
         end
         merged{igmm} = gmdistribution(muM,SM,wM);
+        selected{igmm}.P = Pi;
+        selected{igmm}.err = Pi;
       end
 
       args = {'time',obj.time,'mass',obj.mass_,'data',obj.data,'frac',obj.frac,'options',obj.options};
@@ -231,6 +246,7 @@ classdef GMDist
       end
       out = GMDist(merged,args{:});
       out.misc.threshold = p.Results.threshold;
+      if ~isempty(metricUsed), out.misc.metric = metricUsed; end
       out.misc.nCompOrig = obj.nCompOrig_();     % number of components before the merge
     end
 
@@ -616,6 +632,8 @@ classdef GMDist
         return
       end
 
+      units = irf_units;
+
       nC = obj.nComp;
       KO = obj.nCompOrig_();
       fac = obj.massFactor_();
@@ -624,7 +642,7 @@ classdef GMDist
 
       Ms = unique(nC(:,col));
       Ms = Ms(~isnan(Ms)).';
-      s = struct('M',{},'entry',{},'it',{},'ic',{},'Korig',{},'time',{},'T',{},'dT',{},'dlogT',{},'w',{},'V',{},'vabs',{},'n',{});
+      s = struct('M',{},'entry',{},'it',{},'ic',{},'Korig',{},'time',{},'T',{},'dT',{},'dlogT',{},'w',{},'V',{},'vabs',{},'Uk',{},'n',{});
       for m = Ms
         [it,jc] = find(nC(:,col) == m);
         [it,o] = sort(it);                    % by time
@@ -638,11 +656,12 @@ classdef GMDist
           Ti = zeros(1,m);
           for k = 1:m, Ti(k) = fac*trace(S(:,:,k))/3; end
           Ti(w < p.Results.minWeight) = NaN;
-          [Ti,oo] = sort(Ti,'ascend');        % NaN last
+          %[Ti,oo] = sort(Ti,'ascend');        % NaN last
+          oo = 1:numel(Ti);
           T(i,:) = Ti;
           W(i,:) = w(oo);
           V(i,:,:) = reshape(g.mu(oo,:),[1 m 3]);
-          N(i,:) = nTot(it(i))*obj.frac(it(i),ic(i))*w(oo);
+          N(i,:) = nTot(it(i))*obj.frac(it(i),ic(i))*w(oo);          
         end
         e.M = m;
         e.entry = sub2ind(size(obj.gmm),it,ic);
@@ -655,6 +674,7 @@ classdef GMDist
         e.w = W;
         e.V = V;
         e.vabs = sqrt(sum(V.^2,3));
+        e.Uk = e.vabs.^2*1e6*obj.mass/2/units.eV;
         e.n = N;
         s(end+1) = e; %#ok<AGROW>
       end
@@ -715,6 +735,14 @@ classdef GMDist
         'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'options',obj.options);
       if isfield(obj.misc,'nCompOrig') && isequal(size(obj.misc.nCompOrig),size(obj.gmm))
         out.misc.nCompOrig = obj.misc.nCompOrig(it,ic);
+      end
+      if isfield(obj.misc,'partitions')
+        pp = obj.misc.partitions;
+        for k = 1:numel(pp)
+          pp(k).err = pp(k).err(it,ic);
+          pp(k).fp = pp(k).fp(it,ic);
+        end
+        out.misc.partitions = pp;
       end
     end
 
@@ -818,7 +846,7 @@ classdef GMDist
       p = inputParser;
       addParameter(p,'direction','ascend');
       parse(p,varargin{:});
-      quantity = validatestring(quantity,{'T','n','vabs'});
+      quantity = validatestring(quantity,{'T','n','vabs','vx','vy','vz'});
       dirn = validatestring(p.Results.direction,{'ascend','descend'});
 
       out = obj.gmm;
@@ -834,6 +862,12 @@ classdef GMDist
             key = g.ComponentProportion(:);
           case 'vabs'
             key = sqrt(sum(g.mu.^2,2));
+          case 'vx'
+            key = g.mu(:,1);
+          case 'vy'
+            key = g.mu(:,2);
+          case 'vz'
+            key = g.mu(:,3);
         end
         [~,o] = sort(key,dirn);
         order{i} = o(:)';        
@@ -841,6 +875,7 @@ classdef GMDist
         out{i} = gmdistribution(g.mu(o,:),S(:,:,o),w);
       end
       m0 = obj.misc;
+      if isfield(m0,'partitions'), m0 = rmfield(m0,'partitions'); end   % partitions refer to the component order
       obj = GMDist(out,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
         'bic',obj.bic,'frac',obj.frac,'options',obj.options);
       obj.misc = m0;
@@ -1345,9 +1380,15 @@ classdef GMDist
       addParameter(p,'seed',1);
       addParameter(p,'K',[]);
       addParameter(p,'maxK',8);
+      addParameter(p,'useCache',true);
       parse(p,varargin{:});
       metric = validatestring(p.Results.metric,{'l2','l1','kl'});
       if ~strcmp(metric,'l2'), s0 = rng; restoreRng = onCleanup(@() rng(s0)); end
+      cached = [];                         % results stored by cacheMergeErr, if any
+      if p.Results.useCache
+        [~,prm] = GMDist.keyFromArgs_(varargin);
+        cached = obj.cachedErr_(metric,prm);
+      end
 
       % The partitions depend only on K: compute them once for each K present
       nComp = obj.nComp;
@@ -1366,48 +1407,11 @@ classdef GMDist
         g = obj.gmm{igmm};
         if isempty(g) || ~ismember(g.NumComponents,Ks), continue, end
         Pk = AP{KinP == g.NumComponents};
-        uG = Pk.groups;
-        iG = Pk.iG;
-        nG = numel(uG);
-        w = g.ComponentProportion(:).';
-        mu = g.mu;
-        S = GMDist.fullSigma_(g);
-
-        % One Gaussian per possible group of components
-        wG = zeros(1,nG); muG = zeros(nG,3); SG = zeros(3,3,nG);
-        for ig = 1:nG
-          [wG(ig),muG(ig,:),SG(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,uG{ig});
+        if ~isempty(cached) && numel(cached{igmm}) == numel(Pk.P)
+          errv = cached{igmm};             % stored: no recomputation
+        else
+          errv = GMDist.partitionErr_(g,Pk,metric,p.Results.normalized,p.Results.nSamples,p.Results.seed+igmm);
         end
-
-        errv = zeros(1,numel(Pk.P));
-        switch metric
-          case 'l2'
-            % Inner products: original with itself, with each group, groups with each other
-            ff = GMDist.mixInner_(w,mu,S,w,mu,S);
-            c = zeros(1,nG);
-            M = zeros(nG,nG);
-            for a = 1:nG
-              c(a) = GMDist.mixInner_(w,mu,S,wG(a),muG(a,:),SG(:,:,a));
-              for b = a:nG
-                M(a,b) = GMDist.mixInner_(wG(a),muG(a,:),SG(:,:,a),wG(b),muG(b,:),SG(:,:,b));
-                M(b,a) = M(a,b);
-              end
-            end
-            % ||f-g||^2 = <f,f> - 2<f,g> + <g,g>, for each partition
-            for ip = 1:numel(errv)
-              idx = iG{ip};
-              d2 = ff - 2*sum(c(idx)) + sum(sum(M(idx,idx)));
-              errv(ip) = sqrt(max(d2,0));
-            end
-            if p.Results.normalized, errv = errv/sqrt(ff); end
-          otherwise
-            % 'l1' (total variation) and 'kl': Monte Carlo, samples shared by all partitions
-            if igmm == 13;
-1;
-            end
-            errv = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,p.Results.nSamples,p.Results.seed+igmm);
-        end
-
         err{igmm} = errv;
         P{igmm} = Pk.P(:).';
         nGroups{igmm} = Pk.nGroups(:).';
@@ -1418,6 +1422,45 @@ classdef GMDist
           nGroups{igmm} = nGroups{igmm}(iSort);
         end
       end
+    end
+
+    function out = cacheMergeErr(obj,varargin)
+      % CACHEMERGEERR Compute the merge distances once and store them in the object.
+      %
+      %   gd = gd.cacheMergeErr('metric',m[,option,value,...])
+      %
+      %   The distance of every partition of every fit (see mergeErrPartitions)
+      %   is stored in gd.misc.partitions, together with the metric and its
+      %   parameters (for 'l2' normalized; for 'l1' and 'kl' nSamples and seed).
+      %   mergeErrPartitions, mergeErrBest, bestPartition and merge then use
+      %   the stored values whenever metric and parameters match, so a sweep
+      %   over thresholds needs this slow step only once:
+      %     gd = gd.cacheMergeErr('metric','l1');
+      %     for thr = thresholds, m = gd.merge('threshold',thr,'metric','l1'); end
+      %   Results for other metrics or parameters can be stored next to it;
+      %   storing the same key again replaces it ('force',true recomputes).
+      %   Each stored entry is checked against the fit it was computed from, so
+      %   an entry that has changed is recomputed, not reused. sortBy,
+      %   subMixture and merge drop the stored results (the partitions refer to
+      %   the component order); slice and keepNComp keep them.
+      %   Options: those of mergeErrPartitions except 'sort' and 'useCache'.
+      p = inputParser;
+      p.KeepUnmatched = true;
+      addParameter(p,'force',false);
+      parse(p,varargin{:});
+      rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+      if any(strcmpi(rest(1,:),'sort')), error('GMDist:cache','The stored errors are in the canonical partition order; ''sort'' is not allowed.'), end
+      [metric,prm] = GMDist.keyFromArgs_(rest);
+      err = obj.mergeErrPartitions(rest{:},'useCache',~p.Results.force);
+      entry = struct('metric',metric,'params',prm,'err',{err},'fp',cellfun(@GMDist.fp_,obj.gmm));
+      parts = [];
+      if isfield(obj.misc,'partitions'), parts = obj.misc.partitions; end
+      keep = true(1,numel(parts));
+      for k = 1:numel(parts)
+        if strcmp(parts(k).metric,metric) && isequaln(parts(k).params,prm), keep(k) = false; end
+      end
+      out = obj;
+      out.misc.partitions = [parts(keep), entry];
     end
 
     function [bestErr,bestP] = mergeErrBest(obj,varargin)
@@ -1764,6 +1807,23 @@ classdef GMDist
       for ic = 1:nC, out{ic} = fcn(obj.slice(':',ic)); end
     end
 
+    function c = cachedErr_(obj,metric,prm)
+      % Stored merge errors {nT x nC} for this metric and parameters ([] if
+      % none); entries whose fit has changed are [] (to be recomputed).
+      c = [];
+      if ~isfield(obj.misc,'partitions'), return, end
+      parts = obj.misc.partitions;
+      fpNow = cellfun(@GMDist.fp_,obj.gmm);
+      for k = 1:numel(parts)
+        if strcmp(parts(k).metric,metric) && isequaln(parts(k).params,prm) ...
+            && isequal(size(parts(k).fp),size(fpNow))
+          c = parts(k).err;
+          c(~(fpNow == parts(k).fp)) = {[]};
+          return
+        end
+      end
+    end
+
     function k = nCompOrig_(obj)
       % Number of components of each entry before any merge (misc.nCompOrig),
       % or the present number if the object was not merged.
@@ -1832,6 +1892,72 @@ classdef GMDist
     function j = entryCol_(row,K)
       % Column of the first entry in row with K components (K = []: the first non-empty).
       if isempty(K), j = find(~isnan(row),1); else, j = find(row == K,1); end
+    end
+
+    function errv = partitionErr_(g,Pk,metric,normalized,nSamples,seed)
+      % Distance between the fit g and its merged mixture, for every partition in Pk
+      % (the struct from allPartitionsK), in the order of Pk.P.
+      uG = Pk.groups;
+      iG = Pk.iG;
+      nG = numel(uG);
+      w = g.ComponentProportion(:).';
+      mu = g.mu;
+      S = GMDist.fullSigma_(g);
+
+      % One Gaussian per possible group of components
+      wG = zeros(1,nG); muG = zeros(nG,3); SG = zeros(3,3,nG);
+      for ig = 1:nG
+        [wG(ig),muG(ig,:),SG(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,uG{ig});
+      end
+
+      errv = zeros(1,numel(Pk.P));
+      switch metric
+        case 'l2'
+          % Inner products: original with itself, with each group, groups with each other
+          ff = GMDist.mixInner_(w,mu,S,w,mu,S);
+          c = zeros(1,nG);
+          M = zeros(nG,nG);
+          for a = 1:nG
+            c(a) = GMDist.mixInner_(w,mu,S,wG(a),muG(a,:),SG(:,:,a));
+            for b = a:nG
+              M(a,b) = GMDist.mixInner_(wG(a),muG(a,:),SG(:,:,a),wG(b),muG(b,:),SG(:,:,b));
+              M(b,a) = M(a,b);
+            end
+          end
+          % ||f-g||^2 = <f,f> - 2<f,g> + <g,g>, for each partition
+          for ip = 1:numel(errv)
+            idx = iG{ip};
+            d2 = ff - 2*sum(c(idx)) + sum(sum(M(idx,idx)));
+            errv(ip) = sqrt(max(d2,0));
+          end
+          if normalized, errv = errv/sqrt(ff); end
+        otherwise
+          % 'l1' (total variation) and 'kl': Monte Carlo, samples shared by all partitions
+          errv = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,nSamples,seed);
+      end
+    end
+
+    function [metric,prm] = keyFromArgs_(args)
+      % Metric and the parameters that its values depend on, from a name-value list.
+      p = inputParser;
+      p.KeepUnmatched = true;
+      addParameter(p,'metric','l2');
+      addParameter(p,'normalized',true);
+      addParameter(p,'nSamples',20000);
+      addParameter(p,'seed',1);
+      parse(p,args{:});
+      metric = validatestring(p.Results.metric,{'l2','l1','kl'});
+      switch metric
+        case 'l2', prm = struct('normalized',logical(p.Results.normalized));
+        otherwise, prm = struct('nSamples',p.Results.nSamples,'seed',p.Results.seed);
+      end
+    end
+
+    function f = fp_(g)
+      % Cheap fingerprint of a fit, to detect that a stored result is stale.
+      if isempty(g), f = NaN; return, end
+      k = (1:g.NumComponents).';
+      f = sum(k.*g.ComponentProportion(:)) + sum(k.*g.mu(:,1)) + sum(g.Sigma(:));
     end
 
     function m = metricFromArgs_(args)

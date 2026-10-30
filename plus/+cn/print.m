@@ -32,6 +32,9 @@ while have_options
     %    end
     %end
     switch lower(varargin{1})
+      %case 'extrapath'
+      %    extrapath = varargin{2};          
+      %    varargin(1:2) = [];
       case 'eps'
           frmt = 'epsc';
           fileending = 'eps';
