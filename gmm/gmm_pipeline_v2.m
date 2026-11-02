@@ -73,7 +73,7 @@ vecK = 1:5;
 irf.log('off')
 % Parameters
 ic = 1;
-nMovMean = 1; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
+nMovMean = 3; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 mask_nMovMean = [7 7]; mask_Counts = 5;
 nMP = 10000; % Number of macroparticles
 K = 1:6;  
@@ -86,7 +86,7 @@ doPrint = true;
 
 % Run through events
 for iDF = 33%:50%37;iDFs;
-  str_event = sprintf('Ev%03.0f_nMovMean=%g',iDF,nMovMean);
+  str_event = sprintf('Ev%03.0f_nMovMean=%g_mask=%.0f_%.0f',iDF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   
   % Define time
   t0 = EpochTT(db_table_df.time(iDF));
@@ -131,6 +131,8 @@ for iDF = 33%:50%37;iDFs;
 
   fz = PD.reduce('1D',[0 0 1]);
 
+
+
   %% Run GMM
   disp('>> Running fit.')
   options = statset('MaxIter',150,'TolFun',1e-5);
@@ -155,6 +157,13 @@ for iDF = 33%:50%37;iDFs;
     fprintf(sprintf('%s<%.3f\n',reduction2.metric,reduction2.threshold(ithr)))
     mGM2{ithr} = GM.merge('threshold',reduction2.threshold(ithr),'metric',reduction2.metric);
   end
+
+  alpha = 1.5; floor = 0.05;
+  thr6 = GM.slice(':',6).weightThreshold('alpha',alpha,'floor',floor);        % [nT x 1]
+  mGM3 = GM.merge('threshold',thr6,'metric','l1');  
+  mGM3.userdata.threshold_alpha = alpha;
+  mGM3.userdata.threshold_floor = floor;
+  tsThr = irf.ts_scalar(GM.time,thr6);
 
   % tic
   % for ithr = 1:numel(reduction.threshold)
@@ -341,7 +350,7 @@ for iDF = 33%:50%37;iDFs;
   oK = 6;
   oG = GM.slice(':',oK);
 
-  for ithr = 1:numel(reduction.threshold)
+  for ithr = 1%1:numel(reduction.threshold)
     G = mGM{ithr}.slice(':',oK);
     uM = unique(G.nComp);
     params = G.sortBy(sortBy).byNComp();
@@ -360,7 +369,7 @@ for iDF = 33%:50%37;iDFs;
     irf_timeaxis(h1)
     h1(end).XTickLabelRotation = 0;
   
-    for M = uM(:)'    
+    for M = 3%uM(:)'    
       iM = find(uM==M);    
       nData = numel(params(iM).entry);
       str_var = "K=" + oK + "_" + upper(mGM{ithr}.misc.metric) + "<" + mGM{ithr}.misc.threshold+ "_M=" + M  + "_sortBy=" + sortBy;
@@ -393,7 +402,7 @@ for iDF = 33%:50%37;iDFs;
       
       
       hca = h(isub); isub = isub + 1;
-      edgesT = linspace(1,5,15);
+      edgesT = linspace(1,5,25);
       centerT = edgesT(1:end-1) + 0.5*diff(edgesT);
       normHist = 'pdf';
       fun = @(x)histcounts(log10(x)',edgesT,'normalization',normHist);
@@ -447,6 +456,112 @@ for iDF = 33%:50%37;iDFs;
       if doPrint, cn.print(str_print); end
     end
   end
+  
+  %% Figure, varying threshold
+  thrRefK = 6;
+  plotK = 6;
+  alpha = 1.0; floor = 0.10; % in terms of weight
+  thr = GM.slice(':',thrRefK).weightThreshold('alpha',alpha,'floor',floor);        % [nT x 1]
+  mGM3 = GM.merge('threshold',thr,'metric','l1');  
+  mGM3.userdata.threshold_alpha = alpha;
+  mGM3.userdata.threshold_floor = floor;
+  tsThr = irf.ts_scalar(GM.time,thr);
+  
+  [cold,info_cold] = mGM3.cold('maxColdEV',500,'minGapLog10',0.7);
+  tsNCold = irf.ts_scalar(mGM3.time,cellfun(@(x) sum(x),cold(:,plotK)));
+  tsNHot = irf.ts_scalar(mGM3.time,cellfun(@(x) sum(~x),cold(:,plotK)));
+%
+  figure(105)
+  str_print = sprintf('%s_varying_threshold_alpha=%.2f_floor=%.2f',str_event,alpha,floor);
+  h = irf_plot(8);
+
+  hca = irf_panel('omni fpi');
+  irf_spectrogram(hca,PD.deflux.omni.specrec)
+
+  hca = irf_panel('fz fpi'); % it is easier to see counter-streaming populations in this one
+  irf_spectrogram(hca,fz.specrec)
+  hca.CLim = prctile(hca.Children.CData(:),[1 99]);
+    
+  hca = irf_panel('nComp before merge');
+  [~,hcb] = irf_spectrogram(hca,GM.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'K'},'p_label',{'M'}),'lin');
+  hcb.YTick = 0:nCompMax;
+  hca.CLim = [0 nCompMax];
+
+  hca = irf_panel('nComp after merge');
+  [~,hcb] = irf_spectrogram(hca,mGM3.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'K'},'p_label',{'M'}),'lin');
+  hcb.YTick = 0:nCompMax;
+  hca.CLim = [0 nCompMax]; 
+
+  if 0 % timevarying threshold
+    hca = irf_panel('timevarying threshold');
+    irf_plot(hca,tsThr)
+    hca.YLabel.String = 'thr';
+    irf_legend(hca,{"alpha = " + mGM3.userdata.threshold_alpha + ", floor = " + mGM3.userdata.threshold_floor},[0.98 0.98],'color','k')
+  end
+  if 1 % weights and timevarying threshold
+    hca = irf_panel('ComponentProportion after merge and timevarying threshold');
+    hl = irf_plot(hca,mGM3.slice(':',plotK).sortBy('n','direction','descend').tsProp,'comp');
+    c_eval('hl.Children(?).Marker = "*"; hl.Children(?).LineStyle = "none";',1:numel(hl.Children))
+    hold(hca,'on')
+    irf_plot(hca,tsThr,'k-')
+    hold(hca,'off')
+    hca.YLabel.String = 'weight';     
+    irf_legend(hca,cat(2,"M=" + (1:max(mGM3.slice(':',plotK).nComp)),"threshold")',[1.02 0.98])
+  end
+
+  if 0 % density after merge'
+    hca = irf_panel('density after merge');
+    hl = irf_plot(hca,mGM3.slice(':',plotK).sortBy('n','direction','descend').tsN,'comp');
+    c_eval('hl.Children(?).Marker = "*"; hl.Children(?).LineStyle = "none";',1:numel(hl.Children))
+    hca.YLabel.String = 'n (cc)';
+    %hca.YScale = 'log';
+    %hca.YLim(1) = 10^-3;
+  end
+  if 0 % ComponentProportion after merge'
+    hca = irf_panel('ComponentProportion after merge');
+    hl = irf_plot(hca,mGM3.slice(':',plotK).sortBy('n','direction','descend').tsProp,'comp');
+    c_eval('hl.Children(?).Marker = "*"; hl.Children(?).LineStyle = "none";',1:numel(hl.Children))
+    hca.YLabel.String = 'weight';
+    %hca.YScale = 'log';
+    %hca.YLim(1) = 10^-3;
+  end
+
+
+  hca = irf_panel('reduced f after merge');
+  irf_spectrogram(hca,mGM3.slice(':',plotK).tsReduced(3).specrec,'log')
+  %hca.YLabel.String = 'n (cc)';
+  %hca.YScale = 'log';
+  %hca.YLim(1) = 10^-3;
+
+
+  hca = irf_panel('temeprature after merge');
+  hl = irf_plot(hca,mGM3.slice(':',plotK).sortBy('n','direction','descend').tsT('type','iso'),'comp');
+  c_eval('hl.Children(?).Marker = "*"; hl.Children(?).LineStyle = "none";',1:numel(hl.Children))
+  hca.YLabel.String = 'T (eV), sorted';
+  hca.YScale = 'log';
+  %hca.YLim(1) = 10^-3;
+  irf_zoom(hca,'y')
+  
+  hca = irf_panel('NCold, NHot');
+  irf_plot(hca,{tsNCold,tsNHot},'comp')
+  hca.YLabel.String = 'Count';
+  irf_legend(hca,{'N_{comp,cold}','N_{comp,hot}'},[0.98 0.98])
+
+
+  hlinks = linkprop(h([2 6]),{'CLim','YLim'});
+  h(2).CLim = [-5 -0.5];
+
+  colormap([flipdim(irf_colormap('Spectral'),1)])
+  c_eval('h(?).Layer = ''top'';',1:numel(h))
+  irf_plot_axis_align
+  irf_zoom(h,'x',PD.time)
+  %irf_zoom(h,'y')
+  irf_timeaxis(h)
+  h(end).XTickLabelRotation = 0;
+
+  if doPrint, cn.print(str_print); end
+
+  
 end
 
 irf.log('on')

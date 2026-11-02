@@ -1,0 +1,26 @@
+function [out,dE_] =  fpi_bin_floor_temperature(E,PD,p)
+
+units = irf_units;
+nT = PD.length;
+
+E0 = PD.depend{1};
+E1 = PD.depend{1} - PD.ancillary.delta_energy_minus;
+E2 = PD.depend{1} + PD.ancillary.delta_energy_plus;
+dE = E2-E1;
+
+
+
+v0 = sqrt(2*E0*units.eV/PD.mass);
+v1 = sqrt(2*E1/PD.mass);
+v2 = sqrt(2*E2/PD.mass);
+dv = v2-v1;
+
+n = 2;
+np1 = n/p+1;
+var = (v2.^np1-v1.^np1)./(np1*dv);
+
+out = nan(nT,1);
+for it = 1:nT
+  iE = find(E1(it,:)>E,1,'first');
+  out(it) = var(it,iE)*PD.mass/units.eV;
+end
