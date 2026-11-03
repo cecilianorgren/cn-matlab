@@ -184,23 +184,32 @@ classdef GMDist
       %     'threshold',thr   the fewest groups whose best partition has an error
       %                       of at most thr (a scalar, or an array as in
       %                       bestPartition, e.g. from weightThreshold)
+      %     'err',E records the errors of the given partitions in 
+      %                       misc.merged_partition.err; NaN if not given.
       %   The other options ('metric', 'normalized', 'nSamples', 'seed', 'K',
       %   'maxK') go to bestPartition, which uses the results stored by
       %   cacheMergeErr if they match (a sweep over thr is then fast). Fits
       %   with fewer than M components are left empty. With P and 'threshold'
       %   given, the threshold is only recorded in the result's misc.
+      err = nan(size(obj.gmm));            % errors of the selected partitions, if known
       if ischar(groups) || isstring(groups)
         varargin = [{groups} varargin];
         groups = [];
-        err = nan(size(obj.gmm));
       end
       p = inputParser;
       p.KeepUnmatched = true;
       addParameter(p,'bic',true);
       addParameter(p,'nGroups',[]);
       addParameter(p,'threshold',[]);
+      addParameter(p,'err',[]);
       parse(p,varargin{:});
       rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+      if ~isempty(p.Results.err)
+        if ~isequal(size(p.Results.err),size(obj.gmm))
+          error('GMDist:merge','''err'' must be the size of gmm ([%s]).',num2str(size(obj.gmm)))
+        end
+        err = p.Results.err;
+      end
       metricUsed = '';
       if ~isempty(p.Results.nGroups)
         metricUsed = GMDist.keyFromArgs_(rest);
@@ -1336,6 +1345,10 @@ classdef GMDist
       ts.userData.specrec.p_label = 'BIC';
     end
 
+    function out = tsBICKnee(obj)
+      bicKnee = obj.kneeK;
+      out = irf.ts_scalar(obj.time,);
+    end
     function [tsL2err, tsL2NGroups] = tsMergeErrPartitions(obj,varargin)
       % TSMERGEERRPARTITIONS TSeries of the merge distance for all partitions of each fit.
       %
@@ -1781,9 +1794,22 @@ classdef GMDist
 
     function out = cacheNBinsEff(obj)
       % Save nBinsEff in GMDist structure. This is useful to apply before
-      % for saving the
-      out.misc.nBinsEff = [];
+      % saving the GMDist to be loaded and post-processed later.
+      ... % Claude please complete this function
+      out = obj;
+      out.misc.nBinsEff = []; % ...
     end
+
+    function out = cacheTS(obj,name,ts)
+      % Save total density in GMDist structure. This is useful to apply before
+      % saving the GMDist to be loaded and post-processed later.
+      % For example, save magnetic field, magnetic field curvature, plasma
+      % density (used for reconstructing density)
+      ... % Claude please complete this function
+      out = obj;
+      out.userdata.TSeries.(name) = ts; % ...
+    end
+    
     function out = cacheMergeErr(obj,varargin)
       % CACHEMERGEERR Compute the merge distances once and store them in the object.
       %

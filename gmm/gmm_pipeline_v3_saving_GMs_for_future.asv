@@ -41,7 +41,7 @@ time_df_ttns = double(t0_df.ttns + int64(db_table_ff.t_df));
 time_df_ttns(~db_table_ff.is_df) = NaN;
 db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 
-
+ 
 %% Loop events and plot brief overview
 units = irf_units;
 
@@ -49,7 +49,9 @@ mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 
 % BBF/DF database, to extract times
-db_table_df = db_table_ff(db_table_ff.is_df==1,:);
+iFFs = 1:size(db_table_ff,1);
+iDF_in_FF = find(db_table_ff.is_df==1);
+db_table_df = db_table_ff(iDF_in_FF,:);
 nDF = numel(db_table_df.time);
 
 
@@ -65,9 +67,6 @@ iDFs = 57;
 iDFs=9;
 iDFs = 10;
 iDFs = 16;
-doPrint = 1;
-doPlot = 0;
-vecK = 1:5;
 
 % Turn off irf._log warning messages
 irf.log('off')
@@ -86,9 +85,12 @@ reduction2.metric = 'l1'; % for reduction
 reduction2.threshold = 0.02:0.02:0.3; % for reduction
 
 doPrint = true;
+doPlot = 0;
+doSave = 0;
 
 % Run through events
-for iDF = 33%:50%37;iDFs;
+for iDF = 1%17:nDF
+  iFF = iFFs(iDF);
   str_event = sprintf('Ev_iDF=%03.0f_nMovMean=%g_mask=%.0f_%.0f',iDF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   
   % Define time
@@ -106,15 +108,34 @@ for iDF = 33%:50%37;iDFs;
     ", t2 = " + tint(2).utc('yyyy-mm-ddTHH:MM:SS'))
   
   
-  disp('>> Loading data.')
+  disp('>> Loading PDist and scPot.')
   try
     c_eval('scPot = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+    if isempty(scPot), disp('Empty scPot. Skipping.'); continue; end
     c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
     c_eval('iPDistErr = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic)
     iPDist_counts = iPDist; iPDist_counts.data = (iPDist.data./iPDistErr.data).^2;
+
   catch
-     warning('Error loading data for ic=%g. Continuing to next event.',ic)
+     warning('Error loading data for ic=%g. >> Continuing to next event.',ic)
      %continue
+  end
+
+
+  disp('>> Loading B and computing curvature.')
+  try
+    %%
+    c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
+    c_eval('gseR? = mms.get_data(''R_gse'',tint+60*[-1 1],?);',1:4)
+    c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',1:4)
+    c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',1:4)
+    c_eval('R? = mms_dsl2gse(gseR?.resample(iPDist),defatt?,-1);',1:4)
+    c_eval('B? = dmpaB?.resample(iPDist);',1:4)
+    [curvB,avB]=c_4_grad('R?','B?','curvature');
+  catch ME
+    warning([ME.message ' >> Proceeding without B and curvature.'])
+    curvB = TSeries([]);
+    avB = TSeries([]);
   end
 
   %% Prep data
@@ -151,62 +172,63 @@ for iDF = 33%:50%37;iDFs;
     'Options',options,'SharedCovariance',false, ...
     'RegularizationValue',0.1);
 
-  %% Reduce mixture
-  %disp('>> Reducing mixture.') 
-  fprintf(sprintf('>> Caching merge error, %s.\n',reduction.metric))  
+  %% Save ancillary data to GM object
+  fprintf('>> Caching merge error, %s.\n',reduction.metric)
   GM = GM.cacheMergeErr('metric',reduction.metric);        % the slow step, once  
+
+  fprintf('>> Caching B, curvB, n.\n')  
+  GM = GM.cacheTS('B',avB); 
+  GM = GM.cacheTS('curvB',curvB); 
+  GM = GM.cacheTS('n',MP.n); 
+  GM = GM.cacheTS('nMP',MP.N); 
 
   %% Save GM
   GM_save = GM.removeField('data');
   GM_save.userdata.pdist_derived = pdist_derived;
-  save([pathSave 'GMDist_' str_event '.mat'],'GM_save')
+  if doSave, save([pathSave 'GMDist_' str_event '.mat'],'GM_save'); end
 
-  %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
-  fig = figure(101);
-  fig.Position = [716     1   712   841];
-  str_print = sprintf('%s_M_dep_on_threshold',str_event);
-  h = irf_plot(4+numel(mGM));
-
-  nCompPreMerge = GM.nComp;
-  nCompMax = max(nCompPreMerge(:));
-  nCompMin = min(nCompPreMerge(:));
-
-  hca = irf_panel('omni fpi');
-  irf_spectrogram(hca,PD.deflux.omni.specrec)
-
-  hca = irf_panel('fz fpi'); % it is easier to see counter-streaming populations in this one
-  irf_spectrogram(hca,fz.specrec)
-  hca.CLim = prctile(hca.Children.CData(:),[1 99]);
+  if doPlot
+    %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
+    fig = figure(101);
+    fig.Position = [716     1   712   841];
+    str_print = sprintf('%s_M_dep_on_threshold',str_event);
   
-  hca = irf_panel('BIC'); % it is easier to see counter-streaming populations in this one
-  irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec('p_label','BIC/max(BIC)'),'lin')
+    nCompPreMerge = GM.nComp;
+    nCompMax = max(nCompPreMerge(:));
+    nCompMin = min(nCompPreMerge(:));
   
-  hca = irf_panel('nComp before merge');
-  [~,hcb] = irf_spectrogram(hca,GM.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'K'},'p_label',{'M'}),'lin');
-  hcb.YTick = 0:nCompMax;
-  hca.CLim = [0 nCompMax];
-
-  for iK = 1:numel(nCompPreMerge())
-    G = mGM{ii};
-    hca = irf_panel(('fz K = ',iK));
-    specrec = G.tsNComp.specrec( ...
-      'f',nCompMin:nCompMax, ...
-      'f_label',{'K'}, ...
-      'p_label',{'M';sprintf('thr = %.2f',G.misc.threshold)});
-    [~,hcb] = irf_spectrogram(hca,specrec,'lin');
-    hcb.YTick = 0:nCompMax;
-    hca.CLim = [0 nCompMax];
+    h = irf_plot(3+nCompMax);
+    
+    hca = irf_panel('omni fpi');
+    irf_spectrogram(hca,PD.deflux.omni.specrec)
+  
+    hca = irf_panel('BIC'); % it is easier to see counter-streaming populations in this one
+    irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec('p_label','BIC/max(BIC)'),'lin')
+    
+    hca = irf_panel('fz fpi'); % it is easier to see counter-streaming populations in this one
+    irf_spectrogram(hca,pdist_derived.fz.specrec)
+    %hca.CLim = prctile(hca.Children.CData(:),[1 99]);  
+  
+    for K_ = nCompPreMerge(1,:)
+      G = GM.slice(':',K_);
+      hca = irf_panel(sprintf('fz K = %g',K_));
+      specrec = G.tsReduced(3).specrec;
+      specrec.p_label = {'PSD (s/m^4)';sprintf('K = %g',K_)};
+      [~,hcb] = irf_spectrogram(hca,specrec,'log');
+      %irf_legend(hca,sprintf('K = %g',K),[0.02 0.1])       
+    end
+  
+    hlinks = linkprop(h(3:end),{'CLim','YLim'});
+  
+    colormap([flipdim(irf_colormap('Spectral'),1)])
+    c_eval('h(?).Layer = ''top'';',1:numel(h))
+    irf_plot_axis_align
+    irf_zoom(h,'x',PD.time)
+    irf_timeaxis(h)
+    h(end).XTickLabelRotation = 0;
+  
+    if doPrint, cn.print(str_print); end 
   end
-
-
-  colormap([flipdim(irf_colormap('Spectral'),1)])
-  c_eval('h(?).Layer = ''top'';',1:numel(h))
-  irf_plot_axis_align
-  irf_zoom(h,'x',PD.time)
-  irf_timeaxis(h)
-  h(end).XTickLabelRotation = 0;
-
-  if doPrint, cn.print(str_print); end 
 end
 
 irf.log('on')
