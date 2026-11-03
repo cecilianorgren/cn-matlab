@@ -63,6 +63,7 @@ classdef MParts
     depend % {vx vy vz}, each a {nT x 1} cell
     attr = struct() % per-particle attributes, see class help
     generation = struct('parent',struct('iDep',{{}}),'sampling','') % how the particles were generated
+    userdata
   end
 
   properties (SetAccess = protected)

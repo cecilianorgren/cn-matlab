@@ -37,6 +37,7 @@ classdef GMDist
     %K       % [1 x nK] number of components of each column
     bic     % [nT x nK]
     frac    % [nT x nK] share of the total density carried by each fit (1 for a fit; < 1 for a sub-mixture)
+    counts  % {nT x nK} cell, each [1 x K] FPI counts carried by each component (empty if unknown)
     time    % GenericTimeArray or numeric [nT x 1], [] if unknown
     %mass    % particle mass [kg], [] if unknown
     data    % companion data, [] if none
@@ -46,6 +47,9 @@ classdef GMDist
 
   properties (Access = protected)
     mass_
+  end
+  properties
+    userdata
   end
 
   methods
@@ -60,6 +64,8 @@ classdef GMDist
       addParameter(p,'bic',[]);
       addParameter(p,'options',struct());
       addParameter(p,'frac',[]);
+      addParameter(p,'counts',[]);
+      addParameter(p,'userdata',[]);
       parse(p,varargin{:});
 
       [nT,nK] = size(gmmCell);
@@ -84,12 +90,19 @@ classdef GMDist
       obj.mass_ = p.Results.mass;
       obj.data = data;
       obj.options = p.Results.options;
+      obj.userdata = p.Results.userdata;
       F = p.Results.frac;
       if isempty(F), F = ones(nT,nK); end
       if ~isequal(size(F),[nT,nK])
         error('GMDist:input','frac must be [%d x %d].',nT,nK)
       end
       obj.frac = F;
+      C = p.Results.counts;
+      if isempty(C), C = cell(nT,nK); end
+      if ~iscell(C) || ~isequal(size(C),[nT,nK])
+        error('GMDist:input','counts must be a cell [%d x %d].',nT,nK)
+      end
+      obj.counts = C;
 
       % BIC: given, else from the fits, else recomputed from the data
       B = p.Results.bic;
@@ -169,7 +182,8 @@ classdef GMDist
       %   Instead of P you can give what selects it (see bestPartition):
       %     'nGroups',M       the best partition into exactly M groups
       %     'threshold',thr   the fewest groups whose best partition has an error
-      %                       of at most thr
+      %                       of at most thr (a scalar, or an array as in
+      %                       bestPartition, e.g. from weightThreshold)
       %   The other options ('metric', 'normalized', 'nSamples', 'seed', 'K',
       %   'maxK') go to bestPartition, which uses the results stored by
       %   cacheMergeErr if they match (a sweep over thr is then fast). Fits
@@ -178,6 +192,7 @@ classdef GMDist
       if ischar(groups) || isstring(groups)
         varargin = [{groups} varargin];
         groups = [];
+        err = nan(size(obj.gmm));
       end
       p = inputParser;
       p.KeepUnmatched = true;
@@ -189,10 +204,10 @@ classdef GMDist
       metricUsed = '';
       if ~isempty(p.Results.nGroups)
         metricUsed = GMDist.keyFromArgs_(rest);
-        [~,groups] = obj.bestPartition([],'nGroups',p.Results.nGroups,rest{:});
+        [~,groups,err] = obj.bestPartition([],'nGroups',p.Results.nGroups,rest{:});
       elseif isempty(groups) && ~isempty(p.Results.threshold)
         metricUsed = GMDist.keyFromArgs_(rest);
-        [~,groups] = obj.bestPartition(p.Results.threshold,rest{:});
+        [~,groups,err] = obj.bestPartition(p.Results.threshold,rest{:});
       elseif ~isempty(fieldnames(p.Unmatched))
         fn = fieldnames(p.Unmatched);
         error('GMDist:merge','Unknown option ''%s''.',fn{1})
@@ -214,8 +229,9 @@ classdef GMDist
 
       nComp = obj.nComp;
       merged = cell(size(obj.gmm));
-      selected.P = cell(size(obj.gmm));
-      selected.err = cell(size(obj.gmm));
+      mergedCounts = cell(size(obj.gmm));
+      selectedP = cell(size(obj.gmm));
+      selectedErr = nan(size(obj.gmm));
       for igmm = 1:numel(obj.gmm)
         g = obj.gmm{igmm};
         Pi = groups{igmm};
@@ -236,11 +252,15 @@ classdef GMDist
           [wM(ig),muM(ig,:),SM(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,Pi{ig});
         end
         merged{igmm} = gmdistribution(muM,SM,wM);
-        selected{igmm}.P = Pi;
-        selected{igmm}.err = Pi;
+        if ~isempty(obj.counts{igmm})            % counts of a group: the sum of its members
+          cG = cellfun(@(gr) sum(obj.counts{igmm}(gr)),Pi);
+          mergedCounts{igmm} = cG(:).';
+        end
+        selectedP{igmm} = Pi;
+        selectedErr(igmm) = err(igmm);
       end
 
-      args = {'time',obj.time,'mass',obj.mass_,'data',obj.data,'frac',obj.frac,'options',obj.options};
+      args = {'time',obj.time,'mass',obj.mass_,'data',obj.data,'frac',obj.frac,'counts',mergedCounts,'options',obj.options};
       if isempty(obj.data) || ~p.Results.bic
         args = [args {'bic',nan(size(merged))}];
       end
@@ -248,6 +268,8 @@ classdef GMDist
       out.misc.threshold = p.Results.threshold;
       if ~isempty(metricUsed), out.misc.metric = metricUsed; end
       out.misc.nCompOrig = obj.nCompOrig_();     % number of components before the merge
+      out.misc.merged_partition.P = selectedP;
+      out.misc.merged_partition.err = selectedErr;
     end
 
     function [M,P,err] = bestPartition(obj,thr,varargin)
@@ -270,6 +292,11 @@ classdef GMDist
       %   The other options ('metric', 'normalized', 'nSamples', 'seed', 'K',
       %   'maxK') go to mergeErrBest. For 'l1' thr is the fraction of the
       %   distribution that may be misplaced, for 'kl' nats per particle.
+      %   thr can be a scalar, an [nT x 1] array (one per time, used for all
+      %   columns) or an array the size of gd.gmm (one per fit); NaN selects
+      %   nothing. See weightThreshold for a threshold that follows the weights.
+      %   'mergeWithin',labels (see mergeErrBest) forbids merging components with
+      %   different labels, e.g. 'mergeWithin',gd.cold.
       p = inputParser;
       p.KeepUnmatched = true;
       addParameter(p,'minGroups',1);
@@ -281,8 +308,17 @@ classdef GMDist
         mMin = p.Results.nGroups; mMax = mMin;
         if isempty(thr), thr = Inf; end
       end
-      if ~isscalar(thr) || ~isnumeric(thr)
-        error('GMDist:bestPartition','thr must be a number.')
+      nT = size(obj.gmm,1);
+      if ~isnumeric(thr) || isempty(thr)
+        error('GMDist:bestPartition','thr must be a number or an array of numbers.')
+      elseif isscalar(thr)
+        thrM = repmat(thr,size(obj.gmm));
+      elseif isequal(size(thr),[nT,1])
+        thrM = repmat(thr,1,size(obj.gmm,2));       % one per time, used for all columns
+      elseif isequal(size(thr),size(obj.gmm))
+        thrM = thr;
+      else
+        error('GMDist:bestPartition','thr must be a scalar, [nT x 1] or the size of gmm ([%s]).',num2str(size(obj.gmm)))
       end
       rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
       rest = rest(:)';
@@ -296,13 +332,57 @@ classdef GMDist
         if isempty(bestErr{igmm}), continue, end
         K = nComp(igmm);
         for m = mMin:min(mMax,K)
-          if bestErr{igmm}(m) <= thr
+          if bestErr{igmm}(m) <= thrM(igmm)
             M(igmm) = m;
             err(igmm) = bestErr{igmm}(m);
             P{igmm} = bestP{igmm}{m};
             break
           end
         end
+      end
+    end
+
+    function thr = weightThreshold(obj,varargin)
+      % WEIGHTTHRESHOLD A merge threshold that follows the lightest significant population.
+      %
+      %   thr = gd.weightThreshold([option,value,...])
+      %
+      %   For every fit: thr = min(max(alpha*wmin, floor), ceil), where wmin is
+      %   the smallest proportion among the components that are at least
+      %   'minWeight'. Merging a population away costs roughly its own weight
+      %   in error, so with alpha around 1 to 2 the lightest significant
+      %   population is not absorbed, while merges that cost much less are
+      %   still allowed. thr is [nT x nC] like gd.gmm, NaN where there is no
+      %   fit, and can be given to bestPartition and merge:
+      %     thr = gd.weightThreshold('alpha',1.5,'floor',0.02);
+      %     m = gd.merge('threshold',thr,'metric','l1');
+      %   To make M independent of the starting K, compute it from one
+      %   reference column and use it for all: thr = gd.slice(':',6).weightThreshold();
+      %   ([nT x 1], used for every column).
+      %   Options:
+      %     'alpha'      proportionality factor (default 1.5)
+      %     'floor'      lowest threshold (default 0.01)
+      %     'ceil'       highest threshold (default 0.2)
+      %     'minWeight'  components lighter than this are ignored when finding
+      %                  wmin, so that spurious components do not set the
+      %                  threshold (default 0.01)
+      p = inputParser;
+      addParameter(p,'alpha',1.5);
+      addParameter(p,'floor',0.01);
+      addParameter(p,'ceil',0.2);
+      addParameter(p,'minWeight',0.01);
+      parse(p,varargin{:});
+      if p.Results.floor > p.Results.ceil
+        error('GMDist:weightThreshold','floor must not exceed ceil.')
+      end
+      thr = nan(size(obj.gmm));
+      for i = 1:numel(obj.gmm)
+        g = obj.gmm{i};
+        if isempty(g), continue, end
+        w = g.ComponentProportion(:);
+        ws = w(w >= p.Results.minWeight);
+        if isempty(ws), ws = max(w); end
+        thr(i) = min(max(p.Results.alpha*min(ws),p.Results.floor),p.Results.ceil);
       end
     end
 
@@ -375,7 +455,7 @@ classdef GMDist
       nT = size(obj.gmm,1);
       nTot = obj.totalDensity_(p.Results.n);
 
-      prop = nan(nT,Kmax); n = nan(nT,Kmax); Tiso = nan(nT,Kmax);
+      prop = nan(nT,Kmax); n = nan(nT,Kmax); Tiso = nan(nT,Kmax); cnt = nan(nT,Kmax);
       V = nan(nT,Kmax,3); T = nan(nT,Kmax,3,3);
       for it = 1:nT
         if isnan(idx(it)), continue, end
@@ -385,6 +465,7 @@ classdef GMDist
         pr = g.ComponentProportion(:);
         Tc = fac*S;                                    % 3 x 3 x Kg
         prop(it,1:Kg) = pr.';
+        if ~isempty(obj.counts{idx(it)}), cnt(it,1:Kg) = obj.counts{idx(it)}; end
         Tiso(it,1:Kg) = reshape(Tc(1,1,:)+Tc(2,2,:)+Tc(3,3,:),[1,Kg])/3;
         n(it,1:Kg) = nTot(it)*obj.frac(idx(it))*pr.';
         V(it,1:Kg,:) = reshape(g.mu,[1 Kg 3]);
@@ -392,7 +473,7 @@ classdef GMDist
           T(it,k,:,:) = reshape(Tc(:,:,k),[1 1 3 3]);
         end
       end
-      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso);
+      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso,'counts',cnt);
     end
 
     function [isCold,info] = cold(obj,varargin)
@@ -558,6 +639,7 @@ classdef GMDist
         error('GMDist:subMixture','sel must be a cell of the same size as gmm ([%s]), or one vector.',num2str(size(obj.gmm)))
       end
       sub = cell(size(obj.gmm));
+      cntSub = cell(size(obj.gmm));
       frac = nan(size(obj.gmm));
       for i = 1:numel(obj.gmm)
         g = obj.gmm{i};
@@ -574,9 +656,10 @@ classdef GMDist
         S = GMDist.fullSigma_(g);
         sub{i} = gmdistribution(g.mu(si,:),S(:,:,si),w/ws);   % gmdistribution normalizes to 1
         frac(i) = ws;
+        if ~isempty(obj.counts{i}), cntSub{i} = obj.counts{i}(si); end
       end
       out = GMDist(sub,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
-        'bic',nan(size(sub)),'frac',obj.frac.*frac,'options',obj.options);
+        'bic',nan(size(sub)),'frac',obj.frac.*frac,'counts',cntSub,'options',obj.options);
       if isfield(obj.misc,'nCompOrig'), out.misc.nCompOrig = obj.misc.nCompOrig; end
     end
 
@@ -656,12 +739,10 @@ classdef GMDist
           Ti = zeros(1,m);
           for k = 1:m, Ti(k) = fac*trace(S(:,:,k))/3; end
           Ti(w < p.Results.minWeight) = NaN;
-          %[Ti,oo] = sort(Ti,'ascend');        % NaN last
-          oo = 1:numel(Ti);
           T(i,:) = Ti;
-          W(i,:) = w(oo);
-          V(i,:,:) = reshape(g.mu(oo,:),[1 m 3]);
-          N(i,:) = nTot(it(i))*obj.frac(it(i),ic(i))*w(oo);          
+          W(i,:) = w;
+          V(i,:,:) = reshape(g.mu,[1 m 3]);
+          N(i,:) = nTot(it(i))*obj.frac(it(i),ic(i))*w;
         end
         e.M = m;
         e.entry = sub2ind(size(obj.gmm),it,ic);
@@ -677,6 +758,244 @@ classdef GMDist
         e.Uk = e.vabs.^2*1e6*obj.mass/2/units.eV;
         e.n = N;
         s(end+1) = e; %#ok<AGROW>
+      end
+    end
+
+    function s = floorTParent(obj)
+      % FLOORTPARENT Exact bin-width floor of each component, from the parent bins of its particles.
+      %
+      %   s = gd.floorTParent()
+      %
+      %   Needs the companion MParts with the parent bin of every macroparticle
+      %   (data.generation.parent.iDep: {1 x nDim} cells, each {nT x 1} of [N x 1]
+      %   bin indices, for example energy, azimuth and polar bin). The particles
+      %   were placed inside their bins, so the spread of a component splits
+      %   exactly (law of total covariance, weighting the particles with the
+      %   responsibilities of the component) into
+      %     within the parent bins  = the spread added by the bin widths (the floor)
+      %     between the parent bins = the spread of the bin centres
+      %   No bin geometry, sampling rule or frame is assumed. Outputs ([nT x K],
+      %   components in the stored order, NaN-padded; a cell {1 x nC} of these
+      %   structs for several columns):
+      %     Tfloor      within-bin temperature, trace/3 [eV]
+      %     Ttot        total temperature of the component's particles, trace/3 [eV]
+      %     Tbetween    Ttot - Tfloor [eV]
+      %     nBinsEff    [nT x K x nDim] effective number of parent bins per
+      %                 dimension, exp(entropy) of the responsibility-weighted
+      %                 histogram of bin indices (1 = one bin only)
+      %     iBinDom     [nT x K x nDim] the bin with most weight, per dimension
+      %     K           the number of columns of the arrays
+      %   Call it on an unmasked object with its data attached: the
+      %   responsibilities are those of the mixture in gd (for merged fits, of
+      %   the merged mixture). It is not valid for a sub-mixture. It takes one
+      %   pass over the particles per fit (posterior and bin sums).
+      if size(obj.gmm,2) > 1
+        s = obj.perColumn_(@(g) g.floorTParent());
+        return
+      end
+      data = obj.data;
+      if isempty(data) || iscell(data) || ~isprop(data,'generation') || ...
+          ~isstruct(data.generation) || ~isfield(data.generation,'parent') || isempty(data.generation.parent.iDep)
+        error('GMDist:parent','The companion data has no parent bin indices (generation.parent.iDep).')
+      end
+      if any(obj.frac(~isnan(obj.frac)) < 1)
+        error('GMDist:parent','floorTParent is not valid for a sub-mixture; call it on the unmasked object.')
+      end
+      iDep = data.generation.parent.iDep;
+      nDim = numel(iDep);
+      fac = obj.massFactor_();
+      nT = size(obj.gmm,1);
+      idx = obj.entryIndex_([]);
+      nC = obj.nComp;
+      Kmax = max([1; nC(~isnan(nC))]);
+      Tfloor = nan(nT,Kmax); Ttot = nan(nT,Kmax);
+      nBinsEff = nan(nT,Kmax,nDim); iBinDom = nan(nT,Kmax,nDim);
+      for it = 1:nT
+        if isnan(idx(it)), continue, end
+        g = obj.gmm{idx(it)};
+        Kg = g.NumComponents;
+        X = data.samples(it);                         % [N x 3] km/s
+        iD = zeros(size(X,1),nDim);
+        for d = 1:nDim
+          c = iDep{d}{it};
+          iD(:,d) = c(:);
+        end
+        post = posterior(g,X);                        % [N x Kg] responsibilities
+        sz = max(iD,[],1);
+        cc = num2cell(iD,1);
+        key = sub2ind([sz 1],cc{:});                  % one id per parent bin
+        nb = prod(sz);
+        for k = 1:Kg
+          gk = post(:,k);
+          W = sum(gk);
+          if ~(W > 0), continue, end
+          Wb = accumarray(key,gk,[nb 1]);
+          Mb = zeros(nb,3);
+          for d = 1:3
+            Mb(:,d) = accumarray(key,gk.*X(:,d),[nb 1])./max(Wb,realmin);
+          end
+          within = sum(gk.*sum((X - Mb(key,:)).^2,2))/W;
+          mu = (gk.'*X)/W;
+          total = sum(gk.*sum((X - mu).^2,2))/W;
+          Tfloor(it,k) = fac*within/3;
+          Ttot(it,k) = fac*total/3;
+          for d = 1:nDim
+            h = accumarray(iD(:,d),gk);
+            pr = h/sum(h);
+            pr = pr(pr > 0);
+            nBinsEff(it,k,d) = exp(-sum(pr.*log(pr)));
+            [~,iBinDom(it,k,d)] = max(h);
+          end
+        end
+      end
+      s = struct('K',Kmax,'Tfloor',Tfloor,'Ttot',Ttot,'Tbetween',Ttot-Tfloor, ...
+        'nBinsEff',nBinsEff,'iBinDom',iBinDom);
+    end
+
+    function ts = tsFloorTParent(obj)
+      % TSFLOORTPARENT Exact bin-width floor temperature of each component, as TSeries.
+      %   Cell {1 x K} of scalar TSeries (one per component, NaN-padded); for
+      %   several columns a cell {1 x nC} of such cells. See floorTParent.
+      if size(obj.gmm,2) > 1, ts = obj.perColumn_(@(g) g.tsFloorTParent()); return, end
+      s = obj.floorTParent();
+      t = obj.tsTime_();
+      ts = cell(1,s.K);
+      for k = 1:s.K
+        ts{k} = irf.ts_scalar(t,s.Tfloor(:,k));
+      end
+    end
+
+    function [Tf,dE,iBin,iPol] = floorTBin(obj,PD,varargin)
+      % FLOORTBIN Temperature floor of the bin that each component falls in (analytic).
+      %
+      %   [Tf,dE,iBin,iPol] = gd.floorTBin(PD[,option,value,...])
+      %
+      %   PD is a PDist skymap with the instrument tables (same times as gd):
+      %   depend{1} energy [nT x nE] with ancillary.delta_energy_minus/_plus for
+      %   the bin edges, depend{2} azimuth (nPhi bins), depend{3} polar angle
+      %   0-180 deg (nTheta bins), and PD.mass. Each component is placed in a bin:
+      %   the energy bin containing E = m|V|^2/2 of its mean velocity, and the
+      %   polar bin nearest to the polar angle of V (V in the instrument frame
+      %   of PD).
+      %   The floor is the spread that the bin alone gives to the macroparticles,
+      %   which are sampled uniformly in v^p between the energy edges v1, v2,
+      %   uniformly in azimuth over the bin and uniformly in cos(polar) over the
+      %   polar bin. With v = r*n (n a unit vector),
+      %     tr(Sigma) = <r^2> - <r>^2 |<n>|^2,
+      %     <r^k> = p (v2^(k+p) - v1^(k+p)) / ((k+p) (v2^p - v1^p)),
+      %     |<n>|^2 = sinc^2(dphi/2) <sin th>^2 + <cos th>^2,
+      %   with <cos th> the mean of cos th over the polar bin and <sin th> =
+      %   [c sqrt(1-c^2) + asin c] / (2 dc) evaluated between the cos edges.
+      %   The result does not depend on the azimuth of the bin, nor on the sign
+      %   of the direction (look direction or velocity). Bin widths are 360/nPhi
+      %   and 180/nTheta degrees. The floor is the temperature
+      %   m tr(Sigma)/(3e), to compare with Tiso.
+      %   Outputs, [nT x K] with the components in the stored order, NaN-padded
+      %   and NaN where the energy is outside the table (a cell {1 x nC} of these
+      %   for several columns):
+      %     Tf    temperature floor [eV]
+      %     dE    width of the energy bin [eV]
+      %     iBin  index of the energy bin
+      %     iPol  index of the polar bin
+      %   Options:
+      %     'p'       sampling uniform in v^p (default 2, as 'v_init','v2')
+      %     'type'    'iso' (default) as above, or 'radial': only the spread
+      %               along the energy direction, m Var(v)/e
+      %     'Eshift'  eV added to the component energies before finding the bin
+      %               ([nT x 1] or scalar), e.g. a spacecraft potential shift
+      p = inputParser;
+      addParameter(p,'p',2);
+      addParameter(p,'type','iso');
+      addParameter(p,'Eshift',0);
+      parse(p,varargin{:});
+      type = validatestring(p.Results.type,{'iso','radial'});
+      if size(obj.gmm,2) > 1
+        nC = size(obj.gmm,2);
+        Tf = cell(1,nC); dE = cell(1,nC); iBin = cell(1,nC); iPol = cell(1,nC);
+        for ic = 1:nC
+          [Tf{ic},dE{ic},iBin{ic},iPol{ic}] = obj.slice(':',ic).floorTBin(PD,varargin{:});
+        end
+        return
+      end
+      nT = size(obj.gmm,1);
+      if PD.length ~= nT
+        error('GMDist:floorTBin','PD has %d times but the fits have %d.',PD.length,nT)
+      end
+      u = irf_units;
+      m = PD.mass;
+      pp = p.Results.p;
+
+      % Energy bins: edges, and the moments of v under sampling uniform in v^p
+      E0 = PD.depend{1};
+      dm = PD.ancillary.delta_energy_minus;
+      dp = PD.ancillary.delta_energy_plus;
+      if size(E0,1) == 1, E0 = repmat(E0,nT,1); end
+      if size(dm,1) == 1, dm = repmat(dm,nT,1); end
+      if size(dp,1) == 1, dp = repmat(dp,nT,1); end
+      E1 = E0 - dm;
+      E2 = E0 + dp;
+      v1 = sqrt(2*E1*u.eV/m);
+      v2 = sqrt(2*E2*u.eV/m);
+      d = v2.^pp - v1.^pp;
+      m1 = pp*(v2.^(pp+1) - v1.^(pp+1))./((pp+1)*d);      % <r>   [m/s]
+      m2 = pp*(v2.^(pp+2) - v1.^(pp+2))./((pp+2)*d);      % <r^2> [(m/s)^2]
+
+      % Polar bins: |<n>|^2 for azimuth uniform over dphi and cos(polar) uniform
+      nPhi = size(PD.depend{2},2);
+      dphi = 2*pi/nPhi;
+      sinc2 = (sin(dphi/2)/(dphi/2))^2;
+      thc = PD.depend{3};                                  % polar centres [deg]
+      dth = 180/size(thc,2);
+      cHi = min(max(cosd(thc - dth/2),-1),1);
+      cLo = min(max(cosd(thc + dth/2),-1),1);
+      Ec = (cLo + cHi)/2;
+      Es = (cHi.*sqrt(1-cHi.^2) + asin(cHi) - cLo.*sqrt(1-cLo.^2) - asin(cLo))./(2*(cHi - cLo));
+      An2 = sinc2*Es.^2 + Ec.^2;                           % [1 x nTheta] or [nT x nTheta]
+
+      % Energy and polar angle of each component
+      pop = obj.populations();
+      speed = sqrt(sum(pop.V.^2,3));                       % km/s
+      thetaV = acosd(pop.V(:,:,3)./speed);                 % polar angle of the velocity [deg]
+      Ek = 0.5*m*(speed*1e3).^2/u.eV + p.Results.Eshift(:);
+      K = size(Ek,2);
+      Tf = nan(nT,K); dE = nan(nT,K); iBin = nan(nT,K); iPol = nan(nT,K);
+      for it = 1:nT
+        r = min(it,size(thc,1));
+        for k = 1:K
+          if isnan(Ek(it,k)) || isnan(thetaV(it,k)), continue, end
+          ib = find(E1(it,:) <= Ek(it,k) & Ek(it,k) < E2(it,:),1);
+          if isempty(ib), continue, end
+          [~,ip] = min(abs(thc(r,:) - thetaV(it,k)));
+          switch type
+            case 'iso'
+              Tf(it,k) = m*(m2(it,ib) - m1(it,ib)^2*An2(min(it,size(An2,1)),ip))/(3*u.eV);
+            case 'radial'
+              Tf(it,k) = m*(m2(it,ib) - m1(it,ib)^2)/u.eV;
+          end
+          dE(it,k) = E2(it,ib) - E1(it,ib);
+          iBin(it,k) = ib;
+          iPol(it,k) = ip;
+        end
+      end
+    end
+
+    function ts = tsFloorTBin(obj,PD,varargin)
+      % TSFLOORTBIN Temperature floor of each component's energy bin, as TSeries.
+      %
+      %   ts = gd.tsFloorTBin(PD[,option,value,...])
+      %
+      %   Cell {1 x K} of scalar TSeries (one per component, NaN-padded), like
+      %   tsT; for several columns a cell {1 x nC} of such cells. Options as in
+      %   floorTBin.
+      if size(obj.gmm,2) > 1
+        ts = obj.perColumn_(@(g) g.tsFloorTBin(PD,varargin{:}));
+        return
+      end
+      t = obj.tsTime_();
+      Tf = obj.floorTBin(PD,varargin{:});
+      ts = cell(1,size(Tf,2));
+      for k = 1:size(Tf,2)
+        ts{k} = irf.ts_scalar(t,Tf(:,k));
       end
     end
 
@@ -732,7 +1051,7 @@ classdef GMDist
         end
       end
       out = GMDist(obj.gmm(it,ic),'time',t,'mass',obj.mass_,'data',d, ...
-        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'options',obj.options);
+        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'counts',obj.counts(it,ic),'options',obj.options);
       if isfield(obj.misc,'nCompOrig') && isequal(size(obj.misc.nCompOrig),size(obj.gmm))
         out.misc.nCompOrig = obj.misc.nCompOrig(it,ic);
       end
@@ -771,8 +1090,9 @@ classdef GMDist
       g = obj.gmm; g(~keep) = {[]};
       B = obj.bic; B(~keep) = NaN;
       F = obj.frac; F(~keep) = NaN;
+      C = obj.counts; C(~keep) = {[]};
       out = GMDist(g,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
-        'bic',B,'frac',F,'options',obj.options);
+        'bic',B,'frac',F,'counts',C,'options',obj.options);
       out.misc = obj.misc;
     end
 
@@ -875,9 +1195,13 @@ classdef GMDist
         out{i} = gmdistribution(g.mu(o,:),S(:,:,o),w);
       end
       m0 = obj.misc;
+      cntNew = obj.counts;
+      for i = 1:numel(cntNew)
+        if ~isempty(cntNew{i}), cntNew{i} = cntNew{i}(order{i}); end
+      end
       if isfield(m0,'partitions'), m0 = rmfield(m0,'partitions'); end   % partitions refer to the component order
       obj = GMDist(out,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
-        'bic',obj.bic,'frac',obj.frac,'options',obj.options);
+        'bic',obj.bic,'frac',obj.frac,'counts',cntNew,'options',obj.options);
       obj.misc = m0;
       obj.misc.sort = order;
     end
@@ -893,6 +1217,32 @@ classdef GMDist
       for k = 1:K
         ts{k} = irf.ts_scalar(t,reshape(pop.prop(:,k),[nT 1]));
       end
+    end
+
+    function ts = tsCounts(obj,varargin)
+      % TSCOUNTS FPI counts carried by each component: cell {1 x K} of scalar TSeries.
+      %   The counts are stored by GMDist.fit when the companion MParts has
+      %   attr.dc (counts per macroparticle): the sum of dc weighted with the
+      %   responsibilities of the component. merge sums them over a group,
+      %   sortBy, slice, subMixture and keepNComp carry them along.
+      if size(obj.gmm,2) > 1, ts = obj.perColumn_(@(g) g.tsCounts(varargin{:})); return, end
+      pop = obj.populations(varargin{:});
+      if all(isnan(pop.counts(:))) && ~all(isnan(pop.prop(:)))
+        error('GMDist:counts','No counts stored: fit with a companion MParts that has attr.dc.')
+      end
+      K = pop.K;
+      t = obj.tsTime_();
+      nT = size(pop.counts,1);
+      ts = cell(1,K);
+      for k = 1:K
+        ts{k} = irf.ts_scalar(t,reshape(pop.counts(:,k),[nT 1]));
+      end
+    end
+
+    function GM = removeField(obj,field)
+      % Presently used to remove .data (macroparticles) to conserve space
+      GM = obj;
+      GM.(field) = [];
     end
 
     function ts = tsN(obj,varargin)
@@ -1050,7 +1400,12 @@ classdef GMDist
       %   components varies over time). TS.userData.listPartitions{it,M} is that
       %   partition. Options are those of mergeErrPartitions.
       if size(obj.gmm,2) > 1
-        TS = obj.perColumn_(@(g) g.tsMergeErrBest(varargin{:}));
+        nC = size(obj.gmm,2);
+        TS = cell(1,nC);
+        for ic = 1:nC
+          args = GMDist.sliceWithin_(varargin,ic);
+          TS{ic} = obj.slice(':',ic).tsMergeErrBest(args{:});
+        end
         return
       end
       t = obj.tsTime_();
@@ -1424,6 +1779,11 @@ classdef GMDist
       end
     end
 
+    function out = cacheNBinsEff(obj)
+      % Save nBinsEff in GMDist structure. This is useful to apply before
+      % for saving the
+      out.misc.nBinsEff = [];
+    end
     function out = cacheMergeErr(obj,varargin)
       % CACHEMERGEERR Compute the merge distances once and store them in the object.
       %
@@ -1476,16 +1836,34 @@ classdef GMDist
       %     bestP    {1 x K}  bestP{i}{M} is that partition, a cell of groups
       %   M = K is the unmerged fit (distance 0). Options are those of
       %   mergeErrPartitions ('metric', 'normalized', 'nSamples', 'seed', 'K', 'maxK').
-      [err,P,nGroups] = obj.mergeErrPartitions(varargin{:});
+      %   'mergeWithin',labels restricts the partitions: groups may only combine
+      %   components with the same label. labels is a cell the size of gd.gmm with a
+      %   label vector [1 x K] per fit (logical or numeric), for example gd.cold, so
+      %   that cold populations are never merged with non-cold ones. Fits then have
+      %   no partition with fewer groups than the number of labels they contain
+      %   (NaN error, empty partition). An empty label vector means no restriction.
+      p = inputParser;
+      p.KeepUnmatched = true;
+      addParameter(p,'mergeWithin',[]);
+      parse(p,varargin{:});
+      labels = p.Results.mergeWithin;
+      if ~isempty(labels) && (~iscell(labels) || ~isequal(size(labels),size(obj.gmm)))
+        error('GMDist:mergeWithin','''mergeWithin'' must be a cell the size of gmm ([%s]), e.g. gd.cold.',num2str(size(obj.gmm)))
+      end
+      rest = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
+      [err,P,nGroups] = obj.mergeErrPartitions(rest{:});
       bestErr = cell(size(obj.gmm));
       bestP = cell(size(obj.gmm));
       for igmm = 1:numel(obj.gmm)
         if isempty(err{igmm}), continue, end
         K = obj.gmm{igmm}.NumComponents;
+        allowed = true(1,numel(P{igmm}));
+        if ~isempty(labels), allowed = GMDist.allowedPartitions_(P{igmm},labels{igmm}); end
         bestErr{igmm} = nan(1,K);
         bestP{igmm} = cell(1,K);
         for m = 1:K
-          idx = find(nGroups{igmm} == m);
+          idx = find(nGroups{igmm} == m & allowed);
+          if isempty(idx), continue, end      % no allowed partition with M groups
           [e,iBest] = min(err{igmm}(idx));
           bestErr{igmm}(m) = e;
           bestP{igmm}{m} = P{igmm}{idx(iBest)};
@@ -1554,6 +1932,9 @@ classdef GMDist
 
       nK = numel(K);
       out = cell(nT,nK);
+      cnt = cell(nT,nK);
+      dcAll = [];                        % counts per macroparticle, if the data has attr.dc
+      if ~iscell(data) && ismethod(data,'dc'), dcAll = data.dc(); end
       for iK = 1:nK
         ttic = tic;
         fprintf('K = %g (K=[%s]), ',K(iK),num2str(K))
@@ -1565,17 +1946,22 @@ classdef GMDist
           end
           try
             out{it,iK} = fitgmdist(X,K(iK),'Start',S,fitArgs{:});
+            if ~isempty(dcAll)
+              post = posterior(out{it,iK},X);       % [N x K] responsibilities
+              cnt{it,iK} = dcAll{it}(:).'*post;     % counts carried by each component
+            end
           catch ME
             warning('GMDist:fit','Fit failed at time index %d, K = %d: %s',it,K(iK),ME.message)
           end
         end
         fprintf('time elapsed is %g seconds.\n',toc(ttic))
       end
-      obj = GMDist(out,'data',data,'time',t,'mass',m, ...
-        'options',struct('start',start,'fitgmdist',{fitArgs}));
+      if isa(data,'MParts'), userdata = data.userdata; else userdata = []; end
+      obj = GMDist(out,'data',data,'time',t,'mass',m,'counts',cnt, ...
+        'options',struct('start',start,'fitgmdist',{fitArgs}),'userdata',userdata);
     end
     
-    function  GM = parent_param(obj)
+    function GM = parent_param(obj)
       % Passes parent parameters like counts (and associated error, 
       % perhaps), and depends indices. Depende indices will give an
       % indication of from how many bins the particles of a given GMM comes
@@ -1958,6 +2344,31 @@ classdef GMDist
       if isempty(g), f = NaN; return, end
       k = (1:g.NumComponents).';
       f = sum(k.*g.ComponentProportion(:)) + sum(k.*g.mu(:,1)) + sum(g.Sigma(:));
+    end
+
+    function ok = allowedPartitions_(Pi,lab)
+      % Mask of the partitions in Pi (a cell of partitions) in which every group
+      % holds components with one label only. lab: label per component.
+      ok = true(1,numel(Pi));
+      if isempty(lab), return, end
+      lab = lab(:).';
+      for ip = 1:numel(Pi)
+        for ig = 1:numel(Pi{ip})
+          if numel(unique(lab(Pi{ip}{ig}))) > 1
+            ok(ip) = false;
+            break
+          end
+        end
+      end
+    end
+
+    function args = sliceWithin_(args,ic)
+      % Take column ic of a 'mergeWithin' labels cell in a name-value list.
+      for i = 1:2:numel(args)-1
+        if (ischar(args{i}) || isstring(args{i})) && strcmpi(args{i},'mergeWithin') && iscell(args{i+1})
+          args{i+1} = args{i+1}(:,ic);
+        end
+      end
     end
 
     function m = metricFromArgs_(args)

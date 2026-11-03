@@ -38,7 +38,7 @@ fz = PD.reduce('1D',[0 0 1]);
 %%
 K = 1:6;
 options = statset('MaxIter',150,'TolFun',1e-5);
-GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
+GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1,'counts',PDc);
       
 %GM.bic
 %gm{it,iK} = fitgmdist(R,K,'Start',S,'SharedCovariance',false,'Options',options,'RegularizationValue',0.1);

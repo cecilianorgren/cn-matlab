@@ -32,9 +32,6 @@ classdef GMDist
   %
   %   See also MPARTS, FITGMDIST, GMDISTRIBUTION
 
-  properties
-    userdata
-  end
   properties (SetAccess = protected)
     gmm     % {nT x nK} gmdistribution ([] where a fit failed)
     %K       % [1 x nK] number of components of each column
@@ -51,6 +48,9 @@ classdef GMDist
   properties (Access = protected)
     mass_
   end
+  properties
+    userdata
+  end
 
   methods
     function obj = GMDist(gmmCell,varargin)
@@ -65,6 +65,7 @@ classdef GMDist
       addParameter(p,'options',struct());
       addParameter(p,'frac',[]);
       addParameter(p,'counts',[]);
+      addParameter(p,'userdata',[]);
       parse(p,varargin{:});
 
       [nT,nK] = size(gmmCell);
@@ -89,6 +90,7 @@ classdef GMDist
       obj.mass_ = p.Results.mass;
       obj.data = data;
       obj.options = p.Results.options;
+      obj.userdata = p.Results.userdata;
       F = p.Results.frac;
       if isempty(F), F = ones(nT,nK); end
       if ~isequal(size(F),[nT,nK])
@@ -1237,6 +1239,12 @@ classdef GMDist
       end
     end
 
+    function GM = removeField(obj,field)
+      % Presently used to remove .data (macroparticles) to conserve space
+      GM = obj;
+      GM.(field) = [];
+    end
+
     function ts = tsN(obj,varargin)
       % TSN Density [cm^-3] of each component: cell {1 x K} of scalar TSeries.
       %   Needs a total density: companion data with an n method, or 'n'.
@@ -1771,6 +1779,14 @@ classdef GMDist
       end
     end
 
+    function out = cacheNBinsEff(obj)
+      % Save nBinsEff in GMDist structure. This is useful to apply before
+      % saving the GMDist to be loaded and post-processed later.
+      ... % Claude please complete this function
+      out = obj;
+      out.misc.nBinsEff = []; % ...
+    end
+    
     function out = cacheMergeErr(obj,varargin)
       % CACHEMERGEERR Compute the merge distances once and store them in the object.
       %
@@ -1943,11 +1959,12 @@ classdef GMDist
         end
         fprintf('time elapsed is %g seconds.\n',toc(ttic))
       end
+      if isa(data,'MParts'), userdata = data.userdata; else userdata = []; end
       obj = GMDist(out,'data',data,'time',t,'mass',m,'counts',cnt, ...
-        'options',struct('start',start,'fitgmdist',{fitArgs}));
+        'options',struct('start',start,'fitgmdist',{fitArgs}),'userdata',userdata);
     end
     
-    function  GM = parent_param(obj)
+    function GM = parent_param(obj)
       % Passes parent parameters like counts (and associated error, 
       % perhaps), and depends indices. Depende indices will give an
       % indication of from how many bins the particles of a given GMM comes

@@ -234,7 +234,7 @@ doPrint = true;
 
   
 
-   %% Figure, Bin heating
+  %% Figure, Bin heating
   figure(17007)
   
   K = 2;
@@ -306,35 +306,27 @@ doPrint = true;
   %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
   figure(101)
   str_print = sprintf('%s_M_dep_on_threshold',str_event);
-  h = irf_plot(4+numel(mGM));
+  h = irf_plot(5);
 
   hca = irf_panel('omni fpi');
   irf_spectrogram(hca,PD.deflux.omni.specrec)
+  hca.CLim = [3.8 6.5];
 
   hca = irf_panel('fz fpi'); % it is easier to see counter-streaming populations in this one
   irf_spectrogram(hca,fz.specrec)
-  hca.CLim = prctile(hca.Children.CData(:),[1 99]);
+  %hca.CLim = prctile(hca.Children.CData(:),[1 99]);
   
   hca = irf_panel('BIC'); % it is easier to see counter-streaming populations in this one
   irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec('p_label','BIC/max(BIC)'),'lin')
   
-  hca = irf_panel('nComp before merge');
-  [~,hcb] = irf_spectrogram(hca,GM.tsNComp.specrec('f',nCompMin:nCompMax, 'f_label',{'K'},'p_label',{'M'}),'lin');
-  hcb.YTick = 0:nCompMax;
-  hca.CLim = [0 nCompMax];
-
-  for ii = 1:numel(mGM)
-    G = mGM{ii};
-    hca = irf_panel(sprintf('nComp after merge ithr=%.2f',G.misc.threshold));
-    specrec = G.tsNComp.specrec( ...
-      'f',nCompMin:nCompMax, ...
-      'f_label',{'K'}, ...
-      'p_label',{'M';sprintf('thr = %.2f',G.misc.threshold)});
-    [~,hcb] = irf_spectrogram(hca,specrec,'lin');
-    hcb.YTick = 0:nCompMax;
-    hca.CLim = [0 nCompMax];
+  for K = 1:2
+    hca = irf_panel(sprintf('GM fz, K=%g',K)); % it is easier to see counter-streaming populations in this one
+    irf_spectrogram(hca,GM.slice(':',K).tsReduced(3).specrec,'log')
+    %hca.CLim = prctile(hca.Children.CData(:),[1 99]);
+    %hca.CLim = prctile(hca.Children.CData(:),[1 99]);
   end
 
+  hlinks = linkprop(h([2 4 5]),{'XLim','CLim'});
 
   colormap([flipdim(irf_colormap('Spectral'),1)])
   c_eval('h(?).Layer = ''top'';',1:numel(h))

@@ -1,4 +1,5 @@
 function [out,dE_out] =  fpi_bin_floor_temperature(E,PD,p)
+% Probably wrong
 
 units = irf_units;
 nT = PD.length;
@@ -15,14 +16,20 @@ v1 = sqrt(2*E1*units.eV/PD.mass);
 v2 = sqrt(2*E2*units.eV/PD.mass);
 dv = v2-v1;
 
+n = 1;
+np1 = n/p+1;
+m1 = (v2.^np1-v1.^np1)./(np1*dv);
+
 n = 2;
 np1 = n/p+1;
-var = (v2.^np1-v1.^np1)./(np1*dv);
+m2 = (v2.^np1-v1.^np1)./(np1*dv);
+
+var = m2 - m1.^2;
 
 out = nan(nT,1);
 dE_out = nan(nT,1);
 for it = 1:nT
   iE = find(E1(it,:)>E,1,'first');
-  out(it) = var(it,iE)*PD.mass/units.eV;
+  out(it) = var*PD.mass/units.eV;
   dE_out(it) = dE(it,iE);
 end

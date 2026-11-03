@@ -127,7 +127,12 @@ for iDF = 33%:50%37;iDFs;
   PDc = iPDist_counts.movmean(nMovMean);
   PDc = PDc(1:nMovMean:iPDist_counts.length);
 
-  MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_init','v2','MParts');
+  MP = PD.macroparticles('ntot',nMP,'skipzero',1, ...
+    'scpot',scPot.resample(PD),'v_init','v2','MParts', ...
+    'counts',PDc);
+  MP.userdata.parent_pdist.maskCounts = mask_Counts;
+  MP.userdata.parent_pdist.maskMovMean = mask_nMovMean;
+  MP.userdata.parent_pdist.movMean = nMovMean;
 
   fz = PD.reduce('1D',[0 0 1]);
 
@@ -136,7 +141,9 @@ for iDF = 33%:50%37;iDFs;
   %% Run GMM
   disp('>> Running fit.')
   options = statset('MaxIter',150,'TolFun',1e-5);
-  GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
+  GM = GMDist.fit(MP,K,'start','previous', ...
+    'Options',options,'SharedCovariance',false, ...
+    'RegularizationValue',0.1);
 
   %% Reduce mixture
   disp('>> Reducing mixture.')
