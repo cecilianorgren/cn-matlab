@@ -1064,7 +1064,7 @@ classdef GMDist
         end
       end
       out = GMDist(obj.gmm(it,ic),'time',t,'mass',obj.mass_,'data',d, ...
-        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'counts',obj.counts(it,ic),'options',obj.options);
+        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'counts',obj.counts(it,ic),'options',obj.options,'userdata',obj.userdata);
       if isfield(obj.misc,'nCompOrig') && isequal(size(obj.misc.nCompOrig),size(obj.gmm))
         out.misc.nCompOrig = obj.misc.nCompOrig(it,ic);
       end

@@ -124,7 +124,7 @@ for iEv = 1%:numel(iFF_with_DF)
     c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
     c_eval('iPDistErr = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic)
     iPDist_counts = iPDist; iPDist_counts.data = (iPDist.data./iPDistErr.data).^2;
-  catch
+  catch ME
      warning('Error loading data for ic=%g. Continuing to next event.',ic)
      %continue
   end
@@ -148,13 +148,17 @@ for iEv = 1%:numel(iFF_with_DF)
   %% Prep data
   disp('>> Prepping PDist.')
   PD_use = iPDist;
+  PDc_use = iPDist_counts;
 
   mat = iPDist_counts.find_low_counts('counts',mask_Counts,'nMovMean',mask_nMovMean,'output','mat');
+  
   PD = PD_use.mask('energy','mat',mat);  
-  PD = PD.movmean(nMovMean); % see how this affects the results
+  PDmm = PD.movmean(nMovMean); % see how this affects the results
   PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computations for now, need to check if it is needded for noise
-  PDc = iPDist_counts.movmean(nMovMean);
-  PDc = PDc(1:nMovMean:iPDist_counts.length);
+  
+  PDc = PDc_use.mask('energy','mat',mat);  
+  PDcmm = PDc.movmean(nMovMean);
+  PDc = PDc(1:nMovMean:PDc.length);
 
   disp('>> Generating microparticles.')
   MP = PD.macroparticles('ntot',nMP,'skipzero',1, ...
@@ -190,12 +194,13 @@ for iEv = 1%:numel(iFF_with_DF)
   GM = GM.cacheTS('B',avB); 
   GM = GM.cacheTS('curvB',curvB); 
   GM = GM.cacheTS('n',MP.n); 
-  GM = GM.cacheTS('nMP',irf.ts.MP.N);
+  GM = GM.cacheTS('nMP',irf.ts_scalar(GM.time,MP.N));
   
   GM_save.userdata.pdist_derived = pdist_derived;
   GM_save.userdata.db_tFF_start = t_ff_start;
   GM_save.userdata.db_tFF_stop = t_ff_stop;
   GM_save.userdata.db_tDF = tDF_EpochTT;
+  GM_save.userdata.iSC = ic;
 
   GM_save.userdata.pdist_derived = pdist_derived;
 

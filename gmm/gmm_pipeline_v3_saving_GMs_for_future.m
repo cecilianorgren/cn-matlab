@@ -91,13 +91,13 @@ reduction2.metric = 'l1'; % for reduction
 reduction2.threshold = 0.02:0.02:0.3; % for reduction
 
 doSave = true;
-doPlot = false;
-doPrint = false;
+doPlot = true;
+doPrint = true;
 
 % Run through events
-for iEv = 1:numel(iFF_with_DF)
+for iEv = 2:numel(iFF_with_DF)
   iFF = iFF_with_DF(iEv);
-  str_event = sprintf('Ev_iFF=%03.0f_nMovMean=%g_mask=%.0f_%.0f',iFF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
+  str_event = sprintf('Ev_iFF=%04.0f_nMovMean=%g_mask=%.0f_%.0f',iFF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   
   % Define time
   t0 = EpochTT(db_table.time(iFF));
@@ -124,7 +124,9 @@ for iEv = 1:numel(iFF_with_DF)
     c_eval('iPDist = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
     c_eval('iPDistErr = mms.get_data(''PDERRi_fpi_brst_l2'',tint,?);',ic)
     iPDist_counts = iPDist; iPDist_counts.data = (iPDist.data./iPDistErr.data).^2;
-  catch
+    %iPDist_counts.data(iPDist_counts.data == NaN) = 0;
+    %iPDist_counts = iPDist_counts.nan2zero;
+  catch ME
      warning('Error loading data for ic=%g. Continuing to next event.',ic)
      %continue
   end
@@ -148,13 +150,17 @@ for iEv = 1:numel(iFF_with_DF)
   %% Prep data
   disp('>> Prepping PDist.')
   PD_use = iPDist;
+  PDc_use = iPDist_counts.nan2zero;
 
   mat = iPDist_counts.find_low_counts('counts',mask_Counts,'nMovMean',mask_nMovMean,'output','mat');
-  PD = PD_use.mask('energy','mat',mat);  
-  PD = PD.movmean(nMovMean); % see how this affects the results
-  PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computations for now, need to check if it is needded for noise
-  PDc = iPDist_counts.movmean(nMovMean);
-  PDc = PDc(1:nMovMean:iPDist_counts.length);
+  
+  PDmask = PD_use.mask('energy','mat',mat);  
+  PDmm = PDmask.movmean(nMovMean); % see how this affects the results
+  PD = PDmm(1:nMovMean:PD_use.length); % This step is done just to reduce the computations for now, need to check if it is needded for noise
+  
+  PDcmask = PDc_use.mask('energy','mat',mat);  
+  PDcmm = PDcmask.movmean(nMovMean);
+  PDc = PDcmm(1:nMovMean:PDc_use.length);
 
   disp('>> Generating microparticles.')
   MP = PD.macroparticles('ntot',nMP,'skipzero',1, ...
@@ -170,7 +176,6 @@ for iEv = 1:numel(iFF_with_DF)
   pdist_derived.fz = PD.reduce('1D',[0 0 1]);
   pdist_derived.omni = PD.omni;
 
-
   %% Run GMM
   disp('>> Running fit.')
   options = statset('MaxIter',150,'TolFun',1e-5);
@@ -178,9 +183,9 @@ for iEv = 1:numel(iFF_with_DF)
     'Options',options,'SharedCovariance',false, ...
     'RegularizationValue',0.1);
 
-  %% Cache merge error
-  fprintf(sprintf('>> Caching merge error, %s.\n',reduction.metric))  
-  GM = GM.cacheMergeErr('metric',reduction.metric);        % the slow step, once  
+  %%% Cache merge error
+  %fprintf(sprintf('>> Caching merge error, %s.\n',reduction.metric))  
+  %GM = GM.cacheMergeErr('metric',reduction.metric);        % the slow step, once  
 
   %% Save ancillary data to GM object
   fprintf('>> Cache merge error, %s.\n',reduction.metric)
@@ -192,18 +197,19 @@ for iEv = 1:numel(iFF_with_DF)
   GM = GM.cacheTS('n',MP.n); 
   GM = GM.cacheTS('nMP',irf.ts_scalar(GM.time,MP.N));
   
-  GM_save.userdata.pdist_derived = pdist_derived;
-  GM_save.userdata.db_tFF_start = t_ff_start;
-  GM_save.userdata.db_tFF_stop = t_ff_stop;
-  GM_save.userdata.db_tDF = tDF_EpochTT;
-  GM_save.userdata.iSC = ic;
-
-  GM_save.userdata.pdist_derived = pdist_derived;
+  GM.userdata.pdist_derived = pdist_derived;
+  GM.userdata.db_tFF_start = t_ff_start;
+  GM.userdata.db_tFF_stop = t_ff_stop;
+  GM.userdata.db_tDF = tDF_EpochTT;
+  GM.userdata.iSC = ic; 
 
   GM_save = GM.removeField('data'); % Remove MParts for space
 
   %% Save GM
-  if doSave, save([pathSave 'GMDist_' str_event '.mat'],'GM_save'); end
+  if doSave 
+    save([pathSave 'GMDist_' str_event '.mat'],'GM_save'); 
+    fprintf('Saved %s.\n',[pathSave 'GMDist_' str_event '.mat'])
+  end 
 
   if doPlot
     %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
