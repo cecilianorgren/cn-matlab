@@ -51,7 +51,7 @@ mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 % BBF/DF database, to extract times
 iFFs = 1:size(db_table_ff,1);
 iDF_in_FF = find(db_table_ff.is_df==1);
-db_table_df = db_table_ff(iDF_in_BFF,:);
+db_table_df = db_table_ff(iDF_in_FF,:);
 nDF = numel(db_table_df.time);
 
 

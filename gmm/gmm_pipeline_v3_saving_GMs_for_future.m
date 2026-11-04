@@ -42,17 +42,19 @@ time_df_ttns(~db_table_ff.is_df) = NaN;
 db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 
 
+% BBF/DF database, to extract times
+iFFs = 1:size(db_table_ff,1);
+iFF_with_DF = find(db_table_ff.is_df==1);
+db_table_df = db_table_ff(iFF_with_DF,:);
+nDF = numel(db_table_df.time);
+db_table = db_table_ff;
+
 %% Loop events and plot brief overview
 units = irf_units;
 
 mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 
-% BBF/DF database, to extract times
-iFFs = 1:size(db_table_ff,1);
-iDF_in_FF = find(db_table_ff.is_df==1);
-db_table_df = db_table_ff(iDF_in_BFF,:);
-nDF = numel(db_table_df.time);
 
 
 iDFs = [9 128];
@@ -90,23 +92,26 @@ reduction2.threshold = 0.02:0.02:0.3; % for reduction
 doPrint = true;
 
 % Run through events
-for iDF = 17:nDF
-  iFF = iFFs(iDF);
-  str_event = sprintf('Ev_iDF=%03.0f_nMovMean=%g_mask=%.0f_%.0f',iDF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
+for iFF = 1:numel(iFF_with_DF)
+  %iFF = iFFs(iDF);
+  str_event = sprintf('Ev_iFF=%03.0f_nMovMean=%g_mask=%.0f_%.0f',iFF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   
   % Define time
-  t0 = EpochTT(db_table_df.time(iDF));
-  T =  db_table_df.t_duration_s(iDF);  
+  t0 = EpochTT(db_table.time(iFF));
+  T =  db_table.t_duration_s(iFF);  
   t_ff_start = t0;
   t_ff_stop = t_ff_start + T;
   tint = [t_ff_start t_ff_stop] + 5*[-1 1];
   %tint = tint + [-90 0];
-  tDF = EpochTT(int64(db_table_df.t_df(iDF)));
+  tDF = int64(db_table.t_df(iFF));
+  tDF_EpochTT = EpochTT(tDF);
   
   disp('------------------------------------------------------------')
-  disp("iDF = " + iDF + ...
+  if isnan(db_table.t_df(iFF)), strTDF = 'N/A'; else strTDF = EpochTT(int64(db_table.t_df(iFF))); end
+  disp("iFF = " + iFF + ...
     ", t1 = " + tint(1).utc('yyyy-mm-ddTHH:MM:SS') + ...
-    ", t2 = " + tint(2).utc('yyyy-mm-ddTHH:MM:SS'))
+    ", t2 = " + tint(2).utc('yyyy-mm-ddTHH:MM:SS') + ...
+    ", tDF = " + strTDF)
   
   
   disp('>> Loading data.')
@@ -155,14 +160,16 @@ for iDF = 17:nDF
     'Options',options,'SharedCovariance',false, ...
     'RegularizationValue',0.1);
 
-  %% Reduce mixture
+  %% Cache merge error
   %disp('>> Reducing mixture.') 
   fprintf(sprintf('>> Caching merge error, %s.\n',reduction.metric))  
   GM = GM.cacheMergeErr('metric',reduction.metric);        % the slow step, once  
 
-  %% Save GM
+  %% Add additional data to GM and save GM to file
   GM_save = GM.removeField('data');
   GM_save.userdata.pdist_derived = pdist_derived;
+  GM_save.userdata.db_tDF = tDF_EpochTT;
+
   save([pathSave 'GMDist_' str_event '.mat'],'GM_save')
 
   %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
