@@ -10,15 +10,14 @@ mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 
 doPrint = 1;
-doPlot = 0;
-vecK = 1:5;
+doPlot = 1;
 
 % Turn off irf._log warning messages
 irf.log('off')
 
 % Save path
 pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v1/'];
-listFiles = dir([pathSave '*Ev*']);
+listFiles = dir([pathSave '*iFF*']);
 nFiles = numel(listFiles);
 
 for iFile = 1%:nFiles
@@ -27,15 +26,15 @@ for iFile = 1%:nFiles
 
   GBICmin = GM.selectCol(GM.kneeK('method','min'));
   GBICchord = GM.selectCol(GM.kneeK('method','chord'));  
-  GmaxK = GM.slice(':',max(GM.nComp,[],'all'));
+  GMaxK = GM.selectCol(max(GM.nComp,[],'all'));
   
-  GBICminCold = GBICchord.subMixture(GBICchord.cold('maxColdEV',200));
-  GBICminCold = GBICmin.subMixture(GBICchord.cold('maxColdEV',200));
-
-  GCold = GM.subMixture(GM.cold('maxColdEV',200));
+  GBICminCold = GBICchord.subMixture(GBICchord.cold('maxColdEV',1000));
+  GBICchordCold = GBICchord.subMixture(GBICchord.cold('maxColdEV',1000));
+  GMaxKCold = GMaxK.subMixture(GMaxK.cold('maxColdEV',1000));
 
   %% Plot, BIC
-  h = irf_plot(7);
+  str_print = [listFiles(iFile).name, '_BIC_overview'];
+  h = irf_plot(6);
 
   hca = irf_panel('omni fpi');
   irf_spectrogram(hca,GM.userdata.pdist_derived.omni.deflux.specrec)
@@ -43,20 +42,23 @@ for iFile = 1%:nFiles
   hca = irf_panel('fz fpi');
   irf_spectrogram(hca,GM.userdata.pdist_derived.fz.specrec)
 
+  if 0
   hca = irf_panel('BIC/maxBIC)');
   irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec( ...
   'p_label','log BIC/max(BIC)','f_label','K'),'log')
   hold(hca,'on')
   irf_plot(hca,GM.tsBICKnee,'k')
   hold(hca,'off')
-
+  end
+  if 1
   hca = irf_panel('BIC/minBIC');
   irf_spectrogram(hca,GM.tsBIC('normalization','min').specrec( ...
   'p_label','log BIC-min(BIC)','f_label','K'),'log')
   hold(hca,'on')
-  irf_plot(hca,GM.tsBICKnee('method','min'),'k')
-  irf_plot(hca,GM.tsBICKnee('method','chord'),'r')
+  irf_plot(hca,GM.tsBICKnee('method','min'),'color','k')
+  irf_plot(hca,GM.tsBICKnee('method','chord'),'color','r','linewidth',1)
   hold(hca,'off')
+  end
 
   hca = irf_panel('fz by BIC min');
   irf_spectrogram(hca,GBICmin.tsReduced(3).specrec,'log')
@@ -65,18 +67,20 @@ for iFile = 1%:nFiles
   irf_spectrogram(hca,GBICchord.tsReduced(3).specrec,'log')
 
   hca = irf_panel('fz by max K');  
-  irf_spectrogram(hca,GmaxK.tsReduced(3).specrec,'log')
+  irf_spectrogram(hca,GMaxK.tsReduced(3).specrec,'log')
 
   %hca = irf_panel('fz by largest K');  
   %irf_spectrogram(hca,G1b.tsReduced(3).specrec,'log')
 
-  hlinks = linkprop(h([2 5 6 7]),{'CLim','YLim'});
+  hlinks = linkprop(h([2 4:end]),{'CLim','YLim'});
+  
 
   irf_plot_axis_align
   irf_timeaxis(h)
+  if doPrint, cn.print(str_print); end
 
   %% Plot, cold components
-  h = irf_plot(7);
+  h = irf_plot(6);
 
   hca = irf_panel('omni fpi');
   irf_spectrogram(hca,GM.userdata.pdist_derived.omni.deflux.specrec)
@@ -84,12 +88,12 @@ for iFile = 1%:nFiles
   hca = irf_panel('fz fpi');
   irf_spectrogram(hca,GM.userdata.pdist_derived.fz.specrec)
 
-  hca = irf_panel('BIC/maxBIC)');
-  irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec( ...
-    'p_label','log BIC/max(BIC)','f_label','K'),'log')
-  hold(hca,'on')
-  irf_plot(hca,GM.tsBICKnee,'k')
-  hold(hca,'off')
+  %hca = irf_panel('BIC/maxBIC)');
+  %irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec( ...
+  %  'p_label','log BIC/max(BIC)','f_label','K'),'log')
+  %hold(hca,'on')
+  %irf_plot(hca,GM.tsBICKnee,'k')
+  %hold(hca,'off')
 
   hca = irf_panel('BIC/minBIC');
   irf_spectrogram(hca,GM.tsBIC('normalization','min').specrec( ...
@@ -106,12 +110,12 @@ for iFile = 1%:nFiles
   irf_spectrogram(hca,GBICchord.tsReduced(3).specrec,'log')
 
   hca = irf_panel('fz by max K');  
-  irf_spectrogram(hca,GmaxK.tsReduced(3).specrec,'log')
+  irf_spectrogram(hca,GMaxK.tsReduced(3).specrec,'log')
 
   %hca = irf_panel('fz by largest K');  
   %irf_spectrogram(hca,G1b.tsReduced(3).specrec,'log')
 
-  hlinks = linkprop(h([2 5 6 7]),{'CLim','YLim'});
+  hlinks = linkprop(h([2 5 6]),{'CLim','YLim'});
 
   irf_plot_axis_align
   irf_timeaxis(h)
