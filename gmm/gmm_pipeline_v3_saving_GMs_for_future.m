@@ -52,8 +52,8 @@ db_table = db_table_ff;
 %% Loop events and plot brief overview
 units = irf_units;
 
-mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 
 
 
@@ -69,15 +69,16 @@ iDFs = 57;
 iDFs=9;
 iDFs = 10;
 iDFs = 16;
-doPrint = 1;
-doPlot = 0;
-vecK = 1:5;
+
+
+
 
 % Turn off irf._log warning messages
 irf.log('off')
 
 % Save path
 pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v1/'];
+
 % Parameters
 ic = 1;
 nMovMean = 5; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
@@ -89,11 +90,13 @@ reduction.threshold = [0.1 0.2 0.3 0.4]; % for reduction
 reduction2.metric = 'l1'; % for reduction
 reduction2.threshold = 0.02:0.02:0.3; % for reduction
 
-doPrint = true;
+doSave = true;
+doPlot = false;
+doPrint = false;
 
 % Run through events
-for iFF = 1:numel(iFF_with_DF)
-  %iFF = iFFs(iDF);
+for iEv = 1:numel(iFF_with_DF)
+  iFF = iFF_with_DF(iEv);
   str_event = sprintf('Ev_iFF=%03.0f_nMovMean=%g_mask=%.0f_%.0f',iFF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   
   % Define time
@@ -111,7 +114,7 @@ for iFF = 1:numel(iFF_with_DF)
   disp("iFF = " + iFF + ...
     ", t1 = " + tint(1).utc('yyyy-mm-ddTHH:MM:SS') + ...
     ", t2 = " + tint(2).utc('yyyy-mm-ddTHH:MM:SS') + ...
-    ", tDF = " + strTDF)
+    ", tDF = " + strTDF.utc('yyyy-mm-ddTHH:MM:SS'))
   
   
   disp('>> Loading data.')
@@ -126,20 +129,34 @@ for iFF = 1:numel(iFF_with_DF)
      %continue
   end
 
+  disp('>> Loading B and computing curvature.')
+  try
+    %%
+    c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
+    c_eval('gseR? = mms.get_data(''R_gse'',tint+60*[-1 1],?);',1:4)
+    c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',1:4)
+    c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',1:4)
+    c_eval('R? = mms_dsl2gse(gseR?.resample(iPDist),defatt?,-1);',1:4)
+    c_eval('B? = dmpaB?.resample(iPDist);',1:4)
+    [curvB,avB]=c_4_grad('R?','B?','curvature');
+  catch ME
+    warning([ME.message ' >> Proceeding without B and curvature.'])
+    curvB = TSeries([]);
+    avB = TSeries([]);
+  end
+
   %% Prep data
-  disp('>> Preparing data.')
-  PD_use = iPDist; % iPDist
-  %mask_nMovMean = [7 7]; mask_Counts = 5;
-  %run_metadata.PD.mask_nMovMean = mask_nMovMean;
-  %run_metadata.PD.mask_nCounts = mask_Counts;
+  disp('>> Prepping PDist.')
+  PD_use = iPDist;
 
   mat = iPDist_counts.find_low_counts('counts',mask_Counts,'nMovMean',mask_nMovMean,'output','mat');
   PD = PD_use.mask('energy','mat',mat);  
   PD = PD.movmean(nMovMean); % see how this affects the results
-  PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computations for now, need to check it it is needded for noise
+  PD = PD(1:nMovMean:PD.length); % This step is done just to reduce the computations for now, need to check if it is needded for noise
   PDc = iPDist_counts.movmean(nMovMean);
   PDc = PDc(1:nMovMean:iPDist_counts.length);
 
+  disp('>> Generating microparticles.')
   MP = PD.macroparticles('ntot',nMP,'skipzero',1, ...
     'scpot',scPot.resample(PD),'v_init','v2','MParts', ...
     'counts',PDc);
@@ -147,6 +164,7 @@ for iFF = 1:numel(iFF_with_DF)
   MP.userdata.parent_pdist.maskMovMean = mask_nMovMean;
   MP.userdata.parent_pdist.movMean = nMovMean;
 
+  disp('>> Reducing distributions.')
   pdist_derived.fx = PD.reduce('1D',[1 0 0]);
   pdist_derived.fy = PD.reduce('1D',[0 1 0]);
   pdist_derived.fz = PD.reduce('1D',[0 0 1]);
@@ -161,57 +179,74 @@ for iFF = 1:numel(iFF_with_DF)
     'RegularizationValue',0.1);
 
   %% Cache merge error
-  %disp('>> Reducing mixture.') 
   fprintf(sprintf('>> Caching merge error, %s.\n',reduction.metric))  
   GM = GM.cacheMergeErr('metric',reduction.metric);        % the slow step, once  
 
-  %% Add additional data to GM and save GM to file
-  GM_save = GM.removeField('data');
+  %% Save ancillary data to GM object
+  fprintf('>> Cache merge error, %s.\n',reduction.metric)
+  GM = GM.cacheMergeErr('metric',reduction.metric);        % the slow step, once  
+
+  fprintf('>> Cache B, curvB, n.\n')  
+  GM = GM.cacheTS('B',avB); 
+  GM = GM.cacheTS('curvB',curvB); 
+  GM = GM.cacheTS('n',MP.n); 
+  GM = GM.cacheTS('nMP',irf.ts_scalar(GM.time,MP.N));
+  
   GM_save.userdata.pdist_derived = pdist_derived;
+  GM_save.userdata.db_tFF_start = t_ff_start;
+  GM_save.userdata.db_tFF_stop = t_ff_stop;
   GM_save.userdata.db_tDF = tDF_EpochTT;
+  GM_save.userdata.iSC = ic;
 
-  save([pathSave 'GMDist_' str_event '.mat'],'GM_save')
+  GM_save.userdata.pdist_derived = pdist_derived;
 
-  %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
-  fig = figure(101);
-  fig.Position = [716     1   712   841];
-  str_print = sprintf('%s_M_dep_on_threshold',str_event);
+  GM_save = GM.removeField('data'); % Remove MParts for space
 
-  nCompPreMerge = GM.nComp;
-  nCompMax = max(nCompPreMerge(:));
-  nCompMin = min(nCompPreMerge(:));
+  %% Save GM
+  if doSave, save([pathSave 'GMDist_' str_event '.mat'],'GM_save'); end
 
-  h = irf_plot(3+nCompMax);
+  if doPlot
+    %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
+    fig = figure(101);
+    fig.Position = [716     1   712   841];
+    str_print = sprintf('%s_M_dep_on_threshold',str_event);
   
-  hca = irf_panel('omni fpi');
-  irf_spectrogram(hca,PD.deflux.omni.specrec)
-
-  hca = irf_panel('BIC'); % it is easier to see counter-streaming populations in this one
-  irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec('p_label','BIC/max(BIC)'),'lin')
+    nCompPreMerge = GM.nComp;
+    nCompMax = max(nCompPreMerge(:));
+    nCompMin = min(nCompPreMerge(:));
   
-  hca = irf_panel('fz fpi'); % it is easier to see counter-streaming populations in this one
-  irf_spectrogram(hca,pdist_derived.fz.specrec)
-  %hca.CLim = prctile(hca.Children.CData(:),[1 99]);  
-
-  for K_ = nCompPreMerge(1,:)
-    G = GM.slice(':',K_);
-    hca = irf_panel(sprintf('fz K = %g',K_));
-    specrec = G.tsReduced(3).specrec;
-    specrec.p_label = {'PSD (s/m^4)';sprintf('K = %g',K_)};
-    [~,hcb] = irf_spectrogram(hca,specrec,'log');
-    %irf_legend(hca,sprintf('K = %g',K),[0.02 0.1])       
+    h = irf_plot(3+nCompMax);
+    
+    hca = irf_panel('omni fpi');
+    irf_spectrogram(hca,PD.deflux.omni.specrec)
+  
+    hca = irf_panel('BIC'); % it is easier to see counter-streaming populations in this one
+    irf_spectrogram(hca,GM.tsBIC('normalization','min').specrec('p_label','BIC-min(BIC)'),'lin')
+    
+    hca = irf_panel('fz fpi'); % it is easier to see counter-streaming populations in this one
+    irf_spectrogram(hca,pdist_derived.fz.specrec)
+    %hca.CLim = prctile(hca.Children.CData(:),[1 99]);  
+  
+    for K_ = nCompPreMerge(1,:)
+      G = GM.slice(':',K_);
+      hca = irf_panel(sprintf('fz K = %g',K_));
+      specrec = G.tsReduced(3).specrec;
+      specrec.p_label = {'PSD (s/m^4)';sprintf('K = %g',K_)};
+      [~,hcb] = irf_spectrogram(hca,specrec,'log');
+      %irf_legend(hca,sprintf('K = %g',K),[0.02 0.1])       
+    end
+  
+    hlinks = linkprop(h(3:end),{'CLim','YLim'});
+  
+    colormap([flipdim(irf_colormap('Spectral'),1)])
+    c_eval('h(?).Layer = ''top'';',1:numel(h))
+    irf_plot_axis_align
+    irf_zoom(h,'x',PD.time)
+    irf_timeaxis(h)
+    h(end).XTickLabelRotation = 0;
+  
+    if doPrint, cn.print(str_print); end 
   end
-
-  hlinks = linkprop(h(3:end),{'CLim','YLim'});
-
-  colormap([flipdim(irf_colormap('Spectral'),1)])
-  c_eval('h(?).Layer = ''top'';',1:numel(h))
-  irf_plot_axis_align
-  irf_zoom(h,'x',PD.time)
-  irf_timeaxis(h)
-  h(end).XTickLabelRotation = 0;
-
-  if doPrint, cn.print(str_print); end 
 end
 
 irf.log('on')

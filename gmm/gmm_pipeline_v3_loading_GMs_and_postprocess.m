@@ -2,45 +2,6 @@
 localuser = 'cecilianorgren';
 %file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_b_gsm_2017-2022.nc'];
 
-file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
-%data = load(file);
-file_csv = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.csv'];
-tlim = readtable(file_csv);
-tstart = tlim.Var1; tstart.TimeZone = "UTCLeapSeconds";
-tstop = tlim.Var2;  tstop.TimeZone = "UTCLeapSeconds";
-
-tstart_ttns = convertTo(tstart, 'tt2000');
-tstop_ttns = convertTo(tstop, 'tt2000');
-t_duration_s = double((tstop_ttns - tstart_ttns))*1e-9;
-
-%ncdisp(file)
-
-info = ncinfo(file);
-vars = {info.Variables.Name};
-nvars = numel(vars);
-
-clear db
-for ivar = 1:nvars
-  db.(vars{ivar}) = ncread(file,vars{ivar});
-end
-
-db_table_ff = struct2table(db);
-% Add stop time of slow
-db_table_ff = addvars(db_table_ff,tstart_ttns,tstop_ttns,t_duration_s,'After','time');
-
-
-t0_ff = EpochTT('2017-05-05T19:41:44.790324');
-% time: microseconds since 2017-05-05T19:41:44.790324
-time_ff_ttns = t0_ff.ttns + db_table_ff.time*1e3;
-db_table_ff.time = time_ff_ttns; % rewrite time in ttns
-
-
-t0_df = EpochTT('2017-05-19T03:06:44.458185978');
-% t_df: nanoseconds since  2017-05-19T03:06:44.458185978
-time_df_ttns = double(t0_df.ttns + int64(db_table_ff.t_df));
-time_df_ttns(~db_table_ff.is_df) = NaN;
-db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
-
 
 %% Loop events and plot brief overview
 units = irf_units;
@@ -48,25 +9,6 @@ units = irf_units;
 mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 
-% BBF/DF database, to extract times
-iFFs = 1:size(db_table_ff,1);
-iDF_in_FF = find(db_table_ff.is_df==1);
-db_table_df = db_table_ff(iDF_in_FF,:);
-nDF = numel(db_table_df.time);
-
-
-iDFs = [9 128];
-iDFs = 217:nDF;
-%iDFs = 87;
-iDFs = 17;23:nDF;
-iDFs = 101:nDF;
-iDFs = [1 6 9 10 13 21 25 35 38 45 46 47 52 55 56 57 58 60 61 68 69 70 71 78 79 81 83 87 91];
-iDFs = [92 95 98 101 107 112 115 121 ];
-iDFs = 37;
-iDFs = 57;
-iDFs=9;
-iDFs = 10;
-iDFs = 16;
 doPrint = 1;
 doPlot = 0;
 vecK = 1:5;
@@ -76,18 +18,106 @@ irf.log('off')
 
 % Save path
 pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v1/'];
-% Parameters
-ic = 1;
-nMovMean = 5; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
-mask_nMovMean = [7 7]; mask_Counts = 5;
-nMP = 10000; % Number of macroparticles
-K = 1:7;
-reduction.metric = 'l1'; % for reduction
-reduction.threshold = [0.1 0.2 0.3 0.4]; % for reduction
-reduction2.metric = 'l1'; % for reduction
-reduction2.threshold = 0.02:0.02:0.3; % for reduction
+listFiles = dir([pathSave '*Ev*']);
+nFiles = numel(listFiles);
 
-doPrint = true;
+for iFile = 1%:nFiles
+  fileName = [listFiles(iFile).folder filesep listFiles(iFile).name];
+  GM = load(fileName,'GM_save').GM_save; 
+
+  GBIC = GM.slice(':',GM.kneeK);
+
+  %% Plot, BIC
+  h = irf_plot(5);
+
+  hca = irf_panel('omni fpi');
+  irf_spectrogram(hca,GM.userdata.pdist_derived.omni.deflux.specrec)
+
+  hca = irf_panel('fz fpi');
+  irf_spectrogram(hca,GM.userdata.pdist_derived.fz.specrec)
+
+  hca = irf_panel('BIC/maxBIC)');
+  irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec( ...
+  'p_label','log BIC/max(BIC)','f_label','K'),'log')
+  hold(hca,'on')
+  irf_plot(hca,GM.tsBICKnee,'k')
+  hold(hca,'off')
+
+  hca = irf_panel('BIC/minBIC');
+  irf_spectrogram(hca,GM.tsBIC('normalization','min').specrec( ...
+  'p_label','log BIC-min(BIC)','f_label','K'),'log')
+  hold(hca,'on')
+  irf_plot(hca,GM.tsBICKnee('method','min'),'k')
+  irf_plot(hca,GM.tsBICKnee('method','chord'),'r')
+  hold(hca,'off')
+
+  hca = irf_panel('fz by BIC');
+  irf_spectrogram(hca,GBIC.tsReduced(1).specrec,'log')
+
+
+  irf_plot_axis_align
+  irf_timeaxis(h)
+  %% Plot 1
+
+  h = setup_subplots(2,6,'horizontal');
+  isub = 1;
+  for iK = 1:K
+    hca = h(isub); isub = isub + 1;
+    G = GM.slice(':',iK).sortBy('T');
+    tsN = G.tsN('n',GM.userdata.TSeries.n.data);
+    tsT = G.tsT('type','iso');
+  
+    cellN = cellfun(@(x)x.data,tsN,'UniformOutput',false);
+    matN = cat(2,cellN{:});
+    cellT = cellfun(@(x)x.data,tsT,'UniformOutput',false);
+    matT = cat(2,cellT{:});
+    
+    scatter(hca,matN,matT,'o')
+    hca.XLabel.String = 'n (cm^{-3})';
+    hca.YLabel.String = 'T (eV)';
+  end  
+
+  for iK = 1:K
+    hca = h(isub); isub = isub + 1;
+    G = GM.slice(':',iK).sortBy('T');
+    tsV = G.tsV;
+
+    cX = cellfun(@(x)x.x.data,tsV,'UniformOutput',false);
+    mX = cat(2,cX{:});
+    cY = cellfun(@(x)x.z.data,tsV,'UniformOutput',false);
+    mY = cat(2,cY{:});
+    scatter(hca,mX,mY,'o')
+    hca.XLabel.String = 'v_x (km/s)';
+    hca.YLabel.String = 'v_z (km/s)';
+  end  
+  
+  c_eval('h(?).Box = ''on'';',1:numel(h))
+  c_eval('h(?).FontSize = 12;',1:numel(h))
+
+  %% Plot 2, using .byNComp
+  h = setup_subplots(2,6,'vertical');
+  isub = 1;
+
+  for iK = 1:K
+    G = GM.slice(':',iK).sortBy('T');
+    data = G.byNComp('n',GM.userdata.TSeries.n.data);
+
+    hca = h(isub); isub = isub + 1;
+    scatter(hca,data.n,data.T,'o')
+    %hca.XScale = 'log';
+    %hca.YScale = 'log';
+
+    hca = h(isub); isub = isub + 1;
+    scatter(hca,data.V(:,:,1),data.V(:,:,3),'o')
+  end
+
+  c_eval('h(?).Box = ''on'';',1:numel(h))
+  c_eval('h(?).FontSize = 12;',1:numel(h))
+end
+%%
+
+
+
 
 % Run through events
 for iDF = 17:nDF

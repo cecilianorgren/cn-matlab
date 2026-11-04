@@ -802,6 +802,10 @@ classdef GMDist
         s = obj.perColumn_(@(g) g.floorTParent());
         return
       end
+      if isempty(obj.data) && isfield(obj.misc,'parentStats')    % stored by cacheNBinsEff
+        s = obj.misc.parentStats;
+        return
+      end
       data = obj.data;
       if isempty(data) || iscell(data) || ~isprop(data,'generation') || ...
           ~isstruct(data.generation) || ~isfield(data.generation,'parent') || isempty(data.generation.parent.iDep)
@@ -1072,11 +1076,93 @@ classdef GMDist
         end
         out.misc.partitions = pp;
       end
+      if isfield(obj.misc,'parentStats')
+        ps = obj.misc.parentStats;
+        nT0 = size(obj.gmm,1);
+        if iscell(ps)
+          ps = cellfun(@(x) GMDist.sliceStatsRows_(x,it,nT0),ps(ic),'UniformOutput',false);
+          if numel(ps) == 1, ps = ps{1}; end
+        elseif isscalar(ic) && ic == 1
+          ps = GMDist.sliceStatsRows_(ps,it,nT0);
+        else
+          ps = [];
+        end
+        if ~isempty(ps), out.misc.parentStats = ps; end
+      end
     end
 
     function out = sliceTime(obj,it)
       % SLICETIME Same as slice(it): all columns, selected times.
       out = obj.slice(it,[]);
+    end
+
+    function out = selectCol(obj,ic)
+      % SELECTCOL One fit per time: the entry of gmm in column ic(it) at each time.
+      %
+      %   out = gd.selectCol(ic)
+      %
+      %   ic: [nT x 1] column index for each time (NaN: no fit at that time), or a
+      %   scalar. The result has a single column, so all the methods work on it.
+      %   misc.sourceCol records the column each time came from and
+      %   misc.nCompOrig the number of components before any merge. Stored merge
+      %   errors are not carried.
+      nT = size(obj.gmm,1);
+      nCol = size(obj.gmm,2);
+      ic = ic(:);
+      if isscalar(ic), ic = repmat(ic,nT,1); end
+      if numel(ic) ~= nT
+        error('GMDist:select','ic must have one element per time (%d).',nT)
+      end
+      if any(~isnan(ic) & (ic < 1 | ic > nCol | ic ~= round(ic)))
+        error('GMDist:select','Column indices must be integers in 1:%d (or NaN).',nCol)
+      end
+      KO = obj.nCompOrig_();
+      g = cell(nT,1); C = cell(nT,1);
+      B = nan(nT,1); F = nan(nT,1); ko = nan(nT,1);
+      for it = 1:nT
+        if isnan(ic(it)), continue, end
+        j = ic(it);
+        g{it} = obj.gmm{it,j};
+        B(it) = obj.bic(it,j);
+        F(it) = obj.frac(it,j);
+        C{it} = obj.counts{it,j};
+        ko(it) = KO(it,j);
+      end
+      out = GMDist(g,'time',obj.time,'mass',obj.mass_,'data',obj.data, ...
+        'bic',B,'frac',F,'counts',C,'options',obj.options,'userdata',obj.userdata);
+      out.misc.sourceCol = ic;
+      out.misc.nCompOrig = ko;
+    end
+
+    function out = selectNComp(obj,M)
+      % SELECTNCOMP One fit per time: the one with M(it) components.
+      %
+      %   out = gd.selectNComp(M)
+      %
+      %   M: [nT x 1] number of components for each time (NaN: none), or a
+      %   scalar, for example the result of kneeK:
+      %     gbic = gd.selectNComp(gd.kneeK);
+      %   The fit with that number of components is taken from whichever column
+      %   has it. If more than one column has it at a time (possible after a
+      %   merge), it is ambiguous and an error is given: use selectCol. See
+      %   selectCol for the result.
+      nC = obj.nComp;
+      nT = size(nC,1);
+      M = M(:);
+      if isscalar(M), M = repmat(M,nT,1); end
+      if numel(M) ~= nT
+        error('GMDist:select','M must have one element per time (%d).',nT)
+      end
+      ic = nan(nT,1);
+      for it = 1:nT
+        if isnan(M(it)), continue, end
+        j = find(nC(it,:) == M(it));
+        if numel(j) > 1
+          error('GMDist:select','Time index %d has %d columns with %d components; use selectCol.',it,numel(j),M(it))
+        end
+        if ~isempty(j), ic(it) = j; end
+      end
+      out = obj.selectCol(ic);
     end
 
     function out = keepNComp(obj,M,varargin)
@@ -1794,23 +1880,51 @@ classdef GMDist
     end
 
     function out = cacheNBinsEff(obj)
-      % Save nBinsEff in GMDist structure. This is useful to apply before
-      % saving the GMDist to be loaded and post-processed later.
-      ... % Claude please complete this function
+      % CACHENBINSEFF Store the parent-bin statistics in the object, for later post-processing.
+      %
+      %   gd = gd.cacheNBinsEff()
+      %
+      %   Runs floorTParent (needs the companion MParts with the parent bin
+      %   indices) and stores the result in gd.misc.parentStats: nBinsEff
+      %   (effective number of parent bins per dimension), iBinDom, Tfloor,
+      %   Ttot and Tbetween. Apply it before removeField('data') and saving:
+      %   floorTParent and tsFloorTParent then return the stored values without
+      %   the macroparticles, and slice keeps them in step with the rows and
+      %   columns of gmm. The statistics are in the stored component order and
+      %   are not carried by sortBy, merge, subMixture or selectCol, so cache
+      %   after those.
       out = obj;
-      out.misc.nBinsEff = []; % ...
+      out.misc.parentStats = obj.floorTParent();
     end
 
     function out = cacheTS(obj,name,ts)
-      % Save total density in GMDist structure. This is useful to apply before
-      % saving the GMDist to be loaded and post-processed later.
-      % For example, save magnetic field, magnetic field curvature, plasma
-      % density (used for reconstructing density)
-      ... % Claude please complete this function
+      % CACHETS Store a TSeries in the object, in gd.userdata.TSeries.<name>.
+      %
+      %   gd = gd.cacheTS(name,ts)
+      %
+      %   For post-processing after the macroparticles have been removed and the
+      %   object saved: for example the plasma density 'n', the magnetic field or
+      %   its curvature. name must be a valid field name and ts a TSeries, kept
+      %   as given with its own time. cacheTS(name,[]) removes it. A TSeries
+      %   named 'n' is used as the total density when there is no companion data
+      %   (it is resampled to gd.time if that is a GenericTimeArray).
+      if ~(ischar(name) || (isstring(name) && isscalar(name))) || ~isvarname(char(name))
+        error('GMDist:cacheTS','name must be a valid field name.')
+      end
+      name = char(name);
       out = obj;
-      out.userdata.TSeries.(name) = ts; % ...
+      if isempty(ts)
+        if isstruct(out.userdata) && isfield(out.userdata,'TSeries') && isfield(out.userdata.TSeries,name)
+          out.userdata.TSeries = rmfield(out.userdata.TSeries,name);
+        end
+        return
+      end
+      if ~isobject(ts) || ~ismethod(ts,'resample')
+        error('GMDist:cacheTS','ts must be a TSeries.')
+      end
+      out.userdata.TSeries.(name) = ts;
     end
-    
+
     function out = cacheMergeErr(obj,varargin)
       % CACHEMERGEERR Compute the merge distances once and store them in the object.
       %
@@ -2272,6 +2386,13 @@ classdef GMDist
         catch
           % no usable density from the companion (e.g. no weights): NaN
         end
+      elseif isstruct(obj.userdata) && isfield(obj.userdata,'TSeries') && isfield(obj.userdata.TSeries,'n')
+        tsn = obj.userdata.TSeries.n;                      % stored by cacheTS
+        if isa(obj.time,'GenericTimeArray')
+          try tsn = tsn.resample(obj.time); catch, end
+        end
+        x = tsn.data(:);
+        if numel(x) == nT, nTot = x; end
       end
     end
 
@@ -2347,6 +2468,18 @@ classdef GMDist
         otherwise
           % 'l1' (total variation) and 'kl': Monte Carlo, samples shared by all partitions
           errv = GMDist.sampledPartitionErr_(metric,w,mu,S,wG,muG,SG,iG,nSamples,seed);
+      end
+    end
+
+    function s = sliceStatsRows_(s,it,nT0)
+      % Select the rows it of the time-dependent arrays of a stats struct.
+      for f = fieldnames(s).'
+        v = s.(f{1});
+        if isnumeric(v) && ~isscalar(v) && size(v,1) == nT0
+          idx = repmat({':'},1,ndims(v));
+          idx{1} = it;
+          s.(f{1}) = v(idx{:});
+        end
       end
     end
 
