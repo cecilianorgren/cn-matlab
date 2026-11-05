@@ -98,7 +98,7 @@ for iFile = 1%:nFiles
   
 
     hca = irf_panel('fz by max K');  
-    irf_spectrogram(hca,GMaxK.tsReduced(3).specrec,flog)
+    irf_spectrogram(hca,GMaxK.tsReduced(3,'vg',GM.userdata.pdist_derived.fz.depend{1}(1,:)).specrec,flog)
 
     hca = irf_panel('BIC/minBIC');
     irf_spectrogram(hca,GM.tsBIC('normalization','min').specrec( ...
@@ -109,11 +109,11 @@ for iFile = 1%:nFiles
     hold(hca,'off')
   
     hca = irf_panel('fz by BIC min');
-    specrec = GBICmin.tsReduced(3).specrec('p_label',{'PSD m/m^4','K - BIC min'});
+    specrec = GBICmin.tsReduced(3,'vg',GM.userdata.pdist_derived.fz.depend{1}(1,:)).specrec('p_label',{'PSD m/m^4','K - BIC min'});
     irf_spectrogram(hca,specrec,flog)
   
     hca = irf_panel('fz by BIC chord');
-    specrec = GBICchord.tsReduced(3).specrec('p_label',{'PSD m/m^4','K - BIC chord'});
+    specrec = GBICchord.tsReduced(3,'vg',GM.userdata.pdist_derived.fz.depend{1}(1,:)).specrec('p_label',{'PSD m/m^4','K - BIC chord'});
     irf_spectrogram(hca,specrec,flog)
   
   
@@ -127,7 +127,8 @@ for iFile = 1%:nFiles
     end
 
     hlinks = linkprop(h([2 3 5 6]),{'CLim','YLim'});
-  
+    h(5).CLim = prctile(h(5).Children.CData(:),[1 99]);
+    
     irf_plot_axis_align
     irf_timeaxis(h)
   
