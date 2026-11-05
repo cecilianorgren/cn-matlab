@@ -9,7 +9,7 @@ units = irf_units;
 mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
 %mms.db_init('local_file_db','/Volumes/mms');
 
-doPrint = 1;
+doPrint = 0;
 doPlot = 1;
 
 % Turn off irf._log warning messages
@@ -36,6 +36,7 @@ for iFile = 1%:nFiles
 
   if doPlot
     %% Plot, BIC
+    figure(201)
     str_print = [listFiles(iFile).name, '_BIC_overview'];
     h = irf_plot(6);
   
@@ -82,22 +83,23 @@ for iFile = 1%:nFiles
     irf_timeaxis(h)
     if doPrint, cn.print(str_print); end
   
-    %% Plot, cold components
+    %% Plot, cold components, 1
+    figure(202)
     h = irf_plot(6);
+
+    Ks = unique(GM.nComp);
+    flog = 'log';
   
     hca = irf_panel('omni fpi');
     irf_spectrogram(hca,GM.userdata.pdist_derived.omni.deflux.specrec)
   
     hca = irf_panel('fz fpi');
-    irf_spectrogram(hca,GM.userdata.pdist_derived.fz.specrec)
+    irf_spectrogram(hca,GM.userdata.pdist_derived.fz.specrec,flog)  
   
-    %hca = irf_panel('BIC/maxBIC)');
-    %irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec( ...
-    %  'p_label','log BIC/max(BIC)','f_label','K'),'log')
-    %hold(hca,'on')
-    %irf_plot(hca,GM.tsBICKnee,'k')
-    %hold(hca,'off')
-  
+
+    hca = irf_panel('fz by max K');  
+    irf_spectrogram(hca,GMaxK.tsReduced(3).specrec,flog)
+
     hca = irf_panel('BIC/minBIC');
     irf_spectrogram(hca,GM.tsBIC('normalization','min').specrec( ...
       'p_label','log BIC-min(BIC)','f_label','K'),'log')
@@ -107,29 +109,39 @@ for iFile = 1%:nFiles
     hold(hca,'off')
   
     hca = irf_panel('fz by BIC min');
-    irf_spectrogram(hca,GBICmin.tsReduced(3).specrec,'log')
+    specrec = GBICmin.tsReduced(3).specrec('p_label',{'PSD m/m^4','K - BIC min'});
+    irf_spectrogram(hca,specrec,flog)
   
     hca = irf_panel('fz by BIC chord');
-    irf_spectrogram(hca,GBICchord.tsReduced(3).specrec,'log')
+    specrec = GBICchord.tsReduced(3).specrec('p_label',{'PSD m/m^4','K - BIC chord'});
+    irf_spectrogram(hca,specrec,flog)
   
-    hca = irf_panel('fz by max K');  
-    irf_spectrogram(hca,GMaxK.tsReduced(3).specrec,'log')
   
     %hca = irf_panel('fz by largest K');  
     %irf_spectrogram(hca,G1b.tsReduced(3).specrec,'log')
   
-    hlinks = linkprop(h([2 5 6]),{'CLim','YLim'});
+    if 0
+      hca = irf_panel('nComp cold');
+      irf_plot(hca,{GBICmin.tsNComp,GBICchord.tsNComp},'comp')
+      hca.YLim = [min(Ks) max(Ks)];    
+    end
+
+    hlinks = linkprop(h([2 3 5 6]),{'CLim','YLim'});
   
     irf_plot_axis_align
     irf_timeaxis(h)
   
     %% Plot, scatter
-  
-    h = setup_subplots(2,6,'horizontal');
+    figure(210)
+    Ks = 1:4;
+
+    h = setup_subplots(2,numel(Ks),'horizontal');
     isub = 1;
-    for iK = 1:K
+    %Ks = GM.slice(1,':').nComp;
+    for iK = 1:numel(Ks)
+      K = Ks(iK);
       hca = h(isub); isub = isub + 1;
-      G = GM.slice(':',iK).sortBy('T');
+      G = GM.slice(':',K).sortBy('T');
       tsN = G.tsN('n',GM.userdata.TSeries.n.data);
       tsT = G.tsT('type','iso');
     
@@ -138,12 +150,38 @@ for iFile = 1%:nFiles
       cellT = cellfun(@(x)x.data,tsT,'UniformOutput',false);
       matT = cat(2,cellT{:});
       
+      hca.ColorOrder = pic_colors('matlab');
       scatter(hca,matN,matT,'o')
+      
+      if 1 % add a fit
+        %%
+        hca.ColorOrder = pic_colors('matlab');
+        hold(hca,'on')
+        for ik = 1:K
+          x = (matN(:,ik));
+          y = (matT(:,ik));
+          idx = isfinite(x) & isfinite(y);
+          x = x(idx);
+          y = y(idx);
+          pow = 3;
+          [p,S,mu] = polyfit(x,y,pow);
+          x_ = linspace(min(x),max(x),100);
+          f = polyval(p,x_,S,mu);
+          %f = sum((x_').^(0:(pow-1))*(p-1),2);
+          %f = p(1)*x_.^(pow-1) + p(2)*x_.^(pow-2) + p(3)*x_.^(pow-3) + p(4)*x_.^(pow-4);
+          f(f<min(y)) = NaN;
+          f(f>max(y)) = NaN;
+          plot(hca,x_,f,'--','linewidth',1)
+        end
+        hold(hca,'off')
+      end
+
       hca.XLabel.String = 'n (cm^{-3})';
       hca.YLabel.String = 'T (eV)';
     end  
-  
-    for iK = 1:K
+
+    for iK = 1:numel(Ks)
+      K = Ks(iK);
       hca = h(isub); isub = isub + 1;
       G = GM.slice(':',iK).sortBy('T');
       tsV = G.tsV;
