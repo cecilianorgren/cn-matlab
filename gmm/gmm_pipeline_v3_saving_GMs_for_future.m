@@ -95,7 +95,7 @@ doPlot = true;
 doPrint = true;
 
 % Run through events
-for iEv = 2:numel(iFF_with_DF)
+for iEv = 219:numel(iFF_with_DF)
   iFF = iFF_with_DF(iEv);
   str_event = sprintf('Ev_iFF=%04.0f_nMovMean=%g_mask=%.0f_%.0f',iFF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   

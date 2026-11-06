@@ -20,13 +20,19 @@ function out = gmmCrossEventStatistics(listFiles,varargin)
 %     'intervals'  struct of function handles @(GM) -> logical mask [nT x 1] or
 %                  time indices (default: all, pre, post DF from GM.userdata)
 %     'coldArgs'   arguments to GMDist.cold (default {'maxColdEV',500,'minVabs',50})
-%     'thrL1'      thresholds of the 'l1' statistic (default 0.05:0.05:0.3)
+%     'thrL1'      thresholds of the 'l1' statistic (default 0.05:0.05:0.3); the
+%                  column k of out.l1.<interval>.M belongs to thrL1(k), also in out.thrL1
+%     'l1Args'     extra arguments for the L1 merge errors, e.g. {'nSamples',20000,'seed',1},
+%                  to match the stored errors (see GMDist.cacheMergeErr)
+%   The 'l1' statistic uses the L1 errors stored in the GMDist (cacheMergeErr);
+%   it warns if there are none that match, since they would then be recomputed (slow).
 
 p = inputParser;
 addParameter(p,'stats',{'bicmin','bicchord'});
 addParameter(p,'intervals',defaultIntervals());
 addParameter(p,'coldArgs',{'maxColdEV',500,'minVabs',50});
 addParameter(p,'thrL1',0.05:0.05:0.3);
+addParameter(p,'l1Args',{});
 parse(p,varargin{:});
 
 statNames = p.Results.stats;
@@ -50,6 +56,7 @@ end
 
 out = struct;
 out.nEvents = numel(listFiles);
+out.thrL1 = p.Results.thrL1;
 out.nVDFs = struct;
 for j = 1:numel(intervalNames), out.nVDFs.(intervalNames{j}) = 0; end
 for k = 1:nStat
@@ -121,20 +128,27 @@ function f = statRegistry(name,opt)
     case 'bicmin',   f = @(GM) statBIC(GM,'min');
     case 'bicchord', f = @(GM) statBIC(GM,'chord');
     case 'cold',     f = @(GM) statCold(GM,opt.coldArgs);
-    case 'l1',       f = @(GM) statL1(GM,opt.thrL1);
+    case 'l1',       f = @(GM) statL1(GM,opt.thrL1,opt.l1Args);
     otherwise
       error('gmmCrossEventStatistics:stat','Unknown statistic ''%s''.',name)
   end
 end
 
-function S = statBIC(GM,method)
-  % Number of components chosen by BIC (minimum or chord knee), and the
-  % temperature and proportion of the coldest component at that choice.
-  G = GM.selectNComp(GM.kneeK('method',method));   % K -> column, not kneeK itself
+function S = mixtureStats(G)
+  % The statistics of a single-column GMDist, one row per time: number of
+  % components, and temperature and proportion of the coldest component.
+  % Every selection (BIC, L1 merge, ...) reports through this, so they give the
+  % same fields.
   pop = G.sortBy('T').populations();               % components coldest first
   S.M = G.nComp;                                   % [nT x 1]
   S.minT = pop.Tiso(:,1);                          % eV
   S.wMinT = pop.prop(:,1);
+end
+
+function S = statBIC(GM,method)
+  % Components chosen by BIC (minimum or chord knee).
+  G = GM.selectNComp(GM.kneeK('method',method));   % K -> column, not kneeK itself
+  S = mixtureStats(G);
 end
 
 function S = statCold(GM,coldArgs)
@@ -151,14 +165,21 @@ function S = statCold(GM,coldArgs)
   end
 end
 
-function S = statL1(GM,thr)
-  % Number of components M kept by the L1 merge criterion for each threshold,
-  % for the highest-K fit of each time.
-  GM = GM.cacheMergeErr('metric','l1');            % the slow part, once
+function S = statL1(GM,thr,l1Args)
+  % The same statistics as the BIC ones, after merging with the L1 criterion for
+  % each threshold (columns of the fields = thresholds), for the highest-K fit of
+  % each time, from the L1 errors stored in GM.
+  if ~isfield(GM.misc,'partitions') || ~any(strcmp({GM.misc.partitions.metric},'l1'))
+    warning('gmmCrossEventStatistics:l1','No stored L1 merge errors in this GMDist: they will be computed (slow).')
+  end
   ref = size(GM.gmm,2);
-  S.M = nan(GM.nT,numel(thr));
   for k = 1:numel(thr)
-    Mk = GM.bestPartition(thr(k),'metric','l1');   % [nT x nC]
-    S.M(:,k) = Mk(:,ref);
+    mG = GM.merge('threshold',thr(k),'metric','l1',l1Args{:},'bic',false);   % uses the stored errors
+    Sk = mixtureStats(mG.slice(':',ref));
+    if k == 1
+      S = structfun(@(x) nan(numel(x),numel(thr)),Sk,'UniformOutput',false);
+    end
+    f = fieldnames(Sk);
+    for j = 1:numel(f), S.(f{j})(:,k) = Sk.(f{j}); end
   end
 end
