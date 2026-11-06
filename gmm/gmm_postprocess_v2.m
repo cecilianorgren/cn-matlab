@@ -5,6 +5,7 @@ nFiles = numel(listFiles);
 
 
 out = gmmCrossEventStatistics(listFiles(1:50),'version',{'minbick','chordbick'});
+%out = gmmCrossEventStatistics(listFiles(1:10));
 
 %% Figure, M, minT, histogram
 h = setup_subplots(3,2,'vertical');

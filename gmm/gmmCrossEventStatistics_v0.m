@@ -1,4 +1,4 @@
-function out = gmmCrossEventStatistics(listFiles,varargin)
+function out = gmmCrossEventStatistics_v0(listFiles,varargin)
 
 p = inputParser;
 addParameter(p,'version',[]);
@@ -44,26 +44,14 @@ for iFile = 1:numel(listFiles)
   GMpostDF = GM.sliceTime(iPostDF);
 
   out.nVDFs = out.nVDFs + GM.nT;
-  out.pre.nVDFs = out.pre.nVDFs + GMpreDF.nT;
-  out.post.nVDFs = out.post.nVDFs + GMpostDF.nT;
-  M_bicmin = accumData(GM,'M_bicmin',M_bicmin);
+%  out.pre.nVDFs = out.pre.nVDFs + GMpreDF.nT;
+%  out.post.nVDFs = out.post.nVDFs + GMpostDF.nT;
+%  M_bicmin = accumData(GM,'M_bicmin',M_bicmin);
 
 
   for iVer = 1:nVer
-    
-  end
-end
-out.minT_bicmin = out.minT_bicmin(:,2);
-out.minT_bicchord = out.minT_bicchord(:,2);
-out.nMinT_bicmin = out.nMinT_bicmin(:,2);
-out.nMinT_bicchord = out.nMinT_bicchord(:,2);
-fprintf('\n',iFile)
-
-
-  function out = accumData(GM,version,in)
-
-    switch lower(version)
-      case 'minbick'        
+    switch lower(p.Results.version{iVer})
+      case 'minbick'
         G = GM.selectCol(GM.kneeK('method','min'));
         out.M_bicmin = [out.M_bicmin; G.nComp]; % append nComp
         data = G.sortBy('T').byNComp;
@@ -105,5 +93,17 @@ fprintf('\n',iFile)
       case ''
     
     end
+  end
+end
+out.minT_bicmin = out.minT_bicmin(:,2);
+out.minT_bicchord = out.minT_bicchord(:,2);
+out.nMinT_bicmin = out.nMinT_bicmin(:,2);
+out.nMinT_bicchord = out.nMinT_bicchord(:,2);
+fprintf('\n',iFile)
+
+
+  function out = accumData(in,version,GM)
+
+    
   end
 end
