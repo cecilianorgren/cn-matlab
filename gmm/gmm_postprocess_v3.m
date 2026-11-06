@@ -6,8 +6,9 @@ nFiles = numel(listFiles);
 
 
 tic
-%stats = gmmCrossEventStatistics(listFiles(1:50));
-stats = gmmCrossEventStatistics(listFiles(1:2),'stats',{'bicmin','bicchord','l1','cold'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',500});
+%stats = gmmCrossEventStatistics(listFiles(1:100),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2]);
+%stats = gmmCrossEventStatistics(listFiles(1:2),'stats',{'bicmin','bicchord','l1','cold'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',500});
+stats = gmmCrossEventStatistics(listFiles(1:20),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',200});
 toc
 % perEventMeans = accumarray(out.bicmin.pre.event,out.bicmin.pre.minT,[],@mean)
 
@@ -238,7 +239,7 @@ for where = ["pre","post","all"]
   
   hca = h(isub); isub = isub + 1;
   N = struct('bicmin',[],'bicchord',[],'l1',[]);
-  eT = 0:100:1000;
+  eT = 0:100:3000;
   cT = eT(1:end-1)+0.5*diff(eT);
   histNorm = 'cdf';
   N.bicmin.(where) = histcounts(stats.('bicmin').(where).minT,eT,'Normalization',histNorm);
@@ -260,14 +261,221 @@ for where = ["pre","post","all"]
   hca.XLabel.String = 'Temperature of coldest component (eV)';
   hca.YLabel.String = histNorm;
   %hca.XTick = 0:20;
-  hca.XTick = 0:200:eT(end);
+  hca.XTick = 0:400:eT(end);
   hca.XLim = eT([1 end]);
   irf_legend(hca,cat(2,"bicmin","bicchord","L1<" + stats.thrL1)',[1.02 0.98])
   hca.XTickLabelRotation = 0;
   %hca.XLim = [0 2000];
+  hca.YTick = 0:0.2:1;
   hca.YLim = [0 1];
+  %hca.XMinorGrid = "on";
+  % labels = hca.XTickLabels;
+  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
+  % labels(2:2:end) = emptylbs(2:2:end);
+  % hca.XTickLabels = labels;
+  % labels = hca.YTickLabels;
+  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
+  % labels(2:2:end) = emptylbs(2:2:end);
+  % hca.YTickLabels = labels;
 end
 compact_panels(h,0.1,0.08,1); drawnow; compact_panels(h,0.1,0.08,1)
+
+%% Figure, nColdComp  --  pre post and all separately
+h = setup_subplots(2,3,'vertical');
+isub = 1;
+
+
+method = 'l1';
+iL1 = 1;
+
+perEvent.pre.M = accumarray(stats.(method).pre.event,1,[],@sum);
+perEvent.post.M = accumarray(stats.(method).post.event,1,[],@sum);
+perEvent.all.M = accumarray(stats.(method).all.event,1,[],@sum);
+
+
+nDataPre = numel(stats.(method).pre.M);
+nDataPost = numel(stats.(method).post.M);
+nDataAll = numel(stats.(method).all.M);
+
+marker = 'none';
+
+for where = ["pre","post","all"]  
+  hca = h(isub); isub = isub + 1;
+  N = struct('bicmin',[],'bicchord',[],'l1',[]);
+  eT = 0.5:1:8;
+  cT = eT(1:end-1)+0.5*diff(eT);
+  histNorm = 'pdf';
+  N.bicmin.(where) = histcounts(stats.('bicmin').(where).M,eT,'Normalization',histNorm);
+  N.bicchord.(where) = histcounts(stats.('bicchord').(where).M,eT,'Normalization',histNorm);
+  for iL1 = 1:numel(stats.thrL1)
+    N.l1.(where)(:,iL1) = histcounts(stats.('l1').(where).M(:,iL1),eT,'Normalization',histNorm);
+  end
+  if 0 % plot as steps
+    steps(hca,eT,N.bicmin.(where),'LineWidth',1)
+    hold(hca,'on')
+    steps(hca,eT,N.bicchord.(where),'LineWidth',1)
+    for iL1 = 1:numel(stats.thrL1)
+      steps(hca,eT,N.l1.(where)(:,iL1),'LineWidth',1)
+    end
+  else % plot line  
+    plot(hca,cT,N.bicmin.(where),'LineWidth',1,'Marker',marker)
+    hold(hca,'on')
+    plot(hca,cT,N.bicchord.(where),'LineWidth',1,'Marker',marker)
+    for iL1 = 1:numel(stats.thrL1)
+      plot(hca,cT,N.l1.(where)(:,iL1),'LineWidth',1,'Marker',marker)
+    end
+  end
+  hold(hca,'off')
+  %plot(hca,0.5:1:8,N.pre,1:7,N.post)
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.XLabel.String = 'M';
+  hca.XLabel.String = 'Number of components';
+  hca.YLabel.String = histNorm;
+  hca.XTick = 0:20;
+  hca.XLim = eT([1 end]);
+  irf_legend(hca,cat(2,"bicmin","bicchord","L1<" + stats.thrL1)',[1.02 0.98])
+  hca.Title.String = {"nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(where) + ", where = " + where};
+  
+  
+  hca = h(isub); isub = isub + 1;
+  N = struct('bicmin',[],'bicchord',[],'l1',[]);
+  eT = -0.5:1:3;
+  cT = eT(1:end-1)+0.5*diff(eT);
+  histNorm = 'pdf';
+  N.bicmin.(where) = histcounts(stats.('bicmin').(where).nCold,eT,'Normalization',histNorm);
+  N.bicchord.(where) = histcounts(stats.('bicchord').(where).nCold,eT,'Normalization',histNorm);
+  for iL1 = 1:numel(stats.thrL1)
+    N.l1.(where)(:,iL1) = histcounts(stats.('l1').(where).nCold(:,iL1),eT,'Normalization',histNorm);
+  end
+  steps(hca,eT,N.bicmin.(where),'LineWidth',1)
+  hold(hca,'on')
+  steps(hca,eT,N.bicchord.(where),'LineWidth',1)
+  for iL1 = 1:numel(stats.thrL1)
+    steps(hca,eT,N.l1.(where)(:,iL1),'LineWidth',1)
+  end
+  hold(hca,'off')
+  %plot(hca,0.5:1:8,N.pre,1:7,N.post)
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  %hca.XLabel.String = 'T_{min} (eV)';
+  hca.XLabel.String = 'nColdComp';
+  hca.YLabel.String = histNorm;
+  %hca.XTick = 0:20;
+  %hca.XTick = 0:400:eT(end);
+  hca.XLim = eT([1 end]);
+  irf_legend(hca,cat(2,"bicmin","bicchord","L1<" + stats.thrL1)',[1.02 0.98])
+  hca.XTickLabelRotation = 0;
+  %hca.XLim = [0 2000];
+  hca.YTick = 0:0.2:1;
+  hca.YLim = [0 1];
+  %hca.XMinorGrid = "on";
+  % labels = hca.XTickLabels;
+  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
+  % labels(2:2:end) = emptylbs(2:2:end);
+  % hca.XTickLabels = labels;
+  % labels = hca.YTickLabels;
+  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
+  % labels(2:2:end) = emptylbs(2:2:end);
+  % hca.YTickLabels = labels;
+end
+compact_panels(h,0.1,0.08,1); drawnow; compact_panels(h,0.1,0.08,1)
+
+%% Figure, comparing bicmin, bicchord, L1.  --  pre post and all separately
+
+ %sdf
+method = 'l1';
+iL1 = 1;
+clear perEvent;
+perEvent.pre.M = accumarray(stats.(method).pre.event,1,[],@sum);
+perEvent.post.M = accumarray(stats.(method).post.event,1,[],@sum);
+perEvent.all.M = accumarray(stats.(method).all.event,1,[],@sum);
+%prctile25 = @(x)prctile(x,25);
+for stat = ["bicmin","bicchord","l1"]
+  for where = ["pre","post","all"]
+    for quantity = ["minT"]
+      for fun = {@min,@median,@mean,@max,@prctile10,@prctile25}
+        switch stat
+          case 'l1'
+            for iL1 = 1:numel(stats.thrL1)
+              arr(:,iL1) = accumarray(stats.(stat).(where).event,stats.(stat).(where).(quantity)(:,iL1),[],fun{:});
+            end
+            perEvent.(stat).(where).(char(fun{:})).(quantity) = arr;
+          otherwise
+            perEvent.(stat).(where).(char(fun{:})).(quantity) = accumarray(stats.(stat).(where).event,stats.(stat).(where).(quantity),[],fun{:});
+        end
+      end
+    end
+  end
+end
+
+
+nDataPre = numel(stats.(method).pre.M);
+nDataPost = numel(stats.(method).post.M);
+nDataAll = numel(stats.(method).all.M);
+
+
+h = setup_subplots(3,4,'vertical');
+isub = 1;
+
+marker = 'none';
+
+fun = "median";
+for fun = ["median","mean","prctile10","prctile25"]  
+for where = ["pre","post","all"]  
+  
+  hca = h(isub); isub = isub + 1;
+  N = struct('bicmin',[],'bicchord',[],'l1',[]);
+  eT = 0:100:3000;
+  cT = eT(1:end-1)+0.5*diff(eT);
+  histNorm = 'cdf';
+  N.bicmin.(where) = histcounts(perEvent.('bicmin').(where).(fun).minT,eT,'Normalization',histNorm);
+  N.bicchord.(where) = histcounts(perEvent.('bicchord').(where).(fun).minT,eT,'Normalization',histNorm);
+  for iL1 = 1:numel(stats.thrL1)
+    N.l1.(where)(:,iL1) = histcounts(perEvent.('l1').(where).(fun).minT(:,iL1),eT,'Normalization',histNorm);
+  end
+  steps(hca,eT,N.bicmin.(where),'LineWidth',1)
+  hold(hca,'on')
+  steps(hca,eT,N.bicchord.(where),'LineWidth',1)
+  for iL1 = 1:numel(stats.thrL1)
+    steps(hca,eT,N.l1.(where)(:,iL1),'LineWidth',1)
+  end
+  hold(hca,'off')
+  %plot(hca,0.5:1:8,N.pre,1:7,N.post)
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  hca.Title.String = "where = " + where;
+  %hca.XLabel.String = 'T_{min} (eV)';
+  %hca.XLabel.String = sprintf('%s temperature of coldest component per event (eV)',char(fun));
+  hca.XLabel.String = sprintf('Per-event %s T_{coldest} (eV)',char(fun));
+  hca.YLabel.String = histNorm;
+  %hca.XTick = 0:20;
+  hca.XTick = 0:400:eT(end);
+  hca.XLim = eT([1 end]);
+  irf_legend(hca,cat(2,"bicmin","bicchord","L1<" + stats.thrL1)',[1.02 0.98])
+  hca.XTickLabelRotation = 0;
+  %hca.XLim = [0 2000];
+  hca.YTick = 0:0.2:1;
+  hca.YLim = [0 1];
+  %hca.XMinorGrid = "on";
+  % labels = hca.XTickLabels;
+  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
+  % labels(2:2:end) = emptylbs(2:2:end);
+  % hca.XTickLabels = labels;
+  % labels = hca.YTickLabels;
+  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
+  % labels(2:2:end) = emptylbs(2:2:end);
+  % hca.YTickLabels = labels;
+end
+end
+%compact_panels(h,0.1,0.08,1); drawnow; compact_panels(h,0.1,0.08,1)
+
+
+
+
+
+
+
 
 
 

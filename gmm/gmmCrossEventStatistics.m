@@ -14,12 +14,16 @@ function out = gmmCrossEventStatistics(listFiles,varargin)
 %
 %   Options:
 %     'stats'      cell of statistic names or function handles (default
-%                  {'bicmin','bicchord'}). Names: 'bicmin', 'bicchord', 'cold', 'l1'.
+%                  {'bicmin','bicchord'}). Names: 'bicmin', 'bicchord', 'l1'.
+%                  Every selection reports the same fields: M, minT, wMinT and, with
+%                  coldArgs, nCold and fracCold.
 %                  A handle @(GM) must return a struct of arrays with GM.nT rows,
 %                  one row per VDF, so that new statistics need no other changes.
 %     'intervals'  struct of function handles @(GM) -> logical mask [nT x 1] or
 %                  time indices (default: all, pre, post DF from GM.userdata)
-%     'coldArgs'   arguments to GMDist.cold (default {'maxColdEV',500,'minVabs',50})
+%     'coldArgs'   arguments to GMDist.cold (default {'maxColdEV',500,'minVabs',50}),
+%                  applied to the selected mixture of each statistic: nCold is the number
+%                  of cold components, fracCold their share of the weight; [] skips it
 %     'thrL1'      thresholds of the 'l1' statistic (default 0.05:0.05:0.3); the
 %                  column k of out.l1.<interval>.M belongs to thrL1(k), also in out.thrL1
 %     'l1Args'     extra arguments for the L1 merge errors, e.g. {'nSamples',20000,'seed',1},
@@ -96,6 +100,8 @@ function intervals = defaultIntervals()
   intervals.all  = @(GM) true(GM.nT,1);
   intervals.pre  = @(GM) GM.time.tlim([GM.userdata.db_tFF_start GM.userdata.db_tDF]);
   intervals.post = @(GM) GM.time.tlim([GM.userdata.db_tDF GM.userdata.db_tFF_stop]);
+  intervals.pre5s  = @(GM) GM.time.tlim(GM.userdata.db_tDF + [-5 0]);
+  intervals.post5s = @(GM) GM.time.tlim(GM.userdata.db_tDF + [0 +5]);
 end
 
 function m = toMask(idx,n)
@@ -125,47 +131,44 @@ function f = statRegistry(name,opt)
   % Add a statistic here (or pass a handle in 'stats'): it takes one GMDist and
   % returns a struct of arrays with GM.nT rows.
   switch lower(name)
-    case 'bicmin',   f = @(GM) statBIC(GM,'min');
-    case 'bicchord', f = @(GM) statBIC(GM,'chord');
-    case 'cold',     f = @(GM) statCold(GM,opt.coldArgs);
-    case 'l1',       f = @(GM) statL1(GM,opt.thrL1,opt.l1Args);
+    case 'bicmin',   f = @(GM) statBIC(GM,'min',opt.coldArgs);
+    case 'bicchord', f = @(GM) statBIC(GM,'chord',opt.coldArgs);
+    case 'l1',       f = @(GM) statL1(GM,opt.thrL1,opt.l1Args,opt.coldArgs);
     otherwise
       error('gmmCrossEventStatistics:stat','Unknown statistic ''%s''.',name)
   end
 end
 
-function S = mixtureStats(G)
+function S = mixtureStats(G,coldArgs)
   % The statistics of a single-column GMDist, one row per time: number of
-  % components, and temperature and proportion of the coldest component.
+  % components, temperature and proportion of the coldest component, and (if
+  % coldArgs is not empty) the number of cold components and their weight.
   % Every selection (BIC, L1 merge, ...) reports through this, so they give the
   % same fields.
   pop = G.sortBy('T').populations();               % components coldest first
   S.M = G.nComp;                                   % [nT x 1]
   S.minT = pop.Tiso(:,1);                          % eV
   S.wMinT = pop.prop(:,1);
-end
-
-function S = statBIC(GM,method)
-  % Components chosen by BIC (minimum or chord knee).
-  G = GM.selectNComp(GM.kneeK('method',method));   % K -> column, not kneeK itself
-  S = mixtureStats(G);
-end
-
-function S = statCold(GM,coldArgs)
-  % Weight and number of cold components at the BIC-minimum choice.
-  G = GM.selectNComp(GM.kneeK('method','min'));
-  isCold = G.cold(coldArgs{:});                    % {nT x 1} of logical [1 x K]
-  S.fracCold = nan(G.nT,1);
-  S.nCold = nan(G.nT,1);
-  for it = 1:G.nT
-    g = G.gmm{it};
-    if isempty(g), continue, end
-    S.fracCold(it) = sum(g.ComponentProportion(isCold{it}));
-    S.nCold(it) = nnz(isCold{it});
+  if ~isempty(coldArgs)
+    isCold = G.cold(coldArgs{:});                  % {nT x 1} of logical [1 x K]
+    S.nCold = nan(G.nT,1);
+    S.fracCold = nan(G.nT,1);
+    for it = 1:G.nT
+      g = G.gmm{it};
+      if isempty(g), continue, end
+      S.nCold(it) = nnz(isCold{it});
+      S.fracCold(it) = sum(g.ComponentProportion(isCold{it}));
+    end
   end
 end
 
-function S = statL1(GM,thr,l1Args)
+function S = statBIC(GM,method,coldArgs)
+  % Components chosen by BIC (minimum or chord knee).
+  G = GM.selectNComp(GM.kneeK('method',method));   % K -> column, not kneeK itself
+  S = mixtureStats(G,coldArgs);
+end
+
+function S = statL1(GM,thr,l1Args,coldArgs)
   % The same statistics as the BIC ones, after merging with the L1 criterion for
   % each threshold (columns of the fields = thresholds), for the highest-K fit of
   % each time, from the L1 errors stored in GM.
@@ -175,7 +178,7 @@ function S = statL1(GM,thr,l1Args)
   ref = size(GM.gmm,2);
   for k = 1:numel(thr)
     mG = GM.merge('threshold',thr(k),'metric','l1',l1Args{:},'bic',false);   % uses the stored errors
-    Sk = mixtureStats(mG.slice(':',ref));
+    Sk = mixtureStats(mG.slice(':',ref),coldArgs);
     if k == 1
       S = structfun(@(x) nan(numel(x),numel(thr)),Sk,'UniformOutput',false);
     end
