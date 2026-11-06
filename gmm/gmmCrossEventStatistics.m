@@ -100,8 +100,8 @@ function intervals = defaultIntervals()
   intervals.all  = @(GM) true(GM.nT,1);
   intervals.pre  = @(GM) GM.time.tlim([GM.userdata.db_tFF_start GM.userdata.db_tDF]);
   intervals.post = @(GM) GM.time.tlim([GM.userdata.db_tDF GM.userdata.db_tFF_stop]);
-  intervals.pre5s  = @(GM) GM.time.tlim(GM.userdata.db_tDF + [-5 0]);
-  intervals.post5s = @(GM) GM.time.tlim(GM.userdata.db_tDF + [0 +5]);
+  intervals.pre5s  = @(GM) GM.time.tlim(GM.userdata.db_tDF + [-5 -1]);
+  intervals.post5s = @(GM) GM.time.tlim(GM.userdata.db_tDF + [1 +5]);
 end
 
 function m = toMask(idx,n)
@@ -148,7 +148,9 @@ function S = mixtureStats(G,coldArgs)
   pop = G.sortBy('T').populations();               % components coldest first
   S.M = G.nComp;                                   % [nT x 1]
   S.minT = pop.Tiso(:,1);                          % eV
+  S.maxT = max(pop.Tiso(:,:),[],2);                        % eV
   S.wMinT = pop.prop(:,1);
+  S.wMaxT = max(pop.prop(:,:),[],2);
   if ~isempty(coldArgs)
     isCold = G.cold(coldArgs{:});                  % {nT x 1} of logical [1 x K]
     S.nCold = nan(G.nT,1);

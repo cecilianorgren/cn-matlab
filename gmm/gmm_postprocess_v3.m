@@ -8,7 +8,7 @@ nFiles = numel(listFiles);
 tic
 %stats = gmmCrossEventStatistics(listFiles(1:100),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2]);
 %stats = gmmCrossEventStatistics(listFiles(1:2),'stats',{'bicmin','bicchord','l1','cold'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',500});
-stats = gmmCrossEventStatistics(listFiles(1:20),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',200});
+stats = gmmCrossEventStatistics(listFiles(1:20),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2],'coldArgs',{});
 toc
 % perEventMeans = accumarray(out.bicmin.pre.event,out.bicmin.pre.minT,[],@mean)
 
@@ -179,8 +179,8 @@ else
   h(1).Title.String = {"nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.all,method};
 end
 
-%% Figure, comparing bicmin, bicchord, L1.  --  pre post and all separately
-h = setup_subplots(2,3,'vertical');
+%% Figure, minT maxT --  pre post and all separately
+h = setup_subplots(3,3,'vertical');
 isub = 1;
 
 
@@ -277,11 +277,43 @@ for where = ["pre","post","all"]
   % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
   % labels(2:2:end) = emptylbs(2:2:end);
   % hca.YTickLabels = labels;
+
+  hca = h(isub); isub = isub + 1;
+  N = struct('bicmin',[],'bicchord',[],'l1',[]);
+  eT = 0:1000:10000;
+  cT = eT(1:end-1)+0.5*diff(eT);
+  histNorm = 'cdf';
+  N.bicmin.(where) = histcounts(stats.('bicmin').(where).maxT,eT,'Normalization',histNorm);
+  N.bicchord.(where) = histcounts(stats.('bicchord').(where).maxT,eT,'Normalization',histNorm);
+  for iL1 = 1:numel(stats.thrL1)
+    N.l1.(where)(:,iL1) = histcounts(stats.('l1').(where).maxT(:,iL1),eT,'Normalization',histNorm);
+  end
+  steps(hca,eT,N.bicmin.(where),'LineWidth',1)
+  hold(hca,'on')
+  steps(hca,eT,N.bicchord.(where),'LineWidth',1)
+  for iL1 = 1:numel(stats.thrL1)
+    steps(hca,eT,N.l1.(where)(:,iL1),'LineWidth',1)
+  end
+  hold(hca,'off')
+  %plot(hca,0.5:1:8,N.pre,1:7,N.post)
+  hca.XGrid = 'on';
+  hca.YGrid = 'on';
+  %hca.XLabel.String = 'T_{min} (eV)';
+  hca.XLabel.String = 'Temperature of hottest component (eV)';
+  hca.YLabel.String = histNorm;
+  %hca.XTick = 0:20;
+  %hca.XTick = 0:400:eT(end);
+  hca.XLim = eT([1 end]);
+  irf_legend(hca,cat(2,"bicmin","bicchord","L1<" + stats.thrL1)',[1.02 0.98])
+  hca.XTickLabelRotation = 0;
+  %hca.XLim = [0 2000];
+  hca.YTick = 0:0.2:1;
+  if strcmp(histNorm,'cdf'); hca.YLim = [0 1]; end
 end
 compact_panels(h,0.1,0.08,1); drawnow; compact_panels(h,0.1,0.08,1)
 
 %% Figure, nColdComp  --  pre post and all separately
-h = setup_subplots(2,3,'vertical');
+h = setup_subplots(3,4,'vertical');
 isub = 1;
 
 
@@ -299,7 +331,7 @@ nDataAll = numel(stats.(method).all.M);
 
 marker = 'none';
 
-for where = ["pre","post","all"]  
+for where = ["pre","post","pre5s","post5s"]  
   hca = h(isub); isub = isub + 1;
   N = struct('bicmin',[],'bicchord',[],'l1',[]);
   eT = 0.5:1:8;
@@ -369,17 +401,10 @@ for where = ["pre","post","all"]
   %hca.XLim = [0 2000];
   hca.YTick = 0:0.2:1;
   hca.YLim = [0 1];
-  %hca.XMinorGrid = "on";
-  % labels = hca.XTickLabels;
-  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
-  % labels(2:2:end) = emptylbs(2:2:end);
-  % hca.XTickLabels = labels;
-  % labels = hca.YTickLabels;
-  % emptylbs = cellfun(@(x) '',labels,'UniformOutput',false);
-  % labels(2:2:end) = emptylbs(2:2:end);
-  % hca.YTickLabels = labels;
+
+  
 end
-compact_panels(h,0.1,0.08,1); drawnow; compact_panels(h,0.1,0.08,1)
+%compact_panels(h,0.1,0.08,1); drawnow; compact_panels(h,0.1,0.08,1)
 
 %% Figure, comparing bicmin, bicchord, L1.  --  pre post and all separately
 
@@ -397,6 +422,7 @@ for stat = ["bicmin","bicchord","l1"]
       for fun = {@min,@median,@mean,@max,@prctile10,@prctile25}
         switch stat
           case 'l1'
+            clear arr
             for iL1 = 1:numel(stats.thrL1)
               arr(:,iL1) = accumarray(stats.(stat).(where).event,stats.(stat).(where).(quantity)(:,iL1),[],fun{:});
             end
@@ -611,3 +637,31 @@ end
 
 
 h(1).Title.String = "nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(region) + ", region = " + region;
+
+%% Figure, per M grouping
+
+iL1 = 1;
+clear perM arr;
+perM.uM = 1:7;
+perM.pre.nVDFs = accumarray(stats.(method).pre.event,1,[],@sum);
+perM.post.nVDFs = accumarray(stats.(method).post.event,1,[],@sum);
+perM.all.nVDFs = accumarray(stats.(method).all.event,1,[],@sum);
+
+for stat = ["bicmin","bicchord","l1"]
+  for where = ["pre","post","all","pre5s","post5s"]
+    for quantity = ["M","minT"]
+      for fun = {@min,@median,@mean,@max,@prctile10,@prctile25}
+        switch stat
+          case 'l1'
+            clear arr
+            for iL1 = 1:numel(stats.thrL1)
+              arr(:,iL1) = accumarray(stats.(stat).(where).M(:,iL1),stats.(stat).(where).(quantity)(:,iL1),[max(perM.uM) 1],fun{:});
+            end
+            perM.(stat).(where).(char(fun{:})).(quantity) = arr;
+          otherwise
+            perM.(stat).(where).(char(fun{:})).(quantity) = accumarray(stats.(stat).(where).M,stats.(stat).(where).(quantity),[],fun{:});
+        end
+      end
+    end
+  end
+end
