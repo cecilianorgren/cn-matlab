@@ -30,6 +30,19 @@ function out = gmmCrossEventStatistics(listFiles,varargin)
 %                  to match the stored errors (see GMDist.cacheMergeErr)
 %   The 'l1' statistic uses the L1 errors stored in the GMDist (cacheMergeErr);
 %   it warns if there are none that match, since they would then be recomputed (slow).
+%
+%   Selecting data with the TSeries stored in the GMDist (GMDist.cacheTS):
+%     'eventFilter'  @(GM) -> logical scalar; events for which it is false are
+%                    skipped altogether, e.g. @(GM) mean(GM.getTS('B').data(:,1)) < thrBx
+%     'vdfFilter'    @(GM) -> logical mask [nT x 1] (or indices); VDFs outside it
+%                    are dropped in all intervals, e.g. @(GM) GM.getTS('B').data(:,1) < thrBx
+%   Values to return alongside the statistics ('covariates'): a cell of names of
+%   stored TSeries, e.g. {'B','curvB'}, or a struct of handles @(GM) -> [nT x k]
+%   (e.g. struct('Bmag',@(GM) vecnorm(GM.getTS('B').data,2,2))). They are
+%   resampled to the VDF times (GM.getTS) and returned in out.cov.<interval>.<name>,
+%   row for row aligned with out.<statistic>.<interval>, which have the same event
+%   and iVDF columns. For example scatter(out.cov.pre.curvB,out.bicmin.pre.minT).
+%   out.events(i) tells which events were used (file, used, nVDFs); out.nEventsUsed.
 
 p = inputParser;
 addParameter(p,'stats',{'bicmin','bicchord'});
@@ -37,6 +50,9 @@ addParameter(p,'intervals',defaultIntervals());
 addParameter(p,'coldArgs',{'maxColdEV',500,'minVabs',50});
 addParameter(p,'thrL1',0.05:0.05:0.3);
 addParameter(p,'l1Args',{});
+addParameter(p,'eventFilter',[]);
+addParameter(p,'vdfFilter',[]);
+addParameter(p,'covariates',{});
 parse(p,varargin{:});
 
 statNames = p.Results.stats;
@@ -58,11 +74,18 @@ for k = 1:nStat
   end
 end
 
+covFun = covariateFunctions(p.Results.covariates);
+covNames = fieldnames(covFun);
+eventFilter = p.Results.eventFilter;
+vdfFilter = p.Results.vdfFilter;
+
 out = struct;
 out.nEvents = numel(listFiles);
 out.thrL1 = p.Results.thrL1;
 out.nVDFs = struct;
 for j = 1:numel(intervalNames), out.nVDFs.(intervalNames{j}) = 0; end
+out.events = struct('file',{},'used',{},'nVDFs',{});
+for j = 1:numel(intervalNames), out.cov.(intervalNames{j}) = []; end
 for k = 1:nStat
   for j = 1:numel(intervalNames), out.(statField{k}).(intervalNames{j}) = []; end
 end
@@ -74,10 +97,18 @@ for iFile = 1:numel(listFiles)
   tmp = load(fileName,'GM_save');
   GM = tmp.GM_save;
 
-  % Time masks of the intervals, once per event
+  % Events to skip altogether
+  used = true;
+  if ~isempty(eventFilter), used = logical(eventFilter(GM)); end
+  out.events(iFile) = struct('file',fileName,'used',used,'nVDFs',GM.nT);
+  if ~used, continue, end
+
+  % VDF filter, and the time masks of the intervals, once per event
+  keep = true(GM.nT,1);
+  if ~isempty(vdfFilter), keep = toMask(vdfFilter(GM),GM.nT); end
   masks = struct;
   for j = 1:numel(intervalNames)
-    masks.(intervalNames{j}) = toMask(intervals.(intervalNames{j})(GM),GM.nT);
+    masks.(intervalNames{j}) = toMask(intervals.(intervalNames{j})(GM),GM.nT) & keep;
     out.nVDFs.(intervalNames{j}) = out.nVDFs.(intervalNames{j}) + nnz(masks.(intervalNames{j}));
   end
 
@@ -91,7 +122,26 @@ for iFile = 1:numel(listFiles)
       out.(statField{k}).(name) = appendRows(out.(statField{k}).(name),takeRows(S,masks.(name)));
     end
   end
+
+  % Covariates: the same rows as the statistics
+  if ~isempty(covNames)
+    C = struct;
+    for k = 1:numel(covNames)
+      v = covFun.(covNames{k})(GM);
+      if size(v,1) ~= GM.nT
+        error('gmmCrossEventStatistics:cov','Covariate ''%s'' must have one row per VDF (%d), not %d.',covNames{k},GM.nT,size(v,1))
+      end
+      C.(covNames{k}) = v;
+    end
+    C.event = repmat(iFile,GM.nT,1);
+    C.iVDF = (1:GM.nT).';
+    for j = 1:numel(intervalNames)
+      name = intervalNames{j};
+      out.cov.(name) = appendRows(out.cov.(name),takeRows(C,masks.(name)));
+    end
+  end
 end
+out.nEventsUsed = sum([out.events.used]);
 fprintf('\n')
 end
 
@@ -111,6 +161,19 @@ function m = toMask(idx,n)
   else
     m = false(n,1);
     m(idx) = true;
+  end
+end
+
+% ---------------------------------------------------------------- covariates
+function f = covariateFunctions(cov)
+  % Struct of handles @(GM) -> [nT x k] from names of stored TSeries or a struct.
+  f = struct;
+  if isempty(cov), return, end
+  if isstruct(cov), f = cov; return, end
+  if ischar(cov) || isstring(cov), cov = {char(cov)}; end
+  for k = 1:numel(cov)
+    name = cov{k};
+    f.(name) = @(GM) GM.getTS(name).data;           % stored TSeries, resampled to the VDF times
   end
 end
 
@@ -147,10 +210,13 @@ function S = mixtureStats(G,coldArgs)
   % same fields.
   pop = G.sortBy('T').populations();               % components coldest first
   S.M = G.nComp;                                   % [nT x 1]
-  S.minT = pop.Tiso(:,1);                          % eV
-  S.maxT = max(pop.Tiso(:,:),[],2);                        % eV
+  S.minT = pop.Tiso(:,1);                          % eV  
+  S.maxT = max(pop.Tiso(:,:),[],2);                % eV
   S.wMinT = pop.prop(:,1);
   S.wMaxT = max(pop.prop(:,:),[],2);
+  S.Eth = pop.Eth(:,1);                            % eV
+  S.Ebulk = pop.Ebulk(:,1);                        % eV
+  S.Etot = pop.Etot(:,1);                          % eV
   if ~isempty(coldArgs)
     isCold = G.cold(coldArgs{:});                  % {nT x 1} of logical [1 x K]
     S.nCold = nan(G.nT,1);

@@ -14,3 +14,45 @@ hlinks = linkprop(h,{'CLim'});
 irf_timeaxis(h)
 h(end).XTickLabelRotation = 0;
 c_eval('h(?).FontSize = 12;',1:numel(h))
+
+%% Illustrate loglikelihood and BIC
+
+s = [randn(1000,1);0.2*randn(10,1)-4];
+g = fitgmdist(s,1);
+x = linspace(-5,5,100);
+f = normpdf(x,g.mu,g.Sigma);
+
+hca = subplot(1,1,1);
+histogram(hca,s,'Normalization','pdf')
+hold(hca,'on')
+plot(hca,x,f,'k','LineWidth',2)
+hold(hca,'off')
+hca.XLabel.String = 'v';
+hca.YLabel.String = 'PDF';
+hca.YScale ='log';
+hca.XTick = -6:1:6;
+
+%%
+ik = 1:7;
+it = 46;
+GM = load([listFiles(5).folder filesep listFiles(5).name]).GM_save;
+BIC = GM.bic;
+b = BIC(it,ik);
+nComp = GM.nComp;
+k = nComp(it,ik);
+
+x = (k-k(1))/(k(end)-k(1)); % normalize K
+y = (b-min(b))/max(max(b)-min(b),eps); % normalize BIC
+yc = (y(1) + (y(end)-y(1))*x); % straight line between BIC endpoints
+d =  yc - y; % difference between straight line between BIC endpoints and BIC
+[~,i] = max(d);
+
+[~,j] = min(b);
+
+hca = subplot(1,1,1);
+plot(hca,k,y,k,yc,'--',k(i)*[1 1],[y(i),yc(i)],'k-*',k(j),y(j),'k-*')
+hca.XLabel.String = 'K';
+hca.YLabel.String = 'BIC (norm.)';
+
+hl = findobj(gcf,'type','line'); c_eval('hl(?).LineWidth = 1.;',1:numel(hl))
+c_eval('hl(?).LineWidth = 1;',1:numel(hl))

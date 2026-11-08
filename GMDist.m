@@ -417,9 +417,9 @@ classdef GMDist
         if strcmp(method,'min') || numel(k) < 3
           [~,i] = min(b);
         else
-          x = (k-k(1))/(k(end)-k(1));
-          y = (b-min(b))/max(max(b)-min(b),eps);
-          d = (y(1) + (y(end)-y(1))*x) - y;
+          x = (k-k(1))/(k(end)-k(1)); % normalize K
+          y = (b-min(b))/max(max(b)-min(b),eps); % normalize BIC
+          d = (y(1) + (y(end)-y(1))*x) - y; % difference between straight line between BIC endpoints and BIC
           [~,i] = max(d);
         end
         kBest(it) = k(i);
@@ -466,6 +466,7 @@ classdef GMDist
 
       prop = nan(nT,Kmax); n = nan(nT,Kmax); Tiso = nan(nT,Kmax); cnt = nan(nT,Kmax);
       V = nan(nT,Kmax,3); T = nan(nT,Kmax,3,3);
+      Etot = nan(nT,Kmax); Ebulk = nan(nT,Kmax); Eth = nan(nT,Kmax);
       for it = 1:nT
         if isnan(idx(it)), continue, end
         g = obj.gmm{idx(it)};
@@ -473,6 +474,11 @@ classdef GMDist
         S = GMDist.fullSigma_(g);
         pr = g.ComponentProportion(:);
         Tc = fac*S;                                    % 3 x 3 x Kg
+        mu = g.mu;                                          % [Kg x 3] km/s
+        trS = reshape(S(1,1,:)+S(2,2,:)+S(3,3,:),[1,Kg]);   % trace of each covariance
+        Ebulk(it,1:Kg) = 0.5*fac*sum(mu.^2,2).';            % bulk (flow) energy [eV]
+        Eth(it,1:Kg)   = 0.5*fac*trS;                       % thermal energy = 1.5*Tiso
+        Etot(it,1:Kg)  = Ebulk(it,1:Kg) + Eth(it,1:Kg);     % mean kinetic energy per particle [eV]
         prop(it,1:Kg) = pr.';
         if ~isempty(obj.counts{idx(it)}), cnt(it,1:Kg) = obj.counts{idx(it)}; end
         Tiso(it,1:Kg) = reshape(Tc(1,1,:)+Tc(2,2,:)+Tc(3,3,:),[1,Kg])/3;
@@ -482,7 +488,7 @@ classdef GMDist
           T(it,k,:,:) = reshape(Tc(:,:,k),[1 1 3 3]);
         end
       end
-      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso,'counts',cnt);
+      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso,'counts',cnt,'Etot',Etot,'Eth',Eth,'Ebulk',Ebulk);
     end
 
     function [isCold,info] = cold(obj,varargin)
@@ -1895,6 +1901,27 @@ classdef GMDist
       %   after those.
       out = obj;
       out.misc.parentStats = obj.floorTParent();
+    end
+
+        function ts = getTS(obj,name,varargin)
+      % GETTS A TSeries stored with cacheTS, resampled to the times of gd.
+      %
+      %   ts = gd.getTS(name[,'resample',false])
+      %
+      %   Resampling (default) needs gd.time as a GenericTimeArray, so the values
+      %   line up row for row with the fits; 'resample',false returns it as stored.
+      p = inputParser;
+      addParameter(p,'resample',true);
+      parse(p,varargin{:});
+      if ~(isstruct(obj.userdata) && isfield(obj.userdata,'TSeries') && isfield(obj.userdata.TSeries,name))
+        warning('GMDist:getTS','No stored TSeries ''%s'' (see cacheTS).',name)
+        ts = irf.ts_vec_xyz(obj.time,nan(obj.nT,3));
+        return
+      end
+      ts = obj.userdata.TSeries.(name);
+      if p.Results.resample && isa(obj.time,'GenericTimeArray')
+        ts = ts.resample(obj.time);
+      end
     end
 
     function out = cacheTS(obj,name,ts)

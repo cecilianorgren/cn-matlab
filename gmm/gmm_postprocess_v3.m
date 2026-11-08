@@ -4,11 +4,24 @@ pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v1/'];
 listFiles = dir([pathSave '*iFF*']);
 nFiles = numel(listFiles);
 
-
+thrBx = 5;
 tic
 %stats = gmmCrossEventStatistics(listFiles(1:100),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2]);
 %stats = gmmCrossEventStatistics(listFiles(1:2),'stats',{'bicmin','bicchord','l1','cold'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',500});
-stats = gmmCrossEventStatistics(listFiles(1:20),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2],'coldArgs',{});
+stats_bx5 = gmmCrossEventStatistics(listFiles(1:10),...
+  'stats',{'bicmin','bicchord','l1'}, ...
+  'thrL1',[0.05:0.05:0.2],'coldArgs',{}, ...
+  'covariates',{'B','curvB'}, ...
+  'vdfFilter',@(GM) GM.getTS('B').x.data < thrBx);
+stats_ = gmmCrossEventStatistics(listFiles(1:10),...
+  'stats',{'bicmin','bicchord','l1'}, ...
+  'thrL1',[0.05:0.05:0.2],'coldArgs',{}, ...
+  'covariates',{'B','curvB'}, ...
+  'vdfFilter',@(GM) GM.getTS('B').x.data < thrBx);
+stats1 = gmmCrossEventStatistics(listFiles(1:10),...
+  'stats',{'bicmin','bicchord','l1'}, ...
+  'thrL1',[0.05:0.05:0.2],'coldArgs',{}, ...
+  'covariates',{'B','curvB'});
 toc
 % perEventMeans = accumarray(out.bicmin.pre.event,out.bicmin.pre.minT,[],@mean)
 
@@ -280,7 +293,7 @@ for where = ["pre","post","all"]
 
   hca = h(isub); isub = isub + 1;
   N = struct('bicmin',[],'bicchord',[],'l1',[]);
-  eT = 0:1000:10000;
+  eT = 0:500:10000;
   cT = eT(1:end-1)+0.5*diff(eT);
   histNorm = 'cdf';
   N.bicmin.(where) = histcounts(stats.('bicmin').(where).maxT,eT,'Normalization',histNorm);
@@ -514,17 +527,18 @@ end
 h = setup_subplots(3,2,'vertical');
 isub = 1;
 
-region = 'post';
+where = 'post';
+iL1 = 1;
 
 hca = h(isub); isub = isub + 1;
-nData = numel(stats.bicmin.(region).M);
-histogram(hca,stats.bicmin.(region).M,0.5:1:8,'Normalization','pdf')
+nData = numel(stats.bicmin.(where).M);
+histogram(hca,stats.bicmin.(where).M,0.5:1:8,'Normalization','pdf')
 hold(hca,'on')
-histogram(hca,stats.bicchord.(region).M,0.5:1:8,'Normalization','pdf')
+histogram(hca,stats.bicchord.(where).M,0.5:1:8,'Normalization','pdf')
 hold(hca,'off')
 hca.XLabel.String = 'Number of components';
 hca.YLabel.String = 'Counts';
-hca.Title.String = "nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(region);
+hca.Title.String = "nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(where);
 irf_legend(hca,{'BIC: min','BIC: chord'}',[0.02 0.98])
 
 
@@ -532,10 +546,10 @@ hca = h(isub); isub = isub + 1;
 eT = linspace(0,100,4000);
 eT = 0:200:5000;
 %eT = logspace(1.5,4,10);
-nData = numel(stats.bicmin.(region).minT);
-histogram(hca,stats.bicmin.(region).minT,eT,'Normalization','pdf')
+nData = numel(stats.bicmin.(where).minT);
+histogram(hca,stats.bicmin.(where).minT,eT,'Normalization','pdf')
 hold(hca,'on')
-histogram(hca,stats.bicchord.(region).minT,eT,'Normalization','pdf')
+histogram(hca,stats.bicchord.(where).minT,eT,'Normalization','pdf')
 hold(hca,'off')
 %hca.XScale = 'log';
 hca.XLabel.String = 'min(T) (eV)';
@@ -546,10 +560,10 @@ hca = h(isub); isub = isub + 1;
 eT = linspace(0,100,4000);
 eT = 0:200:5000;
 %eT = logspace(1.5,4,10);
-nData = numel(stats.bicmin.(region).minT);
-histogram(hca,stats.bicmin.(region).minT,eT,'Normalization','cdf')
+nData = numel(stats.bicmin.(where).minT);
+histogram(hca,stats.bicmin.(where).minT,eT,'Normalization','cdf')
 hold(hca,'on')
-histogram(hca,stats.bicchord.(region).minT,eT,'Normalization','cdf')
+histogram(hca,stats.bicchord.(where).minT,eT,'Normalization','cdf')
 hold(hca,'off')
 %hca.XScale = 'log';
 hca.XLabel.String = 'min(T) (eV)';
@@ -561,9 +575,9 @@ hca = h(isub); isub = isub + 1;
 %eT = linspace(0,100,4000);
 %eW = 0:0.05:1;
 %nData = numel(stats.M_bicmin);
-boxchart(hca,stats.('bicmin').(region).M(:,iL1)-0.15,stats.('bicmin').(region).minT(:,iL1))
+boxchart(hca,stats.('bicmin').(where).M(:,iL1)-0.15,stats.('bicmin').(where).minT(:,iL1))
 hold(hca,'on')
-boxchart(hca,stats.('bicchord').(region).M(:,iL1)+0.15,stats.('bicchord').(region).minT(:,iL1))
+boxchart(hca,stats.('bicchord').(where).M(:,iL1)+0.15,stats.('bicchord').(where).minT(:,iL1))
 hold(hca,'off')
 hca.XLabel.String = 'M';
 hca.YLabel.String = 'min(T) (eV)';
@@ -578,9 +592,9 @@ hca = h(isub); isub = isub + 1;
 %eT = linspace(0,100,4000);
 %eW = 0:0.05:1;
 %nData = numel(stats.M_bicmin);
-boxchart(hca,stats.('bicmin').(region).M(:,iL1)-0.15,stats.('bicmin').(region).wMinT(:,iL1))
+boxchart(hca,stats.('bicmin').(where).M(:,iL1)-0.15,stats.('bicmin').(where).wMinT(:,iL1))
 hold(hca,'on')
-boxchart(hca,stats.('bicchord').(region).M(:,iL1)+0.15,stats.('bicchord').(region).wMinT(:,iL1))
+boxchart(hca,stats.('bicchord').(where).M(:,iL1)+0.15,stats.('bicchord').(where).wMinT(:,iL1))
 hold(hca,'off')
 hca.XLabel.String = 'M';
 hca.YLabel.String = 'Weight @min(T) (eV)';
@@ -596,9 +610,9 @@ if 1 %  (n,T)@min(T), scatter
   %eT = linspace(0,100,4000);
   %eW = 0:0.05:1;
   %nData = numel(stats.M_bicmin);  
-  scatter(hca,stats.('bicmin').(region).wMinT(:,iL1),stats.('bicmin').(region).minT(:,iL1),'.')
+  scatter(hca,stats.('bicmin').(where).wMinT(:,iL1),stats.('bicmin').(where).minT(:,iL1),'.')
   hold(hca,'on')
-  scatter(hca,stats.('bicchord').(region).wMinT(:,iL1),stats.('bicchord').(region).minT(:,iL1),'.')
+  scatter(hca,stats.('bicchord').(where).wMinT(:,iL1),stats.('bicchord').(where).minT(:,iL1),'.')
   hold(hca,'off')
   hca.XLabel.String = 'Weight @min(T)';
   hca.YLabel.String = 'min(T) (eV)';
@@ -636,7 +650,41 @@ if 0 %  (n,T)@min(T), contour
 end
 
 
-h(1).Title.String = "nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(region) + ", region = " + region;
+h(1).Title.String = "nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(where) + ", region = " + where;
+
+%% Figure, curvature, all
+%for where = ["per5s","post4s"]
+h = setup_subplots(3,2);
+isub = 1;
+
+stats = stats1;
+where = "post";
+
+for stat = ["bicmin","bicchord","l1"]
+  e1 = linspace(0,5000,15);
+  e2 = linspace(0,5000,16);
+  xx = stats.(stat).(where).Ebulk;
+  yy = stats.(stat).(where).Eth;
+  for i = 1:size(xx,2)
+    hca = h(isub); isub = isub + 1;
+    [N,~,mid,~ ] = histcn([xx(:,i),yy(:,1)],e1,e2);
+    pcolor(hca,mid{1:2},log10(N(:,:,ceil(end/2)))')
+    shading(hca,'flat')
+    colorbar(hca)      
+    addBackground(hca,@(x,y)y./x,1,'linewidth',1);
+    addBackground(hca,@(x,y)sqrt(x.^2 + y.^2),0:1000:10000);
+    hca.XLabel.String = 'E_{bulk}';
+    hca.YLabel.String = 'E_{th}';
+    if strcmp(stat,'l1')
+      hca.Title.String = "nEvents=" + stats.nEvents + "nVDFs=" + stats.nVDFs.(where) + ", " + stat + "<" + stats.thrL1(i) + ", where=" + where;
+    else
+      hca.Title.String = "nEvs=" + stats.nEvents + ", nVDFs=" + stats.nVDFs.(where) + ", " + stat + ", where=" + where;
+    end
+  end
+  
+    
+end
+
 
 %% Figure, per M grouping
 
