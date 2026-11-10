@@ -52,16 +52,16 @@ db_table = db_table_ff;
 %% Loop events and plot brief overview
 units = irf_units;
 
-%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-mms.db_init('local_file_db','/Volumes/mms');
+mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Volumes/mms');
 
 
 
 iDFs = [9 128];
-iDFs = 217:nDF;
+%iDFs = 217:nDF;
 %iDFs = 87;
-iDFs = 17;23:nDF;
-iDFs = 101:nDF;
+%iDFs = 17;23:nDF;
+%iDFs = 101:nDF;
 iDFs = [1 6 9 10 13 21 25 35 38 45 46 47 52 55 56 57 58 60 61 68 69 70 71 78 79 81 83 87 91];
 iDFs = [92 95 98 101 107 112 115 121 ];
 iDFs = 37;
@@ -77,7 +77,7 @@ iDFs = 16;
 irf.log('off')
 
 % Save path
-pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v1/'];
+pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v2/'];
 
 % Parameters
 ic = 1;
@@ -95,7 +95,7 @@ doPlot = true;
 doPrint = true;
 
 % Run through events
-for iEv = 219:numel(iFF_with_DF)
+for iEv = 1%31%2:numel(iFF_with_DF)
   iFF = iFF_with_DF(iEv);
   str_event = sprintf('Ev_iFF=%04.0f_nMovMean=%g_mask=%.0f_%.0f',iFF,nMovMean,mask_nMovMean(1),mask_nMovMean(1));
   
@@ -149,7 +149,8 @@ for iEv = 219:numel(iFF_with_DF)
 
   %% Prep data
   disp('>> Prepping PDist.')
-  PD_use = iPDist;
+  PD_use = iPDist.elim([50 Inf]);
+
   PDc_use = iPDist_counts.nan2zero;
 
   mat = iPDist_counts.find_low_counts('counts',mask_Counts,'nMovMean',mask_nMovMean,'output','mat');
@@ -179,9 +180,9 @@ for iEv = 219:numel(iFF_with_DF)
   %% Run GMM
   disp('>> Running fit.')
   options = statset('MaxIter',150,'TolFun',1e-5);
-  GM = GMDist.fit(MP,K,'start','previous', ...
+  GM = GMDist.fit(MP,K,'start','randSample', ...
     'Options',options,'SharedCovariance',false, ...
-    'RegularizationValue',0.1);
+    'RegularizationValue',0.1,'Replicates',5);
 
   %%% Cache merge error
   %fprintf(sprintf('>> Caching merge error, %s.\n',reduction.metric))  

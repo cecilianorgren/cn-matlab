@@ -1,0 +1,147 @@
+  
+%% plot difference between original and cleaned/smoothed VDF
+h = irf_plot(2);
+c_eval('h(?).Position(2) = h(?).Position(2) + 0.03;',1:numel(h))
+
+hca = irf_panel('original deflux');
+irf_spectrogram(hca,iPDist.omni.specrec,'log');
+
+hca = irf_panel('cleand and smoothed deflux');
+irf_spectrogram(hca,PD.omni.specrec,'log');
+
+%hlinks = linkprop(h(end:-1:1),{'CLim'});
+hlinks = linkprop(h,{'CLim'});
+irf_timeaxis(h)
+h(end).XTickLabelRotation = 0;
+c_eval('h(?).FontSize = 12;',1:numel(h))
+
+%% Illustrate loglikelihood and BIC
+
+s = [randn(1000,1);0.2*randn(10,1)-4];
+g = fitgmdist(s,1);
+x = linspace(-5,5,100);
+f = normpdf(x,g.mu,g.Sigma);
+
+hca = subplot(1,1,1);
+histogram(hca,s,'Normalization','pdf')
+hold(hca,'on')
+plot(hca,x,f,'k','LineWidth',2)
+hold(hca,'off')
+hca.XLabel.String = 'v';
+hca.YLabel.String = 'PDF';
+hca.YScale ='log';
+hca.XTick = -6:1:6;
+
+%%
+ik = 1:7;
+it = 46;
+GM = load([listFiles(5).folder filesep listFiles(5).name]).GM_save;
+BIC = GM.bic;
+b = BIC(it,ik);
+nComp = GM.nComp;
+k = nComp(it,ik);
+
+x = (k-k(1))/(k(end)-k(1)); % normalize K
+y = (b-min(b))/max(max(b)-min(b),eps); % normalize BIC
+yc = (y(1) + (y(end)-y(1))*x); % straight line between BIC endpoints
+d =  yc - y; % difference between straight line between BIC endpoints and BIC
+[~,i] = max(d);
+
+[~,j] = min(b);
+
+hca = subplot(1,1,1);
+plot(hca,k,y,k,yc,'--',k(i)*[1 1],[y(i),yc(i)],'k-*',k(j),y(j),'k-*')
+hca.XLabel.String = 'K';
+hca.YLabel.String = 'BIC (norm.)';
+
+hl = findobj(gcf,'type','line'); c_eval('hl(?).LineWidth = 1.;',1:numel(hl))
+c_eval('hl(?).LineWidth = 1;',1:numel(hl))
+
+%% Illustrate loglikelihood and BIC
+
+K = 2;
+s = [randn(100000,1);0.2*randn(10000,1)+1];
+%s = [randn(200000,1)];
+options = statset('MaxIter',300);
+S.mu = [0 0]';
+S.Sigma = [1 1];
+g = fitgmdist(s,K,'Replicates',5,'Options',options,'CovarianceType','diagonal');
+x = linspace(-8,8,1000);
+
+
+hca = subplot(1,1,1);
+histogram(hca,s,'Normalization','pdf')
+hold(hca,'on')
+ftot = zeros(1,numel(x));
+for ik = 1:K
+  f = g.ComponentProportion(ik)*normpdf(x,g.mu(ik),g.Sigma(ik)^0.5);
+  ftot = ftot + f;
+  plot(hca,x,f,'k','LineWidth',2)
+end
+plot(hca,x,ftot,'r','LineWidth',2)
+hold(hca,'off')
+
+%% Illustrate GMM
+
+K = 3;
+s = [];
+s = [s; randn(10000,1)];
+s = [s; 0.5*randn(2000,1)+3];
+s = [s; 0.2*randn(2000,1)-1.5];
+
+%s = [randn(200000,1)];
+options = statset('MaxIter',300);
+S.mu = [0 0]';
+S.Sigma = [1 1];
+g = fitgmdist(s,K,'Replicates',5,'Options',options,'CovarianceType','diagonal');
+x = linspace(-4,5,1000);
+
+
+hca = subplot(1,1,1);
+histogram(hca,s,'Normalization','pdf','facecolor','r','FaceAlpha',0.2)
+hold(hca,'on')
+ftot = zeros(1,numel(x));
+for ik = 1:K
+  f = g.ComponentProportion(ik)*normpdf(x,g.mu(ik),g.Sigma(ik)^0.5);
+  ftot = ftot + f;
+  plot(hca,x,f,'k','LineWidth',2)
+end
+plot(hca,x,ftot,'r','LineWidth',2)
+hold(hca,'off')
+
+%% Illustrate over-repersentation
+%rng(99)
+K = 2;
+s = [];
+s = [s; randn(10000,1)];
+%s = [s; 0.5*randn(2000,1)+3];
+%s = [s; 0.2*randn(2000,1)-1.5];
+
+%s = [randn(200000,1)];
+options = statset('MaxIter',300);
+S.mu = [0 0]';
+S.Sigma = [1 1];
+g = fitgmdist(s,K,'start','plus','Replicates',5,'Options',options,'CovarianceType','diagonal');
+x = linspace(-4,5,1000);
+
+
+hca = subplot(1,1,1);
+histogram(hca,s,'Normalization','pdf','facecolor','r','FaceAlpha',0.2)
+hold(hca,'on')
+ftot = zeros(1,numel(x));
+for ik = 1:K
+  f = g.ComponentProportion(ik)*normpdf(x,g.mu(ik),g.Sigma(ik)^0.5);
+  ftot = ftot + f;
+  plot(hca,x,f,'k','LineWidth',2)
+end
+plot(hca,x,ftot,'r','LineWidth',2)
+hold(hca,'off')
+hca.YLim = [0 0.45];
+hca.XLim = [-4 4];
+
+%% Statistics, M
+hca = subplot(1,1,1);
+histogram(hca,statsM.('bicchord').('all').M)
+hca.XLabel.String = 'Number of components';
+hca.YLabel.String = 'Counts';
+irf_legend(hca,{"nEvents = " + statsM.nEvents,"nVDFs = " + statsM.nVDFs}',[0.98 0.98])

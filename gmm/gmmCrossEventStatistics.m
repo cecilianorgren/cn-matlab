@@ -92,11 +92,12 @@ end
 
 fprintf('iFile = ')
 for iFile = 1:numel(listFiles)
+  tic
   fprintf('%g,',iFile)
   fileName = [listFiles(iFile).folder filesep listFiles(iFile).name];
   tmp = load(fileName,'GM_save');
   GM = tmp.GM_save;
-
+%toc
   % Events to skip altogether
   used = true;
   if ~isempty(eventFilter), used = logical(eventFilter(GM)); end
@@ -111,6 +112,7 @@ for iFile = 1:numel(listFiles)
     masks.(intervalNames{j}) = toMask(intervals.(intervalNames{j})(GM),GM.nT) & keep;
     out.nVDFs.(intervalNames{j}) = out.nVDFs.(intervalNames{j}) + nnz(masks.(intervalNames{j}));
   end
+  %toc
 
   % Each statistic is computed once on the whole event, then split by interval
   for k = 1:nStat
@@ -122,7 +124,7 @@ for iFile = 1:numel(listFiles)
       out.(statField{k}).(name) = appendRows(out.(statField{k}).(name),takeRows(S,masks.(name)));
     end
   end
-
+%toc
   % Covariates: the same rows as the statistics
   if ~isempty(covNames)
     C = struct;
@@ -140,6 +142,7 @@ for iFile = 1:numel(listFiles)
       out.cov.(name) = appendRows(out.cov.(name),takeRows(C,masks.(name)));
     end
   end
+  %toc
 end
 out.nEventsUsed = sum([out.events.used]);
 fprintf('\n')
@@ -179,14 +182,40 @@ end
 
 % ---------------------------------------------------------------- bookkeeping
 function S = takeRows(S,mask)
+  % Select rows (first dimension) of every field, whatever its number of dimensions.
   f = fieldnames(S);
-  for k = 1:numel(f), S.(f{k}) = S.(f{k})(mask,:); end
+  for k = 1:numel(f)
+    v = S.(f{k});
+    idx = repmat({':'},1,ndims(v));
+    idx{1} = mask;
+    S.(f{k}) = v(idx{:});
+  end
 end
 
 function A = appendRows(A,S)
+  % Append the rows of S to A. Per-component fields have one column per component,
+  % and the number of components differs between events, so the narrower of the
+  % two is padded with NaN columns first.
   if isempty(A), A = S; return, end
   f = fieldnames(S);
-  for k = 1:numel(f), A.(f{k}) = [A.(f{k}); S.(f{k})]; end
+  for k = 1:numel(f)
+    a = A.(f{k});
+    b = S.(f{k});
+    w = max(size(a,2),size(b,2));
+    A.(f{k}) = cat(1,padCols(a,w),padCols(b,w));
+  end
+end
+
+function x = padCols(x,w)
+  % Pad the second dimension of x with NaN up to width w.
+  sz = size(x);
+  if sz(2) >= w, return, end
+  x = cat(2,x,nan([sz(1) w-sz(2) sz(3:end)]));
+end
+
+function f = perComponentFields()
+  % Fields with one column per component (component 1 = the coldest).
+  f = {'Tiso'};
 end
 
 % ---------------------------------------------------------------- statistics
@@ -210,6 +239,10 @@ function S = mixtureStats(G,coldArgs)
   % same fields.
   pop = G.sortBy('T').populations();               % components coldest first
   S.M = G.nComp;                                   % [nT x 1]
+  S.vx = pop.V(:,:,1);
+  S.vy = pop.V(:,:,2);
+  S.vz = pop.V(:,:,3);
+  S.Tiso = pop.Tiso;
   S.minT = pop.Tiso(:,1);                          % eV  
   S.maxT = max(pop.Tiso(:,:),[],2);                % eV
   S.wMinT = pop.prop(:,1);
@@ -238,19 +271,30 @@ end
 
 function S = statL1(GM,thr,l1Args,coldArgs)
   % The same statistics as the BIC ones, after merging with the L1 criterion for
-  % each threshold (columns of the fields = thresholds), for the highest-K fit of
-  % each time, from the L1 errors stored in GM.
+  % each threshold, for the highest-K fit of each time, from the L1 errors stored
+  % in GM. Scalar fields are [nT x nThr] (column k = thr(k)); per-component fields
+  % (Tiso) are [nT x components x nThr], padded with NaN to the largest number of
+  % components over the thresholds.
   if ~isfield(GM.misc,'partitions') || ~any(strcmp({GM.misc.partitions.metric},'l1'))
     warning('gmmCrossEventStatistics:l1','No stored L1 merge errors in this GMDist: they will be computed (slow).')
   end
   ref = size(GM.gmm,2);
+  Sk = cell(1,numel(thr));
   for k = 1:numel(thr)
     mG = GM.merge('threshold',thr(k),'metric','l1',l1Args{:},'bic',false);   % uses the stored errors
-    Sk = mixtureStats(mG.slice(':',ref),coldArgs);
-    if k == 1
-      S = structfun(@(x) nan(numel(x),numel(thr)),Sk,'UniformOutput',false);
+    Sk{k} = mixtureStats(mG.slice(':',ref),coldArgs);
+  end
+  S = struct;
+  f = fieldnames(Sk{1});
+  for j = 1:numel(f)
+    n = size(Sk{1}.(f{j}),1);
+    if ismember(f{j},perComponentFields())
+      w = max(cellfun(@(s) size(s.(f{j}),2),Sk));
+      S.(f{j}) = nan(n,w,numel(thr));
+      for k = 1:numel(thr), S.(f{j})(:,:,k) = padCols(Sk{k}.(f{j}),w); end
+    else
+      S.(f{j}) = nan(n,numel(thr));
+      for k = 1:numel(thr), S.(f{j})(:,k) = Sk{k}.(f{j}); end
     end
-    f = fieldnames(Sk);
-    for j = 1:numel(f), S.(f{j})(:,k) = Sk.(f{j}); end
   end
 end

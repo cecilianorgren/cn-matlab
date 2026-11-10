@@ -2081,7 +2081,7 @@ classdef GMDist
       addParameter(p,'mass',[]);
       % Parse input
       parse(p,varargin{:});
-      start = validatestring(p.Results.start,{'randSample','previous'});
+      start = validatestring(p.Results.start,{'randSample','previous','plus'});
       fitArgs = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
       fitArgs = fitArgs(:)';
 

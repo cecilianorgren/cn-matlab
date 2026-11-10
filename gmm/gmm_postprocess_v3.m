@@ -1,10 +1,12 @@
 % Save path
 localuser = 'cecilianorgren';
 pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v1/'];
+pathSave = ['/Users/' localuser '/IRFU Dropbox/Cecilia Norgren/Data/GMM_v2/'];
 listFiles = dir([pathSave '*iFF*']);
 nFiles = numel(listFiles);
 
 thrBx = 5;
+%%
 tic
 %stats = gmmCrossEventStatistics(listFiles(1:100),'stats',{'bicmin','bicchord','l1'},'thrL1',[0.05:0.05:0.2]);
 %stats = gmmCrossEventStatistics(listFiles(1:2),'stats',{'bicmin','bicchord','l1','cold'},'thrL1',[0.05:0.05:0.2],'coldArgs',{'maxColdEV',500});
@@ -24,6 +26,200 @@ stats1 = gmmCrossEventStatistics(listFiles(1:10),...
   'covariates',{'B','curvB'});
 toc
 % perEventMeans = accumarray(out.bicmin.pre.event,out.bicmin.pre.minT,[],@mean)
+%%
+statsM2 = gmmCrossEventStatistics(listFiles(1:end),...
+  'stats',{'bicchord'});
+%%
+tic
+stats_ = gmmCrossEventStatistics(listFiles(1:10),...
+  'stats',{'bicmin','bicchord','l1'}, ...
+  'thrL1',[0.05:0.05:0.2],'coldArgs',{}, ...
+  'covariates',{'B','curvB'}, ...
+  'vdfFilter',@(GM) GM.getTS('B').x.data < thrBx);
+toc
+%% Figure, M, minT, histogram, comparing pre post and all
+h = setup_subplots(2,2,'vertical');
+isub = 1;
+
+stats = statsM2;
+where = 'pre';
+where = 'post';
+stat = 'bicchord';
+selectM = 2;
+iM = find(stats.(stat).(where).M==selectM);
+
+%perEvent.pre.nVDFs = accumarray(stats.(method).pre.event,1,[],@sum);
+%perEvent.post.nVDFs = accumarray(stats.(method).post.event,1,[],@sum);
+perEvent.all.nVDFs = accumarray(stats.(stat).all.event,1,[],@sum);
+
+if 0
+hca = h(isub); isub = isub + 1;
+histNorm = 'count';
+histogram(hca,stats.(stat).(where).M(iM),'normalization',histNorm,'FaceColor','r','FaceAlpha',0.5)
+hca.XLabel.String = 'M';
+hca.YLabel.String = histNorm;
+%hca.XTick = 0:20;
+%hca.XLim = eT([1 end]);
+%irf_legend(hca,{"pre-DF (N=" + stats.nVDFs.pre + ")","post-DF (N=" + stats.nVDFs.post + ")","all (N=" + stats.nVDFs.all + ")"}',[0.98 0.98])
+end
+
+if 0 % T2 vs T1
+hca = h(isub); isub = isub + 1;
+scatter(hca,stats.(stat).(where).Tiso(iM,1),stats.(stat).(where).Tiso(iM,2),'*')
+addBackground(hca,@(x,y)y./x,[1 2 5 10 20 50 100 200 500 1000],'ShowText','on');
+hca.XScale = 'log';
+hca.YScale = 'log';
+hca.YLim(1) = 1e3; 
+end
+
+hca = h(isub); isub = isub + 1;
+eT1 = logspace(1,4.0,30); yscale = 'log';
+eT2 = logspace(log10(1e3),4.1,31); yscale = 'log';
+[N edges mid loc] = histcn([stats.(stat).(where).Tiso(iM,1),stats.(stat).(where).Tiso(iM,2)],eT1,eT2);
+fun = @log10;
+pcolor(hca,mid{1:2},fun(N(:,:,ceil(end/2)))')
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = char(fun) + "(Counts)";
+colormap(hca,irf_colormap('magma'))
+hca.XLabel.String = 'T_{1} (eV)';
+hca.YLabel.String = 'T_{2} (eV)';
+hca.XScale = yscale;
+hca.YScale = yscale;
+hca.XTick = 10.^(-1:4);
+addBackground(hca,@(x,y)y./x,[1 2 5 10 20 50 100 200 500 1000],'ShowText','on');
+
+if 0 % T2/T1 histogram
+hca = h(isub); isub = isub + 1;
+histNorm = 'cdf';
+x = stats.(stat).(where).Tiso(iM,2)./stats.(stat).(where).Tiso(iM,1);
+histogram(hca,x,logspace(0,3,10),'Normalization',histNorm)
+hca.XScale = 'log';
+end
+if 0
+hca = h(isub); isub = isub + 1;
+histogram(hca,stats.(stat).(where).Tiso(iM,2)-stats.(stat).(where).Tiso(iM,1))
+end
+
+if 0
+hca = h(isub); isub = isub + 1;
+scatter(hca,stats.(stat).(where).Tiso(iM,1:end-1),stats.(stat).(where).Tiso(iM,2:end))
+end
+
+if 0
+hca = h(isub); isub = isub + 1;
+scatter(hca,stats.(stat).(where).vx(iM,:),stats.(stat).(where).vz(iM,:),'o','filled','MarkerFaceAlpha',0.3,'MarkerEdgeAlpha',0.2)
+end
+if 0
+hca = h(isub); isub = isub + 1;
+scatter(hca,stats.(stat).(where).vx(iM,2),stats.(stat).(where).vz(iM,1),'o','filled','MarkerFaceAlpha',0.3,'MarkerEdgeAlpha',0.2)
+end
+
+if 0 % histmap, vx1 vs vx2
+hca = h(isub); isub = isub + 1;
+eT = 0:50:1200; yscale = 'lin';
+[N edges mid loc] = histcn([stats.(stat).(where).vx(iM,2), stats.(stat).(where).vx(iM,1)],eT,eT);
+fun = @log10;
+pcolor(hca,mid{1:2},fun(N(:,:,ceil(end/2)))')
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = char(fun) + "(Counts)";
+colormap(hca,irf_colormap('magma'))
+hca.YLabel.String = 'v_{x1} (eV)';
+hca.XLabel.String = 'v_{x2} (eV)';
+end
+
+if 1 % histmap, vz1 vs vz2
+hca = h(isub); isub = isub + 1;
+eT = 0:40:600; yscale = 'lin';
+[N edges mid loc] = histcn([stats.(stat).(where).vz(iM,2), stats.(stat).(where).vz(iM,1)],eT,eT);
+fun = @log10;
+pcolor(hca,mid{1:2},fun(N(:,:,ceil(end/2)))')
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = char(fun) + "(Counts)";
+colormap(hca,irf_colormap('magma'))
+hca.YLabel.String = 'v_{z1} (eV)';
+hca.XLabel.String = 'v_{z2} (eV)';
+end
+for i = 1
+  hca = h(isub); isub = isub + 1;
+  e1 = 0:40:600; scale1 = 'lin';
+  e2 = logspace(1,5,20); scale2 = 'log';
+  [N edges mid loc] = histcn([stats.(stat).(where).vz(iM,i), stats.(stat).(where).Tiso(iM,i)],e1,e2);
+  fun = @log10;
+  pcolor(hca,mid{1:2},fun(N(:,:,ceil(end/2)))')
+  shading(hca,'flat')
+  hcb = colorbar(hca);
+  hcb.YLabel.String = char(fun) + "(Counts)";
+  colormap(hca,irf_colormap('magma'))
+  hca.XLabel.String = 'v_{z1} (km/s)';
+  hca.YLabel.String = 'T_{z1} (eV)';
+  hca.XScale = scale1;
+  hca.YScale = scale2;
+end
+
+
+if 0 % minT
+hca = h(isub); isub = isub + 1;
+eT = linspace(0,100,4000);
+eT = 0:100:3000;
+cT = eT(1:end-1)+0.5*diff(eT);
+histNorm = 'count';
+histogram(hca,stats.(stat).(where).minT(iM),eT,'FaceColor','r','FaceAlpha',0.5)
+hold(hca,'off')
+%plot(hca,cT,N.pre,cT,N.post)
+%hca.XGrid = 'on';
+%hca.YGrid = 'on';
+hca.XMinorGrid = 'on';
+hca.XLabel.String = 'T_{min} (eV)';
+hca.YLabel.String = histNorm;
+%irf_legend(hca,{"pre-DF (N=" + stats.nVDFs.pre + ")","post-DF (N=" + stats.nVDFs.post + ")","all (N=" + stats.nVDFs.all + ")"}',[0.98 0.98])
+end
+
+if 0 % weight at minT
+hca = h(isub); isub = isub + 1;
+eT = linspace(0,100,4000);
+eT = 0:0.05:1;
+cT = eT(1:end-1)+0.5*diff(eT);
+histNorm = 'count';
+histogram(hca,stats.(stat).(where).wMinT(iM),eT,'FaceColor','r','FaceAlpha',0.5)
+hold(hca,'off')
+%plot(hca,cT,N.pre,cT,N.post)
+%hca.XGrid = 'on';
+%hca.YGrid = 'on';
+%hca.XMinorGrid = 'on';
+hca.XLabel.String = 'w @{min T}';
+hca.YLabel.String = histNorm;
+%irf_legend(hca,{"pre-DF (N=" + stats.nVDFs.pre + ")","post-DF (N=" + stats.nVDFs.post + ")","all (N=" + stats.nVDFs.all + ")"}',[0.98 0.98])
+end
+
+hca = h(isub); isub = isub + 1;
+eT = 0:100:3000; yscale = 'lin';
+eT = logspace(1,log10(6000),21); yscale = 'log';
+eW = 0:0.05:1;
+%[N edges mid loc] = histcn([stats.(stat).(where).wMinT,stats.(stat).(where).minT],eW,eT);
+[N edges mid loc] = histcn([stats.(stat).(where).minT(iM), stats.(stat).(where).wMinT(iM)],eT,eW);
+%colormap(flipdim(irf_colormap(gca,"spectral"),1))
+fun = @log10;
+pcolor(hca,mid{1:2},fun(N(:,:,ceil(end/2)))')
+shading(hca,'flat')
+hcb = colorbar(hca);
+hcb.YLabel.String = char(fun) + "(Counts)";
+colormap(hca,irf_colormap('magma'))
+hca.XScale = yscale;
+hca.XTick = 10.^(-1:1:5);
+%hca.XDir = "reverse";
+%hca.YDir = "reverse";
+hca.XLabel.String = 'T_{min} (eV)';
+hca.YLabel.String = 'w@T_{min}';
+
+
+%colormap(flipdim(irf_colormap(gca,"spectral"),1))
+h(1).Title.String = {"nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.all,stat};
+
+
+
 
 %% Figure, M, minT, histogram, comparing pre post and all
 h = setup_subplots(3,2,'vertical');
@@ -657,7 +853,86 @@ h(1).Title.String = "nEvents = " + stats.nEvents + ", nVDFs = " + stats.nVDFs.(w
 h = setup_subplots(3,2);
 isub = 1;
 
-stats = stats1;
+stats = stats_;
+where = "post";
+
+curvB = stats.cov.(where).curvB;
+curvBabs = vecnorm(curvB,1,2); % 1/km
+R_B_km = 1./curvBabs; % km
+R_B = R_B_km*1e3; % m
+B = stats.cov.(where).B;
+Babs = vecnorm(B,1,2); % nT
+w_c = Babs*1e-9*units.e/units.mp; % rad/s
+
+hca = h(isub); isub = isub + 1;
+histogram(hca,Babs,linspace(0,10,20))
+%hca.XScale = 'log';
+hca.XLabel.String = 'B (nT)';
+
+hca = h(isub); isub = isub + 1;
+histogram(hca,R_B*1e-3,logspace(1,5,20))
+hca.XScale = 'log';
+hca.XLabel.String = 'R_B (km)';
+
+for stat = "bicchord" %["bicmin","bicchord","l1"]
+  e1 = linspace(0,5000,15);
+  e2 = linspace(0,5000,16);
+  xx = stats.(stat).(where).Ebulk;
+  yy = stats.(stat).(where).Eth;
+  E = (1*xx + 1*yy); % eV
+  v = sqrt(2*E*units.eV/units.mp)*1e-3; % km/s
+  rho = v./w_c; % km
+  %v = E;
+  m = units.mp;
+  for i = 1:size(xx,2)
+
+
+    hca = h(isub); isub = isub + 1;
+    histogram(hca,E(:,i))
+    hca.XLabel.String = 'E = E_{int} + E_{kin}';
+
+    hca = h(isub); isub = isub + 1;
+    histogram(hca,rho(:,i))
+    hca.XLabel.String = '\rho (km)';
+
+    %kappa = sqrt(R_B.*w_c*sqrt(m/2)./sqrt(E(:,i)*units.eV)).^1;
+    kappa = sqrt(R_B./rho);
+    hca = h(isub); isub = isub + 1;
+    histNorm = 'cdf';
+    histogram(hca,kappa,logspace(0,2,20),'Normalization',histNorm)
+    hca.XLabel.String = 'kappa';
+    hca.YLabel.String = histNorm;
+    %hca.XLim = [0 6];
+    hca.XScale = 'log';
+
+
+
+    %histogram(hca,v(:,i))
+    %scatter(hca,kappa,stats.(stat).(where).minT(:,i))
+    %[N,~,mid,~ ] = histcn([xx(:,i),yy(:,1)],e1,e2);
+    %pcolor(hca,mid{1:2},log10(N(:,:,ceil(end/2)))')
+    %shading(hca,'flat')
+    %colorbar(hca)      
+    %addBackground(hca,@(x,y)y./x,1,'linewidth',1);
+    %addBackground(hca,@(x,y)sqrt(x.^2 + y.^2),0:1000:10000);
+    %hca.XLabel.String = 'E_{bulk}';
+    %hca.YLabel.String = 'E_{th}';
+    % if strcmp(stat,'l1')
+    %   hca.Title.String = "nEvents=" + stats.nEvents + "nVDFs=" + stats.nVDFs.(where) + ", " + stat + "<" + stats.thrL1(i) + ", where=" + where;
+    % else
+    %   hca.Title.String = "nEvs=" + stats.nEvents + ", nVDFs=" + stats.nVDFs.(where) + ", " + stat + ", where=" + where;
+    % end
+  end
+  
+    
+end
+
+%% Figure, curvature 2, all
+%for where = ["per5s","post4s"]
+h = setup_subplots(3,2);
+isub = 1;
+
+stats = stats_;
 where = "post";
 
 for stat = ["bicmin","bicchord","l1"]
@@ -665,6 +940,13 @@ for stat = ["bicmin","bicchord","l1"]
   e2 = linspace(0,5000,16);
   xx = stats.(stat).(where).Ebulk;
   yy = stats.(stat).(where).Eth;
+  E = xx + yy;
+  % curvB = stats.cov.(where).curvB;
+  % curvBabs = vecnorm(curvB,1,2);
+  % R_B = 1./curvBabs;
+  % w_c = stats.cov.(where).B*units.mp/units.e;
+  % m = units.mp;
+  % kappa = R_B.*w_c*sqrt(m/2)./sqrt(E);
   for i = 1:size(xx,2)
     hca = h(isub); isub = isub + 1;
     [N,~,mid,~ ] = histcn([xx(:,i),yy(:,1)],e1,e2);
