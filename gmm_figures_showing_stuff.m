@@ -109,9 +109,40 @@ end
 plot(hca,x,ftot,'r','LineWidth',2)
 hold(hca,'off')
 
+%% Illustrate fir outside of energy range
+%rng(99)
+K = 1;
+s = [];
+s = [s; randn(10000,1)];
+s(s>0) = [];
+%s = [s; 0.5*randn(2000,1)+3];
+%s = [s; 0.2*randn(2000,1)-1.5];
+
+%s = [randn(200000,1)];
+options = statset('MaxIter',300);
+S.mu = [0 0]';
+S.Sigma = [1 1];
+g = fitgmdist(s,K,'start','plus','Replicates',5,'Options',options,'CovarianceType','diagonal');
+x = linspace(-4,5,1000);
+
+
+hca = subplot(1,1,1);
+histogram(hca,s,'Normalization','pdf','facecolor','r','FaceAlpha',0.2)
+hold(hca,'on')
+ftot = zeros(1,numel(x));
+for ik = 1:K
+  f = g.ComponentProportion(ik)*normpdf(x,g.mu(ik),g.Sigma(ik)^0.5);
+  ftot = ftot + f;
+  plot(hca,x,f,'k','LineWidth',2)
+end
+plot(hca,x,ftot,'r','LineWidth',2)
+hold(hca,'off')
+%hca.YLim = [0 0.45];
+hca.XLim = [-4 4];
+
 %% Illustrate over-repersentation
 %rng(99)
-K = 2;
+K = 3;
 s = [];
 s = [s; randn(10000,1)];
 %s = [s; 0.5*randn(2000,1)+3];
@@ -141,9 +172,16 @@ hca.XLim = [-4 4];
 
 %% Statistics, M
 where = "all";
-stats = statsM2;
+%stats = statsM2;
+stats = stats_chord2;
 hca = subplot(1,1,1);
-histogram(hca,stats.('bicchord').(where).M,'FaceColor','r','FaceAlpha',0.5)
+%histogram(hca,stats.('bicchord').(where).M,'FaceColor','r','FaceAlpha',0.5)
+histogram(hca,stats.('bicchord').(where).M)
+hold(hca,'on')
+histogram(hca,stats.('bicmin').(where).M)
+hold(hca,'off')
 hca.XLabel.String = 'Number of components';
 hca.YLabel.String = 'Counts';
-irf_legend(hca,{{"nEvents = " + stats.nEvents,"nVDFs = " + stats.nVDFs.(where)}}',[0.98 0.98],'color','k')
+%irf_legend(hca,{{"nEvents = " + stats.nEvents,"nVDFs = " + stats.nVDFs.(where)}}',[0.98 0.98],'color','k')
+irf_legend(hca,{{"nEvents = " + stats.nEvents,"nVDFs = " + stats.nVDFs.(where)}}',[0.02 0.98],'color','k')
+hca.XTickLabelRotation = 0;

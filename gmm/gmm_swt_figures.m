@@ -59,10 +59,10 @@ vecK = 1:5;
 irf.log('off')
 % Parameters
 ic = 1;
-nMovMean = 1; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
+nMovMean = 5; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 mask_nMovMean = [7 7]; mask_Counts = 5;
 nMP = 10000; % Number of macroparticles
-K = 1:6;  
+K = 1:7;  
 reduction.metric = 'l1'; % for reduction
 reduction.threshold = [0.1 0.2 0.3 0.4]; % for reduction
 reduction2.metric = 'l1'; % for reduction
@@ -92,6 +92,14 @@ doPrint = true;
      warning('Error loading data for ic=%g. Continuing to next event.',ic)
      %continue
   end
+  %%
+    c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
+    c_eval('gseR? = mms.get_data(''R_gse'',tint+60*[-1 1],?);',1:4)
+    c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',1:4)
+    c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',1:4)
+    c_eval('R? = mms_dsl2gse(gseR?.resample(iPDist),defatt?,-1);',1:4)
+    c_eval('B? = dmpaB?.resample(iPDist);',1:4)
+    [curvB,avB]=c_4_grad('R?','B?','curvature');
   %% Prep data
   disp('>> Preparing data.')
   PD_use = iPDist; % iPDist
@@ -108,6 +116,8 @@ doPrint = true;
 
   MP = PD.macroparticles('ntot',nMP,'skipzero',1,'scpot',scPot.resample(PD),'v_init','v2','MParts');
 
+  fx = PD.reduce('1D',[1 0 0]);
+  fy = PD.reduce('1D',[0 1 0]);
   fz = PD.reduce('1D',[0 0 1]);
 
 
@@ -165,16 +175,76 @@ doPrint = true;
   % end
   % toc
 
+  %% Reduced fz
+  figure(106)
+  
+  K = 2;
+  sortBy = 'T';
+  G = GM.slice(1:GM.nT,1).sortBy(sortBy);
+  PD_ = PD(1:GM.nT);
+
+  str_print = sprintf('%s_M_dep_on_threshold',str_event);  
+  h = irf_plot(4);
+
+  hca = irf_panel('B');
+  irf_plot(hca,gseB1)
+  hca.ColorOrder = mms_colors('xyz');
+  hca.YLabel.String = 'B (nT)';
+  hca.XGrid = "off";
+  hca.YGrid = "off";
+
+  if 0
+  hca = irf_panel('omni fpi');
+  [hs,hcb] = irf_spectrogram(hca,PD.deflux.omni.specrec);
+  end
+
+  comps =["x","y","z"];
+  dim = 3;
+  comp = comps(dim);
+  if 0
+  hca = irf_panel(char("f" + comp + "fpi")); % it is easier to see counter-streaming populations in this one
+  irf_spectrogram(hca,eval("f" + comp + ".specrec"))
+  hca.CLim = prctile(hca.Children.CData(:),[1 99]);
+  hca.YLabel.String = "v_" + comp + " (km/s)";
+  irf_legend(hca,"FPI",[0.98 0.9],'backgroundcolor','w','color','k','fontsize',9)
+  end
+
+
+  hca = irf_panel(char("fz gmm total"));
+  specrec = GM.sortBy('T').tsReduced(dim).specrec;
+  specrec.p_label = {'PSD','s/m^4'};
+  irf_spectrogram(hca,specrec)
+  hca.YLabel.String = "v_" + comp + " (km/s)";
+  irf_legend(hca,"GMM: full",[0.98 0.9],'backgroundcolor','w','color','k','fontsize',9)
+
+  for ik = [1 2]
+    hca = irf_panel(char("fz gmm " + ik));
+    specrec = GM.sortBy('T').tsReduced(dim,'component',ik).specrec;
+    specrec.p_label = {'PSD','s/m^4'};
+    %specrec.p(specrec.p<1e-20) = NaN;
+    irf_spectrogram(hca,specrec)
+    hca.YLabel.String = "v_" + comp + " (km/s)";
+    irf_legend(hca,"GMM: comp. " + ik,[0.98 0.9],'backgroundcolor','w','color','k','fontsize',9)
+  end
+
+  hlinks = linkprop(h(2:end),{'CLim','YLim'});
+  irf_plot_axis_align
+  h(3).CLim = [-6 -0.1];
+  h(3).YLim = 1e3*[-2.5093    2.5093];
+  c_eval('h(?).FontSize = 10;',1:numel(h))
+  h(end).XTickLabelRotation = 0;
+  irf_zoom(h,'x',PD.time)
+
   %% Figure, OMNIDEFlux, f(vz), BIC, K, M(threshold)
   figure(106)
   
   K = 2;
   sortBy = 'T';
-  G = GM.slice(8:GM.nT,K).sortBy(sortBy);
-  PD_ = PD(8:GM.nT);
+  G = GM.slice(1:GM.nT,1).sortBy(sortBy);
+  PD_ = PD(1:GM.nT);
 
   str_print = sprintf('%s_M_dep_on_threshold',str_event);  
-  h = irf_plot(5);
+  h = irf_plot(4);
 
   hca = irf_panel('B');
   irf_plot(hca,gseB1)
@@ -192,11 +262,11 @@ doPrint = true;
 
   %hca = irf_panel('BIC'); % it is easier to see counter-streaming populations in this one
   %irf_spectrogram(hca,GM.tsBIC('normalization','max').specrec('p_label','BIC/max(BIC)'),'lin')
-  
+  if 1
   hca = irf_panel('T'); % it is easier to see counter-streaming populations in this one
   irf_plot(hca,G.tsT('type','iso'),'comp')
   hca.YScale = 'log';
-  if 1
+  if 0
   hold(hca,'on')
   %[Tf,dE,iBin] = GM.slice(':',6).floorTBin(PD);
   tsTFloor = G.tsFloorTBin(PD_);
@@ -206,18 +276,20 @@ doPrint = true;
   if strcmp(hca.YScale,'log'); hca.YTick = 10.^(-10:10); end
   irf_zoom(hca,'y')
   hca.YLabel.String = 'T (eV)';
-
+  end
+  if 1
   hca = irf_panel('N'); % it is easier to see counter-streaming populations in this one
   irf_plot(hca,G.tsN,'comp')
   %hca.YScale = 'log';
   hca.YLabel.String = 'n (cm^{-3})';
-
-  hca = irf_panel('v'); % it is easier to see counter-streaming populations in this one
-  ts = G.tsV; ts = cellfun(@(x){x.z},ts);
+  end
+  for comp = []%["x","y","z"]
+  hca = irf_panel(char("v" + comp)); % it is easier to see counter-streaming populations in this one
+  ts = G.tsV; ts = cellfun(@(x){x.(comp)},ts);
   irf_plot(hca,ts,'comp')
   %hca.YScale = 'log';
-  hca.YLabel.String = 'v_z (km/s)';
-  
+  hca.YLabel.String = "v_" + comp + " (km/s)";
+  end
 
   colormap([flipdim(irf_colormap('Spectral'),1)])
   c_eval('h(?).Layer = ''top'';',1:numel(h))
@@ -237,7 +309,7 @@ doPrint = true;
   %% Figure, Bin heating
   figure(17007)
   
-  K = 2;
+  K = 1;
   sortBy = 'T';
   G = GM.slice(1:GM.nT,K).sortBy(sortBy);
   PD_ = PD(1:GM.nT);
@@ -391,9 +463,9 @@ doPrint = true;
    
   %% Figure, scatterplot of T,T; n,T
   figure(107)
-  K = 2;
+  K = 1;
   sortBy = 'T';
-  G = GM.slice(8:GM.nT,K);
+  G = GM.slice(1:GM.nT,K);
   params = G.sortBy(sortBy).byNComp();
 
   h = setup_subplots(1,2);  
@@ -418,7 +490,9 @@ doPrint = true;
   grid(hca,'on');
   hca.XScale = 'log';
   hca.YScale = 'log';
-  addBackground(hca,@(x,y)x./y,[0.01 0.1 1 10 100],'ShowText',1)
+  hca.YLim = [2e3 9e3];
+  hca.XLim = [5e0 4e3];
+  addBackground(hca,@(x,y)y./x,[0.01 0.1 1 10 100],'ShowText',1)
   
   hca.XTick = 10.^(0:5);
   %hca.YTick = 10.^(0:5);

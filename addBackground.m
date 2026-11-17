@@ -12,8 +12,8 @@ for iax = 1:numel(ax)
   clim = ax(iax).CLim;
   x = ax(iax).XLim;
   y = ax(iax).YLim;
-  x = linspace(x(1),x(2),1000);
-  y = linspace(y(1),y(2),1001);
+  x = linspace(x(1),x(2),4000);
+  y = linspace(y(1),y(2),4001);
   [X,Y] = ndgrid(x,y);
   C = fun(X,Y);
   hold(ax(iax),'on')

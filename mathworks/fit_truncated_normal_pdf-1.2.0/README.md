@@ -1,0 +1,3 @@
+Matlab does not allow to say that a distribution which we fit to a dataset is truncated.   
+In case of a Gaussian distribution, Matlab just calculates the mean and sigma and uses them as the paramters of a pdf, but this does not work if the distribution is cutted from one side, e.g. when you don't have measurements less than some detection limit. Then fitted distribution will be shifted.   
+Here I give an small example how to perform fitting in this case.

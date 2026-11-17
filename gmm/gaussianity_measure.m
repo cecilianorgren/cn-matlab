@@ -50,8 +50,10 @@ q = sum(g_m.w)*mvnpdf(xyz_p_o, g_m.mu(1,:), g_m.Sigma(:,:,1));
 %[~, ~, p_] = gmm_evaluate_f(g_o,xyz_p_o,1,'group',{[1 2]});
 %[q_, ~] = gmm_evaluate_f(g_m,xyz_p_o,1); % evaluate f at xyz
 % Calculate rms
-rms_mc = sqrt(sum((p-q).^2,'all'))/sqrt(sum(p.^2,'all'));
-rms_grid = sqrt(sum((p_grid-q_grid).^2,'all'))/sqrt(sum(p_grid.^2,'all'));
+%rms_mc = sqrt(sum((p-q).^2,'all'))/sqrt(sum(p.^2,'all'));
+%rms_grid = sqrt(sum((p_grid-q_grid).^2,'all'))/sqrt(sum(p_grid.^2,'all'));
+rms_mc = 0.5*sum(abs(p-q),'all')/sum(p,'all');
+rms_grid = 0.5*sum(abs(p_grid-q_grid),'all')/sum(p_grid,'all');
 
 
 
