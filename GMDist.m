@@ -69,7 +69,7 @@ classdef GMDist
       parse(p,varargin{:});
 
       [nT,nK] = size(gmmCell);
-      isG = cellfun(@(g) isempty(g) || isa(g,'gmdistribution'),gmmCell);
+      isG = cellfun(@(g) isempty(g) || isa(g,'gmdistribution') || isa(g,'GMTrunc'),gmmCell);
       if ~all(isG(:))
         error('GMDist:input','gmmCell must hold gmdistribution objects ([] for failed fits).')
       end
@@ -260,7 +260,7 @@ classdef GMDist
         for ig = 1:nG
           [wM(ig),muM(ig,:),SM(:,:,ig)] = GMDist.totalCovariance_(w,mu,S,Pi{ig});
         end
-        merged{igmm} = gmdistribution(muM,SM,wM);
+        merged{igmm} = GMDist.makeMix_(g,muM,SM,wM);
         if ~isempty(obj.counts{igmm})            % counts of a group: the sum of its members
           cG = cellfun(@(gr) sum(obj.counts{igmm}(gr)),Pi);
           mergedCounts{igmm} = cG(:).';
@@ -417,9 +417,9 @@ classdef GMDist
         if strcmp(method,'min') || numel(k) < 3
           [~,i] = min(b);
         else
-          x = (k-k(1))/(k(end)-k(1)); % normalize K
-          y = (b-min(b))/max(max(b)-min(b),eps); % normalize BIC
-          d = (y(1) + (y(end)-y(1))*x) - y; % difference between straight line between BIC endpoints and BIC
+          x = (k-k(1))/(k(end)-k(1));
+          y = (b-min(b))/max(max(b)-min(b),eps);
+          d = (y(1) + (y(end)-y(1))*x) - y;
           [~,i] = max(d);
         end
         kBest(it) = k(i);
@@ -466,7 +466,6 @@ classdef GMDist
 
       prop = nan(nT,Kmax); n = nan(nT,Kmax); Tiso = nan(nT,Kmax); cnt = nan(nT,Kmax);
       V = nan(nT,Kmax,3); T = nan(nT,Kmax,3,3);
-      Etot = nan(nT,Kmax); Ebulk = nan(nT,Kmax); Eth = nan(nT,Kmax);
       for it = 1:nT
         if isnan(idx(it)), continue, end
         g = obj.gmm{idx(it)};
@@ -474,21 +473,16 @@ classdef GMDist
         S = GMDist.fullSigma_(g);
         pr = g.ComponentProportion(:);
         Tc = fac*S;                                    % 3 x 3 x Kg
-        mu = g.mu;                                          % [Kg x 3] km/s
-        trS = reshape(S(1,1,:)+S(2,2,:)+S(3,3,:),[1,Kg]);   % trace of each covariance
-        Ebulk(it,1:Kg) = 0.5*fac*sum(mu.^2,2).';            % bulk (flow) energy [eV]
-        Eth(it,1:Kg)   = 0.5*fac*trS;                       % thermal energy = 1.5*Tiso
-        Etot(it,1:Kg)  = Ebulk(it,1:Kg) + Eth(it,1:Kg);     % mean kinetic energy per particle [eV]
         prop(it,1:Kg) = pr.';
         if ~isempty(obj.counts{idx(it)}), cnt(it,1:Kg) = obj.counts{idx(it)}; end
         Tiso(it,1:Kg) = reshape(Tc(1,1,:)+Tc(2,2,:)+Tc(3,3,:),[1,Kg])/3;
-        n(it,1:Kg) = nTot(it)*obj.frac(idx(it))*pr.';
+        n(it,1:Kg) = nTot(it)*obj.frac(idx(it))*pr.'/GMDist.accFrac_(g);   % a truncated model: the whole component
         V(it,1:Kg,:) = reshape(g.mu,[1 Kg 3]);
         for k = 1:Kg
           T(it,k,:,:) = reshape(Tc(:,:,k),[1 1 3 3]);
         end
       end
-      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso,'counts',cnt,'Etot',Etot,'Eth',Eth,'Ebulk',Ebulk);
+      pop = struct('K',Kmax,'prop',prop,'n',n,'V',V,'T',T,'Tiso',Tiso,'counts',cnt);
     end
 
     function [isCold,info] = cold(obj,varargin)
@@ -669,7 +663,7 @@ classdef GMDist
         ws = sum(w);
         if ~(ws > 0), continue, end          % nothing with weight is selected
         S = GMDist.fullSigma_(g);
-        sub{i} = gmdistribution(g.mu(si,:),S(:,:,si),w/ws);   % gmdistribution normalizes to 1
+        sub{i} = GMDist.makeMix_(g,g.mu(si,:),S(:,:,si),w/ws);   % renormalized to 1
         frac(i) = ws;
         if ~isempty(obj.counts{i}), cntSub{i} = obj.counts{i}(si); end
       end
@@ -757,7 +751,7 @@ classdef GMDist
           T(i,:) = Ti;
           W(i,:) = w;
           V(i,:,:) = reshape(g.mu,[1 m 3]);
-          N(i,:) = nTot(it(i))*obj.frac(it(i),ic(i))*w;
+          N(i,:) = nTot(it(i))*obj.frac(it(i),ic(i))*w/GMDist.accFrac_(g);
         end
         e.M = m;
         e.entry = sub2ind(size(obj.gmm),it,ic);
@@ -1070,7 +1064,7 @@ classdef GMDist
         end
       end
       out = GMDist(obj.gmm(it,ic),'time',t,'mass',obj.mass_,'data',d, ...
-        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'counts',obj.counts(it,ic),'options',obj.options,'userdata',obj.userdata);
+        'bic',obj.bic(it,ic),'frac',obj.frac(it,ic),'counts',obj.counts(it,ic),'options',obj.options);
       if isfield(obj.misc,'nCompOrig') && isequal(size(obj.misc.nCompOrig),size(obj.gmm))
         out.misc.nCompOrig = obj.misc.nCompOrig(it,ic);
       end
@@ -1293,7 +1287,7 @@ classdef GMDist
         [~,o] = sort(key,dirn);
         order{i} = o(:)';        
         w = max(g.ComponentProportion(o),eps);
-        out{i} = gmdistribution(g.mu(o,:),S(:,:,o),w);
+        out{i} = GMDist.makeMix_(g,g.mu(o,:),S(:,:,o),w);
       end
       m0 = obj.misc;
       cntNew = obj.counts;
@@ -1903,7 +1897,7 @@ classdef GMDist
       out.misc.parentStats = obj.floorTParent();
     end
 
-        function ts = getTS(obj,name,varargin)
+    function ts = getTS(obj,name,varargin)
       % GETTS A TSeries stored with cacheTS, resampled to the times of gd.
       %
       %   ts = gd.getTS(name[,'resample',false])
@@ -1914,9 +1908,7 @@ classdef GMDist
       addParameter(p,'resample',true);
       parse(p,varargin{:});
       if ~(isstruct(obj.userdata) && isfield(obj.userdata,'TSeries') && isfield(obj.userdata.TSeries,name))
-        warning('GMDist:getTS','No stored TSeries ''%s'' (see cacheTS).',name)
-        ts = irf.ts_vec_xyz(obj.time,nan(obj.nT,3));
-        return
+        error('GMDist:getTS','No stored TSeries ''%s'' (see cacheTS).',name)
       end
       ts = obj.userdata.TSeries.(name);
       if p.Results.resample && isa(obj.time,'GenericTimeArray')
@@ -2065,6 +2057,14 @@ classdef GMDist
       %     'start'  'randSample' (default) or 'previous' (start from the
       %              fit at the previous time step with the same K)
       %     'time','mass'  metadata (taken from the data object if not given)
+      %     'model'        'gaussian' (default), or 'trunc': Gaussians of a mixture that
+      %                    is only observed inside a speed shell (GMTrunc), so that a
+      %                    beam cut by the energy range is not biased. Needs
+      %                    'energyRange' [Emin Emax] in eV ([nT x 2] if it changes), with
+      %                    the mass from the data or 'mass', or 'vRange' [vmin vmax] in
+      %                    km/s. Velocities in the frame of the instrument. Component
+      %                    densities then refer to the whole component, outside the
+      %                    range as well. Slower than 'gaussian': use 'start','previous'.
       %   All other options are passed to FITGMDIST. A failed fit gives a
       %   warning and an empty entry.
       %
@@ -2079,9 +2079,12 @@ classdef GMDist
       addParameter(p,'start','randSample');
       addParameter(p,'time',[]); 
       addParameter(p,'mass',[]);
+      addParameter(p,'model','gaussian');
+      addParameter(p,'energyRange',[]);
+      addParameter(p,'vRange',[]);
       % Parse input
       parse(p,varargin{:});
-      start = validatestring(p.Results.start,{'randSample','previous','plus'});
+      start = validatestring(p.Results.start,{'randSample','previous'});
       fitArgs = [fieldnames(p.Unmatched), struct2cell(p.Unmatched)]';
       fitArgs = fitArgs(:)';
 
@@ -2097,6 +2100,23 @@ classdef GMDist
       end
       if ~isempty(p.Results.time), t = p.Results.time; end
       if ~isempty(p.Results.mass), m = p.Results.mass; end
+      model = validatestring(p.Results.model,{'gaussian','trunc'});
+      vR = [];
+      if strcmp(model,'trunc')
+        if ~isempty(p.Results.vRange)
+          vR = p.Results.vRange;
+        elseif ~isempty(p.Results.energyRange)
+          if isempty(m), error('GMDist:fit','''energyRange'' needs the particle mass (data.mass or ''mass'').'), end
+          u = irf_units;
+          vR = sqrt(2*p.Results.energyRange*u.eV/m)/1e3;       % km/s
+        else
+          error('GMDist:fit','Model ''trunc'' needs ''energyRange'' [eV] or ''vRange'' [km/s].')
+        end
+        if size(vR,1) == 1, vR = repmat(vR,nT,1); end
+        if size(vR,1) ~= nT || size(vR,2) ~= 2
+          error('GMDist:fit','The range must be [1 x 2] or [nT x 2].')
+        end
+      end
 
       nK = numel(K);
       out = cell(nT,nK);
@@ -2113,7 +2133,11 @@ classdef GMDist
             S = GMDist.startFrom_(out{it-1,iK});
           end
           try
-            out{it,iK} = fitgmdist(X,K(iK),'Start',S,fitArgs{:});
+            if strcmp(model,'trunc')
+              out{it,iK} = GMTrunc.fit(X,K(iK),vR(it,:),'Start',S,fitArgs{:});
+            else
+              out{it,iK} = fitgmdist(X,K(iK),'Start',S,fitArgs{:});
+            end
             if ~isempty(dcAll)
               post = posterior(out{it,iK},X);       % [N x K] responsibilities
               cnt{it,iK} = dcAll{it}(:).'*post;     % counts carried by each component
@@ -2126,7 +2150,7 @@ classdef GMDist
       end
       if isa(data,'MParts'), userdata = data.userdata; else userdata = []; end
       obj = GMDist(out,'data',data,'time',t,'mass',m,'counts',cnt, ...
-        'options',struct('start',start,'fitgmdist',{fitArgs}),'userdata',userdata);
+        'options',struct('start',start,'fitgmdist',{fitArgs},'model',model,'vRange',vR),'userdata',userdata);
     end
     
     function GM = parent_param(obj)
@@ -2307,7 +2331,7 @@ classdef GMDist
         if isequal(c,0), c = 1:g.NumComponents; end
         c = c(c <= g.NumComponents);
         if isempty(c), continue, end
-        D(it,:) = scale(it)*GMDist.marg1D_(g,dim,vg,c)*SI_conversion;
+        D(it,:) = scale(it)/GMDist.accFrac_(g)*GMDist.marg1D_(g,dim,vg,c)*SI_conversion;
       end
     end
 
@@ -2508,6 +2532,16 @@ classdef GMDist
           s.(f{1}) = v(idx{:});
         end
       end
+    end
+
+    function g2 = makeMix_(g0,mu,S,p)
+      % A mixture of the same kind as g0 (plain or truncated) with new parameters.
+      if isa(g0,'GMTrunc'), g2 = g0.similar(mu,S,p); else, g2 = gmdistribution(mu,S,p); end
+    end
+
+    function A = accFrac_(g)
+      % Fraction of a mixture that lies inside the observed range (1 if not truncated).
+      if isa(g,'GMTrunc'), A = g.acceptance(); else, A = 1; end
     end
 
     function [metric,prm] = keyFromArgs_(args)

@@ -4,7 +4,7 @@
 %the problem is that Matlab does not allow to say that a normal distribution 
 %is truncated as a result the fitted distribution will be shifted with respect
 %to the data. Consider an example
-clearvars;
+%clearvars;
 x_min = 3;
 %% Generate data normally distributed random values truncated at x_min = 1
 mu1 = 5; sigma1 = 3;

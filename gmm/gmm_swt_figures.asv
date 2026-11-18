@@ -45,8 +45,8 @@ db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 %% Loop events and plot brief overview
 units = irf_units;
 
-mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 
 tint = irf.tint('2017-07-09T17:30:50.000Z/2017-07-09T17:33:50.000Z');
 
@@ -62,7 +62,7 @@ ic = 1;
 nMovMean = 5; % Number of distributions for the moving average. Use the same for finding the energy limt and the gmm
 mask_nMovMean = [7 7]; mask_Counts = 5;
 nMP = 10000; % Number of macroparticles
-K = 1:6;  
+K = 1:7;  
 reduction.metric = 'l1'; % for reduction
 reduction.threshold = [0.1 0.2 0.3 0.4]; % for reduction
 reduction2.metric = 'l1'; % for reduction
@@ -92,6 +92,14 @@ doPrint = true;
      warning('Error loading data for ic=%g. Continuing to next event.',ic)
      %continue
   end
+  %%
+    c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',1:4);
+    c_eval('gseR? = mms.get_data(''R_gse'',tint+60*[-1 1],?);',1:4)
+    c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',1:4)
+    c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',1:4)
+    c_eval('R? = mms_dsl2gse(gseR?.resample(iPDist),defatt?,-1);',1:4)
+    c_eval('B? = dmpaB?.resample(iPDist);',1:4)
+    [curvB,avB]=c_4_grad('R?','B?','curvature');
   %% Prep data
   disp('>> Preparing data.')
   PD_use = iPDist; % iPDist
@@ -117,8 +125,11 @@ doPrint = true;
   %% Run GMM
   disp('>> Running fit.')
   options = statset('MaxIter',150,'TolFun',1e-5);
-  GM = GMDist.fit(MP,2,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
+  GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
 
+  options = statset('MaxIter',150,'TolFun',1e-5);
+  GMt = GMDist.fit(MP,1:3,'model','trunc','energyRange',[0 3.2248e+04],'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
+  
   %% Reduce mixture
   disp('>> Reducing mixture.')
   nCompPreMerge = GM.nComp;
@@ -167,6 +178,65 @@ doPrint = true;
   % end
   % toc
 
+  %% Figure: Showing specific times and comparing original to truncated GMDist
+  figure(111)
+
+  K = 3;
+  [h1,h2] = initialize_combined_plot('topbottom',1+K,1,2,0.6,'vertical');
+
+  hca = irf_panel('deflux omni');
+  [hs,hcb] = irf_spectrogram(hca,PD.deflux.omni.specrec);
+  colormap(hca,[irf_colormap('Magma')])
+  %colormap(hca,[flipdim(irf_colormap('Blues'),1)])
+
+  comp  = "xx";
+  ts1 = GM.selectCol(K).sortBy('T').tsT;
+  ts2 = GMt.selectCol(K).sortBy('T').tsT;
+  for ik = [1:K]
+    hca = irf_panel(char("T gmm " + ik));
+    irf_plot(hca,{ts1{ik}.(comp),ts2{ik}.(comp)},'comp')
+    hca.YLabel.String = "T_{" + comp + "} (eV)";
+    irf_legend(hca,{'original','truncated'}',[1.02 0.9],'fontsize',9)
+  end
+
+  h1(end).XTickLabelRotation = 0;
+  irf_plot_axis_align
+  irf_zoom(h1,'x',PD.time)
+
+  %%
+  it = 25; 
+  dim = 1; % x
+  if exist('hmark','var'); delete(hmark); end
+  hmark = irf_pl_mark(h1,GM.time(it),'k');
+  colors = pic_colors('matlab');
+  vlim = [-3000 3000];
+
+  f1 = GM.reducedVDFs(it,dim,'col',K);
+  f2 = GMt.reducedVDFs(it,dim,'col',K);
+
+  isub = 1;
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,fx(it).depend{1},fx(it).data,f1.all.depend{1},f1.all.data,f2.all.depend{1},f2.all.data)
+  hca.XLim = vlim;
+  hca.YLim(1) = 1e-4;
+  hca.YScale = 'log';
+  irf_legend(hca,{'fpi','GM:orig.','GM.trunc.'}',[0.02 0.99],'fontsize',9)
+
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,fx(it).depend{1},fx(it).data,'k')
+  hold(hca,'on')
+  %hca.ColorOrder = colors(1:K,:);
+  for ik = 1:K
+    plot(hca,f1.comp{ik}.depend{1},f1.comp{ik}.data,'color',colors(1,:))
+    plot(hca,f2.comp{ik}.depend{1},f2.comp{ik}.data,'color',colors(2,:))
+  end
+  hold(hca,'off')
+  hca.XLim = vlim;
+  hca.YLim(1) = 1e-4;
+  hca.YScale = 'log';
+  irf_legend(hca,{'fpi','GM:orig.','GM.trunc.'}',[0.02 0.99],'fontsize',9)
+
+
   %% Reduced fz
   figure(106)
   
@@ -191,7 +261,7 @@ doPrint = true;
   end
 
   comps =["x","y","z"];
-  dim = 2;
+  dim = 3;
   comp = comps(dim);
   if 0
   hca = irf_panel(char("f" + comp + "fpi")); % it is easier to see counter-streaming populations in this one
@@ -203,7 +273,8 @@ doPrint = true;
 
 
   hca = irf_panel(char("fz gmm total"));
-  specrec = GM.sortBy('T').tsReduced(dim).specrec('p_label',{'PSD','s/m^4'});
+  specrec = GM.sortBy('T').tsReduced(dim).specrec;
+  specrec.p_label = {'PSD','s/m^4'};
   irf_spectrogram(hca,specrec)
   hca.YLabel.String = "v_" + comp + " (km/s)";
   irf_legend(hca,"GMM: full",[0.98 0.9],'backgroundcolor','w','color','k','fontsize',9)
@@ -211,7 +282,7 @@ doPrint = true;
   for ik = [1 2]
     hca = irf_panel(char("fz gmm " + ik));
     specrec = GM.sortBy('T').tsReduced(dim,'component',ik).specrec;
-    specrec.p_label = {'p_label',{'PSD','s/m^4'};
+    specrec.p_label = {'PSD','s/m^4'};
     %specrec.p(specrec.p<1e-20) = NaN;
     irf_spectrogram(hca,specrec)
     hca.YLabel.String = "v_" + comp + " (km/s)";
@@ -454,9 +525,9 @@ doPrint = true;
    
   %% Figure, scatterplot of T,T; n,T
   figure(107)
-  K = 2;
+  K = 1;
   sortBy = 'T';
-  G = GM.slice(8:GM.nT,K);
+  G = GM.slice(1:GM.nT,K);
   params = G.sortBy(sortBy).byNComp();
 
   h = setup_subplots(1,2);  
@@ -481,7 +552,9 @@ doPrint = true;
   grid(hca,'on');
   hca.XScale = 'log';
   hca.YScale = 'log';
-  addBackground(hca,@(x,y)x./y,[0.01 0.1 1 10 100],'ShowText',1)
+  hca.YLim = [2e3 9e3];
+  hca.XLim = [5e0 4e3];
+  addBackground(hca,@(x,y)y./x,[0.01 0.1 1 10 100],'ShowText',1)
   
   hca.XTick = 10.^(0:5);
   %hca.YTick = 10.^(0:5);

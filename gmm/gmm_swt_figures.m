@@ -45,8 +45,8 @@ db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 %% Loop events and plot brief overview
 units = irf_units;
 
-mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
-%mms.db_init('local_file_db','/Volumes/mms');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
 
 tint = irf.tint('2017-07-09T17:30:50.000Z/2017-07-09T17:33:50.000Z');
 
@@ -127,6 +127,9 @@ doPrint = true;
   options = statset('MaxIter',150,'TolFun',1e-5);
   GM = GMDist.fit(MP,K,'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
 
+  options = statset('MaxIter',150,'TolFun',1e-5);
+  GMt = GMDist.fit(MP,1:3,'model','trunc','energyRange',[0 3.2248e+04],'start','previous','Options',options,'SharedCovariance',false,'RegularizationValue',0.1);
+  
   %% Reduce mixture
   disp('>> Reducing mixture.')
   nCompPreMerge = GM.nComp;
@@ -174,6 +177,91 @@ doPrint = true;
   %   toc
   % end
   % toc
+
+  %% Figure: Showing specific times and comparing original to truncated GMDist
+  figure(111)
+
+  K = 2;
+  [h1,h2] = initialize_combined_plot('leftright',1+2*K,2,1,0.6,'vertical');
+
+  hca = irf_panel('deflux omni');
+  [hs,hcb] = irf_spectrogram(hca,PD.deflux.omni.specrec);
+  colormap(hca,[irf_colormap('Magma')])
+  %colormap(hca,[flipdim(irf_colormap('Blues'),1)])
+
+  comp  = "xx";
+  ts1 = GM.selectCol(K).sortBy('T').tsT;
+  ts2 = GMt.selectCol(K).sortBy('T').tsT;
+  for ik = [1:K]
+    hca = irf_panel(char("T gmm " + ik));
+    irf_plot(hca,{ts1{ik}.(comp),ts2{ik}.(comp)},'comp')
+    hca.YLabel.String = "T_{" + comp + "} (eV)";
+    irf_legend(hca,{'original','truncated'}',[1.02 0.9],'fontsize',9)
+    hca.YScale = 'log';
+  end
+
+  comp  = "x";
+  ts1 = GM.selectCol(K).sortBy('T').tsV;
+  ts2 = GMt.selectCol(K).sortBy('T').tsV;
+  for ik = [1:K]
+    hca = irf_panel(char("V gmm " + ik));
+    irf_plot(hca,{ts1{ik}.(comp),ts2{ik}.(comp)},'comp')
+    hca.YLabel.String = "v_{" + comp + "} (km/s)";
+    irf_legend(hca,{'original','truncated'}',[1.02 0.9],'fontsize',9)
+    %hca.YScale = 'log';
+  end
+
+
+  h1(end).XTickLabelRotation = 0;
+  irf_plot_axis_align
+  irf_zoom(h1,'x',PD.time)
+
+  %%
+  for it = 1:2:PD.length
+  
+  dim = 1; % x
+  if exist('hmark','var'); delete(hmark); end
+  hmark = irf_pl_mark(h1,GM.time(it),'k');
+  colors = pic_colors('matlab');
+  vlim = [-3000 3000];
+
+  f1 = GM.reducedVDFs(it,dim,'col',K);
+  f2 = GMt.reducedVDFs(it,dim,'col',K);
+
+  isub = 1;
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,fx(it).depend{1},fx(it).data,'k')
+  hold(hca,'on')
+  plot(hca,f1.all.depend{1},f1.all.data,'color',colors(1,:))
+  plot(hca,f2.all.depend{1},f2.all.data,'color',colors(2,:))
+  hold(hca,'off')
+  hca.XLim = vlim;
+  hca.YLim(1) = 1e-4;
+  hca.YScale = 'log';
+  hca.ColorOrder = [0 0 0; colors(1:K,:)];
+  irf_legend(hca,{'FPI','GM:orig.','GM.trunc.'}',[0.02 0.99],'fontsize',9)
+  hca.YLabel.String = "f(v_" + comp + ") (s/m^4)";
+  hca.XLabel.String = "v_" + comp + " (km/s)";
+
+  hca = h2(isub); isub = isub + 1;
+  plot(hca,fx(it).depend{1},fx(it).data,'k')
+  hold(hca,'on')
+  %hca.ColorOrder = colors(1:K,:);
+  for ik = 1:K
+    plot(hca,f1.comp{ik}.depend{1},f1.comp{ik}.data,'color',colors(1,:))
+    plot(hca,f2.comp{ik}.depend{1},f2.comp{ik}.data,'color',colors(2,:))
+  end
+  hold(hca,'off')
+  hca.XLim = vlim;
+  hca.YLim(1) = 1e-4;
+  hca.YScale = 'log';
+  hca.ColorOrder = [0 0 0; colors(1:K,:)];
+  irf_legend(hca,{'FPI','GM:orig.','GM.trunc.'}',[0.02 0.99],'fontsize',9)
+  hca.YLabel.String = "f(v_" + comp + ") (s/m^4)";
+  hca.XLabel.String = "v_" + comp + " (km/s)";
+
+  cn.print(char("GM_trunc_it=" + it))
+  end
 
   %% Reduced fz
   figure(106)
