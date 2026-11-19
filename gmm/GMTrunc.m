@@ -158,19 +158,19 @@ classdef GMTrunc
         S = g0.Sigma;
       end
 
-      z = GMTrunc.fixedNormals_(nMC);
+      z = GMTrunc.fixedNormals_(nMC); % randum numbers with the same (local) seed
       converged = false;
       for iter = 1:q.Results.MaxIter
-        % E step on the observed points
+        % E step on the observed points (expectation)
         lp = zeros(N,K);
-        for k = 1:K
+        for k = 1:K % sum(log( pi_k * N(x|mu,sigma) )) = sum log(pi)+log(N(x|mu,sigma))
           lp(:,k) = log(pi_(k)) + GMTrunc.logGpdf_(X,mu(k,:),S(:,:,k));
         end
-        mx = max(lp,[],2);
-        w = exp(lp - mx);
-        tot = sum(w,2);
-        g = w./tot;
-        ll = sum(mx + log(tot));
+        mx = max(lp,[],2); % max likelihood (?) component
+        w = exp(lp - mx); % for normalization ?, also remove the log part, so it's only the p
+        tot = sum(w,2); % sum over k
+        g = w./tot; % normalize
+        ll = sum(mx + log(tot)); % log likelihood?
         S0 = sum(g,1);                          % [1 x K]
         S1 = g.'*X;                             % [K x 3]
         S2 = zeros(3,3,K);
@@ -182,21 +182,25 @@ classdef GMTrunc
           L = chol(S(:,:,k),'lower');
           xs = mu(k,:) + z*L.';
           sp = sqrt(sum(xs.^2,2));
-          out = ~(sp > vmin & sp < vmax);
-          xo = xs(out,:);
-          m0(k) = nnz(out)/nMC;
-          Zk(k) = 1 - m0(k);
-          m1(k,:) = sum(xo,1)/nMC;
-          m2(:,:,k) = (xo.'*xo)/nMC;
+          out = ~(sp > vmin & sp < vmax); % all the MC (z) points that are not inside the given v range
+          xo = xs(out,:); % total speed of particles
+          % the out-of-range moments
+          m0(k) = nnz(out)/nMC;   % nnz, number of non-zero elements
+                                  % m0, fraction of density outside v range,
+                                  % assuming the microparticles carry the
+                                  % same weight
+          Zk(k) = 1 - m0(k);      % fraction inside v range
+          m1(k,:) = sum(xo,1)/nMC;    % bulk/average speed
+          m2(:,:,k) = (xo.'*xo)/nMC;  % stress 
         end
-        A = sum(pi_.*Zk);
-        Nt = N/A;                                % observed + missing points
-        S0 = S0 + Nt*pi_.*m0;
+        A = sum(pi_.*Zk);         % total density fraction inside v shell
+        Nt = N/A;                 % observed + missing points, N is observed points
+        S0 = S0 + Nt*pi_.*m0;     % total density?
         S1 = S1 + Nt*pi_(:).*m1;
         for k = 1:K, S2(:,:,k) = S2(:,:,k) + Nt*pi_(k)*m2(:,:,k); end
-        ll = ll - N*log(A);
+        ll = ll - N*log(A); % log likelihood of observed minus (normalized to) what is inside the shell
 
-        % M step
+        % M step (maximization)
         S0 = max(S0,realmin);
         piN = S0/sum(S0);
         muN = S1./S0(:);
