@@ -89,7 +89,7 @@ levA = linspace(minA,maxA,15);
 showText = "off";
 if 1
 minA = floor(min([A(z(:),t1,B0,E0);A(z(:),t2,B0,E0)])*1e3)*1e-3;
-maxA = ceil(max([A(z(:),t1,B0,E0);A(z(:),t2,B0,E0)])*1e3)*1e-3;
+maxA =  ceil(max([A(z(:),t1,B0,E0);A(z(:),t2,B0,E0)])*1e3)*1e-3;
 levA = linspace(minA,maxA,(maxA-minA)*1e3+1);
 showText = "on";
 end
@@ -142,10 +142,14 @@ contourf(hca,X,Z*1e-3,A(Z,t1,B0,E0)*1e3,levA*1e3,"ShowText",showText)
 hca.XLabel.String = 'x';
 hca.YLabel.String = 'z';
 hca.Title.String = 'A_y(t_1)';
+hca.CLim = [minA maxA]*1e3;
 
 hca = h(isub); isub = isub + 1;
 contourf(hca,X,Z*1e-3,A(Z,t2,B0,E0)*1e3,levA*1e3,"ShowText",showText)
 hca.Title.String = 'A_y(t_2)';
+hca.CLim = [minA maxA]*1e3;
 
-hlinks = linkprop(h(3:4),{'CLim'});
+hlinks = linkprop(h([4 3]),{'CLim'});
+
 colormap(flipdim(irf_colormap(gca,"Blues"),1))
+%colormap(irf_colormap(gca,"Magma"))

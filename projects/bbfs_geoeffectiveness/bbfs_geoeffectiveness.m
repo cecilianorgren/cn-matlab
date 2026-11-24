@@ -1,0 +1,159 @@
+% Load DB table
+localuser = 'cecilianorgren';
+%file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_b_gsm_2017-2022.nc'];
+
+file = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.nc'];
+%data = load(file);
+file_csv = ['/Users/' localuser '/Data/Databases/DB_Richard_2022_v2/mms_bbfs_db_2017-2021.csv'];
+tlim = readtable(file_csv);
+tstart = tlim.Var1; tstart.TimeZone = "UTCLeapSeconds";
+tstop = tlim.Var2;  tstop.TimeZone = "UTCLeapSeconds";
+
+tstart_ttns = convertTo(tstart, 'tt2000');
+tstop_ttns = convertTo(tstop, 'tt2000');
+t_duration_s = double((tstop_ttns - tstart_ttns))*1e-9;
+
+%ncdisp(file)
+
+info = ncinfo(file);
+vars = {info.Variables.Name};
+nvars = numel(vars);
+
+clear db
+for ivar = 1:nvars
+  db.(vars{ivar}) = ncread(file,vars{ivar});
+end
+
+db_table_ff = struct2table(db);
+% Add stop time of slow
+db_table_ff = addvars(db_table_ff,tstart_ttns,tstop_ttns,t_duration_s,'After','time');
+
+
+t0_ff = EpochTT('2017-05-05T19:41:44.790324');
+% time: microseconds since 2017-05-05T19:41:44.790324
+time_ff_ttns = t0_ff.ttns + db_table_ff.time*1e3;
+db_table_ff.time = time_ff_ttns; % rewrite time in ttns
+
+
+t0_df = EpochTT('2017-05-19T03:06:44.458185978');
+% t_df: nanoseconds since  2017-05-19T03:06:44.458185978
+time_df_ttns = double(t0_df.ttns + int64(db_table_ff.t_df));
+time_df_ttns(~db_table_ff.is_df) = NaN;
+db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
+
+
+% BBF/DF database, to extract times
+%iFFs = 1:size(db_table_ff,1);
+%iFF_with_DF = find(db_table_ff.is_df==1);
+%db_table_df = db_table_ff(iFF_with_DF,:);
+%nDF = numel(db_table_df.time);
+iEarthward = db_table_ff.v_x>0;
+%db_table = db_table_ff(iEarthward);
+%%
+nFF = numel(db_table_ff.time);
+
+%% Load AE:
+%data = struct('iFF',[],'T',[],'AE',[],'R',[]);
+for iFF = 1030:nFF
+  fprintf('%g, ',iFF)
+  %iFF = 1;
+  t0 = EpochTT(db_table.time(iFF));
+  T =  db_table.t_duration_s(iFF);  
+  t_ff_start = t0;
+  t_ff_stop = t_ff_start + T;
+  tint = [t_ff_start t_ff_stop] + 5*[-1 1];    
+  omnidata = irf_get_data(tint.epochUnix,'AE','omni_min');
+  
+  c_eval('gseR? = mms.get_data(''R_gse'',tint,?);',1)
+  
+  data(iFF).iFF = iFF;
+  data(iFF).T = T;
+  data(iFF).gseR = mean(gseR1.data,1);
+  data(iFF).AE_mean = mean(omnidata(:,2));
+  data(iFF).AE_median = median(omnidata(:,2));
+  data(iFF).AE_max = max(omnidata(:,2));
+  
+  if mod(iFF,10) == 0; save([pathSave 'BFF_AE.mat'],'data'); disp('Saving to file.'); end
+end
+R = cat(1,data.gseR);
+
+%% Plot
+
+dat = data(iEarthward(1:numel(data)));
+
+h = setup_subplots(3,2); isub = 1;
+
+R = cat(1,dat.gseR);
+coeffs = polyfit([dat.T]/60,[R(:,1)],2);
+p = @(x) polyval(coeffs,x);
+
+hca = h(isub); isub = isub + 1;
+histogram(hca,[dat.T]/60,0:1:60)
+hca.XLabel.String = "T_{BFF} (min)";
+
+hca = h(isub); isub = isub + 1;
+plot(hca,R(:,1)*1e3/units.RE,[dat.T]/60,'*')
+hca.XLabel.String = "x_{GSE} (RE)";
+hca.YLabel.String = "T_{BFF} (min)";
+hca.YScale = 'log';
+hold(hca,'on')
+vecR = linspace(min(R(:,1)*1e3/units.RE),max(R(:,1)*1e3/units.RE),20);
+plot(hca,vecR,p(vecR))
+hold(hca,'off')
+
+hca = h(isub); isub = isub + 1;
+plot(hca,[dat.T]/60,[dat.AE_median],'*')
+hca.XLabel.String = "T_{BFF} (min)";
+hca.YLabel.String = "median AE";
+hca.XScale = "log";
+
+hca = h(isub); isub = isub + 1;
+edges.var1 = linspace(-26,-10,17);
+edges.var2 = linspace(0,120,30);
+edges.var2 = logspace(-1,3,30);
+var1 = R(:,1)*1e3/units.RE; 
+var2 = [dat.T]/60;
+[N ,~, mid, ~] = histcn([var1(:),var2(:)],edges.var1,edges.var2,'fun',@sum);
+pcolor(hca,mid{1},mid{2},N');
+shading(hca,'flat')
+hca.XLabel.String = "x_{GSE} (RE)";
+hca.YLabel.String = "T_{BFF} (min)";
+%hcb = colorbar(hca,"north"); hcb.Position(3) = hcb.Position(3)*0.5;
+hcb = colorbar(hca,"eastoutside");
+hcb.Label.String = "Counts";
+hca.YScale = "log";
+
+hca = h(isub); isub = isub + 1;
+scatter(hca,R(:,1)*1e3/units.RE,[dat.T]/60,30,[dat.AE_median],'filled','markerfacealpha',0.5)
+hca.XLabel.String = "x_{GSE} (RE)";
+hca.YLabel.String = "T_{BFF} (min)";
+%hcb = colorbar(hca,"north"); hcb.Position(3) = hcb.Position(3)*0.5;
+hcb = colorbar(hca,"eastoutside");
+hcb.Label.String = "AE";
+hca.YScale = "log";
+
+
+hca = h(isub); isub = isub + 1;
+edges.var1 = linspace(-26,-10,17);
+edges.var2 = linspace(0,180,30);
+edges.var2 = logspace(-1,3,30);
+var1 = R(:,1)*1e3/units.RE; 
+var2 = [dat.T]/60;
+[N ,~, mid, ~] = histcn([var1(:),var2(:)],edges.var1,edges.var2,'accumdata',[dat.AE_median],'fun',@median);
+pcolor(hca,mid{1},mid{2},N');
+shading(hca,'flat')
+hca.XLabel.String = "x_{GSE} (RE)";
+hca.YLabel.String = "T_{BFF} (min)";
+%hcb = colorbar(hca,"north"); hcb.Position(3) = hcb.Position(3)*0.5;
+hcb = colorbar(hca,"eastoutside");
+hcb.Label.String = "median AE";
+hca.YScale = "log";
+
+
+
+colormap(irf_colormap('Blues'))
+
+for ip = 1:numel(h) 
+  h(ip).Box = "on";
+  h(ip).Layer = "top";
+end

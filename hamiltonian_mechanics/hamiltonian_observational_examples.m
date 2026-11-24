@@ -1,0 +1,195 @@
+%% Set up database 
+%mms.db_init('local_file_db','/Users/cecilia/Data/MMS');
+%mms.db_init('local_file_db','/Users/cecilianorgren/Data/MMS');
+%mms.db_init('local_file_db','/Users/cno062/Data/MMS');
+mms.db_init('local_file_db','/Volumes/mms');
+%db_info = datastore('mms_db');
+
+units = irf_units;
+
+% from qi
+utc_list = { ...
+  '2017-07-11T22:34:02.00Z'; '2017-08-10T12:18:33.00Z'; '2016-11-18T12:08:11.00Z'; ...
+  '2016-12-07T17:48:47.00Z'; '2016-01-27T12:05:43.00Z'; '2016-11-02T14:46:18.00Z'; ...
+  '2016-10-22T10:15:58.00Z'; '2016-01-22T10:47:33.00Z'; '2017-06-17T20:24:07.00Z'; ...
+  '2016-11-22T10:15:46.00Z'; '2016-11-04T14:41:50.00Z'; '2016-12-19T14:15:02.00Z'; ...
+  '2015-11-01T15:08:06.00Z'; '2016-01-20T12:32:07.00Z'; '2015-11-28T15:47:00.00Z'; ...
+  '2016-12-09T09:03:54.00Z'; '2015-10-16T13:07:02.00Z'; '2015-12-08T11:20:44.00Z'; ...
+  '2016-02-07T20:23:35.00Z'; '2015-12-14T01:17:40.00Z'; '2016-01-11T04:22:43.00Z'; ...
+  '2016-10-22T12:58:41.00Z'; '2015-11-12T07:19:21.00Z'; '2015-10-16T10:33:30.00Z'; ...
+  '2016-11-06T08:40:58.00Z'; '2016-12-06T23:38:31.00Z'; '2016-10-22T06:05:22.00Z'; ...
+  '2015-11-09T13:39:26.00Z'; '2015-10-25T11:07:46.00Z'; '2016-01-10T09:36:15.00Z'; ...
+  '2015-09-19T07:43:30.00Z'};
+
+% convert to EpochTT, one at a time
+time_event = cell(numel(utc_list),1);
+for i = 1:numel(utc_list)
+  time_event{i} = irf_time(utc_list{i},'utc>EpochTT');
+end
+iEv = 9;
+tint = time_event{iEv} + 30*[-1 1];
+time_xline = time_event{iEv};
+
+if 1
+% Torbert event 
+
+tint = irf.tint('2017-08-10T12:17:40.00Z/2017-08-10T12:19:20.00Z');
+time_xline = irf_time('2017-08-10T12:18:33.00Z','utc>EpochTT');
+
+tint = irf.tint('2017-08-10T12:17:40.00Z/2017-08-10T12:19:20.00Z');
+time_event = irf_time('2017-08-10T12:18:33.00Z','utc>EpochTT');
+%L = [0.985,-0.141, 0.097] % basically gse
+
+ic = 3;
+tint = irf.tint('2017-07-11T22:31:00.00Z/2017-07-11T22:37:20.00Z');
+time_xline = irf_time('2017-07-11T22:34:02.60Z','utc>EpochTT');
+end
+
+ic = 3;
+
+time_xline = irf_time('2020-08-26T23:01:08.00Z','utc>EpochTT'); % Daniel: 26 August 2020 at 23:01:06
+tint = time_xline + [-30 30];
+
+
+
+
+c_eval('dmpaB? = mms.db_get_ts(''mms?_fgm_brst_l2'',''mms?_fgm_b_dmpa_brst_l2'',tint);',ic);
+c_eval('iPDist? = mms.get_data(''PDi_fpi_brst_l2'',tint,?);',ic)
+c_eval('ePDist? = mms.get_data(''PDe_fpi_brst_l2'',tint,?);',ic)
+c_eval('scPot? = mms.db_get_ts(''mms?_edp_brst_l2_scpot'',''mms?_edp_scpot_brst_l2'',tint);',ic);
+c_eval('dslE? = mms.db_get_ts(''mms?_edp_brst_l2_dce'',''mms?_edp_dce_dsl_brst_l2'',tint);',ic);
+c_eval('defatt? = mms.db_get_variable(''mms?_ancillary_defatt'',''zra'',tint);',ic)
+c_eval('defatt?.zdec = mms.db_get_variable(''mms?_ancillary_defatt'',''zdec'',tint).zdec;',ic)
+
+c_eval('dslVExB? = cross(dslE?.resample(dmpaB?.time),dmpaB?)/dmpaB?.abs/dmpaB?.abs*1e3; dmpaVExB?.units = '''';',ic) % km/s
+
+
+disp('Done loading data.')
+
+%%
+%c_eval('fe?_y = ePDist?.reduce(''1D'',[0 1 0],''scpot'',scPot?);',ic)
+%c_eval('fe?_y_vlim = ePDist?.elim([200 Inf]).reduce(''1D'',[0 1 0],''scpot'',scPot?,"vint",[0 5000*1e3]);',ic)
+%c_eval('fe?_y = ePDist?.elim([200 Inf]).reduce(''1D'',[0 1 0],''scpot'',scPot?,"vint",[-Inf Inf]);',ic)
+%c_eval('fe?_ExB = ePDist?.elim([200 Inf]).reduce(''1D'',dslVExB3.norm,''scpot'',scPot?);',ic)
+%c_eval('fe?_ExB_vlim = ePDist?.elim([200 Inf]).reduce(''1D'',dslVExB3.norm,''scpot'',scPot?,"vint",[0 10000*1e3]);',ic)
+
+%c_eval('fe?_y_vlim = ePDist?.elim([200 Inf]).reduce(''1D'',[0.18 0.92 0.34],''scpot'',scPot?,"vint",[0 5000*1e3]);',ic)
+c_eval('fe?_y_vlim = ePDist?.elim([200 Inf]).reduce(''1D'',[0 1 0],''scpot'',scPot?,"vint",[0 5000*1e3]);',ic)
+c_eval('fe?_y = ePDist?.elim([200 Inf]).reduce(''1D'',[0 1 0],''scpot'',scPot?,"vint",[0 Inf]);',ic)
+
+c_eval('fi?_y = iPDist?.elim([200 Inf]).reduce(''1D'',[0 1 0],''scpot'',scPot?,"vint",[0 Inf]);',ic)
+
+
+%% Figure
+%h = irf_plot(3);
+[h1,h2] = initialize_combined_plot('leftright',7,2,1,0.5,'vertical');
+
+hca = irf_panel('B');
+irf_plot(hca,dmpaB3)
+hca.YLabel.String = 'B (nT)'; hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('E');
+irf_plot(hca,dslE3)
+hca.YLabel.String = 'E (mV/m)'; hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('vExB');
+irf_plot(hca,dslVExB3)
+hca.YLabel.String = 'v_{ExB} (km/s)'; hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('i omni deflux');
+irf_spectrogram(hca,iPDist3.omni.deflux.specrec)
+hold(hca,'on')
+%irf_plot(hca,scPot3,'k')
+hold(hca,'off')
+
+hca = irf_panel('i reduced f y');
+irf_spectrogram(hca,fi3_y.specrec)
+hold(hca,'on')
+%irf_plot(hca,dslVExB3.y,'k--')
+hold(hca,'off')
+hca.Layer = 'top';
+hca.YGrid = 'on';
+hca.YLabel.String = 'v_{i,y} (km/s)'; hca.YLabel.Interpreter = 'tex';
+
+hca = irf_panel('e omni deflux');
+irf_spectrogram(hca,ePDist3.omni.deflux.specrec)
+hold(hca,'on')
+irf_plot(hca,scPot3,'k')
+hold(hca,'off')
+hca.YLabel.String = 'E_{e} (eV)'; hca.YLabel.Interpreter = 'tex';
+
+
+hca = irf_panel('e reduced f y');
+irf_spectrogram(hca,fe3_y_vlim.specrec)
+hold(hca,'on')
+%irf_plot(hca,dslVExB3.y,'k--')
+hold(hca,'off')
+hca.Layer = 'top';
+hca.YGrid = 'on';
+hca.YLabel.String = 'v_{e,y} (km/s)'; hca.YLabel.Interpreter = 'tex';
+
+if 0
+hca = irf_panel('e reduced f ExB');
+irf_spectrogram(hca,fe3_ExB_vlim.specrec)
+hold(hca,'on')
+irf_plot(hca,dslVExB3.abs,'k--')
+hold(hca,'off')
+hca.Layer = 'top';
+hca.YGrid = 'on';
+end
+
+irf_plot_axis_align
+irf_zoom(h1,'x',ePDist3.time)
+%irf_zoom(h,'y')
+colormap(flipdim(irf_colormap(gca,"Spectral"),1))
+
+
+%%
+pdTime = time_xline+-16.7;
+pdTime = time_xline+0.03*1;
+%it = 340;
+ite = find(ePDist3.time<pdTime,1,'last');
+%it = it+2;
+iti = find(iPDist3.time<pdTime,1,'last');
+elime = [400 Inf];
+ePD = ePDist3.movmean(1);
+pde = ePD(ite).elim(elime);
+pdi = iPDist3(iti).elim([200 Inf]);
+
+%if exist('hvsc','var'); delete(hvsc); end
+
+if exist('hmark','var'); delete(hmark); end
+hmark = irf_pl_mark(h1,pde.time,'k');
+
+fe3_yz = pde.reduce('2D',[0 1 0],[0 0 1],'scpot',scPot3,'vg',(-70:1:70)*1e3,'vint',20*[-1 1]*1e3);
+fe3_yz_2 = pde.reduce('2D',[0 1 0],[1 0 0],'scpot',scPot3,'vg',(-70:1:70)*1e3,'vint',[-Inf Inf]);
+%fe3_yz_2 = pde.reduce('2D',[0 1 0],[0 0 1],'scpot',scPot3,'vg',(-70:1:70)*1e3,'vint',[-Inf Inf]);
+
+fi3_yz = pdi.reduce('2D',[0 1 0],[0 0 1],'scpot',scPot3,'vg',(-3:0.05:3)*1e3);
+
+isub = 1;
+hca = h2(isub); isub = isub + 1;
+fe3_yz.plot_plane(hca)
+hca.XTick = hca.YTick;
+hca.XLabel.String = "v_1=[" + join(string(fe3_yz.ancillary.projection_dir_1)) + "] (kms/s)";
+hca.YLabel.String = "v_2=[" + join(string(fe3_yz.ancillary.projection_dir_2)) + "] (kms/s)";
+irf_legend(hca,{fe3_yz.ancillary.vint(1) + "<v_3<" + fe3_yz.ancillary.vint(2) + " km/s", ...
+  elime(1) + " eV < E"}',[0.98 0.98],'color',{'k','k'})
+
+
+hca = h2(isub); isub = isub + 1;
+fe3_yz_2.plot_plane(hca)
+hca.XTick = hca.YTick;
+hca.XLabel.String = "v=[" + join(string(fe3_yz.ancillary.projection_dir_1)) + "] (kms/s)";
+hca.YLabel.String = "v=[" + join(string(fe3_yz.ancillary.projection_dir_2)) + "] (kms/s)";
+%irf_legend(hca,fe3_yz_2.ancillary.vint(1) + "<v_3<" + fe3_yz_2.ancillary.vint(2),[0.98 0.98],'color','k')
+irf_legend(hca,{fe3_yz_2.ancillary.vint(1) + "<v_3<" + fe3_yz_2.ancillary.vint(2) + " km/s", ...
+  elime(1) + " eV < E"}',[0.98 0.98],'color',{'k','k'})
+
+if 0
+hca = h2(isub); isub = isub + 1;
+fi3_yz.plot_plane(hca)
+hca.XTick = hca.YTick;
+hca.XLabel.String = "v=[" + join(string(fi3_yz.ancillary.projection_dir_1)) + "] (kms/s)";
+hca.YLabel.String = "v=[" + join(string(fi3_yz.ancillary.projection_dir_2)) + "] (kms/s)";
+end
