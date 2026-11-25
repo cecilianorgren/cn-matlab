@@ -54,7 +54,7 @@ nFF = numel(db_table_ff.time);
 
 %% Load AE:
 %data = struct('iFF',[],'T',[],'AE',[],'R',[]);
-for iFF = 1030:nFF
+for iFF = 3837%:nFF
   fprintf('%g, ',iFF)
   %iFF = 1;
   t0 = EpochTT(db_table.time(iFF));
@@ -78,8 +78,12 @@ end
 R = cat(1,data.gseR);
 
 %% Plot
-
-dat = data(iEarthward(1:numel(data)));
+nn = zeros(numel(data),1);
+for i = 1:numel(data); nn(i) = numel(data(i).gseR); end
+ipl = iEarthward;
+dat = data(all([ipl(1:numel(data)) nn~=0],2));
+%dat = data(ipl);
+%dat = data(nn~=0);
 
 h = setup_subplots(3,2); isub = 1;
 
@@ -91,21 +95,24 @@ hca = h(isub); isub = isub + 1;
 histogram(hca,[dat.T]/60,0:1:60)
 hca.XLabel.String = "T_{BFF} (min)";
 
-hca = h(isub); isub = isub + 1;
-plot(hca,R(:,1)*1e3/units.RE,[dat.T]/60,'*')
-hca.XLabel.String = "x_{GSE} (RE)";
-hca.YLabel.String = "T_{BFF} (min)";
-hca.YScale = 'log';
-hold(hca,'on')
-vecR = linspace(min(R(:,1)*1e3/units.RE),max(R(:,1)*1e3/units.RE),20);
-plot(hca,vecR,p(vecR))
-hold(hca,'off')
-
-hca = h(isub); isub = isub + 1;
-plot(hca,[dat.T]/60,[dat.AE_median],'*')
-hca.XLabel.String = "T_{BFF} (min)";
-hca.YLabel.String = "median AE";
-hca.XScale = "log";
+if 0
+  hca = h(isub); isub = isub + 1;
+  plot(hca,R(:,1)*1e3/units.RE,[dat.T]/60,'*')
+  hca.XLabel.String = "x_{GSE} (RE)";
+  hca.YLabel.String = "T_{BFF} (min)";
+  hca.YScale = 'log';
+  hold(hca,'on')
+  vecR = linspace(min(R(:,1)*1e3/units.RE),max(R(:,1)*1e3/units.RE),20);
+  plot(hca,vecR,p(vecR))
+  hold(hca,'off')
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  plot(hca,[dat.T]/60,[dat.AE_median],'*')
+  hca.XLabel.String = "T_{BFF} (min)";
+  hca.YLabel.String = "median AE";
+  hca.XScale = "log";
+end
 
 hca = h(isub); isub = isub + 1;
 edges.var1 = linspace(-26,-10,17);

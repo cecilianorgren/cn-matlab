@@ -47,13 +47,15 @@ db_table_ff.t_df = time_df_ttns; % rewrite time in ttns
 %iFF_with_DF = find(db_table_ff.is_df==1);
 %db_table_df = db_table_ff(iFF_with_DF,:);
 %nDF = numel(db_table_df.time);
-db_table = db_table_ff;
+iEarthward = db_table_ff.v_x>0;
+%db_table = db_table_ff(iEarthward);
 %%
 nFF = numel(db_table_ff.time);
 
 %% Load AE:
 %data = struct('iFF',[],'T',[],'AE',[],'R',[]);
-for iFF = 773:1000
+for iFF = 3837%:nFF
+  fprintf('%g, ',iFF)
   %iFF = 1;
   t0 = EpochTT(db_table.time(iFF));
   T =  db_table.t_duration_s(iFF);  
@@ -69,43 +71,53 @@ for iFF = 773:1000
   data(iFF).gseR = mean(gseR1.data,1);
   data(iFF).AE_mean = mean(omnidata(:,2));
   data(iFF).AE_median = median(omnidata(:,2));
-
+  data(iFF).AE_max = max(omnidata(:,2));
+  
+  if mod(iFF,10) == 0; save([pathSave 'BFF_AE.mat'],'data'); disp('Saving to file.'); end
 end
 R = cat(1,data.gseR);
 
 %% Plot
+nn = zeros(numel(data),1);
+for i = 1:numel(data); nn(i) = numel(data(i).gseR); end
+%dat = data(~iEarthward(1:numel(data)) && nn=1);
+dat = data(nn~=0);
+
 h = setup_subplots(3,2); isub = 1;
 
-R = cat(1,data.gseR);
-coeffs = polyfit([data.T]/60,[R(:,1)],2);
+R = cat(1,dat.gseR);
+coeffs = polyfit([dat.T]/60,[R(:,1)],2);
 p = @(x) polyval(coeffs,x);
 
 hca = h(isub); isub = isub + 1;
-histogram(hca,[data.T]/60,0:20:60)
+histogram(hca,[dat.T]/60,0:1:60)
 hca.XLabel.String = "T_{BFF} (min)";
 
-hca = h(isub); isub = isub + 1;
-plot(hca,R(:,1)*1e3/units.RE,[data.T]/60,'*')
-hca.XLabel.String = "x_{GSE} (RE)";
-hca.YLabel.String = "T_{BFF} (min)";
-hca.YScale = 'log';
-hold(hca,'on')
-vecR = linspace(min(R(:,1)*1e3/units.RE),max(R(:,1)*1e3/units.RE),20);
-plot(hca,vecR,p(vecR))
-hold(hca,'off')
-
-hca = h(isub); isub = isub + 1;
-plot(hca,[data.T]/60,[data.AE_median],'*')
-hca.XLabel.String = "T_{BFF} (min)";
-hca.YLabel.String = "median AE";
-hca.XScale = "log";
+if 0
+  hca = h(isub); isub = isub + 1;
+  plot(hca,R(:,1)*1e3/units.RE,[dat.T]/60,'*')
+  hca.XLabel.String = "x_{GSE} (RE)";
+  hca.YLabel.String = "T_{BFF} (min)";
+  hca.YScale = 'log';
+  hold(hca,'on')
+  vecR = linspace(min(R(:,1)*1e3/units.RE),max(R(:,1)*1e3/units.RE),20);
+  plot(hca,vecR,p(vecR))
+  hold(hca,'off')
+end
+if 1
+  hca = h(isub); isub = isub + 1;
+  plot(hca,[dat.T]/60,[dat.AE_median],'*')
+  hca.XLabel.String = "T_{BFF} (min)";
+  hca.YLabel.String = "median AE";
+  hca.XScale = "log";
+end
 
 hca = h(isub); isub = isub + 1;
 edges.var1 = linspace(-26,-10,17);
-edges.var2 = linspace(0,120,20);
-edges.var2 = logspace(-1,2,20);
+edges.var2 = linspace(0,120,30);
+edges.var2 = logspace(-1,3,30);
 var1 = R(:,1)*1e3/units.RE; 
-var2 = [data.T]/60;
+var2 = [dat.T]/60;
 [N ,~, mid, ~] = histcn([var1(:),var2(:)],edges.var1,edges.var2,'fun',@sum);
 pcolor(hca,mid{1},mid{2},N');
 shading(hca,'flat')
@@ -115,27 +127,24 @@ hca.YLabel.String = "T_{BFF} (min)";
 hcb = colorbar(hca,"eastoutside");
 hcb.Label.String = "Counts";
 hca.YScale = "log";
-hca.Box = 'on';
 
 hca = h(isub); isub = isub + 1;
-scatter(hca,R(:,1)*1e3/units.RE,[data.T]/60,30,[data.AE_median],'filled','markerfacealpha',0.5)
+scatter(hca,R(:,1)*1e3/units.RE,[dat.T]/60,30,[dat.AE_median],'filled','markerfacealpha',0.5)
 hca.XLabel.String = "x_{GSE} (RE)";
 hca.YLabel.String = "T_{BFF} (min)";
 %hcb = colorbar(hca,"north"); hcb.Position(3) = hcb.Position(3)*0.5;
 hcb = colorbar(hca,"eastoutside");
 hcb.Label.String = "AE";
 hca.YScale = "log";
-hca.Box = 'on';
-
 
 
 hca = h(isub); isub = isub + 1;
 edges.var1 = linspace(-26,-10,17);
-edges.var2 = linspace(0,120,20);
-edges.var2 = logspace(-1,2,20);
+edges.var2 = linspace(0,180,30);
+edges.var2 = logspace(-1,3,30);
 var1 = R(:,1)*1e3/units.RE; 
-var2 = [data.T]/60;
-[N ,~, mid, ~] = histcn([var1(:),var2(:)],edges.var1,edges.var2,'accumdata',[data.AE_median],'fun',@median);
+var2 = [dat.T]/60;
+[N ,~, mid, ~] = histcn([var1(:),var2(:)],edges.var1,edges.var2,'accumdata',[dat.AE_median],'fun',@median);
 pcolor(hca,mid{1},mid{2},N');
 shading(hca,'flat')
 hca.XLabel.String = "x_{GSE} (RE)";
@@ -144,10 +153,12 @@ hca.YLabel.String = "T_{BFF} (min)";
 hcb = colorbar(hca,"eastoutside");
 hcb.Label.String = "median AE";
 hca.YScale = "log";
-hca.Box = 'on';
 
 
 
 colormap(irf_colormap('Blues'))
 
-for ip = 
+for ip = 1:numel(h) 
+  h(ip).Box = "on";
+  h(ip).Layer = "top";
+end

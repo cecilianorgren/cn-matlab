@@ -1,0 +1,58 @@
+classdef TSpectra
+
+  properties
+    time    
+    data
+    depend
+    representation
+    dt % for compability with irf_spectrogram
+    df % for compability with irf_spectrogram
+   % t % for compability with irf_spectrogram
+  end
+
+  methods
+    function obj = TSpectra(time,data,depend,representation)
+      obj.time = time;
+      obj.data = data;
+      obj.depend = depend;
+      obj.representation = representation;
+    end
+
+    function sr = specrec(obj)
+      sr.t = obj.time.epochUnix;
+      sr.p = obj.data;
+      sr.f = obj.depend;
+    end
+
+    function out = t(obj)
+      out = obj.time.epochUnix;
+    end
+    function y = x(obj)
+      %access X component
+      [y,ok] = getComponent(obj,'x'); if ~ok, error('cannot get X'), end
+    end
+    function y = y(obj)
+      %access Y component
+      [y,ok] = getComponent(obj,'y'); if ~ok, error('cannot get Y'), end
+    end
+    function y = z(obj)
+      %access Z component
+      [y,ok] = getComponent(obj,'z'); if ~ok, error('cannot get Z'), end
+    end
+
+  end
+
+  methods (Access=protected)
+    function [res, ok] = getComponent(obj,comp)
+      res = []; ok = false;
+      res = obj;
+      logComp = cellfun(@(s) strcmp(s,comp),obj.representation,'UniformOutput',false);
+      iComp = find(logComp{1});
+      if ~isempty(iComp)
+        ok = true;
+        res.data = obj.data(iComp);
+        res.representation = res.representation{1}(iComp);
+      end
+    end
+  end
+end
